@@ -1,0 +1,63 @@
+{
+  "swagger": "2.0",
+  "info": {
+      "title": "vanderlee/PHPSwaggerGen",
+      "version": "2.3.7"
+  },
+  "host": "example.com",
+  "basePath": "\/base",
+  "paths": {
+      "\/customers": {
+          "get": {
+              "tags": [
+                  "Test"
+              ],
+              "responses": {
+                  "200": {
+                      "description": "OK",
+                      "schema": {
+                          "$ref": "#\/definitions\/Person"
+                      }
+                  }
+              }
+          }
+      }
+  },
+  "definitions": {
+      "Address": {
+          "type": "object",
+          "required": [
+              "city",             
+      "occupant"
+          ],
+          "properties": {
+              "city": {
+                  "type": "string"
+              },
+              "occupant": {
+                  "$ref": "#\/definitions\/Person"
+              }
+          }
+      },
+      "Person": {
+          "type": "object",
+          "required": [
+              "name",
+              "home"
+          ],
+          "properties": {
+              "name": {
+                  "type": "string"
+              },
+              "home": {
+                  "$ref": "#\/definitions\/Address"
+              }
+          }
+      }
+  },
+  "tags": [
+      {
+          "name": "Test"
+      }
+  ]
+}
