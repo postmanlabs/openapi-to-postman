@@ -1,0 +1,389 @@
+{
+    "item": [
+        {
+            "id": "8fe57c93-e627-4cc2-b8cc-e10cd09c0e53",
+            "name": "pets",
+            "item": [
+                {
+                    "id": "c7067134-e4ae-4f14-9f7a-a233d1d6989c",
+                    "name": "{id}",
+                    "item": [
+                        {
+                            "id": "d62edda8-48e1-42ad-8b6d-3b1a3c4f2b24",
+                            "name": "find pet by id",
+                            "request": {
+                                "name": "find pet by id",
+                                "url": {
+                                    "protocol": "http",
+                                    "path": [
+                                        "api",
+                                        "pets",
+                                        ":id"
+                                    ],
+                                    "host": [
+                                        "petstore",
+                                        "swagger",
+                                        "io"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": 5809387,
+                                            "description": "ID of pet to fetch"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "auth": {
+                                    "type": "noauth"
+                                }
+                            },
+                            "response": [
+                                {
+                                    "id": "119e0c7c-f9a7-4caf-9106-4816641f28f3",
+                                    "name": "200",
+                                    "status": "OK",
+                                    "code": 200,
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "body": "{\n    \"name\": \"adipisicing ad tempor occaecat\",\n    \"id\": -8050926,\n    \"tag\": \"Excepteur\"\n}",
+                                    "cookie": []
+                                },
+                                {
+                                    "id": "f86971c0-8ac7-4907-8acb-17e731f6ffe9",
+                                    "name": "default",
+                                    "status": "Internal Server Error",
+                                    "code": 500,
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "body": "{\n    \"code\": 65378026,\n    \"message\": \"eiusmod consequat commodo fugiat anim\"\n}",
+                                    "cookie": []
+                                }
+                            ],
+                            "event": []
+                        },
+                        {
+                            "id": "04d62b9a-8c99-4425-8098-f3f54630485c",
+                            "name": "deletePet",
+                            "request": {
+                                "name": "deletePet",
+                                "url": {
+                                    "protocol": "http",
+                                    "path": [
+                                        "api",
+                                        "pets",
+                                        ":id"
+                                    ],
+                                    "host": [
+                                        "petstore",
+                                        "swagger",
+                                        "io"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": -33614546,
+                                            "description": "ID of pet to delete"
+                                        }
+                                    ]
+                                },
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/x-www-form-urlencoded"
+                                    }
+                                ],
+                                "method": "DELETE",
+                                "auth": {
+                                    "type": "noauth"
+                                },
+                                "body": {
+                                    "mode": "urlencoded",
+                                    "urlencoded": [
+                                        {
+                                            "key": "name",
+                                            "value": "officia enim irure dolore nulla"
+                                        },
+                                        {
+                                            "key": "fav_number",
+                                            "value": -48113613
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": [
+                                {
+                                    "id": "022d380b-0d87-4656-8ade-e7b29f557c46",
+                                    "name": "204",
+                                    "status": "No Content",
+                                    "code": 204,
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": ""
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of allowed requests in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Limit",
+                                            "value": -37015334
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of remaining requests in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Remaining",
+                                            "value": 85576101
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of seconds left in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Reset",
+                                            "value": -33306093
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "This is a temporary header",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Abc",
+                                            "value": -75071431
+                                        }
+                                    ],
+                                    "body": "",
+                                    "cookie": []
+                                },
+                                {
+                                    "id": "ed517155-1002-4b74-bca0-1b3e5dc8eaca",
+                                    "name": "default",
+                                    "status": "Internal Server Error",
+                                    "code": 500,
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "body": "{\n    \"code\": -77475200,\n    \"message\": \"ea nisi ullamco commodo\"\n}",
+                                    "cookie": []
+                                }
+                            ],
+                            "event": []
+                        }
+                    ],
+                    "event": []
+                },
+                {
+                    "id": "0676a270-e5fc-4c5d-a900-ffedb8d4e3d7",
+                    "name": "findPets",
+                    "request": {
+                        "name": "findPets",
+                        "url": {
+                            "protocol": "http",
+                            "path": [
+                                "api",
+                                "pets"
+                            ],
+                            "host": [
+                                "petstore",
+                                "swagger",
+                                "io"
+                            ],
+                            "query": [
+                                {
+                                    "key": "tags",
+                                    "value": [
+                                        "ea enim qui sed",
+                                        "laborum occaecat ut",
+                                        "tempo",
+                                        "fugiat au"
+                                    ],
+                                    "description": "tags to filter by"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": 37258855,
+                                    "description": "maximum number of results to return"
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "header": [
+                            {
+                                "key": "X-Mashape-Key",
+                                "value": "",
+                                "description": "The API authorizes requests through an API key in your header. Enter your Mashape key here. If you don't have an API key, for testing purposes you can use `EF3g83pKnzmshgoksF83V6JB6QyTp1cGrrdjsnczTkkYgYrp8p`."
+                            }
+                        ],
+                        "method": "GET",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "id": "5543fc90-cf91-4323-bb54-e03b083c5dcf",
+                            "name": "200",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "[\n    {\n        \"name\": \"do veniam\",\n        \"id\": -81251647\n    },\n    {\n        \"name\": \"est dolore veniam pariatur\",\n        \"id\": 42292866,\n        \"tag\": \"nisi do eu magna\"\n    },\n    {\n        \"name\": \"voluptate incididunt sit laboris\",\n        \"id\": 58596022,\n        \"tag\": \"aute commodo in\"\n    }\n]",
+                            "cookie": []
+                        },
+                        {
+                            "id": "0d4925b7-9e4b-4ae5-9a21-35e3b4f5e3ad",
+                            "name": "default",
+                            "status": "Internal Server Error",
+                            "code": 500,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n    \"code\": -1835757,\n    \"message\": \"pariatur et Excepteur quis\"\n}",
+                            "cookie": []
+                        }
+                    ],
+                    "event": []
+                },
+                {
+                    "id": "c5f767d6-b34f-4f6e-be52-7ddebef6dc53",
+                    "name": "addPet",
+                    "request": {
+                        "name": "addPet",
+                        "url": {
+                            "protocol": "http",
+                            "path": [
+                                "api",
+                                "pets"
+                            ],
+                            "host": [
+                                "petstore",
+                                "swagger",
+                                "io"
+                            ],
+                            "query": [
+                                {
+                                    "key": "math",
+                                    "value": [
+                                        "officia vol",
+                                        "in",
+                                        "ad",
+                                        "ip",
+                                        "dolor est"
+                                    ],
+                                    "description": "tags to filter by"
+                                },
+                                {
+                                    "key": "physics",
+                                    "value": 51695709,
+                                    "description": "maximum number of results to return"
+                                },
+                                {
+                                    "key": "me",
+                                    "value": "tempor consequat ut magna",
+                                    "description": "something to do"
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "method": "POST",
+                        "auth": {
+                            "type": "oauth2"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"elit consectetur cul\"\n}"
+                        }
+                    },
+                    "response": [
+                        {
+                            "id": "d15d2f60-d1a9-4eed-a795-c1feac2f6a0c",
+                            "name": "200",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n    \"name\": \"aliqua est occaecat\",\n    \"id\": -3894010\n}",
+                            "cookie": []
+                        },
+                        {
+                            "id": "233beba4-3d48-495d-a488-c111646d8f48",
+                            "name": "default",
+                            "status": "Internal Server Error",
+                            "code": 500,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n    \"code\": 75895496,\n    \"message\": \"Ut in est adipisicing\"\n}",
+                            "cookie": []
+                        }
+                    ],
+                    "event": []
+                }
+            ],
+            "event": []
+        }
+    ],
+    "event": [],
+    "variable": [
+        {
+            "id": "base-url",
+            "description": {},
+            "type": "string",
+            "value": "http://petstore.swagger.io/api"
+        }
+    ],
+    "description": {
+        "content": "A sample API that uses a petstore as an example to demonstrate features in the OpenAPI 3.0 specification\nContact Support + \n{\nName : Swagger API Team\nEmail : apiteam@swagger.io\n\n}",
+        "type": "text/plain"
+    },
+    "info": {
+        "id": "8af324f5-3d42-4462-b30d-435a5dd2305f",
+        "name": "Derivative Drivel",
+        "version": {
+            "raw": "1.0.0",
+            "major": 1,
+            "minor": 0,
+            "patch": 0,
+            "prerelease": [],
+            "build": [],
+            "string": "1.0.0"
+        },
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    }
+}
