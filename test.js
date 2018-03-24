@@ -7,21 +7,16 @@ var Converter = require('./lib/convert.js'),
     log = require('console-emoji');
 
 setTimeout(() => {
-  log('\n\nPicking up all of your Swagger 3.0........ -> \n', 'red');
+  log('\n\nImma take all your swagger....Ha! :sunglasses:\n', 'red');
 }, 50);
 
 setTimeout(() => {
-  log('Launching escape pods...\n\nFasten your seatbelts...\n', 'red');
+  log('Launching escape pods... :rocket:', 'red');
 },1000);
 
-fs.writeFileSync('normal.json', JSON.stringify(data, null, 4), (err) => {
-  if(err){
-    console.log('not done');
-  } else {
-    console.log('done');
-  }
-});
-
+setTimeout(() => {
+  log('\nFasten your seatbelts... :seat:\n', 'red');
+},2000)
 
 Converter.convert(data, (status) => {
   if(!status.result){
@@ -34,18 +29,16 @@ Converter.convert(data, (status) => {
         console.log('done');
       }
     });
+    setTimeout(() => {
+      log('Collection created!\n', 'ok')
+    }, 4000);    
+
+    setTimeout(() => {
+      log('You may unbuckle your seatbelts now  :pray:\n\n','yellow');
+    }, 5000);    
   } 
 });
 
-setTimeout(() => {
-  log('Collection created!\n', 'ok')
-}, 3000);
-
-
-
-setTimeout(() => {
-  log('You may unbuckle your seatbelts now  :pray:\n\n','yellow');
-}, 4000);
 
 
 
