@@ -30,7 +30,7 @@ paths:
           in: query
           description: tags to filter by
           required: false
-          style: form
+          style: spaceDelimited
           schema:
             type: array
             items:
@@ -39,9 +39,9 @@ paths:
           in: query
           description: maximum number of results to return
           required: false
-          schema:
-            type: integer
-            format: int32
+          # schema:
+          #   type: integer
+          #   format: int32
       responses:
         '200':
           description: pet response
@@ -69,15 +69,67 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NewPet'
+              
       responses:
         '200':
           description: pet response
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: The number of remaining requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Reset:
+              description: The number of seconds left in the current period
+              schema:
+                type: integer
+            X-Rate-Abc:
+              $ref: '#/components/headers/X-Rate-Abc'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Pet'
         default:
           description: unexpected error
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: The number of remaining requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Reset:
+              description: The number of seconds left in the current period
+              schema:
+                type: integer
+            X-Rate-Abc:
+              $ref: '#/components/headers/X-Rate-Abc'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      description: Delete operation idk what for
+      operationId: deletePets
+      security:
+        - OauthSample : []
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+        
+        default:
+          description: Unexpected error
           content:
             application/json:
               schema:
@@ -134,6 +186,64 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+    put:
+      description: A test put request to check the multipart content type
+      operationId: testReq
+      parameters:
+        - name: zeta_function
+          in: query
+          description: Zeta function rocks
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FormData'
+      responses:
+        '265':
+          description: pet deleted
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: The number of remaining requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Reset:
+              description: The number of seconds left in the current period
+              schema:
+                type: integer
+            X-Rate-Abc:
+              $ref: '#/components/headers/X-Rate-Abc'
+
+        default:
+          description: unexpected error
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: The number of remaining requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Reset:
+              description: The number of seconds left in the current period
+              schema:
+                type: integer
+            X-Rate-Abc:
+              $ref: '#/components/headers/X-Rate-Abc'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
     delete:
       description: deletes a single pet based on the ID supplied
       operationId: deletePet
@@ -141,7 +251,7 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PetForm'
+              $ref: '#/components/schemas/FormData'
             examples:
               foo:
                 value: {"foo", "bar"}
@@ -174,10 +284,23 @@ paths:
             X-Rate-Abc:
               $ref: '#/components/headers/X-Rate-Abc'
 
-
-
         default:
           description: unexpected error
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: The number of remaining requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Reset:
+              description: The number of seconds left in the current period
+              schema:
+                type: integer
+            X-Rate-Abc:
+              $ref: '#/components/headers/X-Rate-Abc'
           content:
             application/json:
               schema:
@@ -256,6 +379,32 @@ components:
       required:
         - name
         - email
+
+    FormData:
+      properties: # Request parts
+        id: # Part 1 (string value)
+          type: string
+        address: # Part2 (object)
+          type: object
+          properties:
+            street:
+              type: object
+              properties:
+                name:
+                  type: string
+                pincode:
+                  type: integer
+              required:
+                - name
+                - pincode
+            city:
+              type: string
+          required:
+            - street
+            - city
+      required:
+        - id
+        - address
 
   parameters:
     Tuhin:
