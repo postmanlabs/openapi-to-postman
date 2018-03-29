@@ -1,0 +1,549 @@
+{
+    "item": [
+        {
+            "id": "ae3d84da-7455-4ac3-a74a-406eb8ceb1e3",
+            "name": "pets",
+            "item": [
+                {
+                    "id": "e2ca5ea2-07a3-43d6-a984-adc43cd6e735",
+                    "name": "{id}",
+                    "item": [
+                        {
+                            "id": "e1186d90-2477-4d64-83b0-5dc3bfa4636d",
+                            "name": "find pet by id",
+                            "request": {
+                                "name": "find pet by id",
+                                "url": "http://petstore.swagger.io/api/pets/:id",
+                                "method": "GET",
+                                "auth": {
+                                    "type": "noauth"
+                                }
+                            },
+                            "response": [
+                                {
+                                    "id": "d9e6d084-49eb-4e86-97f3-d0e03f00be47",
+                                    "name": "200",
+                                    "status": "OK",
+                                    "code": 200,
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "body": "{\n    \"name\": \"est\",\n    \"id\": 26775801\n}",
+                                    "cookie": []
+                                },
+                                {
+                                    "id": "7e942023-01ff-465e-9f32-cc5f020769a4",
+                                    "name": "default",
+                                    "status": "Internal Server Error",
+                                    "code": 500,
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        }
+                                    ],
+                                    "body": "{\n    \"code\": 64876798,\n    \"message\": \"velit\"\n}",
+                                    "cookie": []
+                                }
+                            ],
+                            "event": []
+                        },
+                        {
+                            "id": "a93aa57f-f768-4049-b71a-d702d38ec11a",
+                            "name": "testReq",
+                            "request": {
+                                "name": "testReq",
+                                "url": "http://petstore.swagger.io/api/pets/:id?zeta_function=98563493",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "multipart/form-data"
+                                    }
+                                ],
+                                "method": "PUT",
+                                "auth": {
+                                    "type": "noauth"
+                                },
+                                "body": {
+                                    "mode": "formdata",
+                                    "formdata": [
+                                        {
+                                            "key": "id",
+                                            "value": "deserunt velit"
+                                        },
+                                        {
+                                            "key": "address",
+                                            "value": "{\"street\":{\"name\":\"laboris sed nisi aliquip\",\"pincode\":39193467},\"city\":\"tempor officia magna id in\"}"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": [
+                                {
+                                    "id": "cb43864c-e4b9-4421-a78d-86f2af513d55",
+                                    "name": "265",
+                                    "code": 265,
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": ""
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of allowed requests in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Limit",
+                                            "value": 14843063
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of remaining requests in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Remaining",
+                                            "value": -38682988
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of seconds left in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Reset",
+                                            "value": -64075668
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "This is a temporary header",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Abc",
+                                            "value": -3945732
+                                        }
+                                    ],
+                                    "body": "",
+                                    "cookie": []
+                                },
+                                {
+                                    "id": "1d574dc5-0bf5-4710-8119-f728bf4632a0",
+                                    "name": "default",
+                                    "status": "Internal Server Error",
+                                    "code": 500,
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of allowed requests in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Limit",
+                                            "value": -19041870
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of remaining requests in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Remaining",
+                                            "value": -93673016
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of seconds left in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Reset",
+                                            "value": 13243672
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "This is a temporary header",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Abc",
+                                            "value": 35435282
+                                        }
+                                    ],
+                                    "body": "{\n    \"code\": 50731078,\n    \"message\": \"sunt tempor aute commodo volupt\"\n}",
+                                    "cookie": []
+                                }
+                            ],
+                            "event": []
+                        },
+                        {
+                            "id": "b66da2f9-c689-4637-ba38-b08c9eafc269",
+                            "name": "deletePet",
+                            "request": {
+                                "name": "deletePet",
+                                "url": "http://petstore.swagger.io/api/pets/:id",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/x-www-form-urlencoded"
+                                    }
+                                ],
+                                "method": "DELETE",
+                                "auth": {
+                                    "type": "noauth"
+                                },
+                                "body": {
+                                    "mode": "urlencoded",
+                                    "urlencoded": [
+                                        {
+                                            "key": "id",
+                                            "value": "magna ea est"
+                                        },
+                                        {
+                                            "key": "address",
+                                            "value": "{\"street\":{\"name\":\"amet nisi cillum voluptate do\",\"pincode\":86200247},\"city\":\"nisi nostrud ullamco si\"}"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": [
+                                {
+                                    "id": "349a3f25-b92b-4055-83a6-992f8e0bec2e",
+                                    "name": "204",
+                                    "status": "No Content",
+                                    "code": 204,
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": ""
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of allowed requests in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Limit",
+                                            "value": -40989278
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of remaining requests in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Remaining",
+                                            "value": -3953878
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of seconds left in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Reset",
+                                            "value": -34486473
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "This is a temporary header",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Abc",
+                                            "value": 14724008
+                                        }
+                                    ],
+                                    "body": "",
+                                    "cookie": []
+                                },
+                                {
+                                    "id": "bb42c6ab-6b36-409c-bb35-06f96bd81cfd",
+                                    "name": "default",
+                                    "status": "Internal Server Error",
+                                    "code": 500,
+                                    "header": [
+                                        {
+                                            "key": "Content-Type",
+                                            "value": "application/json"
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of allowed requests in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Limit",
+                                            "value": 92829623
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of remaining requests in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Remaining",
+                                            "value": -26803933
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "The number of seconds left in the current period",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Limit-Reset",
+                                            "value": -12934488
+                                        },
+                                        {
+                                            "description": {
+                                                "content": "This is a temporary header",
+                                                "type": "text/plain"
+                                            },
+                                            "key": "X-Rate-Abc",
+                                            "value": -86242147
+                                        }
+                                    ],
+                                    "body": "{\n    \"code\": -97612650,\n    \"message\": \"ut in voluptate\"\n}",
+                                    "cookie": []
+                                }
+                            ],
+                            "event": []
+                        }
+                    ],
+                    "event": []
+                },
+                {
+                    "id": "be8c4cbd-a9fe-4120-8356-4c3cd06b2c1c",
+                    "name": "findPets",
+                    "request": {
+                        "name": "findPets",
+                        "url": "http://petstore.swagger.io/api/pets?adipisicing aliquip irure velit%20in elit ullamco%20nisi Excepteur%20cupidat%20el&limit=",
+                        "header": [
+                            {
+                                "key": "X-Mashape-Key",
+                                "value": "",
+                                "description": "The API authorizes requests through an API key in your header. Enter your Mashape key here. If you don't have an API key, for testing purposes you can use `EF3g83pKnzmshgoksF83V6JB6QyTp1cGrrdjsnczTkkYgYrp8p`."
+                            }
+                        ],
+                        "method": "GET",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "id": "d48421c4-0d23-4a9d-8dc4-8cd4d8135c6c",
+                            "name": "200",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "[\n    {\n        \"name\": \"ullamco aute Duis sed\",\n        \"id\": -1885749\n    },\n    {\n        \"name\": \"culp\",\n        \"id\": -38284660\n    },\n    {\n        \"name\": \"Lorem tempor laborum aute\",\n        \"id\": -80338324,\n        \"tag\": \"nostrud\"\n    },\n    {\n        \"name\": \"ullamco eu anim\",\n        \"id\": 72463038,\n        \"tag\": \"dolor ut deserunt sed dolore\"\n    },\n    {\n        \"name\": \"velit\",\n        \"id\": 18190839,\n        \"tag\": \"occaecat fu\"\n    }\n]",
+                            "cookie": []
+                        },
+                        {
+                            "id": "08cef0e9-1f33-4c2e-b4f3-63ad434b81b4",
+                            "name": "default",
+                            "status": "Internal Server Error",
+                            "code": 500,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n    \"code\": 1922188,\n    \"message\": \"eu veniam officia Duis aute\"\n}",
+                            "cookie": []
+                        }
+                    ],
+                    "event": []
+                },
+                {
+                    "id": "d57adda4-e7a2-475f-9be9-be35fb778462",
+                    "name": "addPet",
+                    "request": {
+                        "name": "addPet",
+                        "url": "http://petstore.swagger.io/api/pets?math=tempor non&math=ex exercitation in labore&math=nostrud ut eu&math=commodo Excepteur&physics=52137416&me=ipsum fugiat adipisicing",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "method": "POST",
+                        "auth": {
+                            "type": "oauth2"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"ipsum\"\n}"
+                        }
+                    },
+                    "response": [
+                        {
+                            "id": "436c7584-5dd7-465e-9017-481abfef9cb6",
+                            "name": "200",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                },
+                                {
+                                    "description": {
+                                        "content": "The number of allowed requests in the current period",
+                                        "type": "text/plain"
+                                    },
+                                    "key": "X-Rate-Limit-Limit",
+                                    "value": 6962579
+                                },
+                                {
+                                    "description": {
+                                        "content": "The number of remaining requests in the current period",
+                                        "type": "text/plain"
+                                    },
+                                    "key": "X-Rate-Limit-Remaining",
+                                    "value": 87557008
+                                },
+                                {
+                                    "description": {
+                                        "content": "The number of seconds left in the current period",
+                                        "type": "text/plain"
+                                    },
+                                    "key": "X-Rate-Limit-Reset",
+                                    "value": -58307459
+                                },
+                                {
+                                    "description": {
+                                        "content": "This is a temporary header",
+                                        "type": "text/plain"
+                                    },
+                                    "key": "X-Rate-Abc",
+                                    "value": 57697209
+                                }
+                            ],
+                            "body": "{\n    \"name\": \"anim\",\n    \"id\": -38491043\n}",
+                            "cookie": []
+                        },
+                        {
+                            "id": "e752892d-654c-41c8-9a97-7bfcd1b685c3",
+                            "name": "default",
+                            "status": "Internal Server Error",
+                            "code": 500,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                },
+                                {
+                                    "description": {
+                                        "content": "The number of allowed requests in the current period",
+                                        "type": "text/plain"
+                                    },
+                                    "key": "X-Rate-Limit-Limit",
+                                    "value": 18998604
+                                },
+                                {
+                                    "description": {
+                                        "content": "The number of remaining requests in the current period",
+                                        "type": "text/plain"
+                                    },
+                                    "key": "X-Rate-Limit-Remaining",
+                                    "value": -80256394
+                                },
+                                {
+                                    "description": {
+                                        "content": "The number of seconds left in the current period",
+                                        "type": "text/plain"
+                                    },
+                                    "key": "X-Rate-Limit-Reset",
+                                    "value": 563789
+                                },
+                                {
+                                    "description": {
+                                        "content": "This is a temporary header",
+                                        "type": "text/plain"
+                                    },
+                                    "key": "X-Rate-Abc",
+                                    "value": -35585158
+                                }
+                            ],
+                            "body": "{\n    \"code\": 65619069,\n    \"message\": \"voluptate\"\n}",
+                            "cookie": []
+                        }
+                    ],
+                    "event": []
+                },
+                {
+                    "id": "d5e9998a-3307-429b-a026-dd0e274387e0",
+                    "name": "deletePets",
+                    "request": {
+                        "name": "deletePets",
+                        "url": "http://petstore.swagger.io/api/pets?math=tempor&math=cillum ad dolor officia pariatur&math=mollit sit qui in do&math=voluptate dolore eu veniam&physics=-20765408&me=cupidatat nulla mollit ",
+                        "method": "DELETE",
+                        "auth": {
+                            "type": "oauth2"
+                        }
+                    },
+                    "response": [
+                        {
+                            "id": "e6f7f977-29ca-4d82-82e9-dd59fc00bcfd",
+                            "name": "200",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "[\n    {\n        \"name\": \"non irure incididunt eiusmod\",\n        \"id\": 23652998,\n        \"tag\": \"sit voluptate aliqua nisi dolor\"\n    },\n    {\n        \"name\": \"est eu ut\",\n        \"id\": -71351881\n    },\n    {\n        \"name\": \"culpa ullamco\",\n        \"id\": -24504934\n    }\n]",
+                            "cookie": []
+                        },
+                        {
+                            "id": "4cb8c021-2f36-4710-98ae-a22ee2237d9f",
+                            "name": "default",
+                            "status": "Internal Server Error",
+                            "code": 500,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n    \"code\": 74168546,\n    \"message\": \"do adipisicing nulla ea\"\n}",
+                            "cookie": []
+                        }
+                    ],
+                    "event": []
+                }
+            ],
+            "event": []
+        }
+    ],
+    "event": [],
+    "variable": [
+        {
+            "id": "base-url",
+            "description": {},
+            "type": "string",
+            "value": "http://petstore.swagger.io/api"
+        }
+    ],
+    "description": {
+        "content": "A sample API that uses a petstore as an example to demonstrate features in the OpenAPI 3.0 specification\nContact Support + \n{\nName : Swagger API Team\nEmail : apiteam@swagger.io\n\n}",
+        "type": "text/plain"
+    },
+    "info": {
+        "id": "1b6018a3-cc8e-4c0a-9382-c75f483e9323",
+        "name": "Crime Master Gogo",
+        "version": {
+            "raw": "1.0.0",
+            "major": 1,
+            "minor": 0,
+            "patch": 0,
+            "prerelease": [],
+            "build": [],
+            "string": "1.0.0"
+        },
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    }
+}

@@ -1,0 +1,1074 @@
+openapi: 3.0.0
+servers:
+  - url: 'http://localhost:8080/api/v1'
+info:
+  version: v1
+  title: API
+  description: ''
+  termsOfService: 'http://xyz.in/about/legal/terms/api'
+tags:
+  - name: Source
+  - name: Users
+  - name: Roles
+  - name: Capabilities
+  - name: Mapping
+    description: |
+      Mapping can be performed in one of the two ways
+
+      * Users and Roles alotted to the users.
+      * Roles and capabilities alloted to the roles.
+  - name: Transaction
+paths:
+  /source/:
+    get:
+      tags:
+        - Source
+      description: Get information about all sources.
+      responses:
+        '200':
+          description: The source object
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Source'
+    post:
+      tags:
+        - Source
+      description: Add a source.
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                source_name:
+                  description: New source name
+                  type: string
+                parent_source_id:
+                  description: Parent Source ID
+                  type: integer
+              required:
+                - source_name
+                - parent_source_id
+  '/source/{source-id}':
+    get:
+      parameters:
+        - $ref: '#/components/parameters/source-id'
+      tags:
+        - Source
+      description: Get basic information about a source.
+      responses:
+        '200':
+          description: The source object
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Source'
+    delete:
+      parameters:
+        - $ref: '#/components/parameters/source-id'
+      tags:
+        - Source
+      description: Deletes source based on its ID.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /users/:
+    get:
+      tags:
+        - Users
+      description: Get information about all users.
+      responses:
+        '200':
+          description: The user object
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      tags:
+        - Users
+      description: Add a user.
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: New user name
+                  type: string
+                client_id:
+                  description: Client ID
+                  type: integer
+                user_source_id:
+                  description: Source ID for user
+                  type: integer
+                address:
+                  description: User address
+                  type: string
+                address_type:
+                  description: User address type
+                  type: string
+                locality_id:
+                  description: Locality ID
+                  type: integer
+                phone:
+                  description: User's phone number
+                  type: integer
+                email:
+                  description: User's email address
+                  type: string
+              required:
+                - name
+                - client_id
+                - user_source_id
+  '/users/{user-id}':
+    get:
+      parameters:
+        - $ref: '#/components/parameters/user-id'
+      tags:
+        - Users
+      description: Get basic information about a user.
+      responses:
+        '200':
+          description: The user object
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    put:
+      parameters:
+        - $ref: '#/components/parameters/user-id'
+      tags:
+        - Users
+      description: Update user name based on his ID.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: New user name
+                  type: string
+              required:
+                - name
+    delete:
+      parameters:
+        - $ref: '#/components/parameters/user-id'
+      tags:
+        - Users
+      description: Delete user based on his ID.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /users/lookup:
+    get:
+      tags:
+        - Users
+      description: >-
+        Get user id using user's mobile number or email. Atleast one parameter
+        must be passed.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                phone:
+                  description: User's phone number.
+                  type: integer
+                email:
+                  description: User's email.
+                  type: string
+  /users/merge:
+    put:
+      tags:
+        - Users
+      description: Merge users together based on email and phone number.
+      responses:
+        '200':
+          description: Merged
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                email:
+                  description: User's email address
+                  type: string
+                phone:
+                  description: User's phone number
+                  type: integer
+              required:
+                - email
+                - phone
+  '/users/restaurant/{restaurant-id}':
+    get:
+      tags:
+        - Users
+      description: >
+        See the list of users belonging to a restaurant based on
+        `restaurant-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+      parameters:
+        - name: restaurant-id
+          in: path
+          description: Restaurant ID.
+          required: true
+          schema:
+            type: integer
+  '/users/source/{source-id}':
+    get:
+      tags:
+        - Users
+      description: |
+        See the list of users belonging to a restaurant based on `source-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+      parameters:
+        - name: source-id
+          in: path
+          description: Source ID.
+          required: true
+          schema:
+            type: integer
+  '/address/{address-id}':
+    get:
+      parameters:
+        - name: address-id
+          in: path
+          description: User's address ID
+          required: true
+          schema:
+            type: integer
+      description: |
+        Get address details of the user based on his address ID.    
+      tags:
+        - Users
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+    put:
+      parameters:
+        - name: address-id
+          in: path
+          description: User's address ID
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Users
+      responses:
+        '200':
+          description: |
+            OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+    delete:
+      parameters:
+        - name: address-id
+          in: path
+          description: User's address ID
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Users
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  '/users/restaurant/{restaurant-id}/transactions':
+    get:
+      tags:
+        - Transaction
+      description: List of Transactions made by users for a specific restaurant.
+      parameters:
+        - name: restaurant-id
+          in: path
+          description: Restaurant's ID for which transactions need to be returned.
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+  '/users/{user-id}/transactions':
+    parameters:
+      - name: user-id
+        in: path
+        description: User's ID
+        required: true
+        schema:
+          type: integer
+    get:
+      tags:
+        - Transaction
+      description: >-
+        List of Transactions made by User across LT platform based on phone
+        number or email. Atleast one parameter is required.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                phone:
+                  description: User's phone number.
+                  type: integer
+                email:
+                  description: User's email address
+                  type: string
+    post:
+      tags:
+        - Transaction
+      description: >-
+        Add a new transaction to the user based on `user-id` and return a
+        `transaction-id`.
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                transaction-date:
+                  description: Date of transaction.
+                  type: string
+                outlet-id:
+                  description: Outlet's ID
+                  type: integer
+  /capabilities:
+    get:
+      tags:
+        - Capabilities
+      description: |
+        List all the available capabilities.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Capabilities'
+    post:
+      tags:
+        - Capabilities
+      description: |
+        Generate a new capability
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: Name of capability
+                  type: string
+              required:
+                - name
+  '/capabilities/{capability-id}':
+    parameters:
+      - name: capability-id
+        in: path
+        required: true
+        description: Capability ID
+        schema:
+          type: integer
+    get:
+      tags:
+        - Capabilities
+      description: |
+        Get a specific Capability.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Capabilities'
+    put:
+      tags:
+        - Capabilities
+      description: |
+        Update a capability based on its `capability-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: New name for capability
+                  type: string
+              required:
+                - name
+    delete:
+      tags:
+        - Capabilities
+      description: |
+        Delete a capability based on its `capability-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /roles:
+    get:
+      tags:
+        - Roles
+      description: |
+        List all the available roles.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Roles'
+    post:
+      tags:
+        - Roles
+      description: Generate a new role
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: Name of the new role.
+                  type: string
+  '/roles/{role-id}':
+    parameters:
+      - name: role-id
+        in: path
+        required: true
+        description: Role ID
+        schema:
+          type: integer
+    get:
+      tags:
+        - Roles
+      description: |
+        Get a specific Role based on its `role-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Roles'
+    put:
+      tags:
+        - Roles
+      description: |
+        Update a role based on its `role-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: New name for role
+                  type: string
+              required:
+                - name
+    delete:
+      tags:
+        - Roles
+      description: |
+        Delete a role based on its `role-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  '/users/{user-id}/roles':
+    parameters:
+      - name: user-id
+        description: user identifier number
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags:
+        - Mapping
+      description: |
+        List all the available roles for the user identified by `user-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Roles'
+    post:
+      tags:
+        - Mapping
+      description: >
+        Assign roles to a user based on `role-id` or `role-name`. Atleast one
+        parameter needs to be provided.
+      responses:
+        '201':
+          description: Created
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                role-name:
+                  description: Name of the role
+                  type: string
+                role-id:
+                  description: Role ID
+                  type: integer
+    delete:
+      tags:
+        - Mapping
+      description: |
+        Delete all roles assigned to a user based on `user-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  '/users/{user-id}/roles/{role-id}':
+    get:
+      parameters:
+        - name: user-id
+          description: user identifier number
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: role-id
+          in: path
+          description: role identifier number
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Mapping
+      description: |
+        Show a role assigned to a user based on `role-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Roles'
+    delete:
+      parameters:
+        - name: user-id
+          description: user identifier number
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: role-id
+          in: path
+          description: role identifier number
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Mapping
+      description: |
+        Delete a role assigned to a user based on `role-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  '/roles/{role-id}/capabilities':
+    parameters:
+      - name: role-id
+        description: role identifier number
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags:
+        - Mapping
+      description: >
+        List all the available capabilities for the role identified by
+        `role-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Capabilities'
+    post:
+      tags:
+        - Mapping
+      description: >
+        Assign capabilities to a role based on `capability-id` or
+        `capability-name`. Atleast one parameter needs to be provided.
+      responses:
+        '201':
+          description: Created
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                capability-name:
+                  description: Name of the capability
+                  type: string
+                capability-id:
+                  description: Capability ID
+                  type: integer
+    delete:
+      tags:
+        - Mapping
+      description: |
+        Delete all capabilities assigned to the role based on `role-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  '/roles/{role-id}/capabilities/{capability-id}':
+    get:
+      parameters:
+        - name: role-id
+          description: role identifier number
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: capability-id
+          in: path
+          description: capability identifier number
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Mapping
+      description: |
+        Show a capability assigned to a role based on `capability-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Capabilities'
+    delete:
+      parameters:
+        - name: role-id
+          description: role identifier number
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: capability-id
+          in: path
+          description: Capability ID
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Mapping
+      description: |
+        Delete a capability assigned to a role based on `capability-id`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+components:
+  parameters:
+    source-id:
+      name: source-id
+      in: path
+      description: The source identifier number
+      required: true
+      schema:
+        type: integer
+    user-id:
+      name: user-id
+      in: path
+      description: The user identifier number
+      required: true
+      schema:
+        type: integer
+    tag-name:
+      name: tag-name
+      in: path
+      description: Tag name
+      required: true
+      schema:
+        type: string
+  securitySchemes:
+    key:
+      type: apiKey
+      in: query
+      name: api_key
+  schemas:
+    Source:
+      type: object
+      properties:
+        id:
+          type: integer
+        source_name:
+          type: string
+        parent_source_id:
+          type: integer
+        created_at:
+          format: date-time
+        updated_at:
+          format: date-time
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        client_id:
+          type: integer
+        user_source_id:
+          type: integer
+        name:
+          type: string
+        status:
+          type: string
+        user_account_id:
+          type: integer
+        user_account_type:
+          type: string
+        created_at:
+          format: date-time
+        updated_at:
+          format: date-time
+        deleted_at:
+          format: date-time
+    Address:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        address:
+          type: string
+        address_type:
+          type: string
+        locality_id:
+          type: integer
+        status:
+          type: string
+        created_at:
+          format: date-time
+        updated_at:
+          format: date-time
+        deleted_at:
+          format: date-time
+    Email:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: integer
+        user_email:
+          type: string
+        status:
+          type: string
+        created_at:
+          format: date-time
+        deleted_at:
+          format: date-time
+    Phone:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        user_phone_number:
+          type: integer
+        status:
+          type: string
+        created_at:
+          format: date-time
+        deleted_at:
+          format: date-time
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        user_address_id:
+          type: integer
+        source_id:
+          type: integer
+        user_phone_number_id:
+          type: integer
+        user_email_id:
+          type: integer
+        outlet_id:
+          type: integer
+        transaction_date:
+          format: date
+        created_at:
+          format: date-time
+        updated_at:
+          format: date-time
+    Roles:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        created_at:
+          format: date-time
+        updated_at:
+          format: date-time
+        deleted_at:
+          format: date-time
+    Capabilities:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        created_at:
+          format: date-time
+        updated_at:
+          format: date-time
+        deleted_at:
+          format: date-time
+    User_Role_Mappings:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        role_id:
+          type: integer
+    Role_Capability_Mappings:
+      type: object
+      properties:
+        role_id:
+          type: integer
+        capability_id:
+          type: integer

@@ -1,0 +1,442 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Crime Master Gogo
+  description: A sample API that uses a petstore as an example to demonstrate features in the OpenAPI 3.0 specification
+  termsOfService: http://swagger.io/terms/
+  contact:
+    name: Swagger API Team
+    email: apiteam@swagger.io
+    url: http://swagger.io
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: http://petstore.swagger.io
+    # description: 'Adding the variables'
+    # variables:
+    #   api:
+    #     default: tuhin
+    #     description: variable1
+    #   cantordust:
+    #     default: nalin
+    #     description: variable2
+paths:
+  /pets:
+    get:
+      description: |
+        Returns all pets from the system that the user has access to
+        Nam sed condimentum est. Maecenas tempor sagittis sapien, nec rhoncus sem sagittis sit amet. Aenean at gravida augue, ac iaculis sem. Curabitur odio lorem, ornare eget elementum nec, cursus id lectus. Duis mi turpis, pulvinar ac eros ac, tincidunt varius justo. In hac habitasse platea dictumst. Integer at adipiscing ante, a sagittis ligula. Aenean pharetra tempor ante molestie imperdiet. Vivamus id aliquam diam. Cras quis velit non tortor eleifend sagittis. Praesent at enim pharetra urna volutpat venenatis eget eget mauris. In eleifend fermentum facilisis. Praesent enim enim, gravida ac sodales sed, placerat id erat. Suspendisse lacus dolor, consectetur non augue vel, vehicula interdum libero. Morbi euismod sagittis libero sed lacinia.
+
+        Sed tempus felis lobortis leo pulvinar rutrum. Nam mattis velit nisl, eu condimentum ligula luctus nec. Phasellus semper velit eget aliquet faucibus. In a mattis elit. Phasellus vel urna viverra, condimentum lorem id, rhoncus nibh. Ut pellentesque posuere elementum. Sed a varius odio. Morbi rhoncus ligula libero, vel eleifend nunc tristique vitae. Fusce et sem dui. Aenean nec scelerisque tortor. Fusce malesuada accumsan magna vel tempus. Quisque mollis felis eu dolor tristique, sit amet auctor felis gravida. Sed libero lorem, molestie sed nisl in, accumsan tempor nisi. Fusce sollicitudin massa ut lacinia mattis. Sed vel eleifend lorem. Pellentesque vitae felis pretium, pulvinar elit eu, euismod sapien.
+      operationId: findPets
+      security: 
+        - Mashape-Key : []
+        - MyAuth: []
+      parameters:
+        - name: tags
+          in: query
+          description: tags to filter by
+          required: false
+          style: pipeDelimited
+          schema:
+            type: array
+            items:
+              type: string
+        - name: limit
+          in: query
+          description: maximum number of results to return
+          required: false
+          # schema:
+          #   type: integer
+          #   format: int32
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      description: Creates a new pet in the store.  Duplicates are allowed
+      operationId: addPet
+      security:
+        - OauthSample: []  
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewPet'
+              
+      responses:
+        '200':
+          description: pet response
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: The number of remaining requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Reset:
+              description: The number of seconds left in the current period
+              schema:
+                type: integer
+            X-Rate-Abc:
+              $ref: '#/components/headers/X-Rate-Abc'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        default:
+          description: unexpected error
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: The number of remaining requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Reset:
+              description: The number of seconds left in the current period
+              schema:
+                type: integer
+            X-Rate-Abc:
+              $ref: '#/components/headers/X-Rate-Abc'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      description: Delete operation idk what for
+      operationId: deletePets
+      security:
+        - OauthSample : []
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+        
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    parameters:
+        - name: math
+          in: query
+          description: tags to filter by
+          required: false
+          style: form
+          schema:
+            type: array
+            items:
+              type: string
+
+        - name: physics
+          in: query
+          description: maximum number of results to return
+          required: false
+          schema:
+            type: integer
+            format: int32   
+
+        - name: me
+          in: query
+          description: something to do
+          required: false
+          stype: form
+          schema:
+            $ref: '#/components/parameters/Tuhin'
+    servers:
+      - url:  https://{username}.gigantic-server.com:{port}/{basePath}
+        description: Common url for all operations in this path
+        variables:
+          username:
+            default: demo
+            description: Assigned by the service provider
+          port:
+            enum:
+              - '8843'
+              - '443'
+
+            default: '8843'
+          basePath:
+            default: v2   
+
+  /pets/{id}:
+    get:
+      description: Returns a user based on a single ID, if the user does not have access to the pet
+      operationId: find pet by id
+      parameters:
+        - name: id
+          in: path
+          description: ID of pet to fetch
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200': 
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      description: A test put request to check the multipart content type
+      operationId: testReq
+      parameters:
+        - name: zeta_function
+          in: query
+          description: Zeta function rocks
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FormData'
+      responses:
+        '265':
+          description: pet deleted
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: The number of remaining requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Reset:
+              description: The number of seconds left in the current period
+              schema:
+                type: integer
+            X-Rate-Abc:
+              $ref: '#/components/headers/X-Rate-Abc'
+
+        default:
+          description: unexpected error
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: The number of remaining requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Reset:
+              description: The number of seconds left in the current period
+              schema:
+                type: integer
+            X-Rate-Abc:
+              $ref: '#/components/headers/X-Rate-Abc'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      description: deletes a single pet based on the ID supplied
+      operationId: deletePet
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FormData'
+            examples:
+              foo:
+                value: {"foo", "bar"}
+
+        description: Body to delete a single per based on the ID supplied 
+      parameters:
+        - name: id
+          in: path
+          description: ID of pet to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: pet deleted
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: The number of remaining requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Reset:
+              description: The number of seconds left in the current period
+              schema:
+                type: integer
+            X-Rate-Abc:
+              $ref: '#/components/headers/X-Rate-Abc'
+
+        default:
+          description: unexpected error
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: The number of remaining requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Reset:
+              description: The number of seconds left in the current period
+              schema:
+                type: integer
+            X-Rate-Abc:
+              $ref: '#/components/headers/X-Rate-Abc'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    # servers:
+    #   - url: 'https://montyhall.com/{probability}'
+    #     description: Monty hall problem
+    #     variables:
+    #       probability:
+    #         default: the best
+    #         description: One chance
+          
+components:
+  securitySchemes:
+    Mashape-Key:
+      type: apiKey
+      description: "The API authorizes requests through an API key in your header. Enter your Mashape key here. If you don't have an API key, for testing purposes you can use `EF3g83pKnzmshgoksF83V6JB6QyTp1cGrrdjsnczTkkYgYrp8p`."
+      name: X-Mashape-Key
+      in: header
+
+    MyAuth:
+      type: apiKey
+      description: "This is my auth"
+      name: Mera-Auth
+      in: header
+
+    basicAuth:
+      type: http
+      description: "My basic"
+      name: basic-auth
+    
+    OauthSample:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://api.example.com/oauth2/authorize
+          scopes:
+            read_pets: read pets in your account
+            write_pets: modify pets in your account 
+
+  headers:
+    X-Rate-Abc:
+      description: 'This is a temporary header'
+      schema:
+        type: integer
+    
+  schemas:
+    Pet:
+      allOf:
+        - $ref: '#/components/schemas/NewPet'
+        - required:
+          - id
+          properties:
+            id:
+              type: integer
+              format: int64
+
+    NewPet:
+      required:
+        - name  
+      properties:
+        name:
+          type: string
+        tag:
+          type: string    
+
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    
+    PetForm:
+      properties:
+        name:          # <!--- form field name
+          type: string
+        fav_number:    # <!--- form field name
+          type: integer
+      required:
+        - name
+        - email
+
+    FormData:
+      properties: # Request parts
+        id: # Part 1 (string value)
+          type: string
+        address: # Part2 (object)
+          type: object
+          properties:
+            street:
+              type: object
+              properties:
+                name:
+                  type: string
+                pincode:
+                  type: integer
+              required:
+                - name
+                - pincode
+            city:
+              type: string
+          required:
+            - street
+            - city
+      required:
+        - id
+        - address
+
+  parameters:
+    Tuhin:
+      type: string
