@@ -50,6 +50,21 @@ paths:
           # schema:
           #   type: integer
           #   format: int32
+        - name: objectParameter
+          in: query
+          style: pipeDelimited
+          schema:
+            type: object
+            required:
+              - age
+              - bmi
+            properties:
+              age:
+                type: integer
+                format: int32
+              bmi:
+                type: string
+            
       responses:
         '200':
           description: pet response
@@ -77,6 +92,36 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NewPet'
+      parameters:
+        - name: objectParameter2
+          in: query
+          style: spaceDelimited
+          schema:
+            type: object
+            required:
+              - age
+              - bmi
+            properties:
+              age:
+                type: integer
+                format: int64
+              bmi:
+                type: string
+        - name: deep-obj
+          in: query
+          style: deepObject
+          schema:
+            type: object
+            required:
+              - prop1
+              - prop2
+            properties:
+              prop1:
+                type: integer
+                format: int64
+              prop2:
+                type: string
+              
               
       responses:
         '200':
@@ -126,6 +171,12 @@ paths:
       operationId: deletePets
       security:
         - OauthSample : []
+      requestBody:
+        content:
+          application/json:
+            example:
+              name: Tuhin
+              age: 22
       responses:
         '200':
           description: pet response
@@ -221,6 +272,20 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: objectParameter3
+          in: query
+          style: form
+          schema:
+            type: object
+            required:
+              - age
+              - bmi
+            properties:
+              age:
+                type: integer
+                format: int32
+              bmi:
+                type: string
       requestBody:
         content:
           multipart/form-data:
@@ -273,11 +338,11 @@ paths:
       requestBody:
         content:
           application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/FormData'
+            # schema:
+            #   $ref: '#/components/schemas/FormData'
             examples:
               foo:
-                value: {"foo", "bar"}
+                value: {"foo" : 43, "bar" : {"name" : Tuhin, "age": 22}}
 
         description: Body to delete a single per based on the ID supplied 
       parameters:
@@ -288,6 +353,21 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: objectParameter4
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: object
+            required:
+              - age
+              - bmi
+            properties:
+              age:
+                type: integer
+                format: int32
+              bmi:
+                type: string
       responses:
         '204':
           description: pet deleted
