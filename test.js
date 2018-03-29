@@ -1,10 +1,13 @@
-var Converter = require('./lib/convert.js'),
+// var Converter = require('./lib/convert.js'),
+var Converter = require('./index.js'),
     fs = require('fs'),
     yaml = require('js-yaml'),
     file = fs.readFileSync('./examples/petstore-expanded.yaml'),
+    // file = fs.readFileSync('./test/data/valid_openapi/petstore-expanded.yaml')
     data = yaml.safeLoad(file),
     refparser = require('json-schema-ref-parser'),
     log = require('console-emoji');
+
 
 setTimeout(() => {
   log('\n\nImma take all your swagger....Ha! :sunglasses:\n', 'red');
@@ -38,6 +41,7 @@ Converter.convert(data, (status) => {
     }, 5000);    
   } 
 });
+
 
 
 

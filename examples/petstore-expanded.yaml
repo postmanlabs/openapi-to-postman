@@ -1,7 +1,7 @@
 openapi: "3.0.0"
 info:
   version: 1.0.0
-  title: Derivative Drivel
+  title: Crime Master Gogo
   description: A sample API that uses a petstore as an example to demonstrate features in the OpenAPI 3.0 specification
   termsOfService: http://swagger.io/terms/
   contact:
@@ -12,7 +12,15 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
 servers:
-  - url: http://petstore.swagger.io/api
+  - url: http://petstore.swagger.io
+    # description: 'Adding the variables'
+    # variables:
+    #   api:
+    #     default: tuhin
+    #     description: variable1
+    #   cantordust:
+    #     default: nalin
+    #     description: variable2
 paths:
   /pets:
     get:
@@ -30,7 +38,7 @@ paths:
           in: query
           description: tags to filter by
           required: false
-          style: spaceDelimited
+          style: pipeDelimited
           schema:
             type: array
             items:
@@ -159,7 +167,22 @@ paths:
           required: false
           stype: form
           schema:
-            $ref: '#/components/parameters/Tuhin' 
+            $ref: '#/components/parameters/Tuhin'
+    servers:
+      - url:  https://{username}.gigantic-server.com:{port}/{basePath}
+        description: Common url for all operations in this path
+        variables:
+          username:
+            default: demo
+            description: Assigned by the service provider
+          port:
+            enum:
+              - '8843'
+              - '443'
+
+            default: '8843'
+          basePath:
+            default: v2   
 
   /pets/{id}:
     get:
@@ -305,6 +328,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    # servers:
+    #   - url: 'https://montyhall.com/{probability}'
+    #     description: Monty hall problem
+    #     variables:
+    #       probability:
+    #         default: the best
+    #         description: One chance
+          
 components:
   securitySchemes:
     Mashape-Key:
