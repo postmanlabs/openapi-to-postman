@@ -16,6 +16,7 @@
     "commander": ">=2.3.0",
     "console-emoji": "0.0.2",
     "js-yaml": "3.10.0",
+    "jsonschema": "1.2.2",
     "json-schema-faker": "0.4.7",
     "json-schema-ref-parser": "4.1.1",
     "lodash": "4.17.5",
@@ -27,9 +28,15 @@
   "license": "Apache",
   "devDependencies": {
     "chai": "^4.1.2",
-    "mocha": "^5.0.0"
+    "colors": "1.1.2",
+    "eslint": "3.4.0",
+    "eslint-plugin-security": "^1.4.0",
+    "mocha": "^5.0.5",
+    "nsp": "3.1.0",
+    "nyc": "^11.6.0"
   },
   "scripts": {
-    "test-unit": "find ./test/unit -name '*_test.js' | xargs mocha -R spec"
+    "test": "nyc mocha ./test/unit/base.test.js",
+    "coverage": "nyc report --reporter=html --reporter=text mocha"
   }
 }
