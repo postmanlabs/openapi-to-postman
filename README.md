@@ -1,7 +1,8 @@
 
 ![](https://raw.githubusercontent.com/postmanlabs/postmanlabs.github.io/develop/global-artefacts/postman-logo%2Btext-320x132.png) 
+
+*Supercharge your API workflow*
 <br/>
-*Supercharge your API workflow* <br/>
 *Modern software is built on APIs. Postman helps you develop APIs faster.*
 
 # OpenAPI 3.0 to Postman Collection v2.1.0 Converter
