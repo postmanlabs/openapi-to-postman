@@ -16,11 +16,12 @@
     "commander": ">=2.3.0",
     "console-emoji": "0.0.2",
     "js-yaml": "3.10.0",
-    "jsonschema": "1.2.2",
     "json-schema-faker": "0.4.7",
     "json-schema-ref-parser": "4.1.1",
+    "jsonschema": "1.2.2",
     "lodash": "4.17.5",
     "node-uuid": ">= 1.4.1",
+    "package.json": "^2.0.1",
     "path": "^0.12.7",
     "postman-collection": ""
   },
@@ -29,14 +30,20 @@
   "devDependencies": {
     "chai": "^4.1.2",
     "colors": "1.1.2",
-    "eslint": "3.4.0",
+    "eslint": "^4.19.1",
+    "eslint-plugin-jsdoc": "^3.5.0",
+    "eslint-plugin-mocha": "^5.0.0",
     "eslint-plugin-security": "^1.4.0",
+    "istanbul": "^1.0.0-alpha.2",
     "mocha": "^5.0.5",
     "nsp": "3.1.0",
-    "nyc": "^11.6.0"
+    "nyc": "^11.6.0",
+    "shelljs": "^0.8.1"
   },
   "scripts": {
-    "test": "nyc mocha ./test/unit/base.test.js",
+    "test": "./scripts/test.sh",
+    "test-unit": "./scripts/test-unit.sh",
+    "test-lint": "./scripts/test-lint.sh",
     "coverage": "nyc report --reporter=html --reporter=text mocha"
   }
 }
