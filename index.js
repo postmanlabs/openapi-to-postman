@@ -2,4 +2,4 @@
 module.exports = {
   convert: require('./lib/convert.js'),
   validate: require('./lib/validate.js')
-}
+};

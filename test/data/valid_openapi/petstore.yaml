@@ -21,6 +21,24 @@ paths:
           schema:
             type: integer
             format: int32
+        - name: variable
+          in: query
+          description: random variable
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: variable2
+          in: query
+          description: another random variable
+          style: spaceDelimited
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
       responses:
         '200':
           description: An paged array of pets
