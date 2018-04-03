@@ -65,6 +65,32 @@ describe('------------------------------ UTILITY FUNCTION TESTS ----------------
       expect(updatedItem).to.deep.equal(item);
     });
   });
+
+  describe('getQueryStringWithStyle function', function () {
+    it('Should correctly return the query string with the appropriate delimiter', function () {
+      var param = {
+        name: 'tuhin',
+        age: 22,
+        occupation: 'student'
+      };
+
+      expect(Utils.getQueryStringWithStyle(param, '%20')).to.equal('name%20tuhin%20age%2022%20occupation%20student');
+      expect(Utils.getQueryStringWithStyle(param, '|')).to.equal('name|tuhin|age|22|occupation|student');
+      expect(Utils.getQueryStringWithStyle(param, ',')).to.equal('name,tuhin,age,22,occupation,student');
+    });
+
+    it('Should add the delimiter if the value is undefined', function () {
+      var param = {
+        name: 'tuhin',
+        age: undefined,
+        occupation: 'student'
+      };
+
+      expect(Utils.getQueryStringWithStyle(param, '%20')).to.equal('name%20tuhin%20age%20occupation%20student');
+      expect(Utils.getQueryStringWithStyle(param, '|')).to.equal('name|tuhin|age|occupation|student');
+      expect(Utils.getQueryStringWithStyle(param, ',')).to.equal('name,tuhin,age,occupation,student');
+    });
+  });
 });
 
 
