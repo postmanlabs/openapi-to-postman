@@ -1,8 +1,7 @@
 
 ![postman icon](https://raw.githubusercontent.com/postmanlabs/postmanlabs.github.io/develop/global-artefacts/postman-logo%2Btext-320x132.png) 
 
-*Supercharge your API workflow*
-*<br/>*
+*Supercharge your API workflow.*  
 *Modern software is built on APIs. Postman helps you develop APIs faster.*
 
 # OpenAPI 3.0 to Postman Collection v2.1.0 Converter
@@ -135,22 +134,22 @@ The converter can be used as a command line interface as well. The following [co
 ### `openapi2postmanv2 [options]`
 
 ## Options
-- `-V`, `--version`<br />
+- `-V`, `--version`  
   Specifies the version of the converter.
 
-- `-s <source>`, `--spec <source>`<br />
+- `-s <source>`, `--spec <source>`  
   Used to specify the OPENAPI specification which is to be converted.
 
-- `-o <destination>`, `--output <destination>`<br />
+- `-o <destination>`, `--output <destination>`  
   Used to specify the destination file in which the collection is to be written.
 
-- `-t`, `--test`<br />
+- `-t`, `--test`  
   Used to test the collection with an in-built sample specification.
 
-- `-p`, `--pretty` <br />
+- `-p`, `--pretty`  
   Used to pretty print the collection object while writing to a file.
 
-- `-h`, `--help`<br />
+- `-h`, `--help`  
   Specifies all the options along with a few sample usage examples on the terminal.
 
 
