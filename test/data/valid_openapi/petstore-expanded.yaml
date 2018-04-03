@@ -13,14 +13,16 @@ info:
     url: https://www.apache.org/licenses/LICENSE-2.0.html
 servers:
   - url: http://petstore.swagger.io
-    # description: 'Adding the variables'
-    # variables:
-    #   api:
-    #     default: tuhin
-    #     description: variable1
-    #   cantordust:
-    #     default: nalin
-    #     description: variable2
+    description: 'Adding the variables'
+    variables:
+      temp1:
+        default: value1
+        description: variable1
+        enum: [value1, value2]
+      temp2:
+        default: value3
+        description: variable2
+        enum: [value3, value4]
 paths:
   /pets:
     get:
@@ -64,6 +66,15 @@ paths:
                 format: int32
               bmi:
                 type: string
+        - name: arrayParam
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
             
       responses:
         '200':
