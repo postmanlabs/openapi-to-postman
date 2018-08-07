@@ -96,7 +96,7 @@ describe('------------------------------ UTILITY FUNCTION TESTS ----------------
 
 /* Plugin Interface Tests */
 describe('------------------------------ INTERFACE FUNCTION TESTS ------------------------------', function () {
-  describe('The converter must indentify valid specifications', function () {
+  describe('The converter must identify valid specifications', function () {
     var pathPrefix = VALID_OPENAPI_PATH,
       sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix));
 
@@ -138,16 +138,18 @@ describe('------------------------------ INTERFACE FUNCTION TESTS --------------
     sampleSpecs.map((sample) => {
       var specPath = path.join(__dirname, pathPrefix, sample);
 
-      it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function() {
+      it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
         var openapi = fs.readFileSync(specPath, 'utf8');
-        Converter.convert(openapi, (status) => {
-          if (!status.result) {
-            expect();
-          }
-          else {
-            validationResult = validator.validate(status.collection, schema);
-            expect(validationResult.valid).to.equal(true);
-          }
+        Converter.convert(openapi, (err, conversionResult) => {
+          expect(err).to.be.null;
+
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+
+          done();
         });
       });
     });
