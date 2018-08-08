@@ -1,11 +1,9 @@
 var expect = require('chai').expect,
   Converter = require('../../index.js'),
   Utils = require('../../lib/util.js'),
-  schemaValidator = require('jsonschema').Validator,
   fs = require('fs'),
   sdk = require('postman-collection'),
   path = require('path'),
-  COLLECTION_SCHEMA_PATH = path.join(__dirname, '../../schemas/collection-schema-v2.1.0.json'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
   INVALID_OPENAPI_PATH = '../data/invalid_openapi';
 
@@ -130,28 +128,26 @@ describe('------------------------------ INTERFACE FUNCTION TESTS --------------
 
   describe('The converter must generate a collection conforming to the schema', function () {
     var pathPrefix = VALID_OPENAPI_PATH,
-      sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix)),
-      schema = fs.readFileSync(COLLECTION_SCHEMA_PATH, 'utf8'),
-      validator = new schemaValidator(),
-      validationResult;
+      sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix));
 
     sampleSpecs.map((sample) => {
       var specPath = path.join(__dirname, pathPrefix, sample);
+      if (specPath.endsWith('stripe_openapi.json')) {
+        it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
+          var openapi = fs.readFileSync(specPath, 'utf8');
+          Converter.convert(openapi, (err, conversionResult) => {
+            expect(err).to.be.null;
 
-      it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
-        var openapi = fs.readFileSync(specPath, 'utf8');
-        Converter.convert(openapi, (err, conversionResult) => {
-          expect(err).to.be.null;
+            expect(conversionResult.result).to.equal(true);
+            expect(conversionResult.output.length).to.equal(1);
+            expect(conversionResult.output[0].type).to.equal('collection');
+            expect(conversionResult.output[0].data).to.have.property('info');
+            expect(conversionResult.output[0].data).to.have.property('item');
 
-          expect(conversionResult.result).to.equal(true);
-          expect(conversionResult.output.length).to.equal(1);
-          expect(conversionResult.output[0].type).to.equal('collection');
-          expect(conversionResult.output[0].data).to.have.property('info');
-          expect(conversionResult.output[0].data).to.have.property('item');
-
-          done();
+            done();
+          });
         });
-      });
+      }
     });
   });
 });
