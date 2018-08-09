@@ -22,7 +22,7 @@
     "node-uuid": ">= 1.4.1",
     "package.json": "^2.0.1",
     "path": "^0.12.7",
-    "postman-collection": ""
+    "postman-collection": "^3.1.1"
   },
   "author": "Tuhin Khare",
   "license": "Apache",
