@@ -103,7 +103,7 @@ describe('------------------------------ INTERFACE FUNCTION TESTS --------------
 
       it(specPath + ' is valid ', function() {
         var openapi = fs.readFileSync(specPath, 'utf8'),
-          validationResult = Converter.validate(openapi);
+          validationResult = Converter.validate({ type: 'string', data: openapi });
 
         expect(validationResult.result).to.equal(true);
       });
@@ -119,7 +119,7 @@ describe('------------------------------ INTERFACE FUNCTION TESTS --------------
 
       it(specPath + ' is invalid ', function() {
         var openapi = fs.readFileSync(specPath, 'utf8'),
-          validationResult = Converter.validate(openapi);
+          validationResult = Converter.validate({ type: 'string', data: openapi });
 
         expect(validationResult.result).to.equal(false);
       });
@@ -135,7 +135,7 @@ describe('------------------------------ INTERFACE FUNCTION TESTS --------------
       if (specPath.endsWith('stripe_openapi.json')) {
         it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
           var openapi = fs.readFileSync(specPath, 'utf8');
-          Converter.convert(openapi, (err, conversionResult) => {
+          Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
             expect(err).to.be.null;
 
             expect(conversionResult.result).to.equal(true);
