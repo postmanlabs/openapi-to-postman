@@ -6,7 +6,6 @@ var convert = require('./lib/convert.js'),
 module.exports = {
   convert: function(input, options, cb) {
     try {
-      var data;
       if (input.type === 'string') {
         return convert(input.data, cb);
       }
@@ -14,8 +13,12 @@ module.exports = {
         return convert(input.data, cb);
       }
       else if (input.type === 'file') {
-        data = fs.readFileSync(input.data).toString();
-        return convert(data, cb);
+        return fs.read(input.data, function(err, data) {
+          if (err) {
+            return cb(err);
+          }
+          return convert(data, cb);
+        });
       }
       return cb(null, {
         result: false,
