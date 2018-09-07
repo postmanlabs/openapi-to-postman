@@ -178,14 +178,15 @@ $ openapi2postmanv2 --test
 | folderName | paths.path | - |  |
 | requestName | operationItem(method).operationId | - |  |
 | request.method | path.method | - |  |
-| request.headers | parameter (`in = header`) | - | <a href=#header/path_example>here</a> |
+| request.headers | parameter (`in = header`) | - | [here](#Header/Path-param-conversion-example) |
 | request.body | operationItem(method).requestBody | - |  |
 | request.url.raw | server.url (path level server >> openapi server) + path | - |  |
-| requser.url.variables | parameter (`in = path`) | - | <a href=#header/path_example>here</a> |
-| request.url.params | parameter (`in = query`) | - | {<br/>&emsp;"key": param.name,<br/>&emsp;"value": <a href=https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#style-examples>here</a> <br/>}|
+| requser.url.variables | parameter (`in = path`) | - | [here](#Header/Path-param-conversion-example) |
+| request.url.params | parameter (`in = query`) | - | {<br />&emsp;"key": param.name,<br />&emsp;"value": [here](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#style-examples) <br />}|
 | api_key in (query or header) | components.securitySchemes.api_key | - ||
 
 
-### <a name="header/path_example"></a>Header/Path param conversion example
+### Header/Path param conversion example
+
 | *openapi* | *postman* |
 | --- | --- |
