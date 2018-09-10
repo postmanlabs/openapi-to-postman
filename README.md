@@ -182,7 +182,7 @@ $ openapi2postmanv2 --test
 | request.body | operationItem(method).requestBody | - |  |
 | request.url.raw | server.url (path level server >> openapi server) + path | - |  |
 | requser.url.variables | parameter (`in = path`) | - | [here](#Header/Path-param-conversion-example) |
-| request.url.params | parameter (`in = query`) | - | {<br />&emsp;"key": param.name,<br />&emsp;"value": [here](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#style-examples) <br />}|
+| request.url.params | parameter (`in = query`) | - | {"key": param.name, "value": [here](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#style-examples)}|
 | api_key in (query or header) | components.securitySchemes.api_key | - ||
 
 
