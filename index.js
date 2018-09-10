@@ -7,17 +7,17 @@ module.exports = {
   convert: function(input, options, cb) {
     try {
       if (input.type === 'string') {
-        return convert(input.data, cb);
+        return convert(input.data, options, cb);
       }
       else if (input.type === 'json') {
-        return convert(input.data, cb);
+        return convert(input.data, options, cb);
       }
       else if (input.type === 'file') {
         return fs.read(input.data, function(err, data) {
           if (err) {
             return cb(err);
           }
-          return convert(data, cb);
+          return convert(data, options, cb);
         });
       }
       return cb(null, {
