@@ -8,61 +8,377 @@ var expect = require('chai').expect,
   INVALID_OPENAPI_PATH = '../data/invalid_openapi';
 
 /* Utility function Unit tests */
-describe('------------------------------ UTILITY FUNCTION TESTS ------------------------------', function () {
-  // describe('addHeaders Function', function() {
-  //   it('Should add the headers', function () {
-  //     var item = new sdk.Item({
-  //         name: 'postman-item',
-  //         request: {
-  //           url: 'https://petstore.swagger.io/api'
-  //         }
-  //       }),
-  //       headers = [
-  //         {
-  //           name: 'X-Header-One',
-  //           description: 'Header1'
-  //         },
-  //         {
-  //           name: 'X-Header-Two',
-  //           description: 'Header2'
-  //         },
-  //         {
-  //           name: 'X-Header-Three',
-  //           description: 'Header3'
-  //         }
-  //       ],
-  //       postmanHeaders = [
-  //         {
-  //           'key': 'X-Header-One',
-  //           'value': '',
-  //           'description': 'Header1'
-  //         },
-  //         {
-  //           'key': 'X-Header-Two',
-  //           'value': '',
-  //           'description': 'Header2'
-  //         },
-  //         {
-  //           'key': 'X-Header-Three',
-  //           'value': '',
-  //           'description': 'Header3'
-  //         }
-  //       ];
-  //     let updatedItem = Utils.addHeaders(item, headers);
-  //     expect(JSON.stringify(updatedItem.request.headers.members)).to.eql(JSON.stringify(postmanHeaders));
-  //   });
+describe('UTILITY FUNCTION TESTS', function () {
+  describe('convertToPmHeader Function', function() {
+    it('Should conevrt header with schema to pm header', function (done) {
+      var header = {
+        name: 'X-Header-One',
+        in: 'header',
+        description: 'Header1',
+        schema: {
+          type: 'integer',
+          format: 'int64'
+        }
+      };
+      Utils.options.schemaFaker = true;
+      let pmHeader = Utils.convertToPmHeader(header);
+      expect(pmHeader.key).to.equal(header.name);
+      expect(pmHeader.description).to.equal(header.description);
+      expect(typeof pmHeader.value).to.equal('number');
+      done();
+    });
+    it('Should conevrt header without schema to pm header', function (done) {
+      var header = {
+        name: 'X-Header-One',
+        in: 'header',
+        description: 'Header1'
+      };
+      Utils.options.schemaFaker = true;
+      let pmHeader = Utils.convertToPmHeader(header);
+      expect(pmHeader.key).to.equal(header.name);
+      expect(pmHeader.description).to.equal(header.description);
+      expect(pmHeader.value).to.equal('');
+      done();
+    });
+  });
 
-  //   it('Should return the original item object if no headers are passed', function () {
-  //     var item = new sdk.Item({
-  //       name: 'postman-item',
-  //       request: {
-  //         url: 'https://petstore.swagger.io/api'
-  //       }
-  //     });
-  //     let updatedItem = Utils.addHeaders(item, []);
-  //     expect(updatedItem).to.deep.equal(item);
-  //   });
-  // });
+  describe('convertToPmQueryParameters Function', function() {
+    it('Should conevrt queryParam without schema to pm header', function (done) {
+      var param = {
+        name: 'X-Header-One',
+        in: 'query',
+        description: 'query param'
+      };
+      Utils.options.schemaFaker = true;
+      let pmParam = Utils.convertToPmQueryParameters(param);
+      expect(pmParam[0].key).to.equal(param.name);
+      expect(pmParam[0].description).to.equal(param.description);
+      expect(pmParam[0].value).to.equal('');
+      done();
+    });
+    describe('Should conevrt queryParam with schema {type:array, ', function() {
+      describe('style:form, ', function() {
+        it('explode:true} to pm header', function (done) {
+          var param = {
+            name: 'X-Header-One',
+            in: 'query',
+            description: 'query param',
+            style: 'form',
+            explode: true,
+            schema: {
+              type: 'array',
+              items: {
+                type: 'integer',
+                format: 'int64'
+              }
+            }
+          };
+          Utils.options.schemaFaker = true;
+          let pmParam = Utils.convertToPmQueryParameters(param);
+          expect(pmParam[0].key).to.equal(param.name);
+          expect(pmParam[0].description).to.equal(param.description);
+          expect(typeof pmParam[0].value).to.equal('number');
+          done();
+        });
+        it('explode:false} to pm header', function (done) {
+          var param = {
+            name: 'X-Header-One',
+            in: 'query',
+            description: 'query param',
+            style: 'form',
+            explode: false,
+            schema: {
+              type: 'array',
+              items: {
+                type: 'integer',
+                format: 'int64'
+              }
+            }
+          };
+          Utils.options.schemaFaker = true;
+          let pmParam = Utils.convertToPmQueryParameters(param);
+          expect(pmParam[0].key).to.equal(param.name);
+          expect(pmParam[0].description).to.equal(param.description);
+          expect(pmParam[0].value.indexOf(',')).to.not.equal(-1);
+          done();
+        });
+      });
+      it('style:spaceDelimited} to pm header', function (done) {
+        var param = {
+          name: 'X-Header-One',
+          in: 'query',
+          description: 'query param',
+          style: 'spaceDelimited',
+          schema: {
+            type: 'array',
+            items: {
+              type: 'string'
+            }
+          }
+        };
+        Utils.options.schemaFaker = true;
+        let pmParam = Utils.convertToPmQueryParameters(param);
+        expect(pmParam[0].key).to.equal(param.name);
+        expect(pmParam[0].description).to.equal(param.description);
+        expect(pmParam[0].value.indexOf('%20')).to.not.equal(-1);
+        done();
+      });
+      it('style:pipeDelimited} to pm header', function (done) {
+        var param = {
+          name: 'X-Header-One',
+          in: 'query',
+          description: 'query param',
+          style: 'pipeDelimited',
+          schema: {
+            type: 'array',
+            items: {
+              type: 'string'
+            }
+          }
+        };
+        Utils.options.schemaFaker = true;
+        let pmParam = Utils.convertToPmQueryParameters(param);
+        expect(pmParam[0].key).to.equal(param.name);
+        expect(pmParam[0].description).to.equal(param.description);
+        expect(pmParam[0].value.indexOf('|')).to.not.equal(-1);
+        done();
+      });
+      it('style:deepObject} to pm header', function (done) {
+        var param = {
+          name: 'X-Header-One',
+          in: 'query',
+          description: 'query param',
+          style: 'deepObject',
+          schema: {
+            type: 'array',
+            items: {
+              type: 'string'
+            }
+          }
+        };
+        Utils.options.schemaFaker = true;
+        let pmParam = Utils.convertToPmQueryParameters(param);
+        expect(pmParam[0].key).to.equal(param.name + '[]');
+        expect(pmParam[0].description).to.equal(param.description);
+        expect(pmParam[0].key.indexOf('[]')).to.not.equal(-1);
+        expect(pmParam[0].value.indexOf('string')).to.not.equal(-1);
+        done();
+      });
+      it('style:any other} to pm header', function (done) {
+        var param = {
+          name: 'X-Header-One',
+          in: 'query',
+          description: 'query param',
+          schema: {
+            type: 'array',
+            items: {
+              type: 'string'
+            }
+          }
+        };
+        Utils.options.schemaFaker = true;
+        let pmParam = Utils.convertToPmQueryParameters(param);
+        expect(pmParam[0].key).to.equal(param.name);
+        expect(pmParam[0].description).to.equal(param.description);
+        expect(pmParam[0].value.indexOf(',')).to.not.equal(-1);
+        done();
+      });
+    });
+    describe('Should conevrt queryParam with schema {type:object, ', function() {
+      describe('style:form, ', function() {
+        it('explode:true} to pm header', function (done) {
+          var param = {
+            name: 'X-Header-One',
+            in: 'query',
+            description: 'query param',
+            style: 'form',
+            explode: true,
+            schema: {
+              type: 'object',
+              required: [
+                'id',
+                'name'
+              ],
+              properties: {
+                id: {
+                  type: 'integer',
+                  format: 'int64'
+                },
+                name: {
+                  type: 'string'
+                }
+              }
+            }
+          };
+          Utils.options.schemaFaker = true;
+          let pmParam = Utils.convertToPmQueryParameters(param);
+          expect(pmParam[0].key).to.equal('id');
+          expect(pmParam[1].key).to.equal('name');
+          expect(pmParam[0].description).to.equal(param.description);
+          expect(pmParam[1].description).to.equal(param.description);
+          expect(typeof pmParam[0].value).to.equal('number');
+          expect(typeof pmParam[1].value).to.equal('string');
+          done();
+        });
+        it('explode:false} to pm header ', function (done) {
+          var param = {
+            name: 'X-Header-One',
+            in: 'query',
+            description: 'query param',
+            style: 'form',
+            explode: false,
+            schema: {
+              type: 'object',
+              required: [
+                'id',
+                'name'
+              ],
+              properties: {
+                id: {
+                  type: 'integer',
+                  format: 'int64'
+                },
+                name: {
+                  type: 'string'
+                }
+              }
+            }
+          };
+          Utils.options.schemaFaker = true;
+          let pmParam = Utils.convertToPmQueryParameters(param);
+          expect(pmParam[0].key).to.equal(param.name);
+          expect(pmParam[0].description).to.equal(param.description);
+          expect(pmParam[0].value.indexOf('id')).to.not.equal(-1);
+          expect(pmParam[0].value.indexOf('name')).to.not.equal(-1);
+          done();
+        });
+      });
+      it('style:spaceDelimited} to pm header', function (done) {
+        var param = {
+          name: 'X-Header-One',
+          in: 'query',
+          description: 'query param',
+          style: 'spaceDelimited',
+          schema: {
+            type: 'object',
+            required: [
+              'id',
+              'name'
+            ],
+            properties: {
+              id: {
+                type: 'integer',
+                format: 'int64'
+              },
+              name: {
+                type: 'integer',
+                format: 'int64'
+              }
+            }
+          }
+        };
+        Utils.options.schemaFaker = true;
+        let pmParam = Utils.convertToPmQueryParameters(param);
+        expect(pmParam[0].key).to.equal(param.name);
+        expect(pmParam[0].description).to.equal(param.description);
+        expect(pmParam[0].value.indexOf('%20')).to.not.equal(-1);
+        done();
+      });
+      it('style:pipeDelimited} to pm header', function (done) {
+        var param = {
+          name: 'X-Header-One',
+          in: 'query',
+          description: 'query param',
+          style: 'pipeDelimited',
+          schema: {
+            type: 'object',
+            required: [
+              'id',
+              'name'
+            ],
+            properties: {
+              id: {
+                type: 'integer',
+                format: 'int64'
+              },
+              name: {
+                type: 'integer',
+                format: 'int64'
+              }
+            }
+          }
+        };
+        Utils.options.schemaFaker = true;
+        let pmParam = Utils.convertToPmQueryParameters(param);
+        expect(pmParam[0].key).to.equal(param.name);
+        expect(pmParam[0].description).to.equal(param.description);
+        expect(pmParam[0].value.indexOf('|')).to.not.equal(-1);
+        done();
+      });
+      it('style:deepObject} to pm header', function (done) {
+        var param = {
+          name: 'X-Header-One',
+          in: 'query',
+          description: 'query param',
+          style: 'deepObject',
+          schema: {
+            type: 'object',
+            required: [
+              'id',
+              'name'
+            ],
+            properties: {
+              id: {
+                type: 'integer',
+                format: 'int64'
+              },
+              name: {
+                type: 'string'
+              }
+            }
+          }
+        };
+        Utils.options.schemaFaker = true;
+        let pmParam = Utils.convertToPmQueryParameters(param);
+        expect(pmParam[0].key).to.equal(param.name + '[id]');
+        expect(pmParam[1].key).to.equal(param.name + '[name]');
+        expect(pmParam[0].description).to.equal(param.description);
+        expect(pmParam[1].description).to.equal(param.description);
+        expect(typeof pmParam[0].value).to.equal('number');
+        expect(typeof pmParam[1].value).to.equal('string');
+        done();
+      });
+      it('style:any other} to pm header', function (done) {
+        var param = {
+          name: 'X-Header-One',
+          in: 'query',
+          description: 'query param',
+          schema: {
+            type: 'object',
+            required: [
+              'id',
+              'name'
+            ],
+            properties: {
+              id: {
+                type: 'integer',
+                format: 'int64'
+              },
+              name: {
+                type: 'string'
+              }
+            }
+          }
+        };
+        Utils.options.schemaFaker = true;
+        let pmParam = Utils.convertToPmQueryParameters(param);
+        expect(pmParam[0].key).to.equal(param.name);
+        expect(pmParam[0].description).to.equal(param.description);
+        expect(typeof pmParam[0].value).to.equal('object');
+        done();
+      });
+    });
+  });
 
   describe('getQueryStringWithStyle function', function () {
     it('Should correctly return the query string with the appropriate delimiter', function (done) {
@@ -91,6 +407,33 @@ describe('------------------------------ UTILITY FUNCTION TESTS ----------------
       done();
     });
   });
+
+  // describe.only('convertToPmBody function', function() {
+  //   it('should convert requestbody of media type', function() {
+  //     var requestBody = {
+  //         description: 'body description',
+  //         content: {
+  //           'application/json': {
+  //             'schema': {
+  //               type: 'object',
+  //               properties: {
+  //                 id: {
+  //                   type: 'string'
+  //                 },
+  //                 name: {
+  //                   type: 'integer',
+  //                   format: 'int64'
+  //                 }
+  //               }
+  //             }
+  //           }
+  //         }
+  //       },
+  //       result = Utils.convertToPmBody(requestBody);
+
+  //     console.log(result);
+  //   });
+  // });
 });
 
 
