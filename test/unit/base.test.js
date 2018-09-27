@@ -43,7 +43,7 @@ describe('UTILITY FUNCTION TESTS', function () {
   });
 
   describe('convertToPmQueryParameters Function', function() {
-    it('Should conevrt queryParam without schema to pm header', function (done) {
+    it('Should conevrt queryParam without schema to pm param', function (done) {
       var param = {
         name: 'X-Header-One',
         in: 'query',
@@ -58,7 +58,7 @@ describe('UTILITY FUNCTION TESTS', function () {
     });
     describe('Should conevrt queryParam with schema {type:array, ', function() {
       describe('style:form, ', function() {
-        it('explode:true} to pm header', function (done) {
+        it('explode:true} to pm param', function (done) {
           var param = {
             name: 'X-Header-One',
             in: 'query',
@@ -80,7 +80,7 @@ describe('UTILITY FUNCTION TESTS', function () {
           expect(typeof pmParam[0].value).to.equal('number');
           done();
         });
-        it('explode:false} to pm header', function (done) {
+        it('explode:false} to pm param', function (done) {
           var param = {
             name: 'X-Header-One',
             in: 'query',
@@ -103,7 +103,7 @@ describe('UTILITY FUNCTION TESTS', function () {
           done();
         });
       });
-      it('style:spaceDelimited} to pm header', function (done) {
+      it('style:spaceDelimited} to pm param', function (done) {
         var param = {
           name: 'X-Header-One',
           in: 'query',
@@ -123,7 +123,7 @@ describe('UTILITY FUNCTION TESTS', function () {
         expect(pmParam[0].value.indexOf('%20')).to.not.equal(-1);
         done();
       });
-      it('style:pipeDelimited} to pm header', function (done) {
+      it('style:pipeDelimited} to pm param', function (done) {
         var param = {
           name: 'X-Header-One',
           in: 'query',
@@ -143,7 +143,7 @@ describe('UTILITY FUNCTION TESTS', function () {
         expect(pmParam[0].value.indexOf('|')).to.not.equal(-1);
         done();
       });
-      it('style:deepObject} to pm header', function (done) {
+      it('style:deepObject} to pm param', function (done) {
         var param = {
           name: 'X-Header-One',
           in: 'query',
@@ -164,7 +164,7 @@ describe('UTILITY FUNCTION TESTS', function () {
         expect(pmParam[0].value.indexOf('string')).to.not.equal(-1);
         done();
       });
-      it('style:any other} to pm header', function (done) {
+      it('style:any other} to pm param', function (done) {
         var param = {
           name: 'X-Header-One',
           in: 'query',
@@ -186,7 +186,7 @@ describe('UTILITY FUNCTION TESTS', function () {
     });
     describe('Should conevrt queryParam with schema {type:object, ', function() {
       describe('style:form, ', function() {
-        it('explode:true} to pm header', function (done) {
+        it('explode:true} to pm param', function (done) {
           var param = {
             name: 'X-Header-One',
             in: 'query',
@@ -220,7 +220,7 @@ describe('UTILITY FUNCTION TESTS', function () {
           expect(typeof pmParam[1].value).to.equal('string');
           done();
         });
-        it('explode:false} to pm header ', function (done) {
+        it('explode:false} to pm param ', function (done) {
           var param = {
             name: 'X-Header-One',
             in: 'query',
@@ -253,7 +253,7 @@ describe('UTILITY FUNCTION TESTS', function () {
           done();
         });
       });
-      it('style:spaceDelimited} to pm header', function (done) {
+      it('style:spaceDelimited} to pm param', function (done) {
         var param = {
           name: 'X-Header-One',
           in: 'query',
@@ -284,7 +284,7 @@ describe('UTILITY FUNCTION TESTS', function () {
         expect(pmParam[0].value.indexOf('%20')).to.not.equal(-1);
         done();
       });
-      it('style:pipeDelimited} to pm header', function (done) {
+      it('style:pipeDelimited} to pm param', function (done) {
         var param = {
           name: 'X-Header-One',
           in: 'query',
@@ -315,7 +315,7 @@ describe('UTILITY FUNCTION TESTS', function () {
         expect(pmParam[0].value.indexOf('|')).to.not.equal(-1);
         done();
       });
-      it('style:deepObject} to pm header', function (done) {
+      it('style:deepObject} to pm param', function (done) {
         var param = {
           name: 'X-Header-One',
           in: 'query',
@@ -348,7 +348,7 @@ describe('UTILITY FUNCTION TESTS', function () {
         expect(typeof pmParam[1].value).to.equal('string');
         done();
       });
-      it('style:any other} to pm header', function (done) {
+      it('style:any other} to pm param', function (done) {
         var param = {
           name: 'X-Header-One',
           in: 'query',
@@ -408,32 +408,283 @@ describe('UTILITY FUNCTION TESTS', function () {
     });
   });
 
-  // describe.only('convertToPmBody function', function() {
-  //   it('should convert requestbody of media type', function() {
-  //     var requestBody = {
-  //         description: 'body description',
-  //         content: {
-  //           'application/json': {
-  //             'schema': {
-  //               type: 'object',
-  //               properties: {
-  //                 id: {
-  //                   type: 'string'
-  //                 },
-  //                 name: {
-  //                   type: 'integer',
-  //                   format: 'int64'
-  //                 }
-  //               }
-  //             }
-  //           }
-  //         }
-  //       },
-  //       result = Utils.convertToPmBody(requestBody);
+  describe('convertToPmBody function', function() {
+    describe('should convert requestbody of media type', function() {
+      it(' application/json', function(done) {
+        var requestBody = {
+            description: 'body description',
+            content: {
+              'application/json': {
+                'schema': {
+                  type: 'object',
+                  required: [
+                    'id',
+                    'name'
+                  ],
+                  properties: {
+                    id: {
+                      type: 'integer',
+                      format: 'int64'
+                    },
+                    name: {
+                      type: 'string'
+                    }
+                  }
+                }
+              }
+            }
+          },
+          result, resultBody;
+        Utils.options.schemaFaker = true;
+        result = Utils.convertToPmBody(requestBody);
+        resultBody = JSON.parse(result.body.raw);
+        expect(typeof resultBody.id).to.equal('number');
+        expect(typeof resultBody.name).to.equal('string');
+        expect(result.contentHeader).to.deep.include({ key: 'Content-Type', value: 'application/json' });
+        done();
+      });
+      it(' application/x-www-form-urlencoded', function(done) {
+        var requestBody = {
+            description: 'body description',
+            content: {
+              'application/x-www-form-urlencoded': {
+                'schema': {
+                  'type': 'object',
+                  'properties': {
+                    'name': {
+                      'description': 'Updated name of the pet',
+                      'type': 'string'
+                    },
+                    'status': {
+                      'description': 'Updated status of the pet',
+                      'type': 'string'
+                    }
+                  },
+                  'required': ['status', 'name']
+                }
+              }
+            }
+          },
+          result, resultBody;
+        Utils.options.schemaFaker = true;
+        result = Utils.convertToPmBody(requestBody);
+        resultBody = (result.body.urlencoded.toJSON());
+        expect(resultBody[0].key).to.equal('status');
+        expect(resultBody[1].key).to.equal('name');
+        expect(result.contentHeader).to.deep.include(
+          { key: 'Content-Type', value: 'application/x-www-form-urlencoded' });
+        done();
+      });
+      it(' multipart/form-data', function(done) {
+        var requestBody = {
+            description: 'body description',
+            content: {
+              'multipart/form-data': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    file: {
+                      type: 'array',
+                      items: {
+                        type: 'string'
+                      }
+                    }
+                  },
+                  required: ['file']
+                }
+              }
+            }
+          },
+          result, resultBody;
+        Utils.options.schemaFaker = true;
+        result = Utils.convertToPmBody(requestBody);
+        resultBody = (result.body.formdata.toJSON());
+        expect(resultBody[0].key).to.equal('file');
+        expect(result.contentHeader).to.deep.include(
+          { key: 'Content-Type', value: 'multipart/form-data' });
+        done();
+      });
+      it(' text/xml', function(done) { // not properly done
+        var requestBody = {
+            description: 'body description',
+            content: {
+              'text/xml': {
+                examples: {
+                  xml: {
+                    summary: 'A list containing two items',
+                    value: 'text/plain description'
+                  }
+                }
+              }
+            }
+          },
+          result, resultBody;
+        Utils.options.schemaFaker = true;
+        result = Utils.convertToPmBody(requestBody);
+        resultBody = (result.body.raw);
+        expect(resultBody).to.equal('"text/plain description"');
+        expect(result.contentHeader).to.deep.include(
+          { key: 'Content-Type', value: 'text/xml' });
+        done();
+      });
+      it(' text/plain', function(done) { // not properly done
+        var requestBody = {
+            description: 'body description',
+            content: {
+              'text/plain': {
+                example: {
+                  summary: 'A list containing two items',
+                  value: 'text/plain description'
+                }
+              }
+            }
+          },
+          result, resultBody;
+        Utils.options.schemaFaker = true;
+        result = Utils.convertToPmBody(requestBody);
+        resultBody = result.body.raw;
+        expect(resultBody).to.equal('"text/plain description"');
+        expect(result.contentHeader).to.deep.include(
+          { key: 'Content-Type', value: 'text/plain' });
+        done();
+      });
+      it(' text/html', function(done) { // not properly done
+        var requestBody = {
+            description: 'body description',
+            content: {
+              'text/html': {
+                example: {
+                  summary: 'A list containing two items',
+                  value: '<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>'
+                }
+              }
+            }
+          },
+          result, resultBody;
+        Utils.options.schemaFaker = true;
+        result = Utils.convertToPmBody(requestBody);
+        resultBody = (result.body.raw);
+        expect(resultBody).to.equal('"<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>"');
+        expect(result.contentHeader).to.deep.include(
+          { key: 'Content-Type', value: 'text/html' });
+        done();
+      });
+      // things remaining : application/javascript , application/xml
+    });
+  });
 
-  //     console.log(result);
-  //   });
-  // });
+  describe('convertToPmResponseBody function', function() {
+    describe('should convert content object to response body data', function() {
+      it('with undefined ContentObj', function() {
+        var contentObj,
+          pmResponseBody;
+        pmResponseBody = Utils.convertToPmResponseBody(contentObj);
+        expect(pmResponseBody).to.equal('');
+      });
+      it('with Content-Type application/json', function() {
+        var contentObj = {
+            'application/json': {
+              'schema': {
+                'type': 'object',
+                'required': [
+                  'id',
+                  'name'
+                ],
+                'properties': {
+                  id: {
+                    type: 'integer',
+                    format: 'int64'
+                  },
+                  name: {
+                    type: 'string'
+                  }
+                }
+              }
+            }
+          },
+          pmResponseBody;
+        Utils.options.schemaFaker = true;
+        pmResponseBody = JSON.parse(Utils.convertToPmResponseBody(contentObj));
+        expect(typeof pmResponseBody.id).to.equal('number');
+        expect(typeof pmResponseBody.name).to.equal('string');
+      });
+      it('with Content-Type text/plain', function() {
+        var contentObj = {
+            'text/plain': {
+              'schema': {
+                'type': 'string'
+              }
+            }
+          },
+          pmResponseBody;
+        Utils.options.schemaFaker = true;
+        pmResponseBody = Utils.convertToPmResponseBody(contentObj);
+        expect(typeof pmResponseBody).to.equal('string');
+      });
+      // things remaining application/xml, application/javascript
+    });
+  });
+
+  describe('convertToPmResponse function', function() {
+    it('sholud convert response with content field', function(done) {
+      var response = {
+          'description': 'A list of pets.',
+          'content': {
+            'application/json': {
+              'schema': {
+                'type': 'object',
+                'required': [
+                  'id',
+                  'name'
+                ],
+                'properties': {
+                  id: {
+                    type: 'integer',
+                    format: 'int64'
+                  },
+                  name: {
+                    type: 'string'
+                  }
+                }
+              }
+            }
+          }
+        },
+        code = '20X',
+        pmResponse, responseBody;
+
+      Utils.options.schemaFaker = true;
+      pmResponse = Utils.convertToPmResponse(response, code).toJSON();
+      responseBody = JSON.parse(pmResponse.body);
+      expect(pmResponse.name).to.equal(response.description);
+      expect(pmResponse.code).to.equal(200);
+      expect(pmResponse.header).to.deep.include({
+        'key': 'Content-Type',
+        'value': 'application/json'
+      });
+      expect(typeof responseBody.id).to.equal('number');
+      expect(typeof responseBody.name).to.equal('string');
+      done();
+    });
+    it('sholud convert response without content field', function(done) {
+      var response = {
+          'description': 'A list of pets.'
+        },
+        code = '201',
+        pmResponse;
+
+      Utils.options.schemaFaker = true;
+      pmResponse = Utils.convertToPmResponse(response, code).toJSON();
+      expect(pmResponse.name).to.equal(response.description);
+      expect(pmResponse.code).to.equal(201);
+      expect(pmResponse.body).to.equal('');
+      expect(pmResponse.header).to.deep.include({
+        'key': 'Content-Type',
+        'value': 'text/plain'
+      });
+      done();
+    });
+  });
 });
 
 
