@@ -43,6 +43,12 @@ describe('UTILITY FUNCTION TESTS', function () {
   });
 
   describe('convertToPmQueryParameters Function', function() {
+    it('Should conevrt undefined queryParam to pm param', function (done) {
+      var param;
+      let pmParam = Utils.convertToPmQueryParameters(param);
+      expect(JSON.stringify(pmParam)).to.eql('[]');
+      done();
+    });
     it('Should conevrt queryParam without schema to pm param', function (done) {
       var param = {
         name: 'X-Header-One',
@@ -428,6 +434,10 @@ describe('UTILITY FUNCTION TESTS', function () {
                     },
                     name: {
                       type: 'string'
+                    },
+                    neglect: { // this will be neglected since schemaFaker does not process
+                      type: 'string',
+                      format: 'binary'
                     }
                   }
                 }
@@ -448,20 +458,7 @@ describe('UTILITY FUNCTION TESTS', function () {
             description: 'body description',
             content: {
               'application/x-www-form-urlencoded': {
-                'schema': {
-                  'type': 'object',
-                  'properties': {
-                    'name': {
-                      'description': 'Updated name of the pet',
-                      'type': 'string'
-                    },
-                    'status': {
-                      'description': 'Updated status of the pet',
-                      'type': 'string'
-                    }
-                  },
-                  'required': ['status', 'name']
-                }
+                examples: ''
               }
             }
           },
@@ -469,8 +466,7 @@ describe('UTILITY FUNCTION TESTS', function () {
         Utils.options.schemaFaker = true;
         result = Utils.convertToPmBody(requestBody);
         resultBody = (result.body.urlencoded.toJSON());
-        expect(resultBody[0].key).to.equal('status');
-        expect(resultBody[1].key).to.equal('name');
+        expect(resultBody).to.eql([]);
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'application/x-www-form-urlencoded' });
         done();
@@ -682,6 +678,28 @@ describe('UTILITY FUNCTION TESTS', function () {
         'key': 'Content-Type',
         'value': 'text/plain'
       });
+      done();
+    });
+  });
+});
+
+// this covers remaining code
+describe(' cover most part', function() {
+  var pathPrefix = VALID_OPENAPI_PATH + '/test.json',
+    specPath = path.join(__dirname, pathPrefix);
+
+  it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
+    var openapi = fs.readFileSync(specPath, 'utf8');
+    Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      // console.log(err);
+      // console.log(JSON.stringify(conversionResult.output[0].data, null, 2));
+      expect(conversionResult.result).to.equal(true);
+      // expect(conversionResult.output.length).to.equal(1);
+      // expect(conversionResult.output[0].type).to.equal('collection');
+      // expect(conversionResult.output[0].data).to.have.property('info');
+      // expect(conversionResult.output[0].data).to.have.property('item');
+
       done();
     });
   });
