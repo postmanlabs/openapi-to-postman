@@ -9,6 +9,42 @@ var expect = require('chai').expect,
 
 /* Utility function Unit tests */
 describe('UTILITY FUNCTION TESTS', function () {
+  describe('safeSchemaFaker Function', function() {
+    var schema = {
+        anyOf: [
+          {
+            '$ref': '#/components/schemas/schema1'
+          },
+          {
+            '$ref': '#/components/schemas/schema2'
+          }
+        ]
+      },
+      components = {
+        schemas: {
+          schema1: {
+            anyOf: [
+              {
+                '$ref': '#/components/schemas/schema4'
+              },
+              {
+                '$ref': '#/components'
+              }
+            ]
+          },
+          scheam2: {
+            type: 'string'
+          },
+          schema4: {
+            $ref: '#/components/schem2'
+          }
+        }
+      };
+    it('should return result supports json-schema', function(done) {
+      Utils.safeSchemaFaker(schema, components);
+      done();
+    });
+  });
   describe('convertToPmHeader Function', function() {
     it('Should conevrt header with schema to pm header', function (done) {
       var header = {
@@ -523,7 +559,7 @@ describe('UTILITY FUNCTION TESTS', function () {
           { key: 'Content-Type', value: 'text/xml' });
         done();
       });
-      it(' text/plain', function(done) { // not properly done
+      it(' text/plain', function(done) {
         var requestBody = {
             description: 'body description',
             content: {
@@ -544,7 +580,7 @@ describe('UTILITY FUNCTION TESTS', function () {
           { key: 'Content-Type', value: 'text/plain' });
         done();
       });
-      it(' text/html', function(done) { // not properly done
+      it(' text/html', function(done) {
         var requestBody = {
             description: 'body description',
             content: {
@@ -565,7 +601,24 @@ describe('UTILITY FUNCTION TESTS', function () {
           { key: 'Content-Type', value: 'text/html' });
         done();
       });
-      // things remaining : application/javascript , application/xml
+      it(' application/javascript', function(done) { // not properly done
+        var requestBody = {
+            description: 'body description',
+            content: {
+              'application/javascript': {
+              }
+            }
+          },
+          result, resultBody;
+        Utils.options.schemaFaker = true;
+        result = Utils.convertToPmBody(requestBody);
+        resultBody = (result.body.raw);
+        expect(typeof resultBody).to.equal('string');
+        expect(result.contentHeader).to.deep.include(
+          { key: 'Content-Type', value: 'application/javascript' });
+        done();
+      });
+      // things remaining : application/xml
     });
   });
 
@@ -610,6 +663,32 @@ describe('UTILITY FUNCTION TESTS', function () {
               'schema': {
                 'type': 'string'
               }
+            }
+          },
+          pmResponseBody;
+        Utils.options.schemaFaker = true;
+        pmResponseBody = Utils.convertToPmResponseBody(contentObj);
+        expect(typeof pmResponseBody).to.equal('string');
+      });
+      it('with Content-Type application/xml', function() {
+        var contentObj = {
+            'application/xml': {
+              'examples': {
+                'user': {
+                  'summary': 'User example in XML',
+                  'externalValue': 'http://foo.bar/examples/user-example.xml'
+                }
+              }
+            }
+          },
+          pmResponseBody;
+        Utils.options.schemaFaker = true;
+        pmResponseBody = Utils.convertToPmResponseBody(contentObj);
+        expect(typeof pmResponseBody).to.equal('string');
+      });
+      it('with Content-Type application/javascript', function() {
+        var contentObj = {
+            'application/javascript': {
             }
           },
           pmResponseBody;
@@ -682,25 +761,55 @@ describe('UTILITY FUNCTION TESTS', function () {
     });
   });
 });
+describe('CONVERT FUNCTION TESTS', function() {
+  describe('The convert Function', function() {
+    var pathPrefix = VALID_OPENAPI_PATH + '/test.json',
+      specPath = path.join(__dirname, pathPrefix),
+      pathPrefix1 = VALID_OPENAPI_PATH + '/test1.json',
+      specPath1 = path.join(__dirname, pathPrefix1);
 
-// this covers remaining code
-describe(' cover most part', function() {
-  var pathPrefix = VALID_OPENAPI_PATH + '/test.json',
-    specPath = path.join(__dirname, pathPrefix);
 
-  it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
-    var openapi = fs.readFileSync(specPath, 'utf8');
-    Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
-      expect(err).to.be.null;
-      // console.log(err);
-      // console.log(JSON.stringify(conversionResult.output[0].data, null, 2));
-      expect(conversionResult.result).to.equal(true);
-      // expect(conversionResult.output.length).to.equal(1);
-      // expect(conversionResult.output[0].type).to.equal('collection');
-      // expect(conversionResult.output[0].data).to.have.property('info');
-      // expect(conversionResult.output[0].data).to.have.property('item');
+    it('Should generate collection conforming to schema for and fail if not valid ' +
+     specPath, function(done) {
+      var openapi = fs.readFileSync(specPath, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        done();
+      });
+    });
+    it('Should generate collection conforming to schema for and fail if not valid ' +
+      specPath, function(done) {
+      var openapi = fs.readFileSync(specPath1, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { requestName: 'url' }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        // console.log(err);
+        // console.log(JSON.stringify(conversionResult.output[0].data, null, 2));
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
 
-      done();
+        done();
+      });
+    });
+  });
+  describe('for invalid requestName option', function() {
+    var pathPrefix = VALID_OPENAPI_PATH + '/test1.json',
+      specPath = path.join(__dirname, pathPrefix);
+
+    it('for invalid request name, converter should throw an error', function(done) {
+      var openapi = fs.readFileSync(specPath, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { requestName: 'uKnown' }, (err) => {
+        expect(err.toString()).to.equal(
+          'Error: requestName (uKnown) in options is invalid or property does not exist in pets');
+        done();
+      });
     });
   });
 });
@@ -737,7 +846,11 @@ describe('------------------------------ INTERFACE FUNCTION TESTS --------------
           validationResult = Converter.validate({ type: 'string', data: openapi });
 
         expect(validationResult.result).to.equal(false);
-        done();
+        Converter.convert({ type: 'string', data: openapi }, {}, function(err) {
+          expect(err).to.not.equal(null);
+          // expect(validationResult.result).to.equal(false);
+          done();
+        });
       });
     });
   });
@@ -751,20 +864,20 @@ describe('------------------------------ INTERFACE FUNCTION TESTS --------------
       if (specPath.endsWith('stripe_openapi.json')) {
         it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
           var openapi = fs.readFileSync(specPath, 'utf8');
-          Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
-            expect(err).to.be.null;
+          Converter.convert({ type: 'string', data: openapi },
+            { requestName: 'operationId' }, (err, conversionResult) => {
+              expect(err).to.be.null;
 
-            expect(conversionResult.result).to.equal(true);
-            expect(conversionResult.output.length).to.equal(1);
-            expect(conversionResult.output[0].type).to.equal('collection');
-            expect(conversionResult.output[0].data).to.have.property('info');
-            expect(conversionResult.output[0].data).to.have.property('item');
+              expect(conversionResult.result).to.equal(true);
+              expect(conversionResult.output.length).to.equal(1);
+              expect(conversionResult.output[0].type).to.equal('collection');
+              expect(conversionResult.output[0].data).to.have.property('info');
+              expect(conversionResult.output[0].data).to.have.property('item');
 
-            done();
-          });
+              done();
+            });
         });
       }
     });
   });
 });
-

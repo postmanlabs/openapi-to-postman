@@ -9,7 +9,14 @@
 	},
 	"servers": [
 		{
-			"url": "http://petstore.swagger.io/v1"
+            "url": "http://petstore.swagger.io/v1",
+            "variables":{
+                "v1": {
+					"default":"v2.0",
+					"enum":["v2.0","v2.1","v2.2","v2.3"],
+					"description":"version number"
+                }
+            }	
 			
 		}
 	],
@@ -23,14 +30,7 @@
 				],
 				"parameters": [
 					{
-						"name": "limit",
-						"in": "query",
-						"description": "How many items to return at one time (max 100)",
-						"required": false,
-						"schema": {
-							"type": "integer",
-							"format": "int32"
-						}
+						"$ref":"#/components/parameters/queryparam1"
 					},
 					{
 						"name": "variable",
@@ -105,13 +105,21 @@
 			"post": {
 				"tags": [
 					"pets"
-				],
+                ],
+                "requestBody":{
+                    "$ref": "#/components/requestBodies/body1"
+                },
 				"responses": {
 					"201": {
 						"description": "Null response"
 					},
 					"default": {
 						"description": "unexpected error",
+						"headers":{
+							"X-Rate-Limit-Limit":{
+								"$ref":"#/components/headers/header1"
+							}
+						},
 						"content": {
 							"application/json": {
 								"schema": {
@@ -124,18 +132,30 @@
 			},
 			"servers": [
 				{
-					"url": "http://petstore2.swagger.io/v2"	
+                    "url": "http://petstore2.swagger.io/v2",
+                    "variables":{
+                        "v2": {
+                            "default":"v3.0"
+                        }
+                    }	
 				}
 			],
 			"parameters":[{
-				"name": "limit",
-				"in": "query",
-				"description": "path level query param",
-				"required": false,
-				"schema": {
-					"type": "string"
-				}
-			}]
+				"$ref":"#/components/parameters/queryparam1"
+            },
+            {
+                "name": "variable3",
+                "in": "query",
+                "description": "another random variable",
+                "style": "spaceDelimited",
+                "schema": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            }]
 		},
 		"/pet/{petId}": {
 			"get": {
@@ -253,7 +273,18 @@
 					}
 				}
 			}
-		},
+        },
+        "parameters": {
+            "queryparam1": {
+				"name": "limit",
+				"in": "query",
+				"description": "component level query param",
+				"required": false,
+				"schema": {
+					"type": "string"
+				}
+			}
+        },
 		"responses": {
 			"response1":{
 				"description": "Expected response to a valid request",
@@ -270,17 +301,58 @@
 			}
 		},
 		"requestBodies": {
-
-		},
-		"securitySchemes": {
-			"api_key": {
+            "body1": {
+                "description": "here comes request body",
+                "content": {
+                    "text/plain":{
+                        "examples":{
+                            "value": "request body comes here"
+                        }
+                    }
+                }
+            }
+        },
+        "securitySchemes":{
+            "api_key": {
                 "type": "apiKey",
                 "name": "api_key",
-                "in": "header"
+                "in": "query"
+            },
+            "petstore_auth": {
+                "type": "oauth2",
+                "flows": {
+                    "implicit": {
+                        "authorizationUrl": "http://example.org/api/oauth/dialog",
+                        "scopes": {
+                            "write:pets": "modify pets in your account",
+                            "read:pets": "read your pets"
+                        }
+                    }
+                }
+            },
+            "basic_http": {
+                "type": "http",
+                "scheme": "basic"
             }
+		},
+		"headers":{
+			"header1": {
+				"description": "The number of allowed requests in the current period",
+				"schema": {
+				  "type": "integer"
+				}
+			  }
 		}
-	},
-	"security":[{
-		"api_key": []
-	}]
+    },
+    "security":[
+        {
+            "petstore_auth":[]
+        },
+        {
+            "basic_http":[]
+        },
+        {
+            "api_key":[]
+        }
+    ]
 }
