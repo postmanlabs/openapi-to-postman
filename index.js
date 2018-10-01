@@ -5,29 +5,34 @@ var convert = require('./lib/convert.js'),
 
 module.exports = {
   convert: function(input, options, cb) {
-    try {
-      if (input.type === 'string') {
-        return convert(input.data, options, cb);
-      }
-      else if (input.type === 'json') {
-        return convert(input.data, options, cb);
-      }
-      else if (input.type === 'file') {
-        return fs.read(input.data, function(err, data) {
-          if (err) {
-            return cb(err);
-          }
+    // try {
+    if (input.type === 'string') {
+      return convert(input.data, options, cb);
+    }
+    else if (input.type === 'json') {
+      return convert(input.data, options, cb);
+    }
+    else if (input.type === 'file') {
+      return fs.readFile(input.data, 'utf8', function(err, data) {
+        if (err) {
+          return cb(err);
+        }
+        try {
+          return convert(JSON.parse(data), options, cb);
+        }
+        catch (e) {
           return convert(data, options, cb);
-        });
-      }
-      return cb(null, {
-        result: false,
-        reason: 'input type is not valid'
+        }
       });
     }
-    catch (e) {
-      return cb(e);
-    }
+    return cb(null, {
+      result: false,
+      reason: 'input type:' + input.type + ' is not valid'
+    });
+    // }
+    // catch (e) {
+    //   return cb(e);
+    // }
 
   },
   validate: function(input) {
