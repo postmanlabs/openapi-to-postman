@@ -8,8 +8,8 @@ var expect = require('chai').expect,
   INVALID_OPENAPI_PATH = '../data/invalid_openapi';
 
 /* Utility function Unit tests */
-describe('UTILITY FUNCTION TESTS', function () {
-  describe('safeSchemaFaker Function', function() {
+describe('UTILITY FUNCTION TESTS ', function () {
+  describe('safeSchemaFaker Function ', function() {
     var schema = {
         anyOf: [
           {
@@ -45,7 +45,7 @@ describe('UTILITY FUNCTION TESTS', function () {
       done();
     });
   });
-  describe('convertToPmHeader Function', function() {
+  describe('convertToPmHeader Function ', function() {
     it('Should conevrt header with schema to pm header', function (done) {
       var header = {
         name: 'X-Header-One',
@@ -78,7 +78,7 @@ describe('UTILITY FUNCTION TESTS', function () {
     });
   });
 
-  describe('convertToPmQueryParameters Function', function() {
+  describe('convertToPmQueryParameters Function ', function() {
     it('Should conevrt undefined queryParam to pm param', function (done) {
       var param;
       let pmParam = Utils.convertToPmQueryParameters(param);
@@ -193,6 +193,8 @@ describe('UTILITY FUNCTION TESTS', function () {
           style: 'deepObject',
           schema: {
             type: 'array',
+            maxItems: 2,
+            minItems: 2,
             items: {
               type: 'string'
             }
@@ -203,7 +205,6 @@ describe('UTILITY FUNCTION TESTS', function () {
         expect(pmParam[0].key).to.equal(param.name + '[]');
         expect(pmParam[0].description).to.equal(param.description);
         expect(pmParam[0].key.indexOf('[]')).to.not.equal(-1);
-        expect(pmParam[0].value.indexOf('string')).to.not.equal(-1);
         done();
       });
       it('style:any other} to pm param', function (done) {
@@ -762,6 +763,7 @@ describe('UTILITY FUNCTION TESTS', function () {
   });
 });
 describe('CONVERT FUNCTION TESTS', function() {
+  // these two covers remaining part of util.js
   describe('The convert Function', function() {
     var pathPrefix = VALID_OPENAPI_PATH + '/test.json',
       specPath = path.join(__dirname, pathPrefix),
@@ -784,11 +786,8 @@ describe('CONVERT FUNCTION TESTS', function() {
     });
     it('Should generate collection conforming to schema for and fail if not valid ' +
       specPath, function(done) {
-      var openapi = fs.readFileSync(specPath1, 'utf8');
-      Converter.convert({ type: 'string', data: openapi }, { requestName: 'url' }, (err, conversionResult) => {
+      Converter.convert({ type: 'file', data: specPath1 }, { requestName: 'url' }, (err, conversionResult) => {
         expect(err).to.be.null;
-        // console.log(err);
-        // console.log(JSON.stringify(conversionResult.output[0].data, null, 2));
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output.length).to.equal(1);
         expect(conversionResult.output[0].type).to.equal('collection');
@@ -861,10 +860,12 @@ describe('------------------------------ INTERFACE FUNCTION TESTS --------------
 
     sampleSpecs.map((sample) => {
       var specPath = path.join(__dirname, pathPrefix, sample);
-      if (specPath.endsWith('stripe_openapi.json')) {
+      if (specPath.endsWith('stripe_openapi.json') || specPath.endsWith('swagger-with-path.yaml')) {
         it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
-          var openapi = fs.readFileSync(specPath, 'utf8');
-          Converter.convert({ type: 'string', data: openapi },
+          // var openapi = fs.readFileSync(specPath, 'utf8');
+          var result = Converter.validate({ type: 'file', data: specPath });
+          expect(result.result).to.equal(true);
+          Converter.convert({ type: 'file', data: specPath },
             { requestName: 'operationId' }, (err, conversionResult) => {
               expect(err).to.be.null;
 
@@ -878,6 +879,30 @@ describe('------------------------------ INTERFACE FUNCTION TESTS --------------
             });
         });
       }
+    });
+  });
+
+  describe('The converter must throw an error for invalid input type', function() {
+    it('(type: some invalid value)', function(done) {
+      var result = Converter.validate({ type: 'fil', data: 'invalid_path' });
+      expect(result.result).to.equal(false);
+      expect(result.reason).to.equal('input type is not valid');
+      Converter.convert({ type: 'fil', data: 'invalid_path' }, {}, function(err, conversionResult) {
+        expect(conversionResult.result).to.equal(false);
+        expect(conversionResult.reason).to.equal('input type:fil is not valid');
+        done();
+      });
+    });
+  });
+
+  describe('The converter must throw an error for invalid input path', function() {
+    it('(type: file)', function(done) {
+      var result = Converter.validate({ type: 'file', data: 'invalid_path' });
+      expect(result.result).to.equal(false);
+      Converter.convert({ type: 'file', data: 'invalid_path' }, {}, function(err) {
+        expect(err.toString()).to.equal('Error: ENOENT: no such file or directory, open \'invalid_path\'');
+        done();
+      });
     });
   });
 });

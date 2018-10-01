@@ -13,16 +13,21 @@ module.exports = {
         return convert(input.data, options, cb);
       }
       else if (input.type === 'file') {
-        return fs.read(input.data, function(err, data) {
+        return fs.readFile(input.data, 'utf8', function(err, data) {
           if (err) {
             return cb(err);
           }
-          return convert(data, options, cb);
+          try {
+            return convert(JSON.parse(data), options, cb);
+          }
+          catch (e) {
+            return convert(data, options, cb);
+          }
         });
       }
       return cb(null, {
         result: false,
-        reason: 'input type is not valid'
+        reason: 'input type:' + input.type + ' is not valid'
       });
     }
     catch (e) {
