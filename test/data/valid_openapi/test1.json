@@ -9,7 +9,7 @@
 	},
 	"servers": [
 		{
-            "url": "http://petstore.swagger.io/v1",
+            "url": "http://petstore.swagger.io/{v1}",
             "variables":{
                 "v1": {
 					"default":"v2.0",
@@ -132,7 +132,7 @@
 			},
 			"servers": [
 				{
-                    "url": "http://petstore2.swagger.io/v2",
+                    "url": "http://petstore2.swagger.io/{v2}",
                     "variables":{
                         "v2": {
                             "default":"v3.0"

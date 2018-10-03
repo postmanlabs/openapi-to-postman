@@ -1,6 +1,7 @@
 var expect = require('chai').expect,
   Converter = require('../../index.js'),
   Utils = require('../../lib/util.js'),
+  deref = require('../../lib/deref.js'),
   fs = require('fs'),
   // sdk = require('postman-collection'),
   path = require('path'),
@@ -32,7 +33,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
               }
             ]
           },
-          scheam2: {
+          schema2: {
             type: 'string'
           },
           schema4: {
@@ -45,8 +46,204 @@ describe('UTILITY FUNCTION TESTS ', function () {
       done();
     });
   });
+
+  describe('generateTrieFromPaths Function ', function() {
+    it('should generate trie taking swagger specs as input', function(done) {
+      var openapi = {
+          'openapi': '3.0.0',
+          'info': {
+            'version': '1.0.0',
+            'title': 'Swagger Petstore',
+            'license': {
+              'name': 'MIT'
+            }
+          },
+          'servers': [
+            {
+              'url': 'http://petstore.swagger.io/{v1}'
+            }
+          ],
+          'paths': {
+            '/pet': {
+              'get': {
+                'summary': 'List all pets',
+                'operationId': 'listPets',
+                'tags': [
+                  'pets'
+                ],
+                'parameters': [
+                  {
+                    '$ref': '#/components/parameters/queryparam1'
+                  },
+                  {
+                    'name': 'variable',
+                    'in': 'header',
+                    'description': 'random variable',
+                    'style': 'form',
+                    'explode': false,
+                    'schema': {
+                      'type': 'array',
+                      'items': {
+                        'type': 'string'
+                      }
+                    }
+                  },
+                  {
+                    'name': 'variable2',
+                    'in': 'query',
+                    'description': 'another random variable',
+                    'style': 'spaceDelimited',
+                    'schema': {
+                      'type': 'array',
+                      'items': {
+                        'type': 'integer',
+                        'format': 'int64'
+                      }
+                    }
+                  }
+                ],
+                'responses': {
+                  '200': {
+                    'description': 'An paged array of pets',
+                    'headers': {
+                      'x-next': {
+                        'description': 'A link to the next page of responses',
+                        'schema': {
+                          'type': 'string'
+                        }
+                      }
+                    },
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          '$ref': '#/components/schemas/Pets'
+                        }
+                      }
+                    }
+                  },
+                  'default': {
+                    'description': 'unexpected error',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          '$ref': '#/components/schemas/Error'
+                        }
+                      }
+                    }
+                  }
+                },
+                'servers': [
+                  {
+                    'url': 'http://petstore3.swagger.io/{v3}',
+                    'variables': {
+                      'v3': {
+                        'default': 'v6.0',
+                        'enum': ['v4.0', 'v5.0', 'v6.0'],
+                        'description': 'version number'
+                      }
+                    }
+                  }
+                ]
+              },
+              'post': {
+                'tags': [
+                  'pets'
+                ],
+                'requestBody': {
+                  '$ref': '#/components/requestBodies/body1'
+                },
+                'responses': {
+                  '201': {
+                    'description': 'Null response'
+                  },
+                  'default': {
+                    'description': 'unexpected error',
+                    'headers': {
+                      'X-Rate-Limit-Limit': {
+                        '$ref': '#/components/headers/header1'
+                      }
+                    },
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          '$ref': '#/components/schemas/Error'
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              'servers': [
+                {
+                  'url': 'http://petstore.swagger.io/{v2}',
+                  'variables': {
+                    'v2': {
+                      'default': 'v3.0',
+                      'enum': ['v2.0', 'v2.1', 'v2.2', 'v2.3'],
+                      'description': 'version number'
+                    }
+                  }
+                }
+              ]
+            },
+            '/pet/{petId}': {
+              'get': {
+                'operationId': 'showPetById',
+                'tags': [
+                  'pets'
+                ],
+                'parameters': [
+                  {
+                    'name': 'petId',
+                    'in': 'path',
+                    'required': true,
+                    'description': 'The id of the pet to retrieve',
+                    'schema': {
+                      'type': 'string'
+                    }
+                  }
+                ],
+                'responses': {
+                  '200': {
+                    'description': 'Expected response to a valid request',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          '$ref': '#/components/schemas/Pets'
+                        }
+                      }
+                    }
+                  },
+                  'default': {
+                    'description': 'unexpected error',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          '$ref': '#/components/schemas/Error'
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        output = Utils.generateTrieFromPaths(openapi),
+        root = output.tree.root,
+        collectionVariables = output.variables;
+      expect(root.children).to.have.key('pet');
+      expect(root.children.pet.requestCount).to.equal(3);
+      expect(root.children.pet.requests.length).to.equal(2);
+      expect(root.children.pet.children).to.have.key('{petId}');
+      expect(root.children.pet.children['{petId}'].requestCount).to.equal(1);
+      expect(collectionVariables).to.have.key('petUrl');
+      done();
+    });
+  });
+
   describe('convertToPmHeader Function ', function() {
-    it('Should conevrt header with schema to pm header', function (done) {
+    it('Should convert header with schema to pm header', function (done) {
       var header = {
         name: 'X-Header-One',
         in: 'header',
@@ -63,7 +260,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
       expect(typeof pmHeader.value).to.equal('number');
       done();
     });
-    it('Should conevrt header without schema to pm header', function (done) {
+    it('Should convert header without schema to pm header', function (done) {
       var header = {
         name: 'X-Header-One',
         in: 'header',
@@ -79,13 +276,13 @@ describe('UTILITY FUNCTION TESTS ', function () {
   });
 
   describe('convertToPmQueryParameters Function ', function() {
-    it('Should conevrt undefined queryParam to pm param', function (done) {
+    it('Should convert undefined queryParam to pm param', function (done) {
       var param;
       let pmParam = Utils.convertToPmQueryParameters(param);
-      expect(JSON.stringify(pmParam)).to.eql('[]');
+      expect(pmParam.length).to.equal(0);
       done();
     });
-    it('Should conevrt queryParam without schema to pm param', function (done) {
+    it('Should convert queryParam without schema to pm param', function (done) {
       var param = {
         name: 'X-Header-One',
         in: 'query',
@@ -98,7 +295,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
       expect(pmParam[0].value).to.equal('');
       done();
     });
-    describe('Should conevrt queryParam with schema {type:array, ', function() {
+    describe('Should convert queryParam with schema {type:array, ', function() {
       describe('style:form, ', function() {
         it('explode:true} to pm param', function (done) {
           var param = {
@@ -141,7 +338,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
           let pmParam = Utils.convertToPmQueryParameters(param);
           expect(pmParam[0].key).to.equal(param.name);
           expect(pmParam[0].description).to.equal(param.description);
-          expect(pmParam[0].value.indexOf(',')).to.not.equal(-1);
+          expect(pmParam[0].value).to.have.string(',');
           done();
         });
       });
@@ -162,7 +359,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
         let pmParam = Utils.convertToPmQueryParameters(param);
         expect(pmParam[0].key).to.equal(param.name);
         expect(pmParam[0].description).to.equal(param.description);
-        expect(pmParam[0].value.indexOf('%20')).to.not.equal(-1);
+        expect(pmParam[0].value).to.have.string('%20');
         done();
       });
       it('style:pipeDelimited} to pm param', function (done) {
@@ -182,7 +379,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
         let pmParam = Utils.convertToPmQueryParameters(param);
         expect(pmParam[0].key).to.equal(param.name);
         expect(pmParam[0].description).to.equal(param.description);
-        expect(pmParam[0].value.indexOf('|')).to.not.equal(-1);
+        expect(pmParam[0].value).to.have.string('|');
         done();
       });
       it('style:deepObject} to pm param', function (done) {
@@ -204,7 +401,6 @@ describe('UTILITY FUNCTION TESTS ', function () {
         let pmParam = Utils.convertToPmQueryParameters(param);
         expect(pmParam[0].key).to.equal(param.name + '[]');
         expect(pmParam[0].description).to.equal(param.description);
-        expect(pmParam[0].key.indexOf('[]')).to.not.equal(-1);
         done();
       });
       it('style:any other} to pm param', function (done) {
@@ -223,11 +419,11 @@ describe('UTILITY FUNCTION TESTS ', function () {
         let pmParam = Utils.convertToPmQueryParameters(param);
         expect(pmParam[0].key).to.equal(param.name);
         expect(pmParam[0].description).to.equal(param.description);
-        expect(pmParam[0].value.indexOf(',')).to.not.equal(-1);
+        expect(pmParam[0].value).to.have.string(',');
         done();
       });
     });
-    describe('Should conevrt queryParam with schema {type:object, ', function() {
+    describe('Should convert queryParam with schema {type:object, ', function() {
       describe('style:form, ', function() {
         it('explode:true} to pm param', function (done) {
           var param = {
@@ -291,8 +487,8 @@ describe('UTILITY FUNCTION TESTS ', function () {
           let pmParam = Utils.convertToPmQueryParameters(param);
           expect(pmParam[0].key).to.equal(param.name);
           expect(pmParam[0].description).to.equal(param.description);
-          expect(pmParam[0].value.indexOf('id')).to.not.equal(-1);
-          expect(pmParam[0].value.indexOf('name')).to.not.equal(-1);
+          expect(pmParam[0].value).to.have.string('id');
+          expect(pmParam[0].value).to.have.string('name');
           done();
         });
       });
@@ -324,7 +520,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
         let pmParam = Utils.convertToPmQueryParameters(param);
         expect(pmParam[0].key).to.equal(param.name);
         expect(pmParam[0].description).to.equal(param.description);
-        expect(pmParam[0].value.indexOf('%20')).to.not.equal(-1);
+        expect(pmParam[0].value).to.have.string('%20');
         done();
       });
       it('style:pipeDelimited} to pm param', function (done) {
@@ -355,7 +551,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
         let pmParam = Utils.convertToPmQueryParameters(param);
         expect(pmParam[0].key).to.equal(param.name);
         expect(pmParam[0].description).to.equal(param.description);
-        expect(pmParam[0].value.indexOf('|')).to.not.equal(-1);
+        expect(pmParam[0].value).to.have.string('|');
         done();
       });
       it('style:deepObject} to pm param', function (done) {
@@ -762,7 +958,44 @@ describe('UTILITY FUNCTION TESTS ', function () {
     });
   });
 });
-describe('CONVERT FUNCTION TESTS', function() {
+describe('DEREF FUNCTION TESTS ', function() {
+  it('resolveRefs Function should return schema with resolved references.', function(done) {
+    var schema = {
+        $ref: '#/components/schemas/schema1'
+      },
+      components = {
+        schemas: {
+          schema1: {
+            anyOf: [{
+              $ref: '#/components/schemas/schema2'
+            },
+            {
+              $ref: '#/components/schemas/schema3'
+            }
+            ]
+          },
+          schema2: {
+            type: 'object',
+            required: [
+              'id'
+            ],
+            properties: {
+              id: {
+                type: 'integer',
+                format: 'int64'
+              }
+            }
+          }
+        }
+      },
+      output = deref.resolveRefs(schema, components);
+    expect(output).to.deep.include({ type: 'object',
+      required: ['id'],
+      properties: { id: { type: 'integer', format: 'int64' } } });
+    done();
+  });
+});
+describe('CONVERT FUNCTION TESTS ', function() {
   // these two covers remaining part of util.js
   describe('The convert Function', function() {
     var pathPrefix = VALID_OPENAPI_PATH + '/test.json',
@@ -815,7 +1048,7 @@ describe('CONVERT FUNCTION TESTS', function() {
 
 
 /* Plugin Interface Tests */
-describe('------------------------------ INTERFACE FUNCTION TESTS ------------------------------', function () {
+describe('INTERFACE FUNCTION TESTS ', function () {
   describe('The converter must identify valid specifications', function () {
     var pathPrefix = VALID_OPENAPI_PATH,
       sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix));

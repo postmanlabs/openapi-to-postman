@@ -23,7 +23,6 @@ describe(packageJson.name, function() {
   });
 
   it('should validate the sample input correctly', function (done) {
-    // console.log(package.validate(sampleInput).reason);
     expect(package.validate(sampleInput).result).to.equal(true);
     done();
   });
