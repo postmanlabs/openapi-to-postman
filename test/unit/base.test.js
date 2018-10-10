@@ -257,7 +257,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
       let pmHeader = Utils.convertToPmHeader(header);
       expect(pmHeader.key).to.equal(header.name);
       expect(pmHeader.description).to.equal(header.description);
-      expect(typeof pmHeader.value).to.equal('number');
+      expect(typeof pmHeader.value).to.equal('string');// because schema v2.1.0 supports only string value.
       done();
     });
     it('Should convert header without schema to pm header', function (done) {
