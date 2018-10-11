@@ -167,3 +167,29 @@ $ openapi2postmanv2 -s spec.yaml -o collection.json -p
 ```terminal
 $ openapi2postmanv2 --test
 ```
+
+# Conversion Schema
+
+| *postman* | *openapi* | *options* | *examples* |
+| --- | --- | :---: | :--- |
+| collectionName | info.title | - |  |
+| descrition | info.description + info.contact | - |  |
+| collectionVariables| server.variables + pathVariables | - |  |
+| folderName | paths.path | - |  |
+| requestName | operationItem(method).operationId | default(operationId)-(`requestName`)enum['operationId','summary','url'] |  |
+| request.method | path.method | - |  |
+| request.headers | parameter (`in = header`) | - | [here](#Header/Path-param-conversion-example) |
+| request.body | operationItem(method).requestBody | - |  |
+| request.url.raw | server.url (path level server >> openapi server) + path | - |  |
+| requser.url.variables | parameter (`in = path`) | - | [here](#Header/Path-param-conversion-example) |
+| request.url.params | parameter (`in = query`) | - | {"key": param.name, "value": [here](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#style-examples)}|
+| api_key in (query or header) | components.securitySchemes.api_key | - ||
+
+
+>`option : 'schemaFaker'(boolean) whether to use json-schema-faker for schema conversion`
+
+### Header/Path param conversion example
+
+| *openapi* | *postman* |
+| --- | --- |
+|  |  |

@@ -1,5 +1,63 @@
 // Exports the interface for the plugin
+var convert = require('./lib/convert.js'),
+  fs = require('fs'),
+  validate = require('./lib/validate.js');
+
 module.exports = {
-  convert: require('./lib/convert.js'),
-  validate: require('./lib/validate.js')
+  convert: function(input, options, cb) {
+    // try {
+    if (input.type === 'string') {
+      return convert(input.data, options, cb);
+    }
+    else if (input.type === 'json') {
+      return convert(input.data, options, cb);
+    }
+    else if (input.type === 'file') {
+      return fs.readFile(input.data, 'utf8', function(err, data) {
+        if (err) {
+          return cb(err);
+        }
+        try {
+          return convert(JSON.parse(data), options, cb);
+        }
+        catch (e) {
+          return convert(data, options, cb);
+        }
+      });
+    }
+    return cb(null, {
+      result: false,
+      reason: 'input type:' + input.type + ' is not valid'
+    });
+    // }
+    // catch (e) {
+    //   return cb(e);
+    // }
+
+  },
+  validate: function(input) {
+    try {
+      var data;
+      if (input.type === 'string') {
+        return validate(input.data);
+      }
+      else if (input.type === 'json') {
+        return validate(input.data);
+      }
+      else if (input.type === 'file') {
+        data = fs.readFileSync(input.data).toString();
+        return validate(data);
+      }
+      return {
+        result: false,
+        reason: 'input type is not valid'
+      };
+    }
+    catch (e) {
+      return {
+        result: false,
+        reason: e.toString()
+      };
+    }
+  }
 };
