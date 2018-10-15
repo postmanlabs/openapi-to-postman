@@ -1008,7 +1008,6 @@ describe('CONVERT FUNCTION TESTS ', function() {
      specPath, function(done) {
       var openapi = fs.readFileSync(specPath, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
-        console.log(JSON.stringify(conversionResult.output[0].data, null, 2));
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output.length).to.equal(1);
