@@ -53,7 +53,7 @@ The converter provides the following functions at your disposal
 
 The convert function takes in your OPENAPI specification ( YAML / JSON ) and converts it to a POSTMAN collection.
 
-The following points should be kept in mind while using the convert function
+The following points should be kept in mind while using the convert function:
 
 1. The [convert function](#convert-function) is asynchronous in nature and takes a callback as an argument in which the resultant collection object is provided
 

@@ -61,58 +61,6 @@
                       }
                     }
                   }
-                },
-                "default": {
-                  "description": "unexpected error",
-                  "content": {
-                    "application/json": {
-                      "schema": {
-                        "$ref": "#/components/schemas/Error"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "/pets/{petId}": {
-            "get": {
-              "summary": "Info for a specific pet",
-              "operationId": "showPetById",
-              "tags": [
-                "pets"
-              ],
-              "parameters": [
-                {
-                  "name": "petId",
-                  "in": "path",
-                  "required": true,
-                  "description": "The id of the pet to retrieve",
-                  "schema": {
-                    "type": "string"
-                  }
-                }
-              ],
-              "responses": {
-                "200": {
-                  "description": "Expected response to a valid request",
-                  "content": {
-                    "application/json": {
-                      "schema": {
-                        "$ref": "#/components/schemas/Pets"
-                      }
-                    }
-                  }
-                },
-                "default": {
-                  "description": "unexpected error",
-                  "content": {
-                    "application/json": {
-                      "schema": {
-                        "$ref": "#/components/schemas/Error"
-                      }
-                    }
-                  }
                 }
               }
             }
@@ -132,9 +80,6 @@
                 },
                 "name": {
                   "type": "string"
-                },
-                "tag": {
-                  "type": "string"
                 }
               }
             },
@@ -142,21 +87,6 @@
               "type": "array",
               "items": {
                 "$ref": "#/components/schemas/Pet"
-              }
-            },
-            "Error": {
-              "required": [
-                "code",
-                "message"
-              ],
-              "properties": {
-                "code": {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                "message": {
-                  "type": "string"
-                }
               }
             }
           }
@@ -169,20 +99,20 @@
     "openapi2postmanv2": "./bin/openapi2postmanv2.js"
   },
   "dependencies": {
-    "async": "^2.6.0",
-    "commander": ">=2.3.0",
+    "async": "2.6.0",
+    "commander": "2.3.0",
     "console-emoji": "0.0.2",
     "js-yaml": "3.10.0",
     "json-schema-faker": "pavanteja-potnuru/json-schema-faker#feature/pmsupport",
     "jsonschema": "1.2.2",
     "lodash": "4.17.5",
-    "node-uuid": ">= 1.4.1",
-    "package.json": "^2.0.1",
-    "path": "^0.12.7",
+    "node-uuid": "1.4.1",
+    "package.json": "2.0.1",
+    "path": "0.12.7",
     "postman-collection": "3.3.0"
   },
-  "author": "Tuhin Khare",
-  "license": "Apache",
+  "author": "Postman",
+  "license": "MIT",
   "devDependencies": {
     "eslint": "5.4.0",
     "eslint-plugin-jsdoc": "3.8.0",

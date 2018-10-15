@@ -1,15 +1,12 @@
-// Exports the interface for the plugin
 var convert = require('./lib/convert.js'),
-  fs = require('fs'),
-  validate = require('./lib/validate.js');
+  validate = require('./lib/validate.js'),
+  fs = require('fs');
 
 module.exports = {
   convert: function(input, options, cb) {
-    // try {
-    if (input.type === 'string') {
-      return convert(input.data, options, cb);
-    }
-    else if (input.type === 'json') {
+    if (input.type === 'string' || input.type === 'json') {
+      // no need for extra processing before calling the converter
+      // string can be JSON or YAML
       return convert(input.data, options, cb);
     }
     else if (input.type === 'file') {
@@ -17,24 +14,17 @@ module.exports = {
         if (err) {
           return cb(err);
         }
-        try {
-          return convert(JSON.parse(data), options, cb);
-        }
-        catch (e) {
-          return convert(data, options, cb);
-        }
+
+        // if the file contents were JSON or YAML
+        return convert(data, options, cb);
       });
     }
     return cb(null, {
       result: false,
       reason: 'input type:' + input.type + ' is not valid'
     });
-    // }
-    // catch (e) {
-    //   return cb(e);
-    // }
-
   },
+
   validate: function(input) {
     try {
       var data;
