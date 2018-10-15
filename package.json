@@ -173,7 +173,7 @@
     "commander": ">=2.3.0",
     "console-emoji": "0.0.2",
     "js-yaml": "3.10.0",
-    "json-schema-faker": "pavanteja-potnuru/json-schema-faker#feature/pmsupport",
+    "json-schema-faker": "0.5.0-rc15",
     "jsonschema": "1.2.2",
     "lodash": "4.17.5",
     "node-uuid": ">= 1.4.1",
