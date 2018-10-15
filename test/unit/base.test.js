@@ -359,7 +359,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
         let pmParam = Utils.convertToPmQueryParameters(param);
         expect(pmParam[0].key).to.equal(param.name);
         expect(pmParam[0].description).to.equal(param.description);
-        expect(pmParam[0].value).to.have.string('%20');
+        expect(pmParam[0].value).to.have.string(' ');
         done();
       });
       it('style:pipeDelimited} to pm param', function (done) {
@@ -1008,6 +1008,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
      specPath, function(done) {
       var openapi = fs.readFileSync(specPath, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+        console.log(JSON.stringify(conversionResult.output[0].data, null, 2));
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output.length).to.equal(1);
