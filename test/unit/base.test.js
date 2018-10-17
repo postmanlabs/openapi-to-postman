@@ -359,7 +359,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
         let pmParam = Utils.convertToPmQueryParameters(param);
         expect(pmParam[0].key).to.equal(param.name);
         expect(pmParam[0].description).to.equal(param.description);
-        expect(pmParam[0].value).to.have.string('%20');
+        expect(pmParam[0].value).to.have.string(' ');
         done();
       });
       it('style:pipeDelimited} to pm param', function (done) {
