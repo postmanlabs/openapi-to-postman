@@ -991,7 +991,7 @@ describe('DEREF FUNCTION TESTS ', function() {
       output = deref.resolveRefs(schema, components);
     expect(output).to.deep.include({ type: 'object',
       required: ['id'],
-      properties: { id: { default: '<integer-int64>', type: 'integer', format: 'int64' } } });
+      properties: { id: { default: '<integer-int64>', type: 'string' } } });
     done();
   });
 });
