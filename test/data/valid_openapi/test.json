@@ -36,7 +36,7 @@
 						"name": "variable",
 						"in": "header",
 						"description": "random variable",
-						"style": "form",
+						"style": "simple",
 						"explode": false,
 						"schema": {
 							"type": "array",
