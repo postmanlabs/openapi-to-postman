@@ -36,7 +36,7 @@
 						"name": "variable",
 						"in": "header",
 						"description": "random variable",
-						"style": "form",
+						"style": "simple",
 						"explode": false,
 						"schema": {
 							"type": "array",
@@ -305,7 +305,7 @@
                 "description": "here comes request body",
                 "content": {
                     "text/plain":{
-                        "examples":{
+                        "example":{
                             "value": "request body comes here"
                         }
                     }

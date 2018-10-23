@@ -316,7 +316,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
           let pmParam = Utils.convertToPmQueryParameters(param);
           expect(pmParam[0].key).to.equal(param.name);
           expect(pmParam[0].description).to.equal(param.description);
-          expect(typeof pmParam[0].value).to.equal('number');
+          expect(pmParam[0].value).to.equal('<long>');
           done();
         });
         it('explode:false} to pm param', function (done) {
@@ -455,8 +455,8 @@ describe('UTILITY FUNCTION TESTS ', function () {
           expect(pmParam[1].key).to.equal('name');
           expect(pmParam[0].description).to.equal(param.description);
           expect(pmParam[1].description).to.equal(param.description);
-          expect(typeof pmParam[0].value).to.equal('number');
-          expect(typeof pmParam[1].value).to.equal('string');
+          expect(pmParam[0].value).to.equal('<long>');
+          expect(pmParam[1].value).to.equal('<string>');
           done();
         });
         it('explode:false} to pm param ', function (done) {
@@ -583,8 +583,8 @@ describe('UTILITY FUNCTION TESTS ', function () {
         expect(pmParam[1].key).to.equal(param.name + '[name]');
         expect(pmParam[0].description).to.equal(param.description);
         expect(pmParam[1].description).to.equal(param.description);
-        expect(typeof pmParam[0].value).to.equal('number');
-        expect(typeof pmParam[1].value).to.equal('string');
+        expect(pmParam[0].value).to.equal('<long>');
+        expect(pmParam[1].value).to.equal('<string>');
         done();
       });
       it('style:any other} to pm param', function (done) {
@@ -681,8 +681,8 @@ describe('UTILITY FUNCTION TESTS ', function () {
         Utils.options.schemaFaker = true;
         result = Utils.convertToPmBody(requestBody);
         resultBody = JSON.parse(result.body.raw);
-        expect(typeof resultBody.id).to.equal('number');
-        expect(typeof resultBody.name).to.equal('string');
+        expect(resultBody.id).to.equal('<long>');
+        expect(resultBody.name).to.equal('<string>');
         expect(result.contentHeader).to.deep.include({ key: 'Content-Type', value: 'application/json' });
         done();
       });
@@ -851,8 +851,8 @@ describe('UTILITY FUNCTION TESTS ', function () {
           pmResponseBody;
         Utils.options.schemaFaker = true;
         pmResponseBody = JSON.parse(Utils.convertToPmResponseBody(contentObj));
-        expect(typeof pmResponseBody.id).to.equal('number');
-        expect(typeof pmResponseBody.name).to.equal('string');
+        expect(pmResponseBody.id).to.equal('<long>');
+        expect(pmResponseBody.name).to.equal('<string>');
       });
       it('with Content-Type text/plain', function() {
         var contentObj = {
@@ -934,8 +934,8 @@ describe('UTILITY FUNCTION TESTS ', function () {
         'key': 'Content-Type',
         'value': 'application/json'
       });
-      expect(typeof responseBody.id).to.equal('number');
-      expect(typeof responseBody.name).to.equal('string');
+      expect(responseBody.id).to.equal('<long>');
+      expect(responseBody.name).to.equal('<string>');
       done();
     });
     it('sholud convert response without content field', function(done) {
@@ -991,7 +991,7 @@ describe('DEREF FUNCTION TESTS ', function() {
       output = deref.resolveRefs(schema, components);
     expect(output).to.deep.include({ type: 'object',
       required: ['id'],
-      properties: { id: { type: 'integer', format: 'int64' } } });
+      properties: { id: { default: '<long>', type: 'string' } } });
     done();
   });
 });
@@ -1078,9 +1078,9 @@ describe('INTERFACE FUNCTION TESTS ', function () {
           validationResult = Converter.validate({ type: 'string', data: openapi });
 
         expect(validationResult.result).to.equal(false);
-        Converter.convert({ type: 'string', data: openapi }, {}, function(err) {
-          expect(err).to.not.equal(null);
-          // expect(validationResult.result).to.equal(false);
+        Converter.convert({ type: 'string', data: openapi }, {}, function(err, conversionResult) {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(false);
           done();
         });
       });
