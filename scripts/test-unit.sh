@@ -25,7 +25,7 @@ echo -e "\033[93mRunning mocha unit tests...\033[0m";
 echo -en "\033[0m\033[2mmocha `mocha --version`\033[0m";
 
 # set mocha reporter
-if [ "$SHIPPABLE" = "true" ]; then
+if [ "$CI" = "true" ]; then
   MOCHA_REPORTER="xunit";
   ISTANBUL_REPORT="--report cobertura";
 else

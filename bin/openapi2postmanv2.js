@@ -19,18 +19,18 @@ program
 
 
 program.on('--help', function() {
-  Console.log('    Converts a given OPENAPI specification to POSTMAN Collections v2.1.0   ');
-  Console.log(' ');
-  Console.log('    Examples:');
-  Console.log(' 		Read spec.yaml or spec.json and store the output in output.json after conversion     ');
-  Console.log('	           ./openapi2postmanv2 -s spec.yaml -o output.json ');
-  Console.log(' ');
-  Console.log('	        Read spec.yaml or spec.json and print the output to the Console        ');
-  Console.log('                   ./openapi2postmanv2 -s spec.yaml ');
-  Console.log(' ');
-  Console.log('                Read spec.yaml or spec.json and print the prettified output to the Console');
-  Console.log('                  ./openapi2postmanv2 -s spec.yaml -p');
-  Console.log(' ');
+  console.log('    Converts a given OPENAPI specification to POSTMAN Collections v2.1.0   ');
+  console.log(' ');
+  console.log('    Examples:');
+  console.log(' 		Read spec.yaml or spec.json and store the output in output.json after conversion     ');
+  console.log('	           ./openapi2postmanv2 -s spec.yaml -o output.json ');
+  console.log(' ');
+  console.log('	        Read spec.yaml or spec.json and print the output to the Console        ');
+  console.log('                   ./openapi2postmanv2 -s spec.yaml ');
+  console.log(' ');
+  console.log('                Read spec.yaml or spec.json and print the prettified output to the Console');
+  console.log('                  ./openapi2postmanv2 -s spec.yaml -p');
+  console.log(' ');
 });
 
 program.parse(process.argv);
@@ -52,49 +52,57 @@ swaggerData;
  */
 function writetoFile(prettyPrintFlag, file, collection) {
   if (prettyPrintFlag) {
-    fs.writeFileSync(file, JSON.stringify(collection, null, 4), (err) => {
-      if (err) { Console.log('Could not write to file', err); }
-      Console.log('Conversion successful', 'Collection written to file');
+    fs.writeFile(file, JSON.stringify(collection, null, 4), (err) => {
+      if (err) { console.log('Could not write to file', err); }
+      console.log('Conversion successful', 'Collection written to file');
     });
   }
   else {
-    fs.writeFileSync(file, JSON.stringify(collection), (err) => {
-      if (err) { Console.log('Could not write to file', err); }
-      Console.log('Conversion successful', 'Collection written to file');
+    fs.writeFile(file, JSON.stringify(collection), (err) => {
+      if (err) { console.log('Could not write to file', err); }
+      console.log('Conversion successful', 'Collection written to file');
     });
   }
 }
 
 if (testFlag) {
   swaggerInput = fs.readFileSync('../examples/sampleswagger.yaml', 'utf8');
-  Converter.convert(swaggerInput, (status) => {
+  Converter.convert({
+    type: 'string',
+    data: swaggerInput
+  }, (err, status) => {
     if (!status.result) {
-      Console.log(status.reason);
+      console.log(status.reason);
     }
     else if (outputFile) {
       let file = path.resolve(outputFile);
-      writetoFile(prettyPrintFlag, file, status.collection);
+      writetoFile(prettyPrintFlag, file, status.output[0].data);
     }
     else {
-      Console.log(status.collection);
+      console.log(status.collection);
       process.exit(0);
     }
   });
 }
 else if (inputFile) {
   inputFile = path.resolve(__dirname, inputFile);
-  swaggerData = fs.readFileSync(inputFile);
-  Converter.convert(swaggerData, (status) => {
+  console.log('Input file: ', inputFile);
+  swaggerData = fs.readFileSync(inputFile, 'utf8');
+  Converter.convert({
+    type: 'string',
+    data: swaggerData
+  }, {}, (err, status) => {
     if (!status.result) {
-      Console.log(status.reason);
+      console.log(status.reason);
       process.exit(0);
     }
     else if (outputFile) {
       let file = path.resolve(outputFile);
-      writetoFile(prettyPrintFlag, file, status.collection);
+      console.log('Writing to file: ', prettyPrintFlag, file, status);
+      writetoFile(prettyPrintFlag, file, status.output[0].data);
     }
     else {
-      Console.log(status.collection);
+      console.log(status.collection);
       process.exit(0);
     }
   });

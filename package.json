@@ -1,44 +1,127 @@
 {
   "name": "@postman/openapi-to-postmanv2",
-  "version": "1.0.5",
+  "version": "0.0.1",
   "description": "Convert a given OpenAPI specification to Postman Collection v2.0",
   "com_postman_plugin": {
     "plugin_type": "importer",
     "name": "OPENAPI 3.0",
-    "source_format": "OPENAPI3.0"
+    "source_format": "OPENAPI3.0",
+    "source_format_name": "OpenAPI 3.0",
+    "sample_input": {
+      "type": "json",
+      "data": {
+        "openapi": "3.0.0",
+        "info": {
+          "version": "1.0.0",
+          "title": "Swagger Petstore",
+          "license": {
+            "name": "MIT"
+          }
+        },
+        "servers": [
+          {
+            "url": "http://petstore.swagger.io/v1"
+          }
+        ],
+        "paths": {
+          "/pets": {
+            "get": {
+              "summary": "List all pets",
+              "operationId": "listPets",
+              "tags": [
+                "pets"
+              ],
+              "parameters": [
+                {
+                  "name": "limit",
+                  "in": "query",
+                  "description": "How many items to return at one time (max 100)",
+                  "required": false,
+                  "schema": {
+                    "type": "integer",
+                    "format": "int32"
+                  }
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "An paged array of pets",
+                  "headers": {
+                    "x-next": {
+                      "description": "A link to the next page of responses",
+                      "schema": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/Pets"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "components": {
+          "schemas": {
+            "Pet": {
+              "required": [
+                "id",
+                "name"
+              ],
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
+            },
+            "Pets": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Pet"
+              }
+            }
+          }
+        }
+      }
+    }
   },
   "main": "index.js",
   "bin": {
     "openapi2postmanv2": "./bin/openapi2postmanv2.js"
   },
   "dependencies": {
-    "async": "^2.6.0",
-    "commander": ">=2.3.0",
+    "async": "2.6.0",
+    "commander": "2.3.0",
     "console-emoji": "0.0.2",
     "js-yaml": "3.10.0",
-    "json-schema-faker": "0.4.7",
-    "json-schema-ref-parser": "4.1.1",
+    "json-schema-faker": "0.5.0-rc15",
     "jsonschema": "1.2.2",
     "lodash": "4.17.5",
-    "node-uuid": ">= 1.4.1",
-    "package.json": "^2.0.1",
-    "path": "^0.12.7",
-    "postman-collection": ""
+    "node-uuid": "1.4.1",
+    "package.json": "2.0.1",
+    "path": "0.12.7",
+    "postman-collection": "3.3.0"
   },
-  "author": "Tuhin Khare",
-  "license": "Apache",
+  "author": "Postman",
+  "license": "MIT",
   "devDependencies": {
-    "chai": "^4.1.2",
-    "colors": "1.1.2",
-    "eslint": "^4.19.1",
-    "eslint-plugin-jsdoc": "^3.5.0",
-    "eslint-plugin-mocha": "^5.0.0",
-    "eslint-plugin-security": "^1.4.0",
-    "istanbul": "^1.0.0-alpha.2",
-    "mocha": "^5.0.5",
-    "nsp": "3.1.0",
-    "nyc": "^11.6.0",
-    "shelljs": "^0.8.1"
+    "eslint": "5.4.0",
+    "eslint-plugin-jsdoc": "3.8.0",
+    "eslint-plugin-mocha": "5.2.0",
+    "eslint-plugin-security": "1.4.0",
+    "expect.js": "0.3.1",
+    "istanbul": "0.4.5",
+    "mocha": "5.2.0",
+    "chai": "4.1.2"
   },
   "scripts": {
     "test": "./scripts/test.sh",

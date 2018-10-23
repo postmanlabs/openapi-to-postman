@@ -81,11 +81,11 @@ paths:
             type: array
             items:
               type: string
-            enum:
-              - available
-              - pending
-              - sold
-            default: available
+              enum:
+                - available
+                - pending
+                - sold
+              default: available
       responses:
         '200':
           description: successful operation

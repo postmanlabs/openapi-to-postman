@@ -1,0 +1,793 @@
+{
+	"openapi": "3.0.0",
+	"info": {
+		"version": "1.0.0",
+		"title": "Swagger Petstore",
+		"license": {
+			"name": "MIT"
+		}
+	},
+	"servers": [
+		{
+			"url": "http://petstore.swagger.io/v1"
+			
+		}
+	],
+	"paths": {
+		"/pets": {
+			"get": {
+				"summary": "List all pets",
+				"operationId": "listPets",
+				"tags": [
+					"pets"
+				],
+				"parameters": [
+					{
+						"name": "limit",
+						"in": "query",
+						"description": "How many items to return at one time (max 100)",
+						"required": false,
+						"schema": {
+							"type": "integer",
+							"format": "int32"
+						}
+					},
+					{
+						"name": "variable",
+						"in": "header",
+						"description": "random variable",
+						"style": "simple",
+						"explode": false,
+						"schema": {
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					},
+					{
+						"name": "variable2",
+						"in": "query",
+						"description": "another random variable",
+						"style": "spaceDelimited",
+						"schema": {
+							"type": "array",
+							"items": {
+								"type": "integer",
+								"format": "int64"
+							}
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "An paged array of pets",
+						"headers": {
+							"x-next": {
+								"description": "A link to the next page of responses",
+								"schema": {
+									"type": "string"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Pets"
+								}
+							}
+						}
+					},
+					"default": {
+						"description": "unexpected error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				},
+				"servers": [
+					{
+						"url": "http://petstore3.swagger.io/{v3}",
+						"variables": {
+							"v3": {
+								"default":"v6.0",
+								"enum": ["v4.0", "v5.0", "v6.0"],
+								"description" : "version number"
+							}
+						}
+					}
+				]
+			},
+			"post": {
+				"tags": [
+					"pets"
+				],
+				"requestBody": {
+					"content": {
+						"application/x-www-form-urlencoded": {
+							"encoding": {
+								"alternate_statement_descriptors": {
+									"explode": true,
+									"style": "deepObject"
+								},
+								"card": {
+									"explode": true,
+									"style": "deepObject"
+								},
+								"destination": {
+									"explode": true,
+									"style": "deepObject"
+								},
+								"expand": {
+									"explode": true,
+									"style": "deepObject"
+								},
+								"include": {
+									"explode": true,
+									"style": "deepObject"
+								},
+								"level3": {
+									"explode": true,
+									"style": "deepObject"
+								},
+								"metadata": {
+									"explode": true,
+									"style": "deepObject"
+								},
+								"shipping": {
+									"explode": true,
+									"style": "deepObject"
+								},
+								"source": {
+									"explode": true,
+									"style": "deepObject"
+								},
+								"statement_address": {
+									"explode": true,
+									"style": "deepObject"
+								},
+								"statement_descriptor": {
+									"explode": true,
+									"style": "deepObject"
+								}
+							},
+							"schema": {
+								"additionalProperties": false,
+								"properties": {
+									"alternate_statement_descriptors": {
+										"properties": {
+											"kana": {
+												"maxLength": 22,
+												"type": "string"
+											},
+											"kanji": {
+												"maxLength": 22,
+												"type": "string"
+											}
+										},
+										"title": "alternate_statement_descriptors_params",
+										"type": "object"
+									},
+									"amount": {
+										"description": "A positive integer representing how much to charge, in the [smallest currency unit](/docs/currencies#zero-decimal) (e.g., `100` cents to charge $1.00, or `100` to charge ¥100, a zero-decimal currency). The minimum amount is $0.50 USD or [equivalent in charge currency](/docs/currencies#minimum-and-maximum-charge-amounts).",
+										"type": "integer"
+									},
+									"application": {
+										"maxLength": 5000,
+										"type": "string"
+									},
+									"application_fee": {
+										"description": "A fee in %s that will be applied to the charge and transferred to the application owner's Stripe account. The request must be made with an OAuth key or the `Stripe-Account` header in order to take an application fee. For more information, see the application fees [documentation](/docs/connect/direct-charges#collecting-fees).",
+										"type": "integer"
+									},
+									"capture": {
+										"description": "Whether to immediately capture the charge. When `false`, the charge issues an authorization (or pre-authorization), and will need to be [captured](#capture_charge) later. Uncaptured charges expire in _seven days_. For more information, see the [authorizing charges and settling later](/docs/charges#auth-and-capture) documentation.",
+										"type": "boolean"
+									},
+									"card": {
+										"anyOf": [{
+												"type": "object"
+											},
+											{
+												"maxLength": 5000,
+												"type": "string"
+											},
+											{
+												"properties": {
+													"emv_auth_data": {
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"encrypted_pin": {
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"encrypted_pin_key_id": {
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"object": {
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"processing_method": {
+														"enum": [
+															"quick_chip",
+															"traditional"
+														],
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"read_method": {
+														"enum": [
+															"contact",
+															"contact_emv",
+															"contactless",
+															"contactless_emv",
+															"contactless_magstripe_mode",
+															"insert",
+															"keyed",
+															"magnetic_stripe_fallback",
+															"magnetic_stripe_track2",
+															"swipe"
+														],
+														"maxLength": 5000,
+														"type": "string"
+													}
+												},
+												"required": [
+													"emv_auth_data"
+												],
+												"title": "card_emv_auth_params",
+												"type": "object"
+											}
+										],
+										"description": "A token, like the ones returned by [Stripe.js](https://stripe.com/docs/stripe.js)."
+									},
+									"card_program": {
+										"maxLength": 500,
+										"type": "string"
+									},
+									"cross_border_classification": {
+										"enum": [
+											"export"
+										],
+										"maxLength": 5000,
+										"type": "string"
+									},
+									"currency": {
+										"description": "Three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html), in lowercase. Must be a [supported currency](https://stripe.com/docs/currencies).",
+										"type": "string"
+									},
+									"customer": {
+										"description": "The ID of an existing customer that will be charged in this request.",
+										"maxLength": 5000,
+										"type": "string"
+									},
+									"description": {
+										"description": "An arbitrary string which you can attach to a `Charge` object. It is displayed when in the web interface alongside the charge. Note that if you use Stripe to send automatic email receipts to your customers, your receipt emails will include the `description` of the charge(s) that they are describing.",
+										"maxLength": 40000,
+										"type": "string"
+									},
+									"destination": {
+										"anyOf": [{
+												"properties": {
+													"account": {
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"amount": {
+														"type": "integer"
+													}
+												},
+												"required": [
+													"account"
+												],
+												"title": "destination_specs",
+												"type": "object"
+											},
+											{
+												"type": "string"
+											}
+										],
+										"description": "If specified, the charge will be attributed to the destination account for tax reporting, and the funds from the charge will be transferred to the destination account. The ID of the resulting transfer will be returned in the response's `transfer` field. For details, see [Creating Destination Charges on Your Platform](/docs/connect/destination-charges)."
+									},
+									"device_id": {
+										"maxLength": 5000,
+										"type": "string"
+									},
+									"exchange_rate": {
+										"type": "number"
+									},
+									"expand": {
+										"description": "Specifies which fields in the response should be expanded.",
+										"items": {
+											"maxLength": 5000,
+											"type": "string"
+										},
+										"type": "array"
+									},
+									"external_id": {
+										"maxLength": 5000,
+										"type": "string"
+									},
+									"idempotency_key": {
+										"maxLength": 5000,
+										"type": "string"
+									},
+									"include": {
+										"items": {
+											"maxLength": 5000,
+											"type": "string"
+										},
+										"type": "array"
+									},
+									"invoice": {
+										"maxLength": 5000,
+										"type": "string"
+									},
+									"invoice_source": {
+										"maxLength": 5000,
+										"type": "string"
+									},
+									"ip": {
+										"maxLength": 5000,
+										"type": "string"
+									},
+									"level3": {
+										"properties": {
+											"customer_reference": {
+												"maxLength": 25,
+												"type": "string"
+											},
+											"line_items": {
+												"items": {
+													"properties": {
+														"discount_amount": {
+															"type": "integer"
+														},
+														"product_code": {
+															"maxLength": 12,
+															"type": "string"
+														},
+														"product_description": {
+															"maxLength": 26,
+															"type": "string"
+														},
+														"quantity": {
+															"type": "integer"
+														},
+														"tax_amount": {
+															"type": "integer"
+														},
+														"unit_cost": {
+															"type": "integer"
+														}
+													},
+													"required": [
+														"product_code",
+														"product_description"
+													],
+													"title": "line_item",
+													"type": "object"
+												},
+												"type": "array"
+											},
+											"merchant_reference": {
+												"maxLength": 25,
+												"type": "string"
+											},
+											"shipping_address_zip": {
+												"type": "string"
+											},
+											"shipping_amount": {
+												"type": "integer"
+											},
+											"shipping_from_zip": {
+												"type": "string"
+											}
+										},
+										"required": [
+											"line_items",
+											"merchant_reference"
+										],
+										"title": "level3",
+										"type": "object"
+									},
+									"metadata": {
+										"description": "Set of key-value pairs that you can attach to an object. This can be useful for storing additional information about the object in a structured format.",
+										"type": "object"
+									},
+									"on_behalf_of": {
+										"description": "The Stripe account ID for which these funds are intended. Automatically set if you use the `destination` parameter. For details, see [Creating Separate Charges and Transfers](/docs/connect/charges-transfers#on-behalf-of).",
+										"maxLength": 5000,
+										"type": "string"
+									},
+									"order": {
+										"maxLength": 5000,
+										"type": "string"
+									},
+									"payment_method": {
+										"maxLength": 5000,
+										"type": "string"
+									},
+									"payment_user_agent": {
+										"maxLength": 5000,
+										"type": "string"
+									},
+									"receipt_email": {
+										"description": "The email address to which this charge's [receipt](/docs/dashboard/receipts) will be sent. The receipt will not be sent until the charge is paid, and no receipts will be sent for test mode charges. If this charge is for a customer, the email address specified here will override the customer's email address. If `receipt_email` is specified for a charge in live mode, a receipt will be sent regardless of your [email settings](https://dashboard.stripe.com/account/emails).",
+										"type": "string"
+									},
+									"recurring": {
+										"type": "boolean"
+									},
+									"referrer": {
+										"maxLength": 40000,
+										"type": "string"
+									},
+									"shipping": {
+										"description": "Shipping information for the charge. Helps prevent fraud on charges for physical goods.",
+										"properties": {
+											"address": {
+												"properties": {
+													"city": {
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"country": {
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"line1": {
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"line2": {
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"postal_code": {
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"state": {
+														"maxLength": 5000,
+														"type": "string"
+													}
+												},
+												"required": [
+													"line1"
+												],
+												"title": "address",
+												"type": "object"
+											},
+											"carrier": {
+												"maxLength": 5000,
+												"type": "string"
+											},
+											"name": {
+												"maxLength": 5000,
+												"type": "string"
+											},
+											"phone": {
+												"maxLength": 5000,
+												"type": "string"
+											},
+											"tracking_number": {
+												"maxLength": 5000,
+												"type": "string"
+											}
+										},
+										"required": [
+											"address",
+											"name"
+										],
+										"title": "shipping",
+										"type": "object"
+									},
+									"source": {
+										"anyOf": [{
+												"type": "object"
+											},
+											{
+												"maxLength": 5000,
+												"type": "string"
+											},
+											{
+												"properties": {
+													"emv_auth_data": {
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"encrypted_pin": {
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"encrypted_pin_key_id": {
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"object": {
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"processing_method": {
+														"enum": [
+															"quick_chip",
+															"traditional"
+														],
+														"maxLength": 5000,
+														"type": "string"
+													},
+													"read_method": {
+														"enum": [
+															"contact",
+															"contact_emv",
+															"contactless",
+															"contactless_emv",
+															"contactless_magstripe_mode",
+															"insert",
+															"keyed",
+															"magnetic_stripe_fallback",
+															"magnetic_stripe_track2",
+															"swipe"
+														],
+														"maxLength": 5000,
+														"type": "string"
+													}
+												},
+												"required": [
+													"emv_auth_data"
+												],
+												"title": "card_emv_auth_params",
+												"type": "object"
+											}
+										],
+										"description": "A payment source to be charged. This can be the ID of a [card](/docs/api#cards) (i.e., credit or debit card), a [bank account](/docs/api#bank_accounts), a [source](/docs/api#sources), a [token](/docs/api#tokens), or a [connected account](/docs/connect/account-debits#charging-a-connected-account). For certain sources---namely, [cards](/docs/api#cards), [bank accounts](/docs/api#bank_accounts), and attached [sources](/docs/api#sources)---you must also pass the ID of the associated customer."
+									},
+									"statement_address": {
+										"properties": {
+											"city": {
+												"maxLength": 5000,
+												"type": "string"
+											},
+											"line1": {
+												"maxLength": 5000,
+												"type": "string"
+											},
+											"line2": {
+												"maxLength": 5000,
+												"type": "string"
+											},
+											"postal_code": {
+												"maxLength": 5000,
+												"type": "string"
+											},
+											"state": {
+												"maxLength": 5000,
+												"type": "string"
+											}
+										},
+										"required": [
+											"city",
+											"line1",
+											"postal_code",
+											"state"
+										],
+										"title": "charge_address",
+										"type": "object"
+									},
+									"statement_descriptor": {
+										"anyOf": [{
+												"maxLength": 22,
+												"type": "string"
+											},
+											{
+												"maxLength": 22,
+												"type": "string",
+												"x-stripeBypassValidation": true
+											}
+										],
+										"description": "An arbitrary string to be displayed on your customer's credit card statement. This can be up to _22 characters_. As an example, if your website is `RunClub` and the item you're charging for is a race ticket, you might want to specify a `statement_descriptor` of `RunClub 5K race ticket`. The statement description must contain at least one letter, must not contain `<>\"'` characters, and will appear on your customer's statement in capital letters. Non-ASCII characters are automatically stripped. While most banks and card issuers display this information consistently, some might display it incorrectly or not at all."
+									},
+									"transfer_group": {
+										"description": "A string that identifies this transaction as part of a group. For details, see [Grouping transactions](/docs/connect/charges-transfers#grouping-transactions).",
+										"type": "string"
+									},
+									"uncaptured": {
+										"type": "boolean"
+									},
+									"user_agent": {
+										"maxLength": 5000,
+										"type": "string"
+									}
+								},
+								"type": "object"
+							}
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"201": {
+						"description": "Null response"
+					},
+					"default": {
+						"description": "unexpected error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			},
+			"servers": [
+				{
+					"url": "http://petstore2.swagger.io/v2"	
+				}
+			],
+			"parameters":[{
+				"name": "limit",
+				"in": "query",
+				"description": "path level query param",
+				"required": false,
+				"schema": {
+					"type": "string"
+				}
+			}]
+		},
+		"/pet/{petId}": {
+			"get": {
+				"operationId": "showPetById",
+				"tags": [
+					"pets"
+				],
+				"parameters": [
+					{
+						"name": "petId",
+						"in": "path",
+						"required": true,
+						"description": "The id of the pet to retrieve",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Expected response to a valid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Pets"
+								}
+							}
+						}
+					},
+					"default": {
+						"description": "unexpected error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
+				"summary": "Info for a specific pet",
+				"operationId": "showPetById",
+				"tags": [
+					"pets"
+				],
+				"parameters": [
+					{
+						"name": "petId",
+						"in": "path",
+						"required": true,
+						"description": "The id of the pet to retrieve",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"$ref":"#/components/responses/response2"
+					},
+					"default": {
+						"description": "unexpected error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"Pet": {
+				"required": [
+					"id",
+					"name"
+				],
+				"properties": {
+					"id": {
+						"type": "integer",
+						"format": "int64"
+					},
+					"name": {
+						"type": "string"
+					},
+					"tag": {
+						"type": "string"
+					}
+				}
+			},
+			"Pets": {
+				"type": "array",
+				"items": {
+					"$ref": "#/components/schemas/Pet"
+				}
+			},
+			"Error": {
+				"required": [
+					"code",
+					"message"
+				],
+				"properties": {
+					"code": {
+						"type": "integer",
+						"format": "int32"
+					},
+					"message": {
+						"type": "string"
+					}
+				}
+			}
+		},
+		"responses": {
+			"response1":{
+				"description": "Expected response to a valid request",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Pets"
+						}
+					}
+				}
+			},
+			"response2":{
+				"$ref": "#/components/responses/response1"
+			}
+		},
+		"requestBodies": {
+
+		},
+		"securitySchemes": {
+			"api_key": {
+                "type": "apiKey",
+                "name": "api_key",
+                "in": "header"
+            }
+		}
+	},
+	"security":[{
+		"api_key": []
+	}]
+}
