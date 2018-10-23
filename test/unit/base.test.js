@@ -316,7 +316,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
           let pmParam = Utils.convertToPmQueryParameters(param);
           expect(pmParam[0].key).to.equal(param.name);
           expect(pmParam[0].description).to.equal(param.description);
-          expect(pmParam[0].value).to.equal('<integer-int64>');
+          expect(pmParam[0].value).to.equal('<long>');
           done();
         });
         it('explode:false} to pm param', function (done) {
@@ -455,7 +455,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
           expect(pmParam[1].key).to.equal('name');
           expect(pmParam[0].description).to.equal(param.description);
           expect(pmParam[1].description).to.equal(param.description);
-          expect(pmParam[0].value).to.equal('<integer-int64>');
+          expect(pmParam[0].value).to.equal('<long>');
           expect(pmParam[1].value).to.equal('<string>');
           done();
         });
@@ -583,7 +583,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
         expect(pmParam[1].key).to.equal(param.name + '[name]');
         expect(pmParam[0].description).to.equal(param.description);
         expect(pmParam[1].description).to.equal(param.description);
-        expect(pmParam[0].value).to.equal('<integer-int64>');
+        expect(pmParam[0].value).to.equal('<long>');
         expect(pmParam[1].value).to.equal('<string>');
         done();
       });
@@ -681,7 +681,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
         Utils.options.schemaFaker = true;
         result = Utils.convertToPmBody(requestBody);
         resultBody = JSON.parse(result.body.raw);
-        expect(resultBody.id).to.equal('<integer-int64>');
+        expect(resultBody.id).to.equal('<long>');
         expect(resultBody.name).to.equal('<string>');
         expect(result.contentHeader).to.deep.include({ key: 'Content-Type', value: 'application/json' });
         done();
@@ -851,7 +851,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
           pmResponseBody;
         Utils.options.schemaFaker = true;
         pmResponseBody = JSON.parse(Utils.convertToPmResponseBody(contentObj));
-        expect(pmResponseBody.id).to.equal('<integer-int64>');
+        expect(pmResponseBody.id).to.equal('<long>');
         expect(pmResponseBody.name).to.equal('<string>');
       });
       it('with Content-Type text/plain', function() {
@@ -934,7 +934,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
         'key': 'Content-Type',
         'value': 'application/json'
       });
-      expect(responseBody.id).to.equal('<integer-int64>');
+      expect(responseBody.id).to.equal('<long>');
       expect(responseBody.name).to.equal('<string>');
       done();
     });
@@ -991,7 +991,7 @@ describe('DEREF FUNCTION TESTS ', function() {
       output = deref.resolveRefs(schema, components);
     expect(output).to.deep.include({ type: 'object',
       required: ['id'],
-      properties: { id: { default: '<integer-int64>', type: 'string' } } });
+      properties: { id: { default: '<long>', type: 'string' } } });
     done();
   });
 });
