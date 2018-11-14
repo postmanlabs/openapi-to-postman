@@ -3,7 +3,7 @@ var expect = require('chai').expect,
   Utils = require('../../lib/util.js'),
   deref = require('../../lib/deref.js'),
   fs = require('fs'),
-  // sdk = require('postman-collection'),
+  openApiErr = require('../../lib/error.js'),
   path = require('path'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
   INVALID_OPENAPI_PATH = '../data/invalid_openapi';
@@ -11,38 +11,67 @@ var expect = require('chai').expect,
 /* Utility function Unit tests */
 describe('UTILITY FUNCTION TESTS ', function () {
   describe('safeSchemaFaker Function ', function() {
-    var schema = {
-        anyOf: [
-          {
+    it('should return result supports json-schema', function(done) {
+      var schema = {
+          anyOf: [{
             '$ref': '#/components/schemas/schema1'
           },
           {
             '$ref': '#/components/schemas/schema2'
+          }]
+        },
+        components = {
+          schemas: {
+            schema1: {
+              anyOf: [{
+                '$ref': '#/components/schemas/schema3'
+              }]
+            },
+            schema2: {
+              type: 'string'
+            },
+            schema3: {
+              $ref: '#/components/schemas/schema2'
+            }
           }
-        ]
-      },
-      components = {
-        schemas: {
-          schema1: {
-            anyOf: [
-              {
+        };
+
+      expect(Utils.safeSchemaFaker(schema, components)).to.equal('<string>');
+      done();
+    });
+
+    it('should throw error ref not found', function(done) {
+      var schema = {
+          anyOf: [{
+            '$ref': '#/components/schemas/schema1'
+          },
+          {
+            '$ref': '#/components/schemas/schema2'
+          }]
+        },
+        components = {
+          schemas: {
+            schema1: {
+              anyOf: [{
                 '$ref': '#/components/schemas/schema4'
               },
               {
                 '$ref': '#/components'
               }
-            ]
-          },
-          schema2: {
-            type: 'string'
-          },
-          schema4: {
-            $ref: '#/components/schem2'
+              ]
+            },
+            schema2: {
+              type: 'string'
+            },
+            schema4: {
+              $ref: '#/components/schem2'
+            }
           }
-        }
-      };
-    it('should return result supports json-schema', function(done) {
-      Utils.safeSchemaFaker(schema, components);
+        };
+
+      expect(function() {
+        Utils.safeSchemaFaker(schema, components);
+      }).to.throw(openApiErr, 'ref #/components/schem2 not found.');
       done();
     });
   });
@@ -1018,7 +1047,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
     it('Should generate collection conforming to schema for and fail if not valid ' +
-      specPath, function(done) {
+      specPath1, function(done) {
       Converter.convert({ type: 'file', data: specPath1 }, { requestName: 'url' }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
@@ -1037,9 +1066,10 @@ describe('CONVERT FUNCTION TESTS ', function() {
 
     it('for invalid request name, converter should throw an error', function(done) {
       var openapi = fs.readFileSync(specPath, 'utf8');
-      Converter.convert({ type: 'string', data: openapi }, { requestName: 'uKnown' }, (err) => {
-        expect(err.toString()).to.equal(
-          'Error: requestName (uKnown) in options is invalid or property does not exist in pets');
+      Converter.convert({ type: 'string', data: openapi }, { requestName: 'uKnown' }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.reason).to.equal(
+          'requestName (uKnown) in options is invalid or property does not exist in pets');
         done();
       });
     });
