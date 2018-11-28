@@ -106,7 +106,6 @@
     "json-schema-faker": "0.5.0-rc15",
     "jsonschema": "1.2.2",
     "lodash": "4.17.5",
-    "node-uuid": "1.4.1",
     "package.json": "2.0.1",
     "path": "0.12.7",
     "postman-collection": "3.3.0"
