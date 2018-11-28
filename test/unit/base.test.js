@@ -986,6 +986,14 @@ describe('UTILITY FUNCTION TESTS ', function () {
       done();
     });
   });
+
+  describe('setPathVariablesInUrl function', function() {
+    it('should convert a url with scheme and path variables', function(done) {
+      var convertedUrl = Utils.setPathVariablesInUrl('{scheme}://developer.uspto.gov/{path0}/segment/{path1}');
+      expect(convertedUrl).to.equal('{{scheme}}://developer.uspto.gov/:path0/segment/:path1');
+      done();
+    });
+  });
 });
 describe('DEREF FUNCTION TESTS ', function() {
   it('resolveRefs Function should return schema with resolved references.', function(done) {
@@ -1123,7 +1131,7 @@ describe('INTERFACE FUNCTION TESTS ', function () {
 
     sampleSpecs.map((sample) => {
       var specPath = path.join(__dirname, pathPrefix, sample);
-      if (specPath.endsWith('stripe_openapi.json') || specPath.endsWith('swagger-with-path.yaml')) {
+      if (specPath.endsWith('stripe_openapi.json') || specPath.endsWith('swagger-with-path.yaml') || true) {
         it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
           // var openapi = fs.readFileSync(specPath, 'utf8');
           var result = Converter.validate({ type: 'file', data: specPath });
@@ -1137,7 +1145,7 @@ describe('INTERFACE FUNCTION TESTS ', function () {
               expect(conversionResult.output[0].type).to.equal('collection');
               expect(conversionResult.output[0].data).to.have.property('info');
               expect(conversionResult.output[0].data).to.have.property('item');
-
+              console.log(conversionResult.output[0].data);
               done();
             });
         });
