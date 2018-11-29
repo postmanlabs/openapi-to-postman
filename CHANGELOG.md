@@ -1,5 +1,8 @@
 # OpenAPI-Postman Changelog
 
+#### v0.0.4 (November 29, 2018)
+* Handling nested schemas, correct handling for oneOf/anyOf
+
 #### v0.0.3 (November 29, 2018)
 * Prefer examples to schemas while generating example response body
 * Correct handling for scheme variables in the URL
