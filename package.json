@@ -1,6 +1,6 @@
 {
   "name": "@postman/openapi-to-postmanv2",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Convert a given OpenAPI specification to Postman Collection v2.0",
   "com_postman_plugin": {
     "plugin_type": "importer",
