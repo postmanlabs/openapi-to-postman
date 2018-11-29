@@ -1131,25 +1131,23 @@ describe('INTERFACE FUNCTION TESTS ', function () {
 
     sampleSpecs.map((sample) => {
       var specPath = path.join(__dirname, pathPrefix, sample);
-      if (specPath.endsWith('stripe_openapi.json') || specPath.endsWith('swagger-with-path.yaml') || true) {
-        it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
-          // var openapi = fs.readFileSync(specPath, 'utf8');
-          var result = Converter.validate({ type: 'file', data: specPath });
-          expect(result.result).to.equal(true);
-          Converter.convert({ type: 'file', data: specPath },
-            { requestName: 'operationId' }, (err, conversionResult) => {
-              expect(err).to.be.null;
+      it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
+        // var openapi = fs.readFileSync(specPath, 'utf8');
+        var result = Converter.validate({ type: 'file', data: specPath });
+        expect(result.result).to.equal(true);
+        Converter.convert({ type: 'file', data: specPath },
+          {}, (err, conversionResult) => {
+            expect(err).to.be.null;
 
-              expect(conversionResult.result).to.equal(true);
-              expect(conversionResult.output.length).to.equal(1);
-              expect(conversionResult.output[0].type).to.equal('collection');
-              expect(conversionResult.output[0].data).to.have.property('info');
-              expect(conversionResult.output[0].data).to.have.property('item');
-              console.log(conversionResult.output[0].data);
-              done();
-            });
-        });
-      }
+            expect(conversionResult.result).to.equal(true);
+            expect(conversionResult.output.length).to.equal(1);
+            expect(conversionResult.output[0].type).to.equal('collection');
+            expect(conversionResult.output[0].data).to.have.property('info');
+            expect(conversionResult.output[0].data).to.have.property('item');
+
+            done();
+          });
+      });
     });
   });
 
