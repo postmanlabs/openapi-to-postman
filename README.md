@@ -187,6 +187,7 @@ $ openapi2postmanv2 --test
 
 
 >`option : 'schemaFaker'(boolean) whether to use json-schema-faker for schema conversion`
+>`option : 'requestNameSource'(string) The strategy to use to generate request names. url: use the request's URL as the name, fallback: Use the summary/operationId/URL (in that order) Default: fallback`
 
 ### Header/Path param conversion example
 

@@ -1056,7 +1056,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     });
     it('Should generate collection conforming to schema for and fail if not valid ' +
       specPath1, function(done) {
-      Converter.convert({ type: 'file', data: specPath1 }, { requestName: 'url' }, (err, conversionResult) => {
+      Converter.convert({ type: 'file', data: specPath1 }, { requestNameSource: 'url' }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output.length).to.equal(1);
@@ -1068,16 +1068,16 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
   });
-  describe('for invalid requestName option', function() {
+  describe('for invalid requestNameSource option', function() {
     var pathPrefix = VALID_OPENAPI_PATH + '/test1.json',
       specPath = path.join(__dirname, pathPrefix);
 
     it('for invalid request name, converter should throw an error', function(done) {
       var openapi = fs.readFileSync(specPath, 'utf8');
-      Converter.convert({ type: 'string', data: openapi }, { requestName: 'uKnown' }, (err, conversionResult) => {
+      Converter.convert({ type: 'string', data: openapi }, { requestNameSource: 'uKnown' }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.reason).to.equal(
-          'requestName (uKnown) in options is invalid or property does not exist in pets');
+          'requestNameSource (uKnown) in options is invalid or property does not exist in pets');
         done();
       });
     });
