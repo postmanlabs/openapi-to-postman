@@ -71,7 +71,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
 
       expect(function() {
         Utils.safeSchemaFaker(schema, components);
-      }).to.throw(openApiErr, 'ref #/components/schem2 not found.');
+      }).to.throw(openApiErr, 'Invalid schema reference: #/components/schem2');
       done();
     });
   });
