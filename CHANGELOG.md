@@ -1,5 +1,10 @@
 # OpenAPI-Postman Changelog
 
+#### v0.0.5 (November 30, 2018)
+* Populating the original request in generated example responses
+* Infer the response content-type header from the response body
+* Generating more human-readable folder/request names from snake_case/camelCase
+
 #### v0.0.4 (November 29, 2018)
 * Handling nested schemas, correct handling for oneOf/anyOf
 
