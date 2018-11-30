@@ -853,7 +853,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
       it('with undefined ContentObj', function() {
         var contentObj,
           pmResponseBody;
-        pmResponseBody = Utils.convertToPmResponseBody(contentObj);
+        pmResponseBody = Utils.convertToPmResponseBody(contentObj).responseBody;
         expect(pmResponseBody).to.equal('');
       });
       it('with Content-Type application/json', function() {
@@ -879,7 +879,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
           },
           pmResponseBody;
         Utils.options.schemaFaker = true;
-        pmResponseBody = JSON.parse(Utils.convertToPmResponseBody(contentObj));
+        pmResponseBody = JSON.parse(Utils.convertToPmResponseBody(contentObj).responseBody);
         expect(pmResponseBody.id).to.equal('<long>');
         expect(pmResponseBody.name).to.equal('<string>');
       });
@@ -893,7 +893,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
           },
           pmResponseBody;
         Utils.options.schemaFaker = true;
-        pmResponseBody = Utils.convertToPmResponseBody(contentObj);
+        pmResponseBody = Utils.convertToPmResponseBody(contentObj).responseBody;
         expect(typeof pmResponseBody).to.equal('string');
       });
       it('with Content-Type application/xml', function() {
@@ -909,7 +909,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
           },
           pmResponseBody;
         Utils.options.schemaFaker = true;
-        pmResponseBody = Utils.convertToPmResponseBody(contentObj);
+        pmResponseBody = Utils.convertToPmResponseBody(contentObj).responseBody;
         expect(typeof pmResponseBody).to.equal('string');
       });
       it('with Content-Type application/javascript', function() {
@@ -919,7 +919,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
           },
           pmResponseBody;
         Utils.options.schemaFaker = true;
-        pmResponseBody = Utils.convertToPmResponseBody(contentObj);
+        pmResponseBody = Utils.convertToPmResponseBody(contentObj).responseBody;
         expect(typeof pmResponseBody).to.equal('string');
       });
       // things remaining application/xml, application/javascript
