@@ -102,9 +102,6 @@ describe('UTILITY FUNCTION TESTS ', function () {
                 ],
                 'parameters': [
                   {
-                    '$ref': '#/components/parameters/queryparam1'
-                  },
-                  {
                     'name': 'variable',
                     'in': 'header',
                     'description': 'random variable',
