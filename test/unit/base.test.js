@@ -1,4 +1,5 @@
 var expect = require('chai').expect,
+  _ = require('lodash'),
   Converter = require('../../index.js'),
   Utils = require('../../lib/util.js'),
   deref = require('../../lib/deref.js'),
@@ -673,6 +674,21 @@ describe('UTILITY FUNCTION TESTS ', function () {
     });
   });
 
+  describe('insertSpacesInName function', function() {
+    it('should insert spaces in snake/camelCase strings correctly', function (done) {
+      var stringMaps = {
+        'myNameIsRed': 'my Name Is Red',
+        'my_nameIs_red': 'my name Is red',
+        'my_name__is_red': 'my name is red',
+        'NASAMission': 'NASA Mission'
+      };
+      _.forOwn(stringMaps, (value, key) => {
+        expect(Utils.insertSpacesInName(key)).to.equal(value);
+      });
+      done();
+    });
+  });
+
   describe('convertToPmBody function', function() {
     describe('should convert requestbody of media type', function() {
       it(' application/json', function(done) {
@@ -984,9 +1000,9 @@ describe('UTILITY FUNCTION TESTS ', function () {
     });
   });
 
-  describe('setPathVariablesInUrl function', function() {
+  describe('fixPathVariablesInUrl function', function() {
     it('should convert a url with scheme and path variables', function(done) {
-      var convertedUrl = Utils.setPathVariablesInUrl('{scheme}://developer.uspto.gov/{path0}/segment/{path1}');
+      var convertedUrl = Utils.fixPathVariablesInUrl('{scheme}://developer.uspto.gov/{path0}/segment/{path1}');
       expect(convertedUrl).to.equal('{{scheme}}://developer.uspto.gov/:path0/segment/:path1');
       done();
     });
