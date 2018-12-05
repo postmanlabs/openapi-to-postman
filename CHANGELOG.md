@@ -1,5 +1,11 @@
 # OpenAPI-Postman Changelog
 
+#### v0.0.6 (December 5, 2018)
+* Handling schema.enum when no other schema is specified
+* Resolving parameter schemas while creating requests
+* Correctly setting path variable descriptions
+* Using a browserified json-schema-faker
+
 #### v0.0.5 (November 30, 2018)
 * Populating the original request in generated example responses
 * Infer the response content-type header from the response body

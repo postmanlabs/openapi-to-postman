@@ -38,6 +38,6 @@ fi
 
 # run test
 node --max-old-space-size=2048 node_modules/.bin/istanbul cover ${ISTANBUL_REPORT} \
-  --dir ./.coverage --print both _mocha -- \
+  --dir ./.coverage -x **/assets/** --print both _mocha -- \
   --reporter ${MOCHA_REPORTER} --reporter-options output=${XUNIT_FILE} \
   test/unit/*.test.js --recursive --prof --grep "$1";
