@@ -1,5 +1,8 @@
 # OpenAPI-Postman Changelog
 
+#### v0.0.7 (December 7, 2018)
+* Converting all console.error to console.warn
+
 #### v0.0.6 (December 5, 2018)
 * Handling schema.enum when no other schema is specified
 * Resolving parameter schemas while creating requests
