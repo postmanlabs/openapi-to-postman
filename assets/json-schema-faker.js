@@ -7579,7 +7579,7 @@
         } else if (process.traceDeprecation) {
           console.trace(msg);
         } else {
-          console.error(msg);
+          console.warn(msg);
         }
         warned = true;
       }
@@ -7601,7 +7601,7 @@
         var pid = process.pid;
         debugs[set] = function() {
           var msg = exports.format.apply(exports, arguments);
-          console.error('%s %d: %s', set, pid, msg);
+          console.warn('%s %d: %s', set, pid, msg);
         };
       } else {
         debugs[set] = function() {};
@@ -11105,8 +11105,8 @@ exports.kMaxLength = K_MAX_LENGTH
 Buffer.TYPED_ARRAY_SUPPORT = typedArraySupport()
 
 if (!Buffer.TYPED_ARRAY_SUPPORT && typeof console !== 'undefined' &&
-  typeof console.error === 'function') {
-console.error(
+  typeof console.warn === 'function') {
+console.warn(
   'This browser lacks typed array (Uint8Array) support which is required by ' +
   '`buffer` v5.x. Use `buffer` v4.x if you _dereq_ old browser support.'
 )
@@ -13551,7 +13551,7 @@ if (isObject(this._events[type]) && !this._events[type].warned) {
 
   if (m && m > 0 && this._events[type].length > m) {
     this._events[type].warned = true;
-    console.error('(node) warning: possible EventEmitter memory ' +
+    console.warn('(node) warning: possible EventEmitter memory ' +
                   'leak detected. %d listeners added. ' +
                   'Use emitter.setMaxListeners() to increase limit.',
                   this._events[type].length);
@@ -23260,7 +23260,7 @@ module.exports = deprecate;
 * will throw an Error when invoked.
 *
 * If `localStorage.traceDeprecation = true` is set, then deprecated functions
-* will invoke `console.trace()` instead of `console.error()`.
+* will invoke `console.trace()` instead of `console.warn()`.
 *
 * @param {Function} fn - the function to deprecate
 * @param {String} msg - the string to print to the console when `fn` is invoked
