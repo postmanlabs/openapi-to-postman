@@ -185,9 +185,10 @@ $ openapi2postmanv2 --test
 | request.url.params | parameter (`in = query`) | - | {"key": param.name, "value": [here](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#style-examples)}|
 | api_key in (query or header) | components.securitySchemes.api_key | - ||
 
-
->`option : 'schemaFaker'(boolean) whether to use json-schema-faker for schema conversion`
->`option : 'requestNameSource'(string) The strategy to use to generate request names. url: use the request's URL as the name, fallback: Use the summary/operationId/URL (in that order) Default: fallback`
+Usage Options:
+* `'schemaFaker'(boolean):  whether to use json-schema-faker for schema conversion`
+* `'requestNameSource'(string): The strategy to use to generate request names. url: use the request's URL as the name, fallback: Use the summary/operationId/URL (in that order) Default: fallback`
+* `'indentCharacter' (string): The character to use per level of indentation for JSON/XML data. Default: ' ' (space)`
 
 ### Header/Path param conversion example
 
