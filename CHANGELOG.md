@@ -1,5 +1,11 @@
 # OpenAPI-Postman Changelog
 
+#### v0.0.8 (December 12, 2018)
+* Refactoring, restucturing tests
+* Adding support for xml chemas
+* Enabling travis CI
+* Updating README, adding a license, moving to Github
+
 #### v0.0.7 (December 7, 2018)
 * Converting all console.error to console.warn
 
