@@ -6,6 +6,7 @@
 
 # OpenAPI 3.0 to Postman Collection v2.1.0 Converter
 
+[![Build Status](https://travis-ci.org/postmanlabs/openapi-to-postmanv2.svg?branch=master)](https://travis-ci.org/postmanlabs/openapi-to-postmanv2)
 
 #### Contents 
 
