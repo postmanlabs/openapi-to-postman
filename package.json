@@ -1,6 +1,6 @@
 {
-  "name": "@postman/openapi-to-postmanv2",
-  "version": "0.0.7",
+  "name": "openapi-to-postmanv2",
+  "version": "0.0.8",
   "description": "Convert a given OpenAPI specification to Postman Collection v2.0",
   "com_postman_plugin": {
     "plugin_type": "importer",
@@ -110,7 +110,7 @@
     "postman-collection": "3.3.0"
   },
   "author": "Postman",
-  "license": "MIT",
+  "license": "Apache",
   "devDependencies": {
     "eslint": "5.4.0",
     "eslint-plugin-jsdoc": "3.8.0",
