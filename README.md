@@ -86,8 +86,8 @@ The following points should be kept in mind while using the convert function:
 #### Example Usage
 
 ```javascript
-var fs = require('fs),
-  Converter = require('openapi3-to-postman),
+var fs = require('fs'),
+  Converter = require('openapi3-to-postman'),
   openapiData = fs.readFileSync('sample-spec.yaml');
 
 Converter.convert(openapiData, (status) => {
