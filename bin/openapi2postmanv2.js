@@ -92,6 +92,9 @@ else if (inputFile) {
     type: 'string',
     data: swaggerData
   }, {}, (err, status) => {
+    if (err) {
+      return console.error(err);
+    }
     if (!status.result) {
       console.log(status.reason);
       process.exit(0);
@@ -102,7 +105,7 @@ else if (inputFile) {
       writetoFile(prettyPrintFlag, file, status.output[0].data);
     }
     else {
-      console.log(status.collection);
+      console.log(status.output[0].data);
       process.exit(0);
     }
   });
