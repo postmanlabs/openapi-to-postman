@@ -75,7 +75,6 @@ describe('INTERFACE FUNCTION TESTS ', function () {
       });
     });
   });
-
   describe('The converter must identify invalid specifications', function () {
     var pathPrefix = INVALID_OPENAPI_PATH,
       sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix));
