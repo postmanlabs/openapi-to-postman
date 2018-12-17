@@ -457,6 +457,44 @@ describe('UTILITY FUNCTION TESTS ', function () {
     });
   });
 
+  describe('getRefObject', function() {
+    it('Should convert schemas where compnents have refs to other components', function (done) {
+      Utils.components = {
+        'responses': {
+          'TooManyRequests': {
+            'description': '`Too Many Requests`\n',
+            'headers': {
+              'Retry-After': {
+                '$ref': '#/components/responses/InternalError/headers/Retry-After'
+              }
+            }
+          },
+          'InternalError': {
+            'description': '`Internal Error`\n',
+            'headers': {
+              'Retry-After': {
+                'description': 'Some description',
+                'schema': {
+                  'oneOf': [
+                    {
+                      'type': 'string',
+                      'description': 'A date'
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      };
+      // deref compnents more than 2 levels deep
+      var resolvedObject = Utils.getRefObject('#/components/responses/InternalError/headers/Retry-After');
+      expect(resolvedObject.description).to.equal('Some description');
+      expect(resolvedObject.schema.oneOf.length).to.equal(1);
+      done();
+    });
+  });
+
   describe('convertParamsWithStyle', function () {
     it('should work for string params', function() {
       var params = {
@@ -1303,7 +1341,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
   });
 
   describe('convertToPmResponse function', function() {
-    it('sholud convert response with content field', function(done) {
+    it('should convert response with content field', function(done) {
       var response = {
           'description': 'A list of pets.',
           'content': {
@@ -1359,6 +1397,50 @@ describe('UTILITY FUNCTION TESTS ', function () {
         'key': 'Content-Type',
         'value': 'text/plain'
       });
+      done();
+    });
+    it('should convert headers with refs', function(done) {
+      Utils.components = {
+        'responses': {
+          'TooManyRequests': {
+            'description': '`Too Many Requests`\n',
+            'headers': {
+              'Retry-After': {
+                '$ref': '#/components/responses/InternalError/headers/Retry-After'
+              }
+            }
+          },
+          'InternalError': {
+            'description': '`Internal Error`\n',
+            'headers': {
+              'Retry-After': {
+                'description': 'Some description',
+                'schema': {
+                  'oneOf': [
+                    {
+                      'type': 'string',
+                      'description': 'A date'
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      };
+      var response = {
+          'description': '`Too Many Requests`\\n',
+          'headers': {
+            'Retry-After': {
+              '$ref': '#/components/responses/InternalError/headers/Retry-After'
+            }
+          }
+        },
+        code = '200',
+        pmResponse = Utils.convertToPmResponse(response, code, null);
+
+      expect(pmResponse.headers.members[0].key).to.equal('Retry-After');
+      expect(pmResponse.headers.members[0].description).to.equal('Some description');
       done();
     });
   });
