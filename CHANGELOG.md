@@ -1,5 +1,14 @@
 # OpenAPI-Postman Changelog
 
+#### v0.0.9 (December 17, 2018)
+* Removing Node v4/5 from CI
+* Ignoring falsy responses in the OAS spec
+* Correct error handling/output logging in the executable
+* Showing detailed error messages for malformed JSON/YAML
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/5 - headers with refs to deeply nested components should work
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/4 - the cwd (not __dirname) is used to look for files specified by -s
+* Adding tests for the executable
+
 #### v0.0.8 (December 12, 2018)
 * Refactoring, restucturing tests
 * Adding support for xml chemas
