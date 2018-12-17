@@ -1,0 +1,33 @@
+openapi: 3.0.0
+info:
+  title: 'multi-component-failure'
+  description: 'multi-component-failure'
+  version: '0.1'
+
+# Basic authentication
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+
+# Describe your paths here
+paths:
+  /v1:
+    get:
+      summary: Sample summary
+      description: Sample description
+      operationId: sampleOperation
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        status:
+          type: string

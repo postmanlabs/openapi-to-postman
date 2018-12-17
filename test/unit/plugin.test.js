@@ -4,7 +4,7 @@ var path = '../../',
   packageJson = require(path + '/package.json');
 
 /* global describe, it */
-describe(packageJson.name, function() {
+describe('Plugin ' + packageJson.name, function() {
   var sampleInput = packageJson.com_postman_plugin.sample_input;
 
   it('should contain all com_postman_plugin attributes', function (done) {
