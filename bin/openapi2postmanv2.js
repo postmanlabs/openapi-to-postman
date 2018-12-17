@@ -89,6 +89,9 @@ if (testFlag) {
 else if (inputFile) {
   inputFile = path.resolve(inputFile);
   console.log('Input file: ', inputFile); // eslint-disable-line no-console
+  // The last commit removed __dirname while reading inputFile
+  // this will fix https://github.com/postmanlabs/openapi-to-postman/issues/4
+  // inputFile should be read from the cwd, not the path of the executable
   swaggerData = fs.readFileSync(inputFile, 'utf8');
   Converter.convert({
     type: 'string',
