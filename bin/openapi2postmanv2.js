@@ -19,6 +19,7 @@ program
 
 
 program.on('--help', function() {
+  /* eslint-disable */
   console.log('    Converts a given OPENAPI specification to POSTMAN Collections v2.1.0   ');
   console.log(' ');
   console.log('    Examples:');
@@ -31,6 +32,7 @@ program.on('--help', function() {
   console.log('                Read spec.yaml or spec.json and print the prettified output to the Console');
   console.log('                  ./openapi2postmanv2 -s spec.yaml -p');
   console.log(' ');
+  /* eslint-enable */
 });
 
 program.parse(process.argv);
@@ -72,21 +74,21 @@ if (testFlag) {
     data: swaggerInput
   }, (err, status) => {
     if (!status.result) {
-      console.log(status.reason);
+      console.log(status.reason); // eslint-disable-line no-console
     }
     else if (outputFile) {
       let file = path.resolve(outputFile);
       writetoFile(prettyPrintFlag, file, status.output[0].data);
     }
     else {
-      console.log(status.collection);
+      console.log(status.collection); // eslint-disable-line no-console
       process.exit(0);
     }
   });
 }
 else if (inputFile) {
-  inputFile = path.resolve(__dirname, inputFile);
-  console.log('Input file: ', inputFile);
+  inputFile = path.resolve(inputFile);
+  console.log('Input file: ', inputFile); // eslint-disable-line no-console
   swaggerData = fs.readFileSync(inputFile, 'utf8');
   Converter.convert({
     type: 'string',
@@ -96,16 +98,16 @@ else if (inputFile) {
       return console.error(err);
     }
     if (!status.result) {
-      console.log(status.reason);
+      console.log(status.reason); // eslint-disable-line no-console
       process.exit(0);
     }
     else if (outputFile) {
       let file = path.resolve(outputFile);
-      console.log('Writing to file: ', prettyPrintFlag, file, status);
+      console.log('Writing to file: ', prettyPrintFlag, file, status); // eslint-disable-line no-console
       writetoFile(prettyPrintFlag, file, status.output[0].data);
     }
     else {
-      console.log(status.output[0].data);
+      console.log(status.output[0].data); // eslint-disable-line no-console
       process.exit(0);
     }
   });
