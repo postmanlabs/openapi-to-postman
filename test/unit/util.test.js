@@ -1315,7 +1315,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
         pmResponseBody = Utils.convertToPmResponseBody(contentObj).responseBody;
         expect(pmResponseBody).to.equal(
           [
-            '<Person id="(string)">',
+            '<Person id="(integer)">',
             ' <sample:name xmlns:sample="http://example.com/schema/sample">(string)</sample:name>',
             ' <hobbies>',
             '  <hobbies>(string)</hobbies>',

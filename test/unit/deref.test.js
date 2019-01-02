@@ -34,7 +34,7 @@ describe('DEREF FUNCTION TESTS ', function() {
       output = deref.resolveRefs(schema, components);
     expect(output).to.deep.include({ type: 'object',
       required: ['id'],
-      properties: { id: { default: '<long>', type: 'string' } } });
+      properties: { id: { default: '<long>', type: 'integer' } } });
     done();
   });
 });
