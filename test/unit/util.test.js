@@ -455,6 +455,23 @@ describe('UTILITY FUNCTION TESTS ', function () {
       expect(pmHeader.value).to.equal('');
       done();
     });
+    it('Should convert strings without extra quotes', function (done) {
+      var header = {
+        name: 'Authorization',
+        in: 'header',
+        description: 'Authorization',
+        required: false,
+        schema: {
+          type: 'string',
+          default: 'Bearer'
+        }
+      };
+      Utils.options.schemaFaker = true;
+      let pmHeader = Utils.convertToPmHeader(header);
+      expect(pmHeader.key).to.equal('Authorization');
+      expect(pmHeader.value).to.equal('Bearer'); // not \"Bearer\"
+      done();
+    });
   });
 
   describe('getRefObject', function() {
