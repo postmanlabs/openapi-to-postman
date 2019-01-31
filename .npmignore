@@ -1,0 +1,8 @@
+.idea/*
+.vscode/*
+.coverage/*
+npm-debug.log
+npm-debug.log.*
+tempOutput.json
+.travis.yml
+valid_openapi_temp/*
