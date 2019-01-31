@@ -1,5 +1,11 @@
 # OpenAPI-Postman Changelog
 
+#### v0.0.10 (Jan 31, 2019)
+* Safe property access to empty content/authHelper objects
+* Setting postman_previewLanguage while setting responses
+* Not overriding non-string variable types during schema faking
+* Not doubly-stringifying string headers
+
 #### v0.0.9 (December 17, 2018)
 * Removing Node v4/5 from CI
 * Ignoring falsy responses in the OAS spec

@@ -455,6 +455,23 @@ describe('UTILITY FUNCTION TESTS ', function () {
       expect(pmHeader.value).to.equal('');
       done();
     });
+    it('Should convert strings without extra quotes', function (done) {
+      var header = {
+        name: 'Authorization',
+        in: 'header',
+        description: 'Authorization',
+        required: false,
+        schema: {
+          type: 'string',
+          default: 'Bearer'
+        }
+      };
+      Utils.options.schemaFaker = true;
+      let pmHeader = Utils.convertToPmHeader(header);
+      expect(pmHeader.key).to.equal('Authorization');
+      expect(pmHeader.value).to.equal('Bearer'); // not \"Bearer\"
+      done();
+    });
   });
 
   describe('getRefObject', function() {
@@ -1315,7 +1332,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
         pmResponseBody = Utils.convertToPmResponseBody(contentObj).responseBody;
         expect(pmResponseBody).to.equal(
           [
-            '<Person id="(string)">',
+            '<Person id="(integer)">',
             ' <sample:name xmlns:sample="http://example.com/schema/sample">(string)</sample:name>',
             ' <hobbies>',
             '  <hobbies>(string)</hobbies>',
@@ -1341,7 +1358,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
   });
 
   describe('convertToPmResponse function', function() {
-    it('should convert response with content field', function(done) {
+    it('should convert response with JSON content field', function(done) {
       var response = {
           'description': 'A list of pets.',
           'content': {
@@ -1373,12 +1390,52 @@ describe('UTILITY FUNCTION TESTS ', function () {
       responseBody = JSON.parse(pmResponse.body);
       expect(pmResponse.name).to.equal(response.description);
       expect(pmResponse.code).to.equal(200);
+      expect(pmResponse._postman_previewlanguage).to.equal('json');
       expect(pmResponse.header).to.deep.include({
         'key': 'Content-Type',
         'value': 'application/json'
       });
       expect(responseBody.id).to.equal('<long>');
       expect(responseBody.name).to.equal('<string>');
+      done();
+    });
+    it('should convert response with XML content field', function(done) {
+      var response = {
+          'description': 'A list of pets.',
+          'content': {
+            'application/xml': {
+              'schema': {
+                'type': 'object',
+                'required': [
+                  'id',
+                  'name'
+                ],
+                'properties': {
+                  id: {
+                    type: 'integer',
+                    format: 'int64'
+                  },
+                  name: {
+                    type: 'string'
+                  }
+                }
+              }
+            }
+          }
+        },
+        code = '20X',
+        pmResponse;
+
+      Utils.options.schemaFaker = true;
+      pmResponse = Utils.convertToPmResponse(response, code).toJSON();
+      expect(pmResponse.body).to.equal('<element>\n <id>(integer)</id>\n <name>(string)</name>\n</element>');
+      expect(pmResponse.name).to.equal(response.description);
+      expect(pmResponse.code).to.equal(200);
+      expect(pmResponse._postman_previewlanguage).to.equal('xml');
+      expect(pmResponse.header).to.deep.include({
+        'key': 'Content-Type',
+        'value': 'application/xml'
+      });
       done();
     });
     it('sholud convert response without content field', function(done) {
