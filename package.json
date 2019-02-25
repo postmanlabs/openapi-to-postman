@@ -105,8 +105,8 @@
     "js-yaml": "3.10.0",
     "jsonschema": "1.2.2",
     "lodash": "4.17.5",
-    "package.json": "2.0.1",
     "path": "0.12.7",
+    "pkg.json": "2.0.7",
     "postman-collection": "3.3.0"
   },
   "author": "Postman",
