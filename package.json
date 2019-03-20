@@ -99,14 +99,9 @@
     "openapi2postmanv2": "./bin/openapi2postmanv2.js"
   },
   "dependencies": {
-    "async": "2.6.0",
     "commander": "2.3.0",
-    "console-emoji": "0.0.2",
     "js-yaml": "3.10.0",
-    "jsonschema": "1.2.2",
     "lodash": "4.17.5",
-    "package.json": "2.0.1",
-    "path": "0.12.7",
     "postman-collection": "3.3.0"
   },
   "author": "Postman",
