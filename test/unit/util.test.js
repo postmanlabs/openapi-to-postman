@@ -1272,6 +1272,33 @@ describe('UTILITY FUNCTION TESTS ', function () {
         expect(pmResponseBody.id).to.equal('<long>');
         expect(pmResponseBody.name).to.equal('<string>');
       });
+      it('with Content-Type application/vnd.api+json', function() {
+        var contentObj = {
+            'application/vnd.api+json': {
+              'schema': {
+                'type': 'object',
+                'required': [
+                  'id',
+                  'name'
+                ],
+                'properties': {
+                  id: {
+                    type: 'integer',
+                    format: 'int64'
+                  },
+                  name: {
+                    type: 'string'
+                  }
+                }
+              }
+            }
+          },
+          pmResponseBody;
+        Utils.options.schemaFaker = true;
+        pmResponseBody = JSON.parse(Utils.convertToPmResponseBody(contentObj).responseBody);
+        expect(pmResponseBody.id).to.equal('<long>');
+        expect(pmResponseBody.name).to.equal('<string>');
+      });
       it('with Content-Type application/json and specified indentCharacter', function() {
         var contentObj = {
             'application/json': {
@@ -1352,6 +1379,32 @@ describe('UTILITY FUNCTION TESTS ', function () {
         Utils.options.schemaFaker = true;
         pmResponseBody = Utils.convertToPmResponseBody(contentObj).responseBody;
         expect(typeof pmResponseBody).to.equal('string');
+      });
+      it('with Content-Type unsupported', function() {
+        var contentObj = {
+            'application/vnd.api+json+unsupported': {
+              'schema': {
+                'type': 'object',
+                'required': [
+                  'id',
+                  'name'
+                ],
+                'properties': {
+                  id: {
+                    type: 'integer',
+                    format: 'int64'
+                  },
+                  name: {
+                    type: 'string'
+                  }
+                }
+              }
+            }
+          },
+          pmResponseBody;
+        Utils.options.schemaFaker = true;
+        pmResponseBody = Utils.convertToPmResponseBody(contentObj).responseBody;
+        expect(pmResponseBody).to.equal('');
       });
       // things remaining application/xml, application/javascript
     });
