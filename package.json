@@ -100,21 +100,21 @@
   },
   "dependencies": {
     "commander": "2.3.0",
-    "js-yaml": "3.10.0",
-    "lodash": "4.17.5",
-    "postman-collection": "3.3.0"
+    "js-yaml": "3.13.1",
+    "lodash": "4.17.11",
+    "postman-collection": "3.4.7"
   },
   "author": "Postman",
   "license": "Apache",
   "devDependencies": {
-    "eslint": "5.4.0",
+    "chai": "4.1.2",
+    "eslint": "^5.16.0",
     "eslint-plugin-jsdoc": "3.8.0",
     "eslint-plugin-mocha": "5.2.0",
     "eslint-plugin-security": "1.4.0",
     "expect.js": "0.3.1",
     "istanbul": "0.4.5",
-    "mocha": "5.2.0",
-    "chai": "4.1.2"
+    "mocha": "5.2.0"
   },
   "scripts": {
     "test": "./scripts/test.sh",
