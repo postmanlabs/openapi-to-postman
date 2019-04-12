@@ -67,32 +67,12 @@ function writetoFile(prettyPrintFlag, file, collection) {
   }
 }
 
-if (testFlag) {
-  swaggerInput = fs.readFileSync('../examples/sampleswagger.yaml', 'utf8');
-  Converter.convert({
-    type: 'string',
-    data: swaggerInput
-  }, (err, status) => {
-    if (!status.result) {
-      console.log(status.reason); // eslint-disable-line no-console
-    }
-    else if (outputFile) {
-      let file = path.resolve(outputFile);
-      writetoFile(prettyPrintFlag, file, status.output[0].data);
-    }
-    else {
-      console.log(status.collection); // eslint-disable-line no-console
-      process.exit(0);
-    }
-  });
-}
-else if (inputFile) {
-  inputFile = path.resolve(inputFile);
-  console.log('Input file: ', inputFile); // eslint-disable-line no-console
-  // The last commit removed __dirname while reading inputFile
-  // this will fix https://github.com/postmanlabs/openapi-to-postman/issues/4
-  // inputFile should be read from the cwd, not the path of the executable
-  swaggerData = fs.readFileSync(inputFile, 'utf8');
+/**
+ * Helper function for the CLI to convert swagger data input
+ * @param {String} swaggerData - swagger data used for conversion input
+ * @returns {void}
+ */
+function convert(swaggerData) {
   Converter.convert({
     type: 'string',
     data: swaggerData
@@ -114,6 +94,20 @@ else if (inputFile) {
       process.exit(0);
     }
   });
+}
+
+if (testFlag) {
+  swaggerData = fs.readFileSync('../examples/sample-swagger.yaml', 'utf8');
+  convert(swaggerData);
+}
+else if (inputFile) {
+  inputFile = path.resolve(inputFile);
+  console.log('Input file: ', inputFile); // eslint-disable-line no-console
+  // The last commit removed __dirname while reading inputFile
+  // this will fix https://github.com/postmanlabs/openapi-to-postman/issues/4
+  // inputFile should be read from the cwd, not the path of the executable
+  swaggerData = fs.readFileSync(inputFile, 'utf8');
+  convert(swaggerData);
 }
 else {
   program.emit('--help');
