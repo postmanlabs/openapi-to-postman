@@ -192,7 +192,7 @@ $ openapi2postmanv2 --test
 | *postman* | *openapi* | *options* | *examples* |
 | --- | --- | :---: | :--- |
 | collectionName | info.title | - |  |
-| descrition | info.description + info.contact | - |  |
+| description | info.description + info.contact | - |  |
 | collectionVariables| server.variables + pathVariables | - |  |
 | folderName | paths.path | - |  |
 | requestName | operationItem(method).operationId | default(operationId)-(`requestName`)enum['operationId','summary','url'] |  |
