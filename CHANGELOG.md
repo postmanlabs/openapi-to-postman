@@ -1,5 +1,7 @@
 # OpenAPI-Postman Changelog
 
+#### v0.0.12 (Apr 17, 2019)
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/36 - Property names with a . in the name are supported during schema faking
 
 #### v0.0.11 (Apr 17, 2019)
 * Fix for https://github.com/postmanlabs/openapi-to-postman/issues/47 - Accepting application/vnd.api+json headers as JSON
