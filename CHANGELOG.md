@@ -1,5 +1,12 @@
 # OpenAPI-Postman Changelog
 
+
+#### v0.0.11 (Apr 17, 2019)
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/47 - Accepting application/vnd.api+json headers as JSON
+* Removing unused dependencies
+* Fix CLI test commands (courtesy https://github.com/aerotog)
+* Fix README typos (courtesy https://github.com/T1l3 and https://github.com/evertharmeling)
+
 #### v0.0.10 (Jan 31, 2019)
 * Safe property access to empty content/authHelper objects
 * Setting postman_previewLanguage while setting responses
