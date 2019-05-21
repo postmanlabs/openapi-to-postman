@@ -420,7 +420,27 @@ describe('UTILITY FUNCTION TESTS ', function () {
         retValExamples = Utils.convertToPmBodyData(bodyWithExamples, 'application/json');
       expect(retValExamples.foo).to.equal(1);
       expect(retValExamples.bar).to.equal(2);
+    });
 
+    it('should work for examples with a $ref', function() {
+      Utils.options.schemaFaker = true;
+      Utils.components = {
+        'examples': {
+          'SampleExample': {
+            'summary': 'SampleExample',
+            'description': 'Sample example',
+            'value': 'Hello'
+          }
+        }
+      };
+
+      var bodyWithExamples = {
+          'example': {
+            '$ref': '#/components/examples/SampleExample/value'
+          }
+        },
+        retValExample = Utils.convertToPmBodyData(bodyWithExamples, 'application/json');
+      expect(retValExample).to.equal('Hello');
     });
   });
 
