@@ -1578,7 +1578,16 @@ describe('UTILITY FUNCTION TESTS ', function () {
   describe('fixPathVariablesInUrl function', function() {
     it('should convert a url with scheme and path variables', function(done) {
       var convertedUrl = Utils.fixPathVariablesInUrl('{scheme}://developer.uspto.gov/{path0}/segment/{path1}');
-      expect(convertedUrl).to.equal('{{scheme}}://developer.uspto.gov/:path0/segment/:path1');
+      expect(convertedUrl).to.equal('{{scheme}}://developer.uspto.gov/{{path0}}/segment/{{path1}}');
+
+      expect(Utils.fixPathVariablesInUrl('{{a}}')).to.equal('{{a}}');
+
+      expect(Utils.fixPathVariablesInUrl('{{a}}://{b}.com/{pathvar}/{morevar}'))
+        .to.equal('{{a}}://{{b}}.com/{{pathvar}}/{{morevar}}');
+
+      expect(Utils.fixPathVariablesInUrl('{protocol}://{host}:{port}/{contextpath}/{restapi}'))
+        .to.equal('{{protocol}}://{{host}}:{{port}}/{{contextpath}}/{{restapi}}');
+
       done();
     });
   });
