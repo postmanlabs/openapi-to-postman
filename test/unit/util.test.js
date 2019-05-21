@@ -706,6 +706,21 @@ describe('UTILITY FUNCTION TESTS ', function () {
       expect(pmParam[0].value).to.equal('');
       done();
     });
+    it('Should convert queryParam (number) to a query param with a string value', function (done) {
+      var param = {
+        name: 'X-Header-One',
+        in: 'query',
+        description: 'query param',
+        schema: {
+          type: 'integer',
+          default: 10
+        }
+      };
+      Utils.options.schemaFaker = true;
+      let pmParam = Utils.convertToPmQueryParameters(param);
+      expect(pmParam[0].value).to.equal('10'); // '10', not 10
+      done();
+    });
     describe('Should convert queryParam with schema {type:array, ', function() {
       describe('style:form, ', function() {
         it('explode:true} to pm param', function (done) {
