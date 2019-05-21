@@ -9,6 +9,9 @@ describe('DEREF FUNCTION TESTS ', function() {
       schemaWithDotInKey = {
         $ref: '#/components/schemas/schema.four'
       },
+      schemaWithCustomFormat = {
+        $ref: '#/components/schemas/schema3'
+      },
       components = {
         schemas: {
           schema1: {
@@ -43,11 +46,21 @@ describe('DEREF FUNCTION TESTS ', function() {
                 format: 'int64'
               }
             }
+          },
+          schema3: {
+            type: 'object',
+            properties: {
+              emailField: {
+                type: 'string',
+                format: 'email'
+              }
+            }
           }
         }
       },
       output = deref.resolveRefs(schema, components),
-      output_withdot = deref.resolveRefs(schemaWithDotInKey, components);
+      output_withdot = deref.resolveRefs(schemaWithDotInKey, components),
+      output_customFormat = deref.resolveRefs(schemaWithCustomFormat, components);
 
     expect(output).to.deep.include({ type: 'object',
       required: ['id'],
@@ -56,6 +69,10 @@ describe('DEREF FUNCTION TESTS ', function() {
     expect(output_withdot).to.deep.include({ type: 'object',
       required: ['id'],
       properties: { id: { default: '<long>', type: 'integer' } } });
+
+    expect(output_customFormat).to.deep.include({ type: 'object',
+      properties: { emailField: { default: '<email>', type: 'string' } } });
+
     done();
   });
 
