@@ -530,6 +530,28 @@ describe('UTILITY FUNCTION TESTS ', function () {
       expect(resolvedObject.schema.oneOf.length).to.equal(1);
       done();
     });
+
+    it('Should convert schemas with references to paths (using ~1 and ~0)', function (done) {
+      Utils.paths = {
+        '/category': {
+          get: {
+            summary: 'Summary',
+            parameters: [{
+              name: 'expand',
+              in: 'query',
+              description: 'Sample description',
+              schema: {
+                type: 'string'
+              }
+            }]
+          }
+        }
+      };
+      var resolvedObject = Utils.getRefObject('#/paths/~1category/get/parameters/0');
+      expect(resolvedObject.description).to.equal('Sample description');
+      expect(resolvedObject.name).to.equal('expand');
+      done();
+    });
   });
 
   describe('convertParamsWithStyle', function () {
