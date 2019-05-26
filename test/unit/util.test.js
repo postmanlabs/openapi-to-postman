@@ -303,17 +303,33 @@ describe('UTILITY FUNCTION TESTS ', function () {
                   }
                 }
               }
+            },
+            '/nonpet/': {
+              'get': {
+                'summary': 'List all pets',
+                'operationId': 'listPets'
+              },
+              'post': {
+                'tags': [
+                  'pets'
+                ]
+              }
             }
           }
         },
         output = Utils.generateTrieFromPaths(openapi),
         root = output.tree.root,
         collectionVariables = output.variables;
-      expect(root.children).to.have.key('pet');
+      expect(root.children).to.be.an('object').that.has.all.keys('pet', 'nonpet');
       expect(root.children.pet.requestCount).to.equal(3);
       expect(root.children.pet.requests.length).to.equal(2);
       expect(root.children.pet.children).to.have.key('{petId}');
       expect(root.children.pet.children['{petId}'].requestCount).to.equal(1);
+
+      // for paths with trailing slashes
+      expect(root.children.nonpet.children, 'Nonpet should have direct requests, not a child')
+        .to.not.have.any.keys('');
+      expect(root.children.nonpet.requestCount).to.equal(2);
       expect(collectionVariables).to.have.key('petUrl');
       done();
     });
