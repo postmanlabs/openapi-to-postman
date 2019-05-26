@@ -12,6 +12,18 @@ describe('DEREF FUNCTION TESTS ', function() {
       schemaWithCustomFormat = {
         $ref: '#/components/schemas/schema3'
       },
+      schemaWithAllOf = {
+        allOf: [{
+          $ref: '#/components/schemas/schema2'
+        },
+        {
+          properties: {
+            test_prop: {
+              type: 'string'
+            }
+          }
+        }]
+      },
       components = {
         schemas: {
           schema1: {
@@ -28,6 +40,7 @@ describe('DEREF FUNCTION TESTS ', function() {
             required: [
               'id'
             ],
+            description: 'Schema 2',
             properties: {
               id: {
                 type: 'integer',
@@ -60,7 +73,9 @@ describe('DEREF FUNCTION TESTS ', function() {
       },
       output = deref.resolveRefs(schema, components),
       output_withdot = deref.resolveRefs(schemaWithDotInKey, components),
-      output_customFormat = deref.resolveRefs(schemaWithCustomFormat, components);
+      output_customFormat = deref.resolveRefs(schemaWithCustomFormat, components),
+      output_withAllOf = deref.resolveRefs(schemaWithAllOf, components);
+
 
     expect(output).to.deep.include({ type: 'object',
       required: ['id'],
@@ -72,6 +87,15 @@ describe('DEREF FUNCTION TESTS ', function() {
 
     expect(output_customFormat).to.deep.include({ type: 'object',
       properties: { emailField: { default: '<email>', type: 'string' } } });
+
+    expect(output_withAllOf).to.deep.include({
+      type: 'object',
+      description: 'Schema 2',
+      properties: {
+        id: { default: '<long>', type: 'integer' },
+        test_prop: { default: '<string>', type: 'string' }
+      }
+    });
 
     done();
   });
