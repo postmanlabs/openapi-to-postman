@@ -1,5 +1,18 @@
 # OpenAPI-Postman Changelog
 
+#### v0.0.13 (May 29, 2019)
+* Fix for https://github.com/postmanlabs/postman-app-support/issues/6538 - handling references in request/response examples
+* Fix for https://github.com/postmanlabs/postman-app-support/issues/6500 - manually stringifying number types as a workaround for SDK issues
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/23 - custom schema formats are not ignored
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/18 - consistent parsing for URL variables
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/64 - array params don't cause a crash with schemaFaker disabled (courtesy https://github.com/brpeterman)
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/52 - allowing $refs to point to paths, not just components
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/27 - support for allOf-type schemas
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/45 - trailing slashes in the path don't create empty folders
+* Using a placeholder for servers.url in case the spec has a falsy value 
+* Support for x-postman-meta for including Postman auth in converted collections
+
+
 #### v0.0.12 (Apr 17, 2019)
 * Fix for https://github.com/postmanlabs/openapi-to-postman/issues/36 - Property names with a . in the name are supported during schema faking
 
