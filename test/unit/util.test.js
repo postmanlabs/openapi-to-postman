@@ -438,7 +438,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
       expect(retValExamples.bar).to.equal(2);
     });
 
-    it('should work for examples with a $ref', function() {
+    it('should work for examples with a $ref for non-json requests', function() {
       Utils.options.schemaFaker = true;
       Utils.components = {
         'examples': {
@@ -455,8 +455,29 @@ describe('UTILITY FUNCTION TESTS ', function () {
             '$ref': '#/components/examples/SampleExample/value'
           }
         },
-        retValExample = Utils.convertToPmBodyData(bodyWithExamples, 'application/json');
+        retValExample = Utils.convertToPmBodyData(bodyWithExamples, 'text/plain');
       expect(retValExample).to.equal('Hello');
+    });
+
+    it('should work for examples with a $ref for json requests', function() {
+      Utils.options.schemaFaker = true;
+      Utils.components = {
+        'examples': {
+          'SampleExample': {
+            'summary': 'SampleExample',
+            'description': 'Sample example',
+            'value': '{"name": "Example"}'
+          }
+        }
+      };
+
+      var bodyWithExamples = {
+          'example': {
+            '$ref': '#/components/examples/SampleExample/value'
+          }
+        },
+        retValExample = Utils.convertToPmBodyData(bodyWithExamples, 'application/json');
+      expect(retValExample.name).to.equal('Example');
     });
   });
 
