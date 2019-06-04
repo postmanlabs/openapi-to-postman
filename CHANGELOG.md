@@ -1,5 +1,8 @@
 # OpenAPI-Postman Changelog
 
+#### v0.0.14 (June 4, 2019)
+* Fix for https://github.com/postmanlabs/postman-app-support/issues/6538 - parsing JSON correctly from example references
+
 #### v0.0.13 (May 29, 2019)
 * Fix for https://github.com/postmanlabs/postman-app-support/issues/6538 - handling references in request/response examples
 * Fix for https://github.com/postmanlabs/postman-app-support/issues/6500 - manually stringifying number types as a workaround for SDK issues
