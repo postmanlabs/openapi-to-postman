@@ -1,6 +1,7 @@
 # OpenAPI-Postman Changelog
 
-#### v0.0.14 (June 4, 2019)
+#### v0.0.14 / v0.0.15 (June 5, 2019)
+* Added system tests, updated lockfiles for npm@6.4.1
 * Fix for https://github.com/postmanlabs/postman-app-support/issues/6538 - parsing JSON correctly from example references
 
 #### v0.0.13 (May 29, 2019)
