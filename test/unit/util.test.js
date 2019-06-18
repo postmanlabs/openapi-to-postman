@@ -333,6 +333,53 @@ describe('UTILITY FUNCTION TESTS ', function () {
       expect(collectionVariables).to.have.key('petUrl');
       done();
     });
+
+    // https://github.com/postmanlabs/openapi-to-postman/issues/80
+    it('should generate trie taking swagger specs with root endpoint declaration as input.', function (done) {
+      var openapi = {
+          'openapi': '3.0.0',
+          'info': {
+            'version': '1.0.0',
+            'title': 'Swagger Petstore',
+            'license': {
+              'name': 'MIT'
+            }
+          },
+          'servers': [
+            {
+              'url': 'http://petstore.swagger.io/{v1}'
+            }
+          ],
+          'paths': {
+            '/': {
+              'get': {
+                'summary': 'List all pets',
+                'operationId': 'listPets',
+                'responses': {
+                  '200': {
+                    'description': 'An paged array of pets',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          '$ref': '#/components/schemas/Pets'
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        output = Utils.generateTrieFromPaths(openapi),
+        root = output.tree.root;
+
+      expect(root.children).to.be.an('object').that.has.all.keys('');
+      expect(root.children[''].requestCount).to.equal(1);
+      expect(root.children[''].requests.length).to.equal(1);
+
+      done();
+    });
   });
 
   describe('convertPathVariables', function() {
