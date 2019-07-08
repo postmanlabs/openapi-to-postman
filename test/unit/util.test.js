@@ -357,14 +357,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
                 'operationId': 'listPets',
                 'responses': {
                   '200': {
-                    'description': 'An paged array of pets',
-                    'content': {
-                      'application/json': {
-                        'schema': {
-                          '$ref': '#/components/schemas/Pets'
-                        }
-                      }
-                    }
+                    'description': 'An paged array of pets'
                   }
                 }
               }
