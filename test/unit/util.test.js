@@ -367,9 +367,9 @@ describe('UTILITY FUNCTION TESTS ', function () {
         output = Utils.generateTrieFromPaths(openapi),
         root = output.tree.root;
 
-      expect(root.children).to.be.an('object').that.has.all.keys('');
-      expect(root.children[''].requestCount).to.equal(1);
-      expect(root.children[''].requests.length).to.equal(1);
+      expect(root.children).to.be.an('object').that.has.all.keys('(root)');
+      expect(root.children['(root)'].requestCount).to.equal(1);
+      expect(root.children['(root)'].requests.length).to.equal(1);
 
       done();
     });
