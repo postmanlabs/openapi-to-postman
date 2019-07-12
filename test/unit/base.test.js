@@ -41,8 +41,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
-    it('should generate collection for a custom content type headers requests.'
-    + specPath2 , function(done) {
+    it('should generate collection for a custom content type headers requests.' +
+      specPath2, function(done) {
       var openapi = fs.readFileSync(specPath2, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
         expect(err).to.be.null;
@@ -55,7 +55,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data.item[0].response[0]).to.have.property('body');
         done();
       });
-    });  
+    });
   });
   describe('for invalid requestNameSource option', function() {
     var pathPrefix = VALID_OPENAPI_PATH + '/test1.json',
