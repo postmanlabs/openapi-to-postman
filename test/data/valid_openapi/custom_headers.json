@@ -1,0 +1,244 @@
+{
+	"openapi": "3.0.0",
+	"info": {
+		"description": "The bol.com API for Retailers.",
+		"version": "3.0",
+		"title": "v3"
+	},
+	"paths": {
+		"/retailer/commission": {
+			"post": {
+				"tags": [
+					"Commission"
+				],
+				"summary": "Get all commissions and reductions by EAN in bulk",
+				"description": "Gets all commissions and possible reductions by EAN, condition and\noptionally price. No more than 100 EAN`s can be sent in a single\nrequest.",
+				"operationId": "get-commissions",
+				"requestBody": {
+					"content": {
+						"application/vnd.retailer.v3+json": {
+							"schema": {
+								"$ref": "#/components/schemas/commissionRequest"
+							}
+						},
+						"application/vnd.retailer.v3+xml": {
+							"schema": {
+								"$ref": "#/components/schemas/commissionRequest"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Ok: Successfully processed the request.",
+						"content": {
+							"application/vnd.retailer.v3+json": {
+								"schema": {
+									"$ref": "#/components/schemas/commissionResponse"
+								}
+							},
+							"application/vnd.retailer.v3+xml": {
+								"schema": {
+									"$ref": "#/components/schemas/commissionResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request: The sent request does not meet the API specification.\nPlease check the error message(s) for more information.",
+						"content": {
+							"application/vnd.retailer.v3+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							},
+							"application/vnd.retailer.v3+xml": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not found: The requested item could not be found.",
+						"content": {
+							"application/vnd.retailer.v3+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							},
+							"application/vnd.retailer.v3+xml": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"servers": [
+		{
+			"url": "https://api.bol.com"
+		}
+	],
+	"components": {
+		"schemas": {
+			"commissionRequest": {
+				"type": "object",
+				"required": [
+					"commissionQueries"
+				],
+				"properties": {
+					"commissionQueries": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/CommissionQuery"
+						}
+					}
+				}
+			},
+			"commissionResponse": {
+				"type": "object",
+				"required": [
+					"commissions"
+				],
+				"properties": {
+					"commissions": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/Commission"
+						}
+					}
+				}
+            },
+            "Problem": {
+				"type": "object",
+				"properties": {
+					"type": {
+						"type": "string",
+						"format": "uri",
+						"example": "http://api.bol.com/problems",
+						"description": "Type URI for this problem. Fixed value:\nhttp://api.bol.com/problems."
+					},
+					"title": {
+						"type": "string",
+						"example": "Error validating request body. Consult the bol.com API documentation\nfor more information.",
+						"description": "Title describing the nature of the problem."
+					},
+					"status": {
+						"type": "integer",
+						"format": "int32",
+						"example": "40X",
+						"description": "HTTP status returned from the endpoint causing the problem."
+					},
+					"detail": {
+						"type": "string",
+						"example": "Bad request",
+						"description": "Detailed error message describing in additional detail what caused\nthe service to return this problem."
+					},
+					"host": {
+						"type": "string",
+						"example": "Instance-001",
+						"description": "Host identifier describing the server instance that reported the\nproblem."
+					},
+					"instance": {
+						"type": "string",
+						"format": "uri",
+						"example": "https://api.bol.com//retailer/resource",
+						"description": "Full URI path of the resource that reported the problem."
+					},
+					"violations": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/Violation"
+						}
+					}
+				},
+				"description": "Describes a problem that occurred interacting with the API."
+            },
+            "CommissionQuery": {
+				"type": "object",
+				"required": [
+					"ean"
+				],
+				"properties": {
+					"ean": {
+						"type": "string",
+						"example": "0000007740404",
+						"description": "The EAN number associated with this product."
+					},
+					"condition": {
+						"type": "string",
+						"example": "NEW",
+						"description": "The condition of the offer.",
+						"enum": [
+							"NEW",
+							"AS_NEW",
+							"GOOD",
+							"REASONABLE",
+							"MODERATE"
+						]
+					},
+					"price": {
+						"type": "number",
+						"example": 10.99,
+						"description": "The price of the product with a period as a decimal separator. The\nprice should always have two decimals precision.",
+						"minimum": 0,
+						"maximum": 9999
+					}
+				}
+            },
+            "Commission": {
+				"type": "object",
+				"required": [
+					"reductions"
+				],
+				"properties": {
+					"ean": {
+						"type": "string",
+						"example": "0000007740404",
+						"description": "The EAN number associated with this product."
+					},
+					"condition": {
+						"type": "string",
+						"example": "NEW",
+						"description": "The condition of the offer."
+					},
+					"price": {
+						"type": "number",
+						"example": 10.99,
+						"description": "The price of the product with a period as a decimal separator. The\nprice should always have two decimals precision."
+					},
+					"fixedAmount": {
+						"type": "number",
+						"example": 0.99,
+						"description": "Fixed fee."
+					},
+					"percentage": {
+						"type": "number",
+						"example": 15,
+						"description": "A percentage of the offer price. The percentage can vary per product\ncategory."
+					},
+					"totalCost": {
+						"type": "number",
+						"example": 1.99,
+						"description": "Total applicable fee calculated based on the offer price provided."
+					},
+					"totalCostWithoutReduction": {
+						"type": "number",
+						"example": 3.99,
+						"description": "Total applicable fee calculated based on the offer price if you do\nnot meet the maximum price criteria."
+					},
+					"reductions": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/Reduction"
+						}
+					}
+				}
+			}
+		}
+	}
+}
