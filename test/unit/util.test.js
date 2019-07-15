@@ -1478,6 +1478,33 @@ describe('UTILITY FUNCTION TESTS ', function () {
         expect(pmResponseBody.id).to.equal('<long>');
         expect(pmResponseBody.name).to.equal('<string>');
       });
+      it('with Content-Type application/vnd.retailer.v2+json', function() {
+        var contentObj = {
+            'application/vnd.retailer.v2+json': {
+              'schema': {
+                'type': 'object',
+                'required': [
+                  'id',
+                  'name'
+                ],
+                'properties': {
+                  id: {
+                    type: 'integer',
+                    format: 'int64'
+                  },
+                  name: {
+                    type: 'string'
+                  }
+                }
+              }
+            }
+          },
+          pmResponseBody;
+        Utils.options.schemaFaker = true;
+        pmResponseBody = JSON.parse(Utils.convertToPmResponseBody(contentObj).responseBody);
+        expect(pmResponseBody.id).to.equal('<long>');
+        expect(pmResponseBody.name).to.equal('<string>');
+      });
       it('with Content-Type application/vnd.api+json', function() {
         var contentObj = {
             'application/vnd.api+json': {
