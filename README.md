@@ -107,9 +107,9 @@ function (err, result) {
 ```javascript
 var fs = require('fs'),
   Converter = require('openapi-to-postmanv2'),
-  openapiData = fs.readFileSync('sample-spec.yaml');
+  openapiData = fs.readFileSync('sample-spec.yaml', {encoding: 'UTF8'});
 
- Converter.convert({ type: 'string', data: specPath },
+ Converter.convert({ type: 'string', data: openapiData },
   {}, (err, conversionResult) => {
     if (!conversionResult.result) {
       console.log('Could not convert', conversionResult.reason);
