@@ -12,7 +12,7 @@
 					"Commission"
 				],
 				"summary": "Get all commissions and reductions by EAN in bulk",
-				"description": "Gets all commissions and possible reductions by EAN, condition and\noptionally price. No more than 100 EAN`s can be sent in a single\nrequest.",
+				"description": "Gets all commissions and possible reductions by EAN, condition and\noptionally price.",
 				"operationId": "get-commissions",
 				"requestBody": {
 					"content": {
@@ -40,36 +40,6 @@
 							"application/vnd.retailer.v3+xml": {
 								"schema": {
 									"$ref": "#/components/schemas/commissionResponse"
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Bad request: The sent request does not meet the API specification.\nPlease check the error message(s) for more information.",
-						"content": {
-							"application/vnd.retailer.v3+json": {
-								"schema": {
-									"$ref": "#/components/schemas/Problem"
-								}
-							},
-							"application/vnd.retailer.v3+xml": {
-								"schema": {
-									"$ref": "#/components/schemas/Problem"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Not found: The requested item could not be found.",
-						"content": {
-							"application/vnd.retailer.v3+json": {
-								"schema": {
-									"$ref": "#/components/schemas/Problem"
-								}
-							},
-							"application/vnd.retailer.v3+xml": {
-								"schema": {
-									"$ref": "#/components/schemas/Problem"
 								}
 							}
 						}
@@ -124,7 +94,7 @@
 					},
 					"title": {
 						"type": "string",
-						"example": "Error validating request body. Consult the bol.com API documentation\nfor more information.",
+						"example": "Error validating request body.",
 						"description": "Title describing the nature of the problem."
 					},
 					"status": {
@@ -184,7 +154,7 @@
 					"price": {
 						"type": "number",
 						"example": 10.99,
-						"description": "The price of the product with a period as a decimal separator. The\nprice should always have two decimals precision.",
+						"description": "The price of the product with a period as a decimal separator.",
 						"minimum": 0,
 						"maximum": 9999
 					}
@@ -209,7 +179,7 @@
 					"price": {
 						"type": "number",
 						"example": 10.99,
-						"description": "The price of the product with a period as a decimal separator. The\nprice should always have two decimals precision."
+						"description": "The price of the product with a period as a decimal separator."
 					},
 					"fixedAmount": {
 						"type": "number",
@@ -219,7 +189,7 @@
 					"percentage": {
 						"type": "number",
 						"example": 15,
-						"description": "A percentage of the offer price. The percentage can vary per product\ncategory."
+						"description": "A percentage of the offer price."
 					},
 					"totalCost": {
 						"type": "number",
