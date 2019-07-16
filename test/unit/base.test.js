@@ -164,14 +164,14 @@ describe('INTERFACE FUNCTION TESTS ', function () {
   });
 });
 
-describe('The check header function checks for', function() {
-  it('Custom type JSON header.', function() {
-    let result = utils.checkHeaderType('application/vnd.retailer+json');
+describe('Validate content type header function', function() {
+  it('should checks for custom type JSON header', function() {
+    let result = utils.validateContentTypeHeader('application/vnd.retailer+json');
     expect(result).to.equal(true);
   });
 
-  it('Custom type xml header.', function() {
-    let result = utils.checkHeaderType('application/vnd.retailer+xml');
+  it('should checks for custom type xml header', function() {
+    let result = utils.validateContentTypeHeader('application/vnd.retailer+xml');
     expect(result).to.equal(true);
   });
 });
