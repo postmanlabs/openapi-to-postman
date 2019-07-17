@@ -8,9 +8,6 @@
 	"paths": {
 		"/retailer/commission": {
 			"post": {
-				"tags": [
-					"Commission"
-				],
 				"summary": "Get all commissions and reductions by EAN in bulk",
 				"description": "Gets all commissions and possible reductions by EAN, condition and\noptionally price.",
 				"operationId": "get-commissions",
