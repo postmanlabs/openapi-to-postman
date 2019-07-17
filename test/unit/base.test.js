@@ -166,12 +166,12 @@ describe('INTERFACE FUNCTION TESTS ', function () {
 
 describe('Validate content type header function', function() {
   it('should checks for custom type JSON header', function() {
-    let result = utils.getContentTypeHeader('application/vnd.retailer+json');
+    let result = utils.getContentTypeHeaderFormat('application/vnd.retailer+json');
     expect(result).to.equal('json');
   });
 
   it('should checks for custom type xml header', function() {
-    let result = utils.getContentTypeHeader('application/vnd.retailer+xml');
+    let result = utils.getContentTypeHeaderFormat('application/vnd.retailer+xml');
     expect(result).to.equal('xml');
   });
 });
