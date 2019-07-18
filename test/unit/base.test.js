@@ -11,8 +11,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
     var pathPrefix = VALID_OPENAPI_PATH + '/test.json',
       specPath = path.join(__dirname, pathPrefix),
       pathPrefix1 = VALID_OPENAPI_PATH + '/test1.json',
-      specPath1 = path.join(__dirname, pathPrefix1);
-
+      specPath1 = path.join(__dirname, pathPrefix1),
+      pathPrefix2 = VALID_OPENAPI_PATH + '/multiple_folder_problem.json',
+      specPath2 = path.join(__dirname, pathPrefix2);
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      specPath, function(done) {
@@ -30,6 +31,20 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it('Should generate collection conforming to schema for and fail if not valid ' +
       specPath1, function(done) {
       Converter.convert({ type: 'file', data: specPath1 }, { requestNameSource: 'url' }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+
+        done();
+      });
+    });
+    it('Should generate collection with collapsing unnecessary folders ' +
+     specPath2, function(done) {
+      var openapi = fs.readFileSync(specPath2, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output.length).to.equal(1);
