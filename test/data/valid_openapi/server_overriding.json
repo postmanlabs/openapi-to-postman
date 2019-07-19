@@ -1,0 +1,41 @@
+{
+    "openapi": "3.0.2",
+    "info": {
+      "title": "Example",
+      "version": "2.0.0"
+    },
+    "servers": [
+      {
+        "url": "https://api.example.com"
+      }
+    ],
+    "paths": {
+      "/primary-domain/works": {
+        "get": {
+          "operationId": "get_authorize",
+          "summary": "Should keep the same domain",
+          "responses": {
+            "200": {
+              "description": "A response"
+            }
+          }
+        }
+      },
+      "/secondary-domain/fails": {
+        "get": {
+          "operationId": "get_authorize",
+          "summary": "Should use the other domain",
+          "servers": [
+            {
+              "url": "https://other-api.example.com"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "A response"
+            }
+          }
+        }
+      }
+    }
+  }
