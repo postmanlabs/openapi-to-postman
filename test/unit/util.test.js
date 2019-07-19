@@ -1724,7 +1724,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
       });
       done();
     });
-    it('sholud convert response without content field', function(done) {
+    it('should convert response without content field', function(done) {
       var response = {
           'description': 'A list of pets.'
         },
@@ -1803,5 +1803,17 @@ describe('UTILITY FUNCTION TESTS ', function () {
 
       done();
     });
+  });
+});
+
+describe('Validate content type header function ', function() {
+  it('should check for custom type JSON header', function() {
+    let result = Utils.getHeaderFamily('application/vnd.retailer+json');
+    expect(result).to.equal('json');
+  });
+
+  it('should check for custom type xml header', function() {
+    let result = Utils.getHeaderFamily('application/vnd.retailer+xml');
+    expect(result).to.equal('xml');
   });
 });

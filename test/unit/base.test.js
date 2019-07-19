@@ -3,7 +3,6 @@ var expect = require('chai').expect,
   fs = require('fs'),
   path = require('path'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
-  utils = require('../../lib/util'),
   INVALID_OPENAPI_PATH = '../data/invalid_openapi';
 
 describe('CONVERT FUNCTION TESTS ', function() {
@@ -161,17 +160,5 @@ describe('INTERFACE FUNCTION TESTS ', function () {
         done();
       });
     });
-  });
-});
-
-describe('Validate content type header function', function() {
-  it('should checks for custom type JSON header', function() {
-    let result = utils.getContentTypeHeaderFormat('application/vnd.retailer+json');
-    expect(result).to.equal('json');
-  });
-
-  it('should checks for custom type xml header', function() {
-    let result = utils.getContentTypeHeaderFormat('application/vnd.retailer+xml');
-    expect(result).to.equal('xml');
   });
 });
