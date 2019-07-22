@@ -13,12 +13,7 @@
       "/primary-domain/works": {
         "get": {
           "operationId": "get_authorize",
-          "summary": "Should keep the same domain",
-          "responses": {
-            "200": {
-              "description": "A response"
-            }
-          }
+          "summary": "Should keep the same domain"
         }
       },
       "/secondary-domain/fails": {
@@ -29,12 +24,7 @@
             {
               "url": "https://other-api.example.com"
             }
-          ],
-          "responses": {
-            "200": {
-              "description": "A response"
-            }
-          }
+          ]
         }
       }
     }
