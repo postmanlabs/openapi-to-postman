@@ -1,0 +1,20 @@
+openapi: 3.0.0
+info:
+    description:
+        Test Service
+    version: 0.1
+    title: Test Service Name
+servers:
+    -   url: https://test.com
+        description: Test API
+paths:
+    /entity:
+        put:
+            summary: Update entity
+            operationId: updateEntity
+            requestBody:
+                schema: object # This is wrong,
+                # but the converter should just ignore the formHeaders if not present
+            responses:
+                200:
+                    description: 200 OK
