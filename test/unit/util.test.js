@@ -1806,7 +1806,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
   });
 });
 
-describe('Validate content type header function ', function() {
+describe('Get header family function ', function() {
   it('should check for custom type JSON header', function() {
     let result = Utils.getHeaderFamily('application/vnd.retailer+json');
     expect(result).to.equal('json');
