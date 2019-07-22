@@ -11,7 +11,7 @@ var program = require('commander'),
   swaggerData;
 
 program
-  .version('0.0.1')
+  .version(require('../package.json').version, '-v, --version')
   .option('-s, --spec <spec>', 'Convert given OPENAPI 3.0.0 spec to Postman Collection v2.0')
   .option('-o, --output <output>', 'Write the collection to an output file')
   .option('-t, --test', 'Test the OPENAPI converter')
