@@ -24,9 +24,10 @@ describe('The converter must generate a collection conforming to the schema', fu
           expect(err).to.be.null;
 
           let collection = conversionResult.output[0].data;
-          // eslint-disable-next-line no-console
-          // console.log(JSON.stringify(collection, null, 2));
-          fs.writeFileSync('./temp/temp-collection.json', JSON.stringify(collection, null, 2));
+          fs.writeFileSync(
+            path.join(__dirname, '../data/.temp/temp-collection.json'),
+            JSON.stringify(collection, null, 2)
+          );
           done();
         });
     });
