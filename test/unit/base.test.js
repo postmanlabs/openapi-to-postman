@@ -12,8 +12,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       specPath = path.join(__dirname, pathPrefix),
       pathPrefix1 = VALID_OPENAPI_PATH + '/test1.json',
       specPath1 = path.join(__dirname, pathPrefix1),
-      pathPrefix2 = VALID_OPENAPI_PATH + '/multiple_folder_problem.json',
-      specPath2 = path.join(__dirname, pathPrefix2);
+      pathPrefix3 = VALID_OPENAPI_PATH + '/multiple_folder_problem.json',
+      specPath3 = path.join(__dirname, pathPrefix3);
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      specPath, function(done) {
@@ -42,8 +42,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
     it('Should generate collection with collapsing unnecessary folders ' +
-     specPath2, function(done) {
-      var openapi = fs.readFileSync(specPath2, 'utf8');
+     specPath3, function(done) {
+      var openapi = fs.readFileSync(specPath3, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
