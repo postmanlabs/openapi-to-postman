@@ -1,15 +1,14 @@
 {
 	"openapi": "3.0.0",
 	"info": {
-		"description": "The bol.com API for Retailers.",
+		"description": "The API for custom headers.",
 		"version": "3.0",
 		"title": "v3"
 	},
 	"paths": {
 		"/retailer/commission": {
 			"post": {
-				"summary": "Get all commissions and reductions by EAN in bulk",
-				"description": "Gets all commissions and possible reductions by EAN, condition and\noptionally price.",
+				"summary": "Get all commissions",
 				"operationId": "get-commissions",
 				"requestBody": {
 					"content": {
@@ -51,7 +50,7 @@
 	},
 	"servers": [
 		{
-			"url": "https://api.bol.com"
+			"url": "https://api.com"
 		}
 	]
 }
