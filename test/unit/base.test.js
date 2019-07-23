@@ -41,7 +41,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
-    it('Issue ID: #90-Should create a request using local server instead of global server ' +
+    it('[Github #90] - Should create a request using local server instead of global server ' +
     specPath2, function(done) {
       Converter.convert({ type: 'file', data: specPath2 }, { schemaFaker: true }, (err, conversionResult) => {
         expect(err).to.be.null;
