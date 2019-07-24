@@ -44,6 +44,10 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it('[Github #90] - Should create a request using local server instead of global server ' +
     specPath2, function(done) {
       Converter.convert({ type: 'file', data: specPath2 }, { schemaFaker: true }, (err, conversionResult) => {
+        let protocol = conversionResult.output[0].data.item[1].request.url.protocol,
+          host = conversionResult.output[0].data.item[1].request.url.host.join('/'),
+          path = conversionResult.output[0].data.item[1].request.url.path.join('/'),
+          endPoint = protocol + '://' + host + '/' + path;
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output.length).to.equal(1);
@@ -53,6 +57,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data.item[1].request.url.path).to.be.an('array');
         expect(conversionResult.output[0].data.item[1].request.url.path).to.have.lengthOf(2);
         expect(conversionResult.output[0].data.item[1].request.url.host).to.be.an('array');
+        expect(endPoint).to.equal('https://other-api/example/com/secondary-domain/fails');
 
         done();
       });
