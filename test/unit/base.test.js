@@ -51,6 +51,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].type).to.equal('collection');
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item[0].name).to.equal('pets/a/b');
+        expect(conversionResult.output[0].data.item[0].item[0].request.method).to.equal('GET');
+        expect(conversionResult.output[0].data.item[0].item[1].request.method).to.equal('POST');
 
         done();
       });
