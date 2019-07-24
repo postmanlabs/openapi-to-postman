@@ -53,6 +53,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data).to.have.property('item');
         expect(conversionResult.output[0].data.item[0]).to.have.property('response');
         expect(conversionResult.output[0].data.item[0].response[0]).to.have.property('body');
+        /* eslint-disable max-len */
+        expect(conversionResult.output[0].data.item[0].response[0].header[0].value).to.equal('application/vnd.retailer.v3+json');
         done();
       });
     });
