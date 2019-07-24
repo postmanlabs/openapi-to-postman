@@ -30,13 +30,13 @@
 					"200": {
 						"description": "Ok: Successfully processed the request.",
 						"content": {
-							"application/vnd.retailer.v3+json": {
+							"application/vnd.retailer.v3+xml": {
 								"schema": {
 									"type": "integer",
 									"format": "int32"
 								}
 							},
-							"application/vnd.retailer.v3+xml": {
+							"application/vnd.retailer.v3+json": {
 								"schema": {
 									"type": "integer",
 									"format": "int32"

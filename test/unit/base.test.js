@@ -41,7 +41,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
-    it('should generate collection for a custom content type headers requests.' +
+    it('Should generate collection for a custom content type headers requests' +
       specPath4, function(done) {
       var openapi = fs.readFileSync(specPath4, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
