@@ -44,15 +44,16 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it('[Github: 102]- Should generate collection description with only given fields in info object ' +
       specPath2, function(done) {
       Converter.convert({ type: 'file', data: specPath2 }, { schemaFaker: true }, (err, conversionResult) => {
-        let description = conversionResult.output[0].data.info.description;
+        let description;
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output.length).to.equal(1);
         expect(conversionResult.output[0].type).to.equal('collection');
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
-        // eslint-disable-next-line max-len
-        expect(description.content).to.equal('\n\nContact Support: \n{\n\nName : API Support\n\nEmail : support@example.com\n\n}');
+        description = conversionResult.output[0].data.info.description;
+        expect(description.content).to
+          .equal('\n\nContact Support: \n{\n\nName : API Support\n\nEmail : support@example.com\n\n}');
 
         done();
       });
