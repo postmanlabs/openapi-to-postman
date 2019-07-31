@@ -47,11 +47,15 @@ describe('CONVERT FUNCTION TESTS ', function() {
         let protocol = conversionResult.output[0].data.item[1].request.url.protocol,
           host = conversionResult.output[0].data.item[1].request.url.host.join('.'),
           path = conversionResult.output[0].data.item[1].request.url.path.join('/'),
-          endPoint = protocol + '://' + host + '/' + path;
+          endPoint = protocol + '://' + host + '/' + path,
+          host1 = conversionResult.output[0].data.variable[0].value,
+          path1 = conversionResult.output[0].data.item[0].request.url.path.join('/'),
+          endPoint1 = host1 + '/' + path1;
         expect(conversionResult.output[0].data.item[1].request.url.path).to.be.an('array');
         expect(conversionResult.output[0].data.item[1].request.url.path).to.have.lengthOf(2);
         expect(conversionResult.output[0].data.item[1].request.url.host).to.be.an('array');
         expect(endPoint).to.equal('https://other-api.example.com/secondary-domain/fails');
+        expect(endPoint1).to.equal('https://api.example.com/primary-domain/works');
 
         done();
       });
