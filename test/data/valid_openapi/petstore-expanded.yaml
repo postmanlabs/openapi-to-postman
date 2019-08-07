@@ -230,6 +230,7 @@ paths:
           stype: form
           schema:
             $ref: '#/components/parameters/Tuhin'
+        - $ref: '#/paths/~1pets~1%7Bid%7D/get/parameters/0'
     servers:
       - url:  https://{username}.gigantic-server.com:{port}/{basePath}
         description: Common url for all operations in this path
