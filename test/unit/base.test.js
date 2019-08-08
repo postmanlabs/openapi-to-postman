@@ -51,7 +51,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].type).to.equal('collection');
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
-        console.log(conversionResult.output[0].data.item[0], 'conversion result');
+        // console.log(conversionResult.output[0].data.item[0], 'conversion result');
         done();
       });
     });

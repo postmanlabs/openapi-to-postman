@@ -5,12 +5,7 @@
 		"title": "Swagger Petstore",
 		"license": {
 			"name": "MIT"
-		},
-                "contact": {
-                        "name": "API Support",
-  "url": "http://www.example.com/support",
-  "email": "support@example.com"
-                }
+		}
 	},
 	"servers": [
 		{
@@ -18,35 +13,111 @@
 		}
 	],
 	"paths": {
-		"/pets": {
-			"post": {
+		"/pets/{petId}": {
+			"get": {
 				"summary": "Info for a specific pet",
 				"operationId": "showPetById",
 				"tags": [
 					"pets"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "integer",
-                                "format": "int32"
-                            }
-                        }
-                    }
-                },
+				],
+				"parameters": [
+					{
+						"name": "petId",
+						"in": "path",
+						"required": true,
+						"description": "The id of the pet to retrieve",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
 				"responses": {
 					"200": {
 						"description": "Expected response to a valid request",
 						"content": {
 							"application/json": {
 								"schema": {
-									"type": "integer",
-                                    "format": "int32",
-                                    "readOnly": "true"
+									"$ref": "#/components/schemas/Pet"
 								}
 							}
 						}
+					},
+					"default": {
+						"description": "unexpected error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
+				"summary": "Create a pet",
+				"operationId": "createPets",
+				"tags": [
+					"pets"
+				],
+				"responses": {
+					"200": {
+						"description": "Expected response to a valid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Pet"
+								}
+							}
+						}
+					},
+					"default": {
+						"description": "unexpected error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"Pet": {
+				"required": [
+					"id",
+					"name"
+				],
+				"properties": {
+					"id": {
+						"type": "integer",
+						"format": "int64",
+						"readOnly": "true"
+					},
+					"name": {
+						"type": "string"
+					},
+					"tag": {
+						"type": "string"
+					}
+				}
+			},
+			"Error": {
+				"required": [
+					"code",
+					"message"
+				],
+				"properties": {
+					"code": {
+						"type": "integer",
+						"format": "int32"
+					},
+					"message": {
+						"type": "string"
 					}
 				}
 			}
