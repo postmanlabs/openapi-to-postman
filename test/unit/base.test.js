@@ -43,7 +43,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
-    it('[Github: 102]- Should generate collection info with only contact info' +
+    it('[Github #102]- Should generate collection info with only contact info' +
       specPath2, function(done) {
       Converter.convert({ type: 'file', data: specPath2 }, { schemaFaker: true }, (err, conversionResult) => {
         let description;
@@ -54,7 +54,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
-    it('[Github: 102]- Should generate collection info with only description' +
+    it('[Github #102]- Should generate collection info with only description' +
       specPath3, function(done) {
       Converter.convert({ type: 'file', data: specPath3 }, { schemaFaker: true }, (err, conversionResult) => {
         let description;
