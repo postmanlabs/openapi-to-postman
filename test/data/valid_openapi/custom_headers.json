@@ -1,31 +1,12 @@
 {
 	"openapi": "3.0.0",
 	"info": {
-		"description": "The API for custom headers.",
 		"version": "3.0",
 		"title": "v3"
 	},
 	"paths": {
 		"/retailer/commission": {
 			"post": {
-				"summary": "Get all commissions",
-				"operationId": "get-commissions",
-				"requestBody": {
-					"content": {
-						"application/vnd.retailer.v3+json": {
-							"schema": {
-								"type": "integer",
-								"format": "int32"
-							}
-						},
-						"application/vnd.retailer.v3+xml": {
-							"schema": {
-								"type": "integer",
-								"format": "int32"
-							}
-						}
-					}
-				},
 				"responses": {
 					"200": {
 						"description": "Ok: Successfully processed the request.",
