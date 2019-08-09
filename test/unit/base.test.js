@@ -44,6 +44,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it('[Github #90] - Should create a request using local server instead of global server ' +
     specPath2, function(done) {
       Converter.convert({ type: 'file', data: specPath2 }, { schemaFaker: true }, (err, conversionResult) => {
+        // Combining protocol, host, path to create a request
+        // Ex- https:// + example.com + /example = https://example.com/example
         let request = conversionResult.output[0].data.item[1].request,
           protocol = request.url.protocol,
           host = request.url.host.join('.'),
