@@ -41,20 +41,13 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
-    it('Should generate collection for a custom content type headers requests' +
-      specPath4, function(done) {
+    it('convertor should add custom header in the response' +
+    specPath4, function(done) {
       var openapi = fs.readFileSync(specPath4, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
         expect(err).to.be.null;
-        expect(conversionResult.result).to.equal(true);
-        expect(conversionResult.output.length).to.equal(1);
-        expect(conversionResult.output[0].type).to.equal('collection');
-        expect(conversionResult.output[0].data).to.have.property('info');
-        expect(conversionResult.output[0].data).to.have.property('item');
-        expect(conversionResult.output[0].data.item[0]).to.have.property('response');
-        expect(conversionResult.output[0].data.item[0].response[0]).to.have.property('body');
-        /* eslint-disable max-len */
-        expect(conversionResult.output[0].data.item[0].response[0].header[0].value).to.equal('application/vnd.retailer.v3+json');
+        expect(conversionResult.output[0].data.item[0].response[0].header[0].value)
+          .to.equal('application/vnd.retailer.v3+json');
         done();
       });
     });
