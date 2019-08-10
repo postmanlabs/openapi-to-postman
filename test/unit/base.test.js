@@ -11,8 +11,11 @@ describe('CONVERT FUNCTION TESTS ', function() {
     var pathPrefix = VALID_OPENAPI_PATH + '/test.json',
       specPath = path.join(__dirname, pathPrefix),
       pathPrefix1 = VALID_OPENAPI_PATH + '/test1.json',
-      specPath1 = path.join(__dirname, pathPrefix1);
-
+      specPath1 = path.join(__dirname, pathPrefix1),
+      pathPrefix2 = VALID_OPENAPI_PATH + '/info_having_contact_only.json',
+      specPath2 = path.join(__dirname, pathPrefix2),
+      pathPrefix3 = VALID_OPENAPI_PATH + '/info_having_description_only.json',
+      specPath3 = path.join(__dirname, pathPrefix3);
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      specPath, function(done) {
@@ -36,6 +39,28 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].type).to.equal('collection');
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
+
+        done();
+      });
+    });
+    it('[Github #102]- Should generate collection info with only contact info' +
+      specPath2, function(done) {
+      Converter.convert({ type: 'file', data: specPath2 }, { schemaFaker: true }, (err, conversionResult) => {
+        let description;
+        description = conversionResult.output[0].data.info.description;
+        expect(description.content).to
+          .equal('Contact Support:\n Name: API Support\n Email: support@example.com');
+
+        done();
+      });
+    });
+    it('[Github #102]- Should generate collection info with only description' +
+      specPath3, function(done) {
+      Converter.convert({ type: 'file', data: specPath3 }, { schemaFaker: true }, (err, conversionResult) => {
+        let description;
+        description = conversionResult.output[0].data.info.description;
+        expect(description.content).to
+          .equal('Hey, this is the description.');
 
         done();
       });
