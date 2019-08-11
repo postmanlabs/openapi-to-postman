@@ -1518,6 +1518,33 @@ describe('UTILITY FUNCTION TESTS ', function () {
         expect(pmResponseBody.id).to.equal('<long>');
         expect(pmResponseBody.name).to.equal('<string>');
       });
+      it('with Content-Type application/vnd.retailer.v2+json', function() {
+        var contentObj = {
+            'application/vnd.retailer.v2+json': {
+              'schema': {
+                'type': 'object',
+                'required': [
+                  'id',
+                  'name'
+                ],
+                'properties': {
+                  id: {
+                    type: 'integer',
+                    format: 'int64'
+                  },
+                  name: {
+                    type: 'string'
+                  }
+                }
+              }
+            }
+          },
+          pmResponseBody;
+        Utils.options.schemaFaker = true;
+        pmResponseBody = JSON.parse(Utils.convertToPmResponseBody(contentObj).responseBody);
+        expect(pmResponseBody.id).to.equal('<long>');
+        expect(pmResponseBody.name).to.equal('<string>');
+      });
       it('with Content-Type application/vnd.api+json', function() {
         var contentObj = {
             'application/vnd.api+json': {
@@ -1737,7 +1764,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
       });
       done();
     });
-    it('sholud convert response without content field', function(done) {
+    it('should convert response without content field', function(done) {
       var response = {
           'description': 'A list of pets.'
         },
@@ -1816,5 +1843,17 @@ describe('UTILITY FUNCTION TESTS ', function () {
 
       done();
     });
+  });
+});
+
+describe('Get header family function ', function() {
+  it('should check for custom type JSON header', function() {
+    let result = Utils.getHeaderFamily('application/vnd.retailer+json');
+    expect(result).to.equal('json');
+  });
+
+  it('should check for custom type xml header', function() {
+    let result = Utils.getHeaderFamily('application/vnd.retailer+xml');
+    expect(result).to.equal('xml');
   });
 });
