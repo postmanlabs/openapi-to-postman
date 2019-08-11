@@ -12,6 +12,12 @@ describe('CONVERT FUNCTION TESTS ', function() {
       specPath = path.join(__dirname, pathPrefix),
       pathPrefix1 = VALID_OPENAPI_PATH + '/test1.json',
       specPath1 = path.join(__dirname, pathPrefix1),
+      pathPrefix2 = VALID_OPENAPI_PATH + '/info_having_contact_only.json',
+      specPath2 = path.join(__dirname, pathPrefix2),
+      pathPrefix3 = VALID_OPENAPI_PATH + '/info_having_description_only.json',
+      specPath3 = path.join(__dirname, pathPrefix3),
+      pathPrefix4 = VALID_OPENAPI_PATH + '/custom_headers.json',
+      specPath4 = path.join(__dirname, pathPrefix4);
       pathPrefix6 = VALID_OPENAPI_PATH + '/readOnly.json',
       specPath6 = path.join(__dirname, pathPrefix6);
 
@@ -41,7 +47,18 @@ describe('CONVERT FUNCTION TESTS ', function() {
     //     done();
     //   });
     // });
-    it('Should generate collection conforming to schema for and fail if not valid ' +
+
+  //   it('convertor should add custom header in the response' +
+  //   specPath4, function(done) {
+  //     var openapi = fs.readFileSync(specPath4, 'utf8');
+  //     Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+  //       expect(err).to.be.null;
+  //       expect(conversionResult.output[0].data.item[0].response[0].header[0].value)
+  //         .to.equal('application/vnd.retailer.v3+json');
+  //       done();
+  //     });
+  //   });
+  it('Should generate collection conforming to schema for and fail if not valid ' +
      specPath6, function(done) {
       var openapi = fs.readFileSync(specPath6, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
@@ -51,10 +68,45 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].type).to.equal('collection');
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
-        // console.log(conversionResult.output[0].data.item[0], 'conversion result');
         done();
       });
     });
+
+  //   it('[Github #102]- Should generate collection info with only contact info' +
+  //     specPath2, function(done) {
+  //     Converter.convert({ type: 'file', data: specPath2 }, { schemaFaker: true }, (err, conversionResult) => {
+  //       let description;
+  //       description = conversionResult.output[0].data.info.description;
+  //       expect(description.content).to
+  //         .equal('Contact Support:\n Name: API Support\n Email: support@example.com');
+
+  //       done();
+  //     });
+  //   });
+  //   it('[Github #102]- Should generate collection info with only description' +
+  //     specPath3, function(done) {
+  //     Converter.convert({ type: 'file', data: specPath3 }, { schemaFaker: true }, (err, conversionResult) => {
+  //       let description;
+  //       description = conversionResult.output[0].data.info.description;
+  //       expect(description.content).to
+  //         .equal('Hey, this is the description.');
+  //       done();
+  //     });
+  //   });
+  // });
+  // describe('for invalid requestNameSource option', function() {
+  //   var pathPrefix = VALID_OPENAPI_PATH + '/test1.json',
+  //     specPath = path.join(__dirname, pathPrefix);
+
+  //   it('for invalid request name, converter should throw an error', function(done) {
+  //     var openapi = fs.readFileSync(specPath, 'utf8');
+  //     Converter.convert({ type: 'string', data: openapi }, { requestNameSource: 'uKnown' }, (err, conversionResult) => {
+  //       expect(err).to.be.null;
+  //       expect(conversionResult.reason).to.equal(
+  //         'requestNameSource (uKnown) in options is invalid or property does not exist in pets');
+  //       done();
+  //     });
+  //   });
   });
   // describe('for invalid requestNameSource option', function() {
   //   var pathPrefix = VALID_OPENAPI_PATH + '/test1.json',
