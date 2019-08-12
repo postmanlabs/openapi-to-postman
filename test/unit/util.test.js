@@ -333,6 +333,46 @@ describe('UTILITY FUNCTION TESTS ', function () {
       expect(collectionVariables).to.have.key('petUrl');
       done();
     });
+
+    // https://github.com/postmanlabs/openapi-to-postman/issues/80
+    it('should generate trie taking swagger specs with root endpoint declaration as input.', function (done) {
+      var openapi = {
+          'openapi': '3.0.0',
+          'info': {
+            'version': '1.0.0',
+            'title': 'Swagger Petstore',
+            'license': {
+              'name': 'MIT'
+            }
+          },
+          'servers': [
+            {
+              'url': 'http://petstore.swagger.io/{v1}'
+            }
+          ],
+          'paths': {
+            '/': {
+              'get': {
+                'summary': 'List all pets',
+                'operationId': 'listPets',
+                'responses': {
+                  '200': {
+                    'description': 'An paged array of pets'
+                  }
+                }
+              }
+            }
+          }
+        },
+        output = Utils.generateTrieFromPaths(openapi),
+        root = output.tree.root;
+
+      expect(root.children).to.be.an('object').that.has.all.keys('(root)');
+      expect(root.children['(root)'].requestCount).to.equal(1);
+      expect(root.children['(root)'].requests.length).to.equal(1);
+
+      done();
+    });
   });
 
   describe('convertPathVariables', function() {
@@ -778,6 +818,21 @@ describe('UTILITY FUNCTION TESTS ', function () {
       Utils.options.schemaFaker = true;
       let pmParam = Utils.convertToPmQueryParameters(param);
       expect(pmParam[0].value).to.equal('10'); // '10', not 10
+      done();
+    });
+    it('Should convert queryParam (boolean) to a query param with a string value', function (done) {
+      var param = {
+        name: 'X-Header-One',
+        in: 'query',
+        description: 'query param',
+        schema: {
+          type: 'boolean',
+          default: true
+        }
+      };
+      Utils.options.schemaFaker = true;
+      let pmParam = Utils.convertToPmQueryParameters(param);
+      expect(pmParam[0].value).to.equal('true'); // 'true', not true
       done();
     });
     describe('Should convert queryParam with schema {type:array, ', function() {
@@ -1478,6 +1533,33 @@ describe('UTILITY FUNCTION TESTS ', function () {
         expect(pmResponseBody.id).to.equal('<long>');
         expect(pmResponseBody.name).to.equal('<string>');
       });
+      it('with Content-Type application/vnd.retailer.v2+json', function() {
+        var contentObj = {
+            'application/vnd.retailer.v2+json': {
+              'schema': {
+                'type': 'object',
+                'required': [
+                  'id',
+                  'name'
+                ],
+                'properties': {
+                  id: {
+                    type: 'integer',
+                    format: 'int64'
+                  },
+                  name: {
+                    type: 'string'
+                  }
+                }
+              }
+            }
+          },
+          pmResponseBody;
+        Utils.options.schemaFaker = true;
+        pmResponseBody = JSON.parse(Utils.convertToPmResponseBody(contentObj).responseBody);
+        expect(pmResponseBody.id).to.equal('<long>');
+        expect(pmResponseBody.name).to.equal('<string>');
+      });
       it('with Content-Type application/vnd.api+json', function() {
         var contentObj = {
             'application/vnd.api+json': {
@@ -1697,7 +1779,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
       });
       done();
     });
-    it('sholud convert response without content field', function(done) {
+    it('should convert response without content field', function(done) {
       var response = {
           'description': 'A list of pets.'
         },
@@ -1776,5 +1858,17 @@ describe('UTILITY FUNCTION TESTS ', function () {
 
       done();
     });
+  });
+});
+
+describe('Get header family function ', function() {
+  it('should check for custom type JSON header', function() {
+    let result = Utils.getHeaderFamily('application/vnd.retailer+json');
+    expect(result).to.equal('json');
+  });
+
+  it('should check for custom type xml header', function() {
+    let result = Utils.getHeaderFamily('application/vnd.retailer+xml');
+    expect(result).to.equal('xml');
   });
 });

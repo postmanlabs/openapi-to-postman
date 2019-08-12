@@ -1,0 +1,37 @@
+{
+	"openapi": "3.0.0",
+	"info": {
+		"version": "3.0",
+		"title": "v3"
+	},
+	"paths": {
+		"/retailer/commission": {
+			"post": {
+				"responses": {
+					"200": {
+						"description": "Ok: Successfully processed the request.",
+						"content": {
+							"application/vnd.retailer.v3+xml": {
+								"schema": {
+									"type": "integer",
+									"format": "int32"
+								}
+							},
+							"application/vnd.retailer.v3+json": {
+								"schema": {
+									"type": "integer",
+									"format": "int32"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"servers": [
+		{
+			"url": "https://api.com"
+		}
+	]
+}
