@@ -1,5 +1,10 @@
 # OpenAPI-Postman Changelog
 
+#### v0.0.16 (July 22, 2019)
+* Corrected code snippet in README (courtesy https://github.com/simonlampen)
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/44 - Prevent crashes for specs that contain a root endpoint (courtesy https://github.com/pitpit)
+* Ignoring missing body propertes in schema objects 
+
 #### v0.0.14 / v0.0.15 (June 5, 2019)
 * Added system tests, updated lockfiles for npm@6.4.1
 * Fix for https://github.com/postmanlabs/postman-app-support/issues/6538 - parsing JSON correctly from example references
