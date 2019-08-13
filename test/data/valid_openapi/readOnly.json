@@ -23,7 +23,6 @@
 				},
 				"responses": {
 					"200": {
-						"description": "Expected response to a valid request",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -37,7 +36,6 @@
 			"post": {
 				"responses": {
 					"200": {
-						"description": "Expected response to a valid request",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -53,10 +51,6 @@
 	"components": {
 		"schemas": {
 			"Pet": {
-				"required": [
-					"id",
-					"name"
-				],
 				"properties": {
 					"id": {
 						"type": "integer",
@@ -69,21 +63,6 @@
 					"tag": {
 						"type": "string",
 						"writeOnly": "true"
-					}
-				}
-			},
-			"Error": {
-				"required": [
-					"code",
-					"message"
-				],
-				"properties": {
-					"code": {
-						"type": "integer",
-						"format": "int32"
-					},
-					"message": {
-						"type": "string"
 					}
 				}
 			}
