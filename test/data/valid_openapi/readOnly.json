@@ -10,8 +10,36 @@
 		}
 	],
 	"paths": {
-		"/pets/{petId}": {
+		"/pets": {
 			"get": {
+				"responses": {
+					"200": {
+						"description": "Successfull",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"properties": {
+											"id": {
+												"type": "integer",
+												"format": "int64",
+												"readOnly": true
+											},
+											"tag": {
+												"type": "string",
+												"writeOnly": true
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
 				"requestBody": {
 					"content": {
 						"application/json": {
@@ -23,26 +51,7 @@
 				},
 				"responses": {
 					"200": {
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Pet"
-								}
-							}
-						}
-					}
-				}
-			},
-			"post": {
-				"responses": {
-					"200": {
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Pet"
-								}
-							}
-						}
+						"description": "Successfully created a pet"
 					}
 				}
 			}
@@ -55,14 +64,14 @@
 					"id": {
 						"type": "integer",
 						"format": "int64",
-						"readOnly": "true"
+						"readOnly": true
 					},
 					"name": {
 						"type": "string"
 					},
 					"tag": {
 						"type": "string",
-						"writeOnly": "true"
+						"writeOnly": true
 					}
 				}
 			}
