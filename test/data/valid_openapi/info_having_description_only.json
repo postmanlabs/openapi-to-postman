@@ -1,0 +1,25 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "version": "1.0.0",
+        "title": "Swagger Petstore",
+        "description": "Hey, this is the description."
+    },
+    "servers": [
+        {
+            "url": "http://petstore.swagger.io/v1"
+        }
+    ],
+    "paths": {
+        "/pets": {
+            "get": {
+                "summary": "Info for a specific pet",
+                "responses": {
+                    "200": {
+                        "description": "Expected response to a valid request"
+                    }
+                }
+            }
+        }
+    }
+}
