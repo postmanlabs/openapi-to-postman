@@ -12,14 +12,16 @@ describe('CONVERT FUNCTION TESTS ', function() {
       specPath = path.join(__dirname, pathPrefix),
       pathPrefix1 = VALID_OPENAPI_PATH + '/test1.json',
       specPath1 = path.join(__dirname, pathPrefix1),
+      pathPrefix5 = VALID_OPENAPI_PATH + '/server_overriding.json',
+      specPath5 = path.join(__dirname, pathPrefix5),
       pathPrefix2 = VALID_OPENAPI_PATH + '/info_having_contact_only.json',
       specPath2 = path.join(__dirname, pathPrefix2),
       pathPrefix3 = VALID_OPENAPI_PATH + '/info_having_description_only.json',
       specPath3 = path.join(__dirname, pathPrefix3),
       pathPrefix4 = VALID_OPENAPI_PATH + '/custom_headers.json',
       specPath4 = path.join(__dirname, pathPrefix4),
-      pathPrefix5 = VALID_OPENAPI_PATH + '/readOnly.json',
-      specPath5 = path.join(__dirname, pathPrefix5);
+      pathPrefix6 = VALID_OPENAPI_PATH + '/readOnly.json',
+      specPath6 = path.join(__dirname, pathPrefix6);
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      specPath, function(done) {
@@ -47,7 +49,24 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
-
+    it('[Github #90] - Should create a request using local server instead of global server ' +
+    specPath5, function(done) {
+      Converter.convert({ type: 'file', data: specPath5 }, { schemaFaker: true }, (err, conversionResult) => {
+        // Combining protocol, host, path to create a request
+        // Ex https:// + example.com + /example = https://example.com/example
+        let request = conversionResult.output[0].data.item[1].request,
+          protocol = request.url.protocol,
+          host = request.url.host.join('.'),
+          path = request.url.path.join('/'),
+          endPoint = protocol + '://' + host + '/' + path,
+          host1 = conversionResult.output[0].data.variable[0].value,
+          path1 = conversionResult.output[0].data.item[0].request.url.path.join('/'),
+          endPoint1 = host1 + '/' + path1;
+        expect(endPoint).to.equal('https://other-api.example.com/secondary-domain/fails');
+        expect(endPoint1).to.equal('https://api.example.com/primary-domain/works');
+        done();
+      });
+    });
     it('convertor should add custom header in the response' +
     specPath4, function(done) {
       var openapi = fs.readFileSync(specPath4, 'utf8');
@@ -59,8 +78,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
     it('Should respects readOnly and writeOnly properties in requestBody or response schema' +
-     specPath5, function(done) {
-      var openapi = fs.readFileSync(specPath5, 'utf8');
+     specPath6, function(done) {
+      var openapi = fs.readFileSync(specPath6, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
         let requestBody = conversionResult.output[0].data.item[0].item[1].request.body.raw,
           responseBody = conversionResult.output[0].data.item[0].item[0].response[0].body;
