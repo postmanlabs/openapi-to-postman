@@ -71,7 +71,7 @@ describe('DEREF FUNCTION TESTS ', function() {
           }
         }
       },
-      bodyType = 'REQUEST'
+      bodyType = 'REQUEST',
       output = deref.resolveRefs(schema, bodyType, components),
       output_withdot = deref.resolveRefs(schemaWithDotInKey, bodyType, components),
       output_customFormat = deref.resolveRefs(schemaWithCustomFormat, bodyType, components),
