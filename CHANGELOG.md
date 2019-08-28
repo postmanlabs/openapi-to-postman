@@ -1,5 +1,36 @@
 # OpenAPI-Postman Changelog
 
+#### v0.0.16 (July 22, 2019)
+* Corrected code snippet in README (courtesy https://github.com/simonlampen)
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/44 - Prevent crashes for specs that contain a root endpoint (courtesy https://github.com/pitpit)
+* Ignoring missing body propertes in schema objects 
+
+#### v0.0.14 / v0.0.15 (June 5, 2019)
+* Added system tests, updated lockfiles for npm@6.4.1
+* Fix for https://github.com/postmanlabs/postman-app-support/issues/6538 - parsing JSON correctly from example references
+
+#### v0.0.13 (May 29, 2019)
+* Fix for https://github.com/postmanlabs/postman-app-support/issues/6538 - handling references in request/response examples
+* Fix for https://github.com/postmanlabs/postman-app-support/issues/6500 - manually stringifying number types as a workaround for SDK issues
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/23 - custom schema formats are not ignored
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/18 - consistent parsing for URL variables
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/64 - array params don't cause a crash with schemaFaker disabled (courtesy https://github.com/brpeterman)
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/52 - allowing $refs to point to paths, not just components
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/27 - support for allOf-type schemas
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/45 - trailing slashes in the path don't create empty folders
+* Using a placeholder for servers.url in case the spec has a falsy value 
+* Support for x-postman-meta for including Postman auth in converted collections
+
+
+#### v0.0.12 (Apr 17, 2019)
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/36 - Property names with a . in the name are supported during schema faking
+
+#### v0.0.11 (Apr 17, 2019)
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/47 - Accepting application/vnd.api+json headers as JSON
+* Removing unused dependencies
+* Fix CLI test commands (courtesy https://github.com/aerotog)
+* Fix README typos (courtesy https://github.com/T1l3 and https://github.com/evertharmeling)
+
 #### v0.0.10 (Jan 31, 2019)
 * Safe property access to empty content/authHelper objects
 * Setting postman_previewLanguage while setting responses

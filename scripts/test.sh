@@ -28,5 +28,10 @@ which git &>/dev/null && \
 # run lint
 npm run test-lint;
 
+# run system tests
+npm run test-system;
+
 # run unit tests
 npm run test-unit;
+
+
