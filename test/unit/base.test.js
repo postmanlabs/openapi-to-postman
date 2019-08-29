@@ -73,7 +73,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output[0].data.item[0].name).to.equal('pets/a/b');
         expect(conversionResult.output[0].data.item[0].item[0].request.method).to.equal('GET');
-        expect(conversionResult.output[0].data.item[0].item[0].item[1].request.method).to.equal('POST');
+        expect(conversionResult.output[0].data.item[0].item[1].request.method).to.equal('POST');
         done();
       });
     });
