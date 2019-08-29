@@ -153,22 +153,22 @@ The converter can be used as a CLI tool as well. The following [command line opt
 `openapi2postmanv2 [options]`
 
 ### Options
-- `-V`, `--version` 
+- `-V`, `--version`  
   Specifies the version of the converter
 
-- `-s <source>`, `--spec <source>` 
+- `-s <source>`, `--spec <source>`  
   Used to specify the OpenAPI specification (file path) which is to be converted
 
-- `-o <destination>`, `--output <destination>` 
+- `-o <destination>`, `--output <destination>`  
   Used to specify the destination file in which the collection is to be written
 
-- `-t`, `--test` 
+- `-t`, `--test`  
   Used to test the collection with an in-built sample specification
 
-- `-p`, `--pretty` 
+- `-p`, `--pretty`  
   Used to pretty print the collection object while writing to a file
 
-- `-h`, `--help` 
+- `-h`, `--help`  
   Specifies all the options along with a few usage examples on the terminal
 
 
