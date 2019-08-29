@@ -6,6 +6,37 @@
 		"description": "A sample API that uses a petstore as an example to demonstrate features in\nthe swagger-2.0 specification"
 	},
 	"paths": {
+    "/pets/a": {
+      "get": {
+				"description": "Returns all pets from the system that the user has access to\nNam sed condimentum est.\n",
+				"operationId": "findPets",
+				"responses": {
+					"200": {
+						"description": "pet response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"$ref": "#/components/schemas/Pet"
+									}
+								}
+							}
+						}
+					},
+					"default": {
+						"description": "unexpected error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			}
+    },
 		"/pets/a/b": {
 			"get": {
 				"description": "Returns all pets from the system that the user has access to\nNam sed condimentum est.\n",
