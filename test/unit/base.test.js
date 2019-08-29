@@ -21,9 +21,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
       pathPrefix5 = VALID_OPENAPI_PATH + '/server_overriding.json',
       specPath5 = path.join(__dirname, pathPrefix5),
       pathPrefix6 = VALID_OPENAPI_PATH + '/multiple_folder_problem1.json',
-      specPath6 = path.join(__dirname, pathPrefix6);
-      // pathPrefix7 = VALID_OPENAPI_PATH + '/multiple_folder_problem.json',
-      // specPath7 = path.join(__dirname, pathPrefix7);
+      specPath6 = path.join(__dirname, pathPrefix6),
+      pathPrefix7 = VALID_OPENAPI_PATH + '/multiple_folder_problem.json',
+      specPath7 = path.join(__dirname, pathPrefix7);
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      specPath, function(done) {
@@ -65,18 +65,16 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
-    // it('Should generate collection with collapsing unnecessary folders ' +
-    //  specPath7, function(done) {
-    //   var openapi = fs.readFileSync(specPath7, 'utf8');
-    //   Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
-    //     expect(err).to.be.null;
-    //     expect(conversionResult.result).to.equal(true);
-    //     expect(conversionResult.output[0].data.item[0].name).to.equal('pets/a/b');
-    //     expect(conversionResult.output[0].data.item[0].item[0].request.method).to.equal('GET');
-    //     expect(conversionResult.output[0].data.item[0].item[1].request.method).to.equal('POST');
-    //     done();
-    //   });
-    // });
+    it('Should generate collection with collapsing unnecessary folders ' +
+     specPath7, function(done) {
+      var openapi = fs.readFileSync(specPath7, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output[0].data.item[0].name).to.equal('pets/a/b');
+        done();
+      });
+    });
     it('[Github #90] - Should create a request using local server instead of global server ' +
     specPath5, function(done) {
       Converter.convert({ type: 'file', data: specPath5 }, { schemaFaker: true }, (err, conversionResult) => {
