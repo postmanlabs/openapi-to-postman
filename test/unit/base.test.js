@@ -81,9 +81,12 @@ describe('CONVERT FUNCTION TESTS ', function() {
      specPath6, function(done) {
       var openapi = fs.readFileSync(specPath6, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
-        let requestBody = conversionResult.output[0].data.item[0].item[1].request.body.raw;
+        let requestBody = conversionResult.output[0].data.item[0].item[1].request.body.raw,
+          responseBody = conversionResult.output[0].data.item[0].item[0].response[0].body;
         expect(err).to.be.null;
         expect(requestBody).to.equal('{\n    "name": "<string>",\n    "tag": "<string>"\n}');
+        expect(responseBody).to.equal('[\n {\n  "id": "<long>",\n  "name": "<string>"\n }' +
+        ',\n {\n  "id": "<long>",\n  "name": "<string>"\n }\n]');
 
         done();
       });
