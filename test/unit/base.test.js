@@ -85,7 +85,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
           responseBody = conversionResult.output[0].data.item[0].item[0].response[0].body;
         expect(err).to.be.null;
         expect(requestBody).to.equal('{\n    "name": "<string>",\n    "tag": "<string>"\n}');
-        expect(responseBody).to.equal('[\n {\n  "id": "<long>"\n },\n {\n  "id": "<long>"\n }\n]');
+        expect(responseBody).to.equal('[\n {\n  "id": "<long>",\n  "name": "<string>"\n }' +
+        ',\n {\n  "id": "<long>",\n  "name": "<string>"\n }\n]');
 
         done();
       });

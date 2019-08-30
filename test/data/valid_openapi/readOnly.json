@@ -21,17 +21,7 @@
 									"type": "array",
 									"items": {
 										"type": "object",
-										"properties": {
-											"id": {
-												"type": "integer",
-												"format": "int64",
-												"readOnly": true
-											},
-											"tag": {
-												"type": "string",
-												"writeOnly": true
-											}
-										}
+										"$ref": "#/components/schemas/Pet"
 									}
 								}
 							}
