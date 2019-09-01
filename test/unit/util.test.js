@@ -29,9 +29,10 @@ describe('UTILITY FUNCTION TESTS ', function () {
               $ref: '#/components/schemas/schema2'
             }
           }
-        };
+        },
+        bodyType = 'REQUEST';
 
-      expect(Utils.safeSchemaFaker(schema, components)).to.equal('<string>');
+      expect(Utils.safeSchemaFaker(schema, bodyType, components)).to.equal('<string>');
       done();
     });
 
@@ -62,10 +63,11 @@ describe('UTILITY FUNCTION TESTS ', function () {
               $ref: '#/components/schem2'
             }
           }
-        };
+        },
+        bodyType = 'REQUEST';
 
       expect(function() {
-        Utils.safeSchemaFaker(schema, components);
+        Utils.safeSchemaFaker(schema, bodyType, components);
       }).to.throw(openApiErr, 'Invalid schema reference: #/components/schem2');
       done();
     });

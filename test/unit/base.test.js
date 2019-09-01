@@ -19,7 +19,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
       pathPrefix3 = VALID_OPENAPI_PATH + '/info_having_description_only.json',
       specPath3 = path.join(__dirname, pathPrefix3),
       pathPrefix4 = VALID_OPENAPI_PATH + '/custom_headers.json',
-      specPath4 = path.join(__dirname, pathPrefix4);
+      specPath4 = path.join(__dirname, pathPrefix4),
+      pathPrefix6 = VALID_OPENAPI_PATH + '/readOnly.json',
+      specPath6 = path.join(__dirname, pathPrefix6);
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      specPath, function(done) {
@@ -72,6 +74,20 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(err).to.be.null;
         expect(conversionResult.output[0].data.item[0].response[0].header[0].value)
           .to.equal('application/vnd.retailer.v3+json');
+        done();
+      });
+    });
+    it('Should respects readOnly and writeOnly properties in requestBody or response schema' +
+     specPath6, function(done) {
+      var openapi = fs.readFileSync(specPath6, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+        let requestBody = conversionResult.output[0].data.item[0].item[1].request.body.raw,
+          responseBody = conversionResult.output[0].data.item[0].item[0].response[0].body;
+        expect(err).to.be.null;
+        expect(requestBody).to.equal('{\n    "name": "<string>",\n    "tag": "<string>"\n}');
+        expect(responseBody).to.equal('[\n {\n  "id": "<long>",\n  "name": "<string>"\n }' +
+        ',\n {\n  "id": "<long>",\n  "name": "<string>"\n }\n]');
+
         done();
       });
     });
