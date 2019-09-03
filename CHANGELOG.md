@@ -1,9 +1,18 @@
 # OpenAPI-Postman Changelog
 
+#### v0.0.17 (Sep 3, 2019)
+* Custom JSON headers being picked up for request/response body generation
+* Stringifying boolean params if present as query parameters (courtesy https://github.com/Firtzberg)
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/102 - Not crashing on undefined name/email/description properties
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/90 - respecting `server` elements defined inside paths
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/98 - respecting `readOnly` and `writeOnly` properies while faking schemas
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/88 - escaping / and ~ characters in `$ref`s  (courtesy https://github.com/bzmw)
+
+
 #### v0.0.16 (July 22, 2019)
 * Corrected code snippet in README (courtesy https://github.com/simonlampen)
 * Fix for https://github.com/postmanlabs/openapi-to-postman/issues/44 - Prevent crashes for specs that contain a root endpoint (courtesy https://github.com/pitpit)
-* Ignoring missing body propertes in schema objects 
+* Ignoring missing body propertes in schema objects
 
 #### v0.0.14 / v0.0.15 (June 5, 2019)
 * Added system tests, updated lockfiles for npm@6.4.1
@@ -18,7 +27,7 @@
 * Fix for https://github.com/postmanlabs/openapi-to-postman/issues/52 - allowing $refs to point to paths, not just components
 * Fix for https://github.com/postmanlabs/openapi-to-postman/issues/27 - support for allOf-type schemas
 * Fix for https://github.com/postmanlabs/openapi-to-postman/issues/45 - trailing slashes in the path don't create empty folders
-* Using a placeholder for servers.url in case the spec has a falsy value 
+* Using a placeholder for servers.url in case the spec has a falsy value
 * Support for x-postman-meta for including Postman auth in converted collections
 
 
