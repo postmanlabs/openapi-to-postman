@@ -1,6 +1,7 @@
 # OpenAPI-Postman Changelog
 
-#### v0.0.17 (Sep 3, 2019)
+#### v0.0.17/v0.0.18 (Sep 3, 2019)
+* Empty local server definitions not crashing the converter
 * Custom JSON headers being picked up for request/response body generation
 * Stringifying boolean params if present as query parameters (courtesy https://github.com/Firtzberg)
 * Fix for https://github.com/postmanlabs/openapi-to-postman/issues/102 - Not crashing on undefined name/email/description properties
