@@ -86,6 +86,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
 
         done();
       });
+      describe('create folders according to their tags', function() {
+
+      });
     });
 
     it('[Github #102]- Should generate collection info with only contact info' +
@@ -108,14 +111,6 @@ describe('CONVERT FUNCTION TESTS ', function() {
           description = conversionResult.output[0].data.info.description;
           expect(description.content).to
             .equal('Hey, this is the description.');
-          done();
-        });
-    });
-    it.only('create folders and club request according to their tags' +
-      tagsFolderSpec, function(done) {
-      Converter.convert({ type: 'file', data: tagsFolderSpec },
-        { schemaFaker: true }, (err, conversionResult) => {
-          console.log(conversionResult);
           done();
         });
     });

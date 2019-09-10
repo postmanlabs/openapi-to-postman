@@ -11,10 +11,10 @@
   ],
   "tags": [
     {
-      "name": "tags"
+      "name": "emptyTag"
     },
     {
-      "name": "animals"
+      "name": "single pet"
     }
   ],
 	"paths": {
@@ -31,7 +31,7 @@
 				}
 			},
 			"post": {
-				"summary": "Create a pet",
+				"summary": "Create pets",
 				"tags": [
 					"pets"
 				],
@@ -46,11 +46,19 @@
 			"get": {
 				"summary": "Info for a specific pet",
 				"tags": [
-					"animals"
+					"single pet"
 				],
 				"responses": {
 					"200": {
 						"description": "Expected response to a valid request"
+					}
+				}
+      },
+      "delete": {
+				"summary": "Delete a pet",
+				"responses": {
+					"201": {
+						"description": "Null response"
 					}
 				}
 			}
