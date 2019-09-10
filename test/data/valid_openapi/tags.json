@@ -1,0 +1,59 @@
+{
+	"openapi": "3.0.0",
+	"info": {
+		"version": "1.0.0",
+		"title": "Swagger Petstore"
+	},
+	"servers": [
+		{
+			"url": "http://petstore.swagger.io/v1"
+		}
+  ],
+  "tags": [
+    {
+      "name": "tags"
+    },
+    {
+      "name": "animals"
+    }
+  ],
+	"paths": {
+		"/pets": {
+			"get": {
+				"summary": "List all pets",
+				"tags": [
+					"pets"
+				],
+				"responses": {
+					"200": {
+						"description": "A paged array of pets"
+					}
+				}
+			},
+			"post": {
+				"summary": "Create a pet",
+				"tags": [
+					"pets"
+				],
+				"responses": {
+					"201": {
+						"description": "Null response"
+					}
+				}
+			}
+		},
+		"/pets/{petId}": {
+			"get": {
+				"summary": "Info for a specific pet",
+				"tags": [
+					"animals"
+				],
+				"responses": {
+					"200": {
+						"description": "Expected response to a valid request"
+					}
+				}
+			}
+		}
+	}
+}
