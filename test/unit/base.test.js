@@ -86,9 +86,6 @@ describe('CONVERT FUNCTION TESTS ', function() {
 
         done();
       });
-      describe('create folders according to their tags', function() {
-
-      });
     });
 
     it('[Github #102]- Should generate collection info with only contact info' +
@@ -113,6 +110,12 @@ describe('CONVERT FUNCTION TESTS ', function() {
             .equal('Hey, this is the description.');
           done();
         });
+    });
+    describe('create folders according to their tags', function() {
+      it('', function(done) {
+
+        done();
+      });
     });
   });
   describe('for invalid requestNameSource option', function() {
