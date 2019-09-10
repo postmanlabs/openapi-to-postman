@@ -111,10 +111,41 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         });
     });
-    describe('create folders according to their tags', function() {
-      it('', function(done) {
+    describe('create folders according to their tags ' + tagsFolderSpec, function() {
+      it('should maintain the sorted order of folder according to the global tags ', function(done) {
+        Converter.convert({ type: 'file', data: tagsFolderSpec },
+          { schemaFaker: true, folderStrategy: 'tag' }, (err, conversionResult) => {
+            let folders = conversionResult.output[0].data.item;
+            // checking for the global tags
+            expect(folders[0].name).to.equal('emptyTag');
+            expect(folders[1].name).to.equal('single pet');
+            // now checking for operation level tag
+            expect(folders[2].name).to.equal('pets');
+            done();
+          });
+      });
 
-        done();
+      it('should create empty folders on the basis of tags defined in global tags, ' +
+      'even though they are not used in any operation', function (done) {
+        Converter.convert({ type: 'file', data: tagsFolderSpec },
+          { schemaFaker: true, folderStrategy: 'tag' }, (err, conversionResult) => {
+            let folders = conversionResult.output[0].data.item;
+            // emptyTag is not used in any of the operations in spec file
+            expect(folders[0].name).to.equal('emptyTag');
+            done();
+          });
+      });
+
+      it('should add the requests that doesn\'t have any tags to the collection at root level', function(done) {
+        Converter.convert({ type: 'file', data: tagsFolderSpec },
+          { schemaFaker: true, folderStrategy: 'tag' }, (err, conversionResult) => {
+            let foldersAndRequests = conversionResult.output[0].data.item;
+            // skipping the first three items as they are folders.
+            expect(foldersAndRequests[3].name).to.equal('Delete a pet');
+            expect(foldersAndRequests[3]).to.have.property('request');
+            expect(foldersAndRequests[3]).to.have.property('response');
+            done();
+          });
       });
     });
   });
