@@ -15,7 +15,10 @@ describe('CONVERT FUNCTION TESTS ', function() {
       infoHavingContactOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_contact_only.json'),
       infoHavingDescriptionOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_description_only.json'),
       customHeadersSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/custom_headers.json'),
-      readOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/readOnly.json');
+      readOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/readOnly.json'),
+      multipleFoldersSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem.json'),
+      multipleFoldersSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem1.json'),
+      multipleFoldersSpec2 = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem2.json');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
@@ -43,9 +46,21 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
+    it('Should generate collection with collapsing unnecessary folders ' +
+    multipleFoldersSpec, function(done) {
+      var openapi = fs.readFileSync(multipleFoldersSpec, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output[0].data.item[0].name).to.equal('pets/a/b');
+        expect(conversionResult.output[0].data.item[0].item[0].request.method).to.equal('GET');
+        expect(conversionResult.output[0].data.item[0].item[1].request.method).to.equal('POST');
+        done();
+      });
+    });
     it('Should collapse child and parent folder when parent has only one child' +
-     specPath7, function(done) {
-      var openapi = fs.readFileSync(specPath7, 'utf8');
+    multipleFoldersSpec1, function(done) {
+      var openapi = fs.readFileSync(multipleFoldersSpec1, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
@@ -57,21 +72,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
-    it('Should generate collection with collapsing unnecessary folders ' +
-     specPath8, function(done) {
-      var openapi = fs.readFileSync(specPath8, 'utf8');
-      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
-        expect(err).to.be.null;
-        expect(conversionResult.result).to.equal(true);
-        expect(conversionResult.output[0].data.item[0].name).to.equal('pets/a/b');
-        expect(conversionResult.output[0].data.item[0].item[0].request.method).to.equal('GET');
-        expect(conversionResult.output[0].data.item[0].item[1].request.method).to.equal('POST');
-        done();
-      });
-    });
     it('Should generate collection without creating folders and having only one request' +
-     specPath9, function(done) {
-      var openapi = fs.readFileSync(specPath9, 'utf8');
+    multipleFoldersSpec2, function(done) {
+      var openapi = fs.readFileSync(multipleFoldersSpec2, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
