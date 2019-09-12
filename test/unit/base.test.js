@@ -8,30 +8,18 @@ var expect = require('chai').expect,
 describe('CONVERT FUNCTION TESTS ', function() {
   // these two covers remaining part of util.js
   describe('The convert Function', function() {
-    var pathPrefix = VALID_OPENAPI_PATH + '/test.json',
-      specPath = path.join(__dirname, pathPrefix),
-      pathPrefix1 = VALID_OPENAPI_PATH + '/test1.json',
-      specPath1 = path.join(__dirname, pathPrefix1),
-      pathPrefix2 = VALID_OPENAPI_PATH + '/info_having_contact_only.json',
-      specPath2 = path.join(__dirname, pathPrefix2),
-      pathPrefix3 = VALID_OPENAPI_PATH + '/info_having_description_only.json',
-      specPath3 = path.join(__dirname, pathPrefix3),
-      pathPrefix4 = VALID_OPENAPI_PATH + '/custom_headers.json',
-      specPath4 = path.join(__dirname, pathPrefix4),
-      pathPrefix5 = VALID_OPENAPI_PATH + '/server_overriding.json',
-      specPath5 = path.join(__dirname, pathPrefix5),
-      pathPrefix6 = VALID_OPENAPI_PATH + '/readOnly.json',
-      specPath6 = path.join(__dirname, pathPrefix6),
-      pathPrefix7 = VALID_OPENAPI_PATH + '/multiple_folder_problem1.json',
-      specPath7 = path.join(__dirname, pathPrefix7),
-      pathPrefix8 = VALID_OPENAPI_PATH + '/multiple_folder_problem.json',
-      specPath8 = path.join(__dirname, pathPrefix8),
-      pathPrefix9 = VALID_OPENAPI_PATH + '/multiple_folder_problem2.json',
-      specPath9 = path.join(__dirname, pathPrefix9);
+
+    var testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
+      testSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/test1.json'),
+      serverOverRidingSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/server_overriding.json'),
+      infoHavingContactOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_contact_only.json'),
+      infoHavingDescriptionOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_description_only.json'),
+      customHeadersSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/custom_headers.json'),
+      readOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/readOnly.json');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
-     specPath, function(done) {
-      var openapi = fs.readFileSync(specPath, 'utf8');
+     testSpec, function(done) {
+      var openapi = fs.readFileSync(testSpec, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
@@ -43,8 +31,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
     it('Should generate collection conforming to schema for and fail if not valid ' +
-      specPath1, function(done) {
-      Converter.convert({ type: 'file', data: specPath1 }, { requestNameSource: 'url' }, (err, conversionResult) => {
+      testSpec1, function(done) {
+      Converter.convert({ type: 'file', data: testSpec1 }, { requestNameSource: 'url' }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output.length).to.equal(1);
@@ -93,26 +81,27 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
     it('[Github #90] - Should create a request using local server instead of global server ' +
-    specPath5, function(done) {
-      Converter.convert({ type: 'file', data: specPath5 }, { schemaFaker: true }, (err, conversionResult) => {
+    serverOverRidingSpec, function(done) {
+      Converter.convert({ type: 'file', data: serverOverRidingSpec }, { schemaFaker: true },
+        (err, conversionResult) => {
         // Combining protocol, host, path to create a request
         // Ex https:// + example.com + /example = https://example.com/example
-        let request = conversionResult.output[0].data.item[1].request,
-          protocol = request.url.protocol,
-          host = request.url.host.join('.'),
-          path = request.url.path.join('/'),
-          endPoint = protocol + '://' + host + '/' + path,
-          host1 = conversionResult.output[0].data.variable[0].value,
-          path1 = conversionResult.output[0].data.item[0].request.url.path.join('/'),
-          endPoint1 = host1 + '/' + path1;
-        expect(endPoint).to.equal('https://other-api.example.com/secondary-domain/fails');
-        expect(endPoint1).to.equal('https://api.example.com/primary-domain/works');
-        done();
-      });
+          let request = conversionResult.output[0].data.item[1].request,
+            protocol = request.url.protocol,
+            host = request.url.host.join('.'),
+            path = request.url.path.join('/'),
+            endPoint = protocol + '://' + host + '/' + path,
+            host1 = conversionResult.output[0].data.variable[0].value,
+            path1 = conversionResult.output[0].data.item[0].request.url.path.join('/'),
+            endPoint1 = host1 + '/' + path1;
+          expect(endPoint).to.equal('https://other-api.example.com/secondary-domain/fails');
+          expect(endPoint1).to.equal('https://api.example.com/primary-domain/works');
+          done();
+        });
     });
     it('convertor should add custom header in the response' +
-    specPath4, function(done) {
-      var openapi = fs.readFileSync(specPath4, 'utf8');
+    customHeadersSpec, function(done) {
+      var openapi = fs.readFileSync(customHeadersSpec, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.output[0].data.item[0].response[0].header[0].value)
@@ -121,8 +110,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
     it('Should respects readOnly and writeOnly properties in requestBody or response schema' +
-     specPath6, function(done) {
-      var openapi = fs.readFileSync(specPath6, 'utf8');
+     readOnlySpec, function(done) {
+      var openapi = fs.readFileSync(readOnlySpec, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
         let requestBody = conversionResult.output[0].data.item[0].item[1].request.body.raw,
           responseBody = conversionResult.output[0].data.item[0].item[0].response[0].body;
@@ -136,25 +125,27 @@ describe('CONVERT FUNCTION TESTS ', function() {
     });
 
     it('[Github #102]- Should generate collection info with only contact info' +
-      specPath2, function(done) {
-      Converter.convert({ type: 'file', data: specPath2 }, { schemaFaker: true }, (err, conversionResult) => {
-        let description;
-        description = conversionResult.output[0].data.info.description;
-        expect(description.content).to
-          .equal('Contact Support:\n Name: API Support\n Email: support@example.com');
+      infoHavingContactOnlySpec, function(done) {
+      Converter.convert({ type: 'file', data: infoHavingContactOnlySpec },
+        { schemaFaker: true }, (err, conversionResult) => {
+          let description;
+          description = conversionResult.output[0].data.info.description;
+          expect(description.content).to
+            .equal('Contact Support:\n Name: API Support\n Email: support@example.com');
 
-        done();
-      });
+          done();
+        });
     });
     it('[Github #102]- Should generate collection info with only description' +
-      specPath3, function(done) {
-      Converter.convert({ type: 'file', data: specPath3 }, { schemaFaker: true }, (err, conversionResult) => {
-        let description;
-        description = conversionResult.output[0].data.info.description;
-        expect(description.content).to
-          .equal('Hey, this is the description.');
-        done();
-      });
+      infoHavingDescriptionOnlySpec, function(done) {
+      Converter.convert({ type: 'file', data: infoHavingDescriptionOnlySpec },
+        { schemaFaker: true }, (err, conversionResult) => {
+          let description;
+          description = conversionResult.output[0].data.info.description;
+          expect(description.content).to
+            .equal('Hey, this is the description.');
+          done();
+        });
     });
   });
   describe('for invalid requestNameSource option', function() {
