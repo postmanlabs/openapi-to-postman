@@ -115,8 +115,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       circularRefSpec, function(done) {
       Converter.convert({ type: 'file', data: circularRefSpec },
         { schemaFaker: true }, (err, conversionResult) => {
-          console.log(conversionResult);
           expect(err).to.be.null;
+          expect(conversionResult.output[0].data.item[0].name).to.equal('/pets');
           done();
         });
     });
