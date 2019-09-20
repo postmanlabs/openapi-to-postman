@@ -1446,8 +1446,8 @@
   var clone = module.exports = function(obj, seen) {
     seen = seen || [];
 
-    if (seen.indexOf(obj) > -1) {
-      throw new Error('unable dereference circular structures');
+    if (seen.indexOf(obj) > -1 && seen[indexOf(obj)].repetition > 2) {
+      return 'unable dereference circular structures';
     }
 
     if (!obj || typeof obj !== 'object') {
@@ -5472,7 +5472,7 @@
   break;
   case 7:yy.ast.set({ operation: "member" }); yy.ast.push();
   break;
-  case 8:yy.ast.set({ operation: "subscript" }); yy.ast.push(); 
+  case 8:yy.ast.set({ operation: "subscript" }); yy.ast.push();
   break;
   case 9:yy.ast.set({ scope: "child" });
   break;
@@ -8089,7 +8089,7 @@
   module.exports = function (ast, vars) {
       if (!vars) vars = {};
       var FAIL = {};
-      
+
       var result = (function walk (node) {
           if (node.type === 'Literal') {
               return node.value;
@@ -8130,7 +8130,7 @@
               if (l === FAIL) return FAIL;
               var r = walk(node.right);
               if (r === FAIL) return FAIL;
-              
+
               var op = node.operator;
               if (op === '==') return l == r;
               if (op === '===') return l === r;
@@ -8150,7 +8150,7 @@
               if (op === '^') return l ^ r;
               if (op === '&&') return l && r;
               if (op === '||') return l || r;
-              
+
               return FAIL;
           }
           else if (node.type === 'Identifier') {
@@ -8162,7 +8162,7 @@
           else if (node.type === 'CallExpression') {
               var callee = walk(node.callee);
               if (callee === FAIL) return FAIL;
-              
+
               var ctx = node.callee.object ? walk(node.callee.object) : FAIL;
               if (ctx === FAIL) ctx = null;
 
@@ -8194,7 +8194,7 @@
           }
           else return FAIL;
       })(ast);
-      
+
       return result === FAIL ? undefined : result;
   };
 
@@ -8207,9 +8207,9 @@
 
   var jsonSchemaRefParser = createCommonjsModule(function(module, exports) {/*!
 * JSON Schema $Ref Parser v5.0.0 (March 18th 2018)
-* 
+*
 * https://github.com/BigstickCarpet/json-schema-ref-parser
-* 
+*
 * @author  James Messinger (http://bigstickcarpet.com)
 * @license MIT
 */
@@ -13736,7 +13736,7 @@ if(args.length) {
         break;
     }
     if(!escaped) {
-      return arg; 
+      return arg;
     }
     args.unshift(arg);
     return match;
@@ -22038,7 +22038,7 @@ if (mode === 'fetch') {
   self.url = response.url
   self.statusCode = response.status
   self.statusMessage = response.statusText
-  
+
   response.headers.forEach(function(header, key){
     self.headers[key.toLowerCase()] = header
     self.rawHeaders.push(key, header)
@@ -22126,7 +22126,7 @@ switch (self._mode) {
       self.push(new Buffer(response))
       break
     }
-    // Falls through in IE8	
+  // Falls through in IE8
   case 'text':
     try { // This will fail when readyState = 3 in IE9. Switch mode and wait for readyState = 4
       response = xhr.responseText
@@ -24096,8 +24096,13 @@ function extend() {
       function walk(obj) {
           var json = JSON.stringify(obj);
           if (seen.indexOf(json) === -1) {
+              json.repetition = 0;
+              obj.repetition = 0;
               seen.push(json);
               tmp.push(obj);
+          }
+          else {
+            seen[seen.indexOf(json)].repetition += 1;
           }
       }
       items.forEach(walk);
@@ -24151,7 +24156,7 @@ function extend() {
       var optionalsProbability = optionAPI('alwaysFakeOptionals') === true ? 1.0 : optionAPI('optionalsProbability');
       var length = (maxItems != null && optionalsProbability)
           ? Math.round(maxItems * optionalsProbability)
-          : random.number(minItems, maxItems, 1, 5), 
+          : random.number(minItems, maxItems, 1, 5),
       // TODO below looks bad. Should additionalItems be copied as-is?
       sample = typeof value.additionalItems === 'object' ? value.additionalItems : {};
       for (var current = items.length; current < length; current++) {
