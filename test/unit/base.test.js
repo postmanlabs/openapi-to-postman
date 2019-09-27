@@ -15,8 +15,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       infoHavingContactOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_contact_only.json'),
       infoHavingDescriptionOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_description_only.json'),
       customHeadersSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/custom_headers.json'),
-      readOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/readOnly.json'),
-      circularRefSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/circularRefs.json');
+      readOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/readOnly.json');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
@@ -108,15 +107,6 @@ describe('CONVERT FUNCTION TESTS ', function() {
           description = conversionResult.output[0].data.info.description;
           expect(description.content).to
             .equal('Hey, this is the description.');
-          done();
-        });
-    });
-    it('Should import collection without throwing an error for circular refs' +
-      circularRefSpec, function(done) {
-      Converter.convert({ type: 'file', data: circularRefSpec },
-        { schemaFaker: true }, (err, conversionResult) => {
-          expect(err).to.be.null;
-          expect(conversionResult.output[0].data.item[0].name).to.equal('/pets');
           done();
         });
     });

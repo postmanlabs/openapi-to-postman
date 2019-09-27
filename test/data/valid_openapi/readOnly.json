@@ -14,7 +14,7 @@
 			"get": {
 				"responses": {
 					"200": {
-						"description": "Successful",
+						"description": "Successfull",
 						"content": {
 							"application/json": {
 								"schema": {
