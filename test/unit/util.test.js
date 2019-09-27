@@ -36,6 +36,31 @@ describe('UTILITY FUNCTION TESTS ', function () {
       done();
     });
 
+    it('should resolve circular structures', function(done) {
+      let schema = {
+          '$ref': '#/components/schemas/a'
+        },
+        components = {
+          schemas: {
+            'a': {
+              'type': 'array',
+              'items': {
+                '$ref': '#/components/schemas/b'
+              }
+            },
+            'b': {
+              'type': 'object',
+              'properties': {
+                '$ref': '#/components/schemas/a'
+              }
+            }
+          }
+        },
+        bodyType = 'REQUEST';
+      expect(Utils.safeSchemaFaker(schema, bodyType, components)).to.not.equal(null);
+      done();
+    });
+
     it('should throw error ref not found', function(done) {
       var schema = {
           anyOf: [{

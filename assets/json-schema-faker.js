@@ -1446,8 +1446,8 @@
   var clone = module.exports = function(obj, seen) {
     seen = seen || [];
 
-    if (seen.indexOf(obj) > -1 && seen[indexOf(obj)].repetition > 2) {
-      return 'unable dereference circular structures';
+    if (seen.indexOf(obj) > -1) {
+      throw new Error('unable dereference circular structures');
     }
 
     if (!obj || typeof obj !== 'object') {
@@ -22126,7 +22126,7 @@ switch (self._mode) {
       self.push(new Buffer(response))
       break
     }
-  // Falls through in IE8
+    // Falls through in IE8
   case 'text':
     try { // This will fail when readyState = 3 in IE9. Switch mode and wait for readyState = 4
       response = xhr.responseText
@@ -24096,13 +24096,8 @@ function extend() {
       function walk(obj) {
           var json = JSON.stringify(obj);
           if (seen.indexOf(json) === -1) {
-              json.repetition = 0;
-              obj.repetition = 0;
               seen.push(json);
               tmp.push(obj);
-          }
-          else {
-            seen[seen.indexOf(json)].repetition += 1;
           }
       }
       items.forEach(walk);
