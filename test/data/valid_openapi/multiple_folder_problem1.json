@@ -1,0 +1,45 @@
+{
+	"openapi": "3.0.0",
+	"info": {
+		"version": "1.0.0",
+		"title": "Swagger Petstore",
+		"description": "A sample API that uses a petstore as an example to demonstrate features in\nthe swagger-2.0 specification"
+	},
+	"paths": {
+    "/pets/a": {
+      "get": {
+				"description": "Returns all pets from the system that the user has access to\nNam sed condimentum est.\n",
+				"operationId": "findPets",
+				"responses": {
+					"200": {
+						"description": "pet response"
+					}
+				}
+			}
+    },
+		"/pets/a/b": {
+			"get": {
+				"description": "Returns all pets from the system that the user has access to\nNam sed condimentum est.\n",
+				"operationId": "findPets",
+				"responses": {
+					"200": {
+						"description": "pet response"
+					}
+				}
+			},
+			"post": {
+				"description": "Creates a new pet in the store.  Duplicates are allowed",
+				"responses": {
+					"200": {
+						"description": "pet response"
+					}
+				}
+			}
+		}
+	},
+	"servers": [
+		{
+			"url": "http://petstore.swagger.io/api"
+		}
+	]
+}
