@@ -51,13 +51,21 @@ describe('UTILITY FUNCTION TESTS ', function () {
             'b': {
               'type': 'object',
               'properties': {
-                '$ref': '#/components/schemas/a'
+                'c': {
+                  '$ref': '#/components/schemas/a'
+                }
               }
             }
           }
         },
-        bodyType = 'REQUEST';
-      expect(Utils.safeSchemaFaker(schema, bodyType, components)).to.not.equal(null);
+        bodyType = 'REQUEST',
+        x = {},
+
+        result = Utils.safeSchemaFaker(schema, bodyType, components);
+
+      expect(result).to.not.equal(null);
+      x = { value: '<Error: Too many levels of nesting to fake this schema>' };
+      expect(_.isEqual(result[0].c[0].c[0].c[0].c[0].c, x)).to.equal(true);
       done();
     });
 
