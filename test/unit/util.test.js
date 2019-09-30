@@ -61,11 +61,10 @@ describe('UTILITY FUNCTION TESTS ', function () {
         bodyType = 'REQUEST',
 
         result = Utils.safeSchemaFaker(schema, bodyType, components),
-        tooManyLevelsString = result[0].c[0].c[0].c[0].c[0].c;
+        tooManyLevelsString = result[0].c[0].c[0].c[0].c[0].c.value;
 
       expect(result).to.not.equal(null);
-      expect(_.isEqual(tooManyLevelsString, {
-        value: '<Error: Too many levels of nesting to fake this schema>' })).to.equal(true);
+      expect(tooManyLevelsString).to.equal('<Error: Too many levels of nesting to fake this schema>');
       done();
     });
 
