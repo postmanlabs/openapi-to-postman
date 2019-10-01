@@ -36,6 +36,38 @@ describe('UTILITY FUNCTION TESTS ', function () {
       done();
     });
 
+    it('should resolve circular structures', function(done) {
+      let schema = {
+          '$ref': '#/components/schemas/a'
+        },
+        components = {
+          schemas: {
+            'a': {
+              'type': 'array',
+              'items': {
+                '$ref': '#/components/schemas/b'
+              }
+            },
+            'b': {
+              'type': 'object',
+              'properties': {
+                'c': {
+                  '$ref': '#/components/schemas/a'
+                }
+              }
+            }
+          }
+        },
+        bodyType = 'REQUEST',
+
+        result = Utils.safeSchemaFaker(schema, bodyType, components),
+        tooManyLevelsString = result[0].c[0].c[0].c[0].c[0].c.value;
+
+      expect(result).to.not.equal(null);
+      expect(tooManyLevelsString).to.equal('<Error: Too many levels of nesting to fake this schema>');
+      done();
+    });
+
     it('should throw error ref not found', function(done) {
       var schema = {
           anyOf: [{
