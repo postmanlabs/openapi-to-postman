@@ -1,5 +1,10 @@
 # OpenAPI-Postman Changelog
 
+#### v0.1.0 (Oct 1, 2019)
+* Fix for https://github.com/postmanlabs/swagger2-postman2/issues/21 - Not creating folders at each path level unless required
+* Schemas with circular object definitions are imported successfully
+
+
 #### v0.0.17/v0.0.18 (Sep 3, 2019)
 * Empty local server definitions not crashing the converter
 * Custom JSON headers being picked up for request/response body generation
