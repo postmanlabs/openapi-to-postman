@@ -8,7 +8,7 @@ info:
     irc.freenode.net, #swagger.  For this sample, you can use the api key
     "special-key" to test the authorization filters
   version: 1.0.0
-  title: Ye Teja Teja Kya hai ?
+  title: Sample title
   termsOfService: 'http://helloreverb.com/terms/'
   contact:
     email: apiteam@wordnik.com

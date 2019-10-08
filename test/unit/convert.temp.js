@@ -7,7 +7,7 @@ var expect = require('chai').expect,
   Converter = require('../../index.js'),
   fs = require('fs'),
   path = require('path'),
-  VALID_OPENAPI_PATH = '../data/.temp';
+  VALID_OPENAPI_PATH = '../data/.temp/specs';
 
 describe('The converter must generate a collection conforming to the schema', function () {
   var pathPrefix = VALID_OPENAPI_PATH,
