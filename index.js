@@ -49,5 +49,45 @@ module.exports = {
         reason: e.toString()
       };
     }
+  },
+
+  getOptions: function() {
+    return [
+      {
+        name: 'Fake schema',
+        id: 'schemaFaker',
+        type: 'boolean',
+        default: true,
+        description: 'Fake the schema using json or xml schema faker.'
+      },
+      {
+        name: 'Collapse folder for long routes',
+        id: 'collapseLongFolders',
+        type: 'boolean',
+        default: true,
+        description: 'Collapse folders in case of long routes leading to unnecessary folders'
+      },
+      {
+        name: 'Set root request body type',
+        id: 'rootRequestBodyType',
+        type: 'string',
+        default: 'schema',
+        description: 'Option for setting root request body between schema or example'
+      },
+      {
+        name: 'Set example request and response body type',
+        id: 'exampleBodyType',
+        type: 'string',
+        default: 'example',
+        description: 'Option for setting example request and response body between schema or example'
+      },
+      {
+        name: 'Set folder strategy',
+        id: 'folderStrategy',
+        type: 'string',
+        default: 'paths',
+        description: 'Option for setting folder creating strategy between paths or tags'
+      }
+    ];
   }
 };
