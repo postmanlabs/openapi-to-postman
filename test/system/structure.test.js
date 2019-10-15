@@ -1,7 +1,7 @@
 let expect = require('chai').expect,
   getOptions = require('../../index').getOptions;
 
-const optionsIds = [
+const optionIds = [
     'schemaFaker',
     'collapseLongFolders',
     'rootRequestBodyType',
@@ -60,7 +60,7 @@ describe('getOptions', function() {
 
   it('must be a valid id and should be present in the whitelist of options id', function () {
     options.forEach((option) => {
-      expect(option.id).to.be.oneOf(optionsIds);
+      expect(option.id).to.be.oneOf(optionIds);
     });
   });
 
