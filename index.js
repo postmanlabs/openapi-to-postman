@@ -58,7 +58,7 @@ module.exports = {
         id: 'schemaFaker',
         type: 'boolean',
         default: true,
-        description: 'Fake the schema using json or xml schema faker.'
+        description: 'Fake the schema using json or xml schema faker'
       },
       {
         name: 'Collapse folder for long routes',
@@ -87,6 +87,20 @@ module.exports = {
         type: 'string',
         default: 'paths',
         description: 'Option for setting folder creating strategy between paths or tags'
+      },
+      {
+        name: 'Set indent character',
+        id: 'indentCharacter',
+        type: 'string',
+        default: ' ',
+        description: 'Option for setting indentation character'
+      },
+      {
+        name: 'Set request name source',
+        id: 'requestNameSource',
+        type: 'string',
+        default: 'fallback',
+        description: 'Option for setting source for a request name'
       }
     ];
   }
