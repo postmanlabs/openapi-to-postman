@@ -54,14 +54,14 @@ module.exports = {
   getOptions: function() {
     return [
       {
-        name: 'Fake schema',
+        name: 'Toggle for faking schema',
         id: 'schemaFaker',
         type: 'boolean',
         default: true,
-        description: 'Fake the schema using json or xml schema faker'
+        description: 'Option for Fake the schema using json or xml schema faker'
       },
       {
-        name: 'Collapse folder for long routes',
+        name: 'Toggle for collapsing folder for long routes',
         id: 'collapseLongFolders',
         type: 'boolean',
         default: true,

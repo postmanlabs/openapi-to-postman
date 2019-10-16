@@ -12,13 +12,13 @@ const optionIds = [
   ],
   expectedOptions = {
     schemaFaker: {
-      name: 'Fake schema',
+      name: 'Toggle for faking schema',
       type: 'boolean',
       default: true,
-      description: 'Fake the schema using json or xml schema faker'
+      description: 'Option for Fake the schema using json or xml schema faker'
     },
     collapseLongFolders: {
-      name: 'Collapse folder for long routes',
+      name: 'Toggle for collapsing folder for long routes',
       type: 'boolean',
       default: true,
       description: 'Collapse folders in case of long routes leading to unnecessary folders'
