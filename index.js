@@ -1,4 +1,4 @@
-var convert = require('./lib/convert.js'),
+var converter = require('./lib/convert.js'),
   validate = require('./lib/validate.js'),
   fs = require('fs');
 
@@ -7,7 +7,7 @@ module.exports = {
     if (input.type === 'string' || input.type === 'json') {
       // no need for extra processing before calling the converter
       // string can be JSON or YAML
-      return convert(input.data, options, cb);
+      return converter.convert(input.data, options, cb);
     }
     else if (input.type === 'file') {
       return fs.readFile(input.data, 'utf8', function(err, data) {
@@ -16,7 +16,7 @@ module.exports = {
         }
 
         // if the file contents were JSON or YAML
-        return convert(data, options, cb);
+        return converter.convert(data, options, cb);
       });
     }
     return cb(null, {
@@ -52,56 +52,6 @@ module.exports = {
   },
 
   getOptions: function() {
-    return [
-      {
-        name: 'Toggle for faking schema',
-        id: 'schemaFaker',
-        type: 'boolean',
-        default: true,
-        description: 'Option for Fake the schema using json or xml schema faker'
-      },
-      {
-        name: 'Toggle for collapsing folder for long routes',
-        id: 'collapseLongFolders',
-        type: 'boolean',
-        default: true,
-        description: 'Collapse folders in case of long routes leading to unnecessary folders'
-      },
-      {
-        name: 'Set root request body type',
-        id: 'rootRequestBodyType',
-        type: 'string',
-        default: 'schema',
-        description: 'Option for setting root request body between schema or example'
-      },
-      {
-        name: 'Set example request and response body type',
-        id: 'exampleBodyType',
-        type: 'string',
-        default: 'example',
-        description: 'Option for setting example request and response body between schema or example'
-      },
-      {
-        name: 'Set folder strategy',
-        id: 'folderStrategy',
-        type: 'string',
-        default: 'paths',
-        description: 'Option for setting folder creating strategy between paths or tags'
-      },
-      {
-        name: 'Set indent character',
-        id: 'indentCharacter',
-        type: 'string',
-        default: ' ',
-        description: 'Option for setting indentation character'
-      },
-      {
-        name: 'Set request name source',
-        id: 'requestNameSource',
-        type: 'string',
-        default: 'fallback',
-        description: 'Option for setting source for a request name'
-      }
-    ];
+    return converter.getOptions();
   }
 };
