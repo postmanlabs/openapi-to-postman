@@ -18,7 +18,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       readOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/readOnly.json'),
       multipleFoldersSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem.json'),
       multipleFoldersSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem1.json'),
-      multipleFoldersSpec2 = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem2.json');
+      multipleFoldersSpec2 = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem2.json'),
+      examplesInBodySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/examples_in_body.json');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
@@ -158,6 +159,15 @@ describe('CONVERT FUNCTION TESTS ', function() {
           description = conversionResult.output[0].data.info.description;
           expect(description.content).to
             .equal('Hey, this is the description.');
+          done();
+        });
+    });
+    it('[Github #108]- Use example values instead of faking schema' +
+      examplesInBodySpec, function(done) {
+      Converter.convert({ type: 'file', data: examplesInBodySpec },
+        { schemaFaker: true }, (err, conversionResult) => {
+          expect(conversionResult.output[0].data.item[0].request.body.raw).to
+            .equal('{\n    "a": "example-a",\n    "b": "example-b"\n}');
           done();
         });
     });
