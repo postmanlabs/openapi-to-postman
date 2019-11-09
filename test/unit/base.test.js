@@ -62,7 +62,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       '(if the option is specified) ' +
       multipleFoldersSpec, function(done) {
       var openapi = fs.readFileSync(multipleFoldersSpec, 'utf8');
-      Converter.convert({ type: 'string', data: openapi }, { collapseLongFolders: false }, (err, conversionResult) => {
+      Converter.convert({ type: 'string', data: openapi }, { collapseFolders: false }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output[0].data.item[0].name).to.equal('pets');
