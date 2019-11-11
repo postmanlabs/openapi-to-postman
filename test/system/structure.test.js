@@ -15,7 +15,7 @@ const optionIds = [
       name: 'Toggle for faking schema',
       type: 'boolean',
       default: true,
-      description: 'Option for Fake the schema using json or xml schema faker'
+      description: 'Option for faking the schema using JSON or XML schema faker'
     },
     collapseFolders: {
       name: 'Toggle for collapsing folder for long routes',
@@ -24,13 +24,13 @@ const optionIds = [
       description: 'Collapse folders in case of long routes leading to unnecessary folders'
     },
     requestParametersResolution: {
-      name: 'Set root request body type',
+      name: 'Set root request parameters type',
       type: 'string',
       default: 'schema',
       description: 'Option for setting root request body between schema or example'
     },
     exampleParametersResolution: {
-      name: 'Set example request and response body type',
+      name: 'Set example request and response parameters type',
       type: 'string',
       default: 'example',
       description: 'Option for setting example request and response body between schema or example'
