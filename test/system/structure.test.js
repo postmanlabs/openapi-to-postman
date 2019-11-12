@@ -2,7 +2,6 @@ let expect = require('chai').expect,
   getOptions = require('../../index').getOptions;
 
 const optionIds = [
-    'schemaFaker',
     'collapseFolders',
     'requestParametersResolution',
     'exampleParametersResolution',
@@ -11,46 +10,54 @@ const optionIds = [
     'requestNameSource'
   ],
   expectedOptions = {
-    schemaFaker: {
-      name: 'Toggle for faking schema',
-      type: 'boolean',
-      default: true,
-      description: 'Option for faking the schema using JSON or XML schema faker'
-    },
     collapseFolders: {
       name: 'Toggle for collapsing folder for long routes',
       type: 'boolean',
       default: true,
-      description: 'Collapse folders in case of long routes leading to unnecessary folders'
+      description: 'Determines whether the importer should attempt to collapse redundant folders into one.' +
+       'Folders are redundant if they have only one child element, and don\'t' +
+       'have any folder-level data to persist.'
     },
     requestParametersResolution: {
       name: 'Set root request parameters type',
-      type: 'string',
+      type: 'enum',
       default: 'schema',
-      description: 'Option for setting root request body between schema or example'
+      availableOptions: ['example', 'schema'],
+      description: 'Determines how request parameters (query parameters, path parameters, headers,' +
+       'or the request body) should be generated. Setting this to schema will cause the importer to' +
+       'use the parameter\'s schema as an indicator; `example` will cause the example (if provided)' +
+       'to be picked up.'
     },
     exampleParametersResolution: {
       name: 'Set example request and response parameters type',
-      type: 'string',
+      type: 'enum',
       default: 'example',
-      description: 'Option for setting example request and response body between schema or example'
+      availableOptions: ['example', 'schema'],
+      description: 'Determines how response parameters (query parameters, path parameters, headers,' +
+       'or the request body) should be generated. Setting this to schema will cause the importer to' +
+       'use the parameter\'s schema as an indicator; `example` will cause the example (if provided)' +
+       'to be picked up.'
     },
     folderStrategy: {
       name: 'Set folder strategy',
-      type: 'string',
+      type: 'enum',
       default: 'paths',
-      description: 'Option for setting folder creating strategy between paths or tags'
+      availableOptions: ['paths', 'tags'],
+      description: 'Determines whether the importer should attempt to create the folders according' +
+       'to paths or tags which are given in the spec.'
     },
     indentCharacter: {
       name: 'Set indent character',
-      type: 'string',
+      type: 'enum',
       default: ' ',
+      availableOptions: [' ', '\t'],
       description: 'Option for setting indentation character'
     },
     requestNameSource: {
       name: 'Set request name source',
-      type: 'string',
+      type: 'enum',
       default: 'fallback',
+      availableOptions: ['url', 'uKnown', 'fallback'],
       description: 'Option for setting source for a request name'
     }
   };
