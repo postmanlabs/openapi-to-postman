@@ -9,30 +9,30 @@
       "post": {
         "parameters": [
           {
-						"name": "limit",
-						"in": "header",
-						"description": "How many items to return at one time (max 100)",
-						"required": false,
-						"schema": {
-							"type": "integer",
+            "name": "limit",
+            "in": "header",
+            "description": "How many items to return at one time (max 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
               "format": "int32",
-              "example": "heading example"
-						}
+              "example": "header example"
+            }
           },
           {
-						"name": "variable2",
-						"in": "query",
-						"description": "another random variable",
-						"style": "spaceDelimited",
-						"schema": {
-							"type": "array",
-							"items": {
-								"type": "integer",
+            "name": "variable2",
+            "in": "query",
+            "description": "another random variable",
+            "style": "spaceDelimited",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
                 "format": "int64",
                 "example": "queryParamExample"
-							}
-						}
-					}
+              }
+            }
+          }
         ],
         "requestBody": {
           "content": {

@@ -19,7 +19,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       multipleFoldersSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem.json'),
       multipleFoldersSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem1.json'),
       multipleFoldersSpec2 = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem2.json'),
-      examplesInBodySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/examples_in_body.json');
+      examplesInSchemaSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/example_in_schema.json'),
+      schemaWithoutExampleSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/example_not_present.json');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
@@ -162,17 +163,42 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         });
     });
-    it('[Github #108]- Use example values instead of faking schema' +
-      examplesInBodySpec, function(done) {
-      Converter.convert({ type: 'file', data: examplesInBodySpec },
-        { schemaFaker: true, requestParametersResolution: 'schema', exampleParametersResolution: 'example' },
-        (err, conversionResult) => {
-          expect(conversionResult.output[0].data.item[0].request.body.raw).to
-            .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
-          expect(conversionResult.output[0].data.item[0].response[0].originalRequest.body.raw).to
-            .equal('{\n    "a": "example-a",\n    "b": "example-b"\n}');
-          done();
-        });
+    describe('[Github #108]- Use example values instead of faking schema', function() {
+      it('Set an option for choosing schema faking for root request and example for example request' +
+      examplesInSchemaSpec, function(done) {
+        Converter.convert({ type: 'file', data: examplesInSchemaSpec },
+          { schemaFaker: true, requestParametersResolution: 'schema', exampleParametersResolution: 'example' },
+          (err, conversionResult) => {
+            let rootRequest = conversionResult.output[0].data.item[0].request,
+              exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
+            // Request body
+            expect(rootRequest.body.raw).to
+              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+            expect(exampleRequest.body.raw).to
+              .equal('{\n    "a": "example-a",\n    "b": "example-b"\n}');
+            // Request header
+            expect(rootRequest.header[0].value).to.equal('<integer>');
+            expect(exampleRequest.header[0].value).to.equal('header example');
+            // Request query parameters
+            expect(rootRequest.url.query[0].value).to.equal('<long> <long>');
+            expect(exampleRequest.url.query[0].value).to.equal('queryParamExample queryParamExample');
+            done();
+          });
+      });
+      it('Fallback to schema if the example is not present in the spec and the option is set to example' +
+      schemaWithoutExampleSpec, function(done) {
+        Converter.convert({ type: 'file', data: schemaWithoutExampleSpec },
+          { schemaFaker: true, requestParametersResolution: 'example', exampleParametersResolution: 'example' },
+          (err, conversionResult) => {
+            let rootRequest = conversionResult.output[0].data.item[0].request,
+              exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
+            expect(exampleRequest.body.raw).to
+              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+            expect(rootRequest.body.raw).to
+              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+            done();
+          });
+      });
     });
   });
   describe('for invalid requestNameSource option', function() {
