@@ -162,13 +162,14 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         });
     });
-    it.only('[Github #108]- Use example values instead of faking schema' +
+    it('[Github #108]- Use example values instead of faking schema' +
       examplesInBodySpec, function(done) {
       Converter.convert({ type: 'file', data: examplesInBodySpec },
-        { schemaFaker: true }, (err, conversionResult) => {
-          // console.log(conversionResult.output[0].data.item[0].response[0].originalRequest.body);
-          console.log(err);
+        { schemaFaker: true, requestParametersResolution: 'schema', exampleParametersResolution: 'example' },
+        (err, conversionResult) => {
           expect(conversionResult.output[0].data.item[0].request.body.raw).to
+            .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+          expect(conversionResult.output[0].data.item[0].response[0].originalRequest.body.raw).to
             .equal('{\n    "a": "example-a",\n    "b": "example-b"\n}');
           done();
         });
