@@ -1,4 +1,4 @@
-var convert = require('./lib/convert.js'),
+var converter = require('./lib/convert.js'),
   validate = require('./lib/validate.js'),
   fs = require('fs');
 
@@ -7,7 +7,7 @@ module.exports = {
     if (input.type === 'string' || input.type === 'json') {
       // no need for extra processing before calling the converter
       // string can be JSON or YAML
-      return convert(input.data, options, cb);
+      return converter.convert(input.data, options, cb);
     }
     else if (input.type === 'file') {
       return fs.readFile(input.data, 'utf8', function(err, data) {
@@ -16,7 +16,7 @@ module.exports = {
         }
 
         // if the file contents were JSON or YAML
-        return convert(data, options, cb);
+        return converter.convert(data, options, cb);
       });
     }
     return cb(null, {
@@ -49,5 +49,9 @@ module.exports = {
         reason: e.toString()
       };
     }
+  },
+
+  getOptions: function() {
+    return converter.getOptions();
   }
 };
