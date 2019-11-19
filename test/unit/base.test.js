@@ -166,8 +166,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
     descriptionInBodyParams, function(done) {
       var openapi = fs.readFileSync(descriptionInBodyParams, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
-        let descriptionOne = conversionResult.output[0].data.item[0].request.body.urlencoded[0].description.content,
-          descriptionTwo = conversionResult.output[0].data.item[0].request.body.urlencoded[1].description.content;
+        let descriptionOne = conversionResult.output[0].data.item[0].request.body.urlencoded[0].description,
+          descriptionTwo = conversionResult.output[0].data.item[0].request.body.urlencoded[1].description;
         expect(err).to.be.null;
         expect(descriptionOne).to.equal('Description of Pet ID');
         expect(descriptionTwo).to.equal('Description of Pet name');
