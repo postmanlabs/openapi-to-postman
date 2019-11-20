@@ -20,7 +20,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       multipleFoldersSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem1.json'),
       multipleFoldersSpec2 = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem2.json'),
       examplesInSchemaSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/example_in_schema.json'),
-      schemaWithoutExampleSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/example_not_present.json');
+      schemaWithoutExampleSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/example_not_present.json'),
+      descriptionInBodyParams = path.join(__dirname, VALID_OPENAPI_PATH + '/description_in_body_params.json');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
@@ -198,6 +199,16 @@ describe('CONVERT FUNCTION TESTS ', function() {
               .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
             done();
           });
+    it('[Github #117]- Should add the description in body params in case of urlencoded' +
+    descriptionInBodyParams, function(done) {
+      var openapi = fs.readFileSync(descriptionInBodyParams, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+        let descriptionOne = conversionResult.output[0].data.item[0].request.body.urlencoded[0].description,
+          descriptionTwo = conversionResult.output[0].data.item[0].request.body.urlencoded[1].description;
+        expect(err).to.be.null;
+        expect(descriptionOne).to.equal('Description of Pet ID');
+        expect(descriptionTwo).to.equal('Description of Pet name');
+        done();
       });
     });
   });
