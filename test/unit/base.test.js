@@ -164,8 +164,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         });
     });
-    describe('[Github #108]- Use example values instead of faking schema', function() {
-      it('Set an option for choosing schema faking for root request and example for example request' +
+    describe('[Github #108]- Parameters resolution option', function() {
+      it('Should respect schema faking for root request and example for example request' +
       examplesInSchemaSpec, function(done) {
         Converter.convert({ type: 'file', data: examplesInSchemaSpec },
           { schemaFaker: true, requestParametersResolution: 'schema', exampleParametersResolution: 'example' },
@@ -186,7 +186,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
             done();
           });
       });
-      it('Fallback to schema if the example is not present in the spec and the option is set to example' +
+      it('Should fallback to schema if the example is not present in the spec and the option is set to example' +
       schemaWithoutExampleSpec, function(done) {
         Converter.convert({ type: 'file', data: schemaWithoutExampleSpec },
           { schemaFaker: true, requestParametersResolution: 'example', exampleParametersResolution: 'example' },
@@ -199,6 +199,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
               .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
             done();
           });
+      });
+    });
     it('[Github #117]- Should add the description in body params in case of urlencoded' +
     descriptionInBodyParams, function(done) {
       var openapi = fs.readFileSync(descriptionInBodyParams, 'utf8');
