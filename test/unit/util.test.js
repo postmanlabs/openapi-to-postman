@@ -1913,3 +1913,22 @@ describe('Get header family function ', function() {
     expect(result).to.equal('xml');
   });
 });
+
+describe('ResolveToExampleOrSchema function', function() {
+  it('Should return schema if the request type is root and option is set to schema', function() {
+    let result = Utils.resolveToExampleOrSchema('ROOT', 'schema', 'example');
+    expect(result).to.equal('schema');
+  });
+  it('Should return example if the request type is root and option is set to example', function() {
+    let result = Utils.resolveToExampleOrSchema('ROOT', 'example', 'example');
+    expect(result).to.equal('example');
+  });
+  it('Should return example if the request type is example and option is set to example', function() {
+    let result = Utils.resolveToExampleOrSchema('EXAMPLE', 'example', 'example');
+    expect(result).to.equal('example');
+  });
+  it('Should return schema if the request type is example and option is set to schema', function() {
+    let result = Utils.resolveToExampleOrSchema('EXAMPLE', 'example', 'schema');
+    expect(result).to.equal('schema');
+  });
+});
