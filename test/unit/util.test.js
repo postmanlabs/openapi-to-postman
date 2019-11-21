@@ -30,10 +30,10 @@ describe('UTILITY FUNCTION TESTS ', function () {
             }
           }
         },
-        bodyType = 'REQUEST',
+        parameterSource = 'REQUEST',
         resolveTo = 'schema';
 
-      expect(Utils.safeSchemaFaker(schema, resolveTo, bodyType, components)).to.equal('<string>');
+      expect(Utils.safeSchemaFaker(schema, resolveTo, parameterSource, components)).to.equal('<string>');
       done();
     });
 
@@ -59,10 +59,10 @@ describe('UTILITY FUNCTION TESTS ', function () {
             }
           }
         },
-        bodyType = 'REQUEST',
+        parameterSource = 'REQUEST',
         resolveTo = 'schema',
 
-        result = Utils.safeSchemaFaker(schema, resolveTo, bodyType, components),
+        result = Utils.safeSchemaFaker(schema, resolveTo, parameterSource, components),
         tooManyLevelsString = result[0].c[0].c[0].c[0].c[0].c.value;
 
       expect(result).to.not.equal(null);
@@ -98,11 +98,11 @@ describe('UTILITY FUNCTION TESTS ', function () {
             }
           }
         },
-        bodyType = 'REQUEST',
+        parameterSource = 'REQUEST',
         resolveTo = 'schema';
 
       expect(function() {
-        Utils.safeSchemaFaker(schema, resolveTo, bodyType, components);
+        Utils.safeSchemaFaker(schema, resolveTo, parameterSource, components);
       }).to.throw(openApiErr, 'Invalid schema reference: #/components/schem2');
       done();
     });
@@ -1930,5 +1930,38 @@ describe('ResolveToExampleOrSchema function', function() {
   it('Should return schema if the request type is example and option is set to schema', function() {
     let result = Utils.resolveToExampleOrSchema('EXAMPLE', 'example', 'schema');
     expect(result).to.equal('schema');
+  });
+});
+
+describe('setQueryParamsToUrl function', function() {
+  let queryObject = { query:
+    [{ name: 'variable2',
+      in: 'query',
+      description: 'another random variable',
+      style: 'spaceDelimited',
+      schema: { type: 'array',
+        items: {
+          type: 'integer',
+          format: 'int64',
+          example: 'queryParamExample'
+        } } },
+    { name: 'variable3',
+      in: 'query',
+      description: 'another random variable',
+      style: 'spaceDelimited',
+      schema: { type: 'array',
+        items: {
+          type: 'integer',
+          format: 'int64',
+          example: 'queryParamExample1'
+        } } }] };
+  Utils.options.schemaFaker = true;
+  Utils.options.exampleParametersResolution = 'example';
+  Utils.options.requestParametersResolution = 'schema';
+
+  it('Should creates an array having all the query params', function() {
+    let result = Utils.setQueryParamsToUrl(queryObject);
+    expect(result[0]).to.equal('variable2=queryParamExample queryParamExample');
+    expect(result[1]).to.equal('variable3=queryParamExample1 queryParamExample1');
   });
 });

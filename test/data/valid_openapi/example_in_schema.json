@@ -32,6 +32,20 @@
                 "example": "queryParamExample"
               }
             }
+          },
+          {
+            "name": "variable3",
+            "in": "query",
+            "description": "another random variable",
+            "style": "spaceDelimited",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64",
+                "example": "queryParamExample1"
+              }
+            }
           }
         ],
         "requestBody": {

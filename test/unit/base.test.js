@@ -184,7 +184,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
             expect(exampleRequest.header[0].value).to.equal('header example');
             // Request query parameters
             expect(rootRequest.url.query[0].value).to.equal('<long> <long>');
+            expect(rootRequest.url.query[1].value).to.equal('<long> <long>');
             expect(exampleRequest.url.query[0].value).to.equal('queryParamExample queryParamExample');
+            expect(exampleRequest.url.query[1].value).to.equal('queryParamExample1 queryParamExample1');
             done();
           });
       });
