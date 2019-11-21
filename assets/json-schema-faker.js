@@ -23563,6 +23563,7 @@ function extend() {
               data['alwaysFakeOptionals'] = false;
               data['optionalsProbability'] = 0.0;
               data['useDefaultValue'] = false;
+              data['useExamplesValue'] = false;
               data['requiredOnly'] = false;
               data['minItems'] = 0;
               data['maxItems'] = null;
@@ -24518,7 +24519,9 @@ function extend() {
       if (!schema) {
           return;
       }
-      // default values has higher precedence
+      if (optionAPI('useExamplesValue') && 'example' in schema) {
+        return schema.example;
+      }
       if (optionAPI('useDefaultValue') && 'default' in schema) {
           return schema.default;
       }

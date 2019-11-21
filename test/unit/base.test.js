@@ -19,6 +19,10 @@ describe('CONVERT FUNCTION TESTS ', function() {
       multipleFoldersSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem.json'),
       multipleFoldersSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem1.json'),
       multipleFoldersSpec2 = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem2.json'),
+      examplesInSchemaSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/example_in_schema.json'),
+      schemaWithoutExampleSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/example_not_present.json'),
+      examplesOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/examples_outside_schema.json'),
+      exampleOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/example_outside_schema.json'),
       descriptionInBodyParams = path.join(__dirname, VALID_OPENAPI_PATH + '/description_in_body_params.json');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
@@ -161,6 +165,73 @@ describe('CONVERT FUNCTION TESTS ', function() {
             .equal('Hey, this is the description.');
           done();
         });
+    });
+    describe('[Github #108]- Parameters resolution option', function() {
+      it('Should respect schema faking for root request and example for example request' +
+      examplesInSchemaSpec, function(done) {
+        Converter.convert({ type: 'file', data: examplesInSchemaSpec },
+          { schemaFaker: true, requestParametersResolution: 'schema', exampleParametersResolution: 'example' },
+          (err, conversionResult) => {
+            let rootRequest = conversionResult.output[0].data.item[0].request,
+              exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
+            // Request body
+            expect(rootRequest.body.raw).to
+              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+            expect(exampleRequest.body.raw).to
+              .equal('{\n    "a": "example-a",\n    "b": "example-b"\n}');
+            // Request header
+            expect(rootRequest.header[0].value).to.equal('<integer>');
+            expect(exampleRequest.header[0].value).to.equal('header example');
+            // Request query parameters
+            expect(rootRequest.url.query[0].value).to.equal('<long> <long>');
+            expect(rootRequest.url.query[1].value).to.equal('<long> <long>');
+            expect(exampleRequest.url.query[0].value).to.equal('queryParamExample queryParamExample');
+            expect(exampleRequest.url.query[1].value).to.equal('queryParamExample1 queryParamExample1');
+            done();
+          });
+      });
+      it('Should fallback to schema if the example is not present in the spec and the option is set to example' +
+      schemaWithoutExampleSpec, function(done) {
+        Converter.convert({ type: 'file', data: schemaWithoutExampleSpec },
+          { schemaFaker: true, requestParametersResolution: 'example', exampleParametersResolution: 'example' },
+          (err, conversionResult) => {
+            let rootRequest = conversionResult.output[0].data.item[0].request,
+              exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
+            expect(exampleRequest.body.raw).to
+              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+            expect(rootRequest.body.raw).to
+              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+            done();
+          });
+      });
+      it('Should use examples outside of schema instead of schema properties' +
+      exampleOutsideSchema, function(done) {
+        Converter.convert({ type: 'file', data: exampleOutsideSchema },
+          { schemaFaker: true, requestParametersResolution: 'schema', exampleParametersResolution: 'example' },
+          (err, conversionResult) => {
+            let rootRequest = conversionResult.output[0].data.item[0].request,
+              exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
+            expect(rootRequest.body.raw).to
+              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+            expect(exampleRequest.body.raw).to
+              .equal('{\n    "a": "example-b",\n    "b": "example-c"\n}');
+            done();
+          });
+      });
+      it('Should use example outside of schema instead of schema properties' +
+      examplesOutsideSchema, function(done) {
+        Converter.convert({ type: 'file', data: examplesOutsideSchema },
+          { schemaFaker: true, requestParametersResolution: 'schema', exampleParametersResolution: 'example' },
+          (err, conversionResult) => {
+            let rootRequest = conversionResult.output[0].data.item[0].request,
+              exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
+            expect(rootRequest.body.raw).to
+              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+            expect(exampleRequest.body.raw).to
+              .equal('{\n    "a": "example-b",\n    "b": "example-c"\n}');
+            done();
+          });
+      });
     });
     it('[Github #117]- Should add the description in body params in case of urlencoded' +
     descriptionInBodyParams, function(done) {

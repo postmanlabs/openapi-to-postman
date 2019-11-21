@@ -25,7 +25,7 @@ describe('travis.yml', function () {
   describe('strucure', function () {
     it('language must be set to node', function () {
       expect(travisYAML.language).to.be('node_js');
-      expect(travisYAML.node_js).to.eql(['6', '7', '8', '9', 'node', 'lts/*']);
+      expect(travisYAML.node_js).to.eql(['7', '8', '9', 'node', 'lts/*']);
     });
   });
 });
