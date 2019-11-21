@@ -1934,33 +1934,33 @@ describe('ResolveToExampleOrSchema function', function() {
 });
 
 describe('setQueryParamsToUrl function', function() {
-  let queryObject = { query:
-    [{ name: 'variable2',
-      in: 'query',
-      description: 'another random variable',
-      style: 'spaceDelimited',
-      schema: { type: 'array',
-        items: {
-          type: 'integer',
-          format: 'int64',
-          example: 'queryParamExample'
-        } } },
-    { name: 'variable3',
-      in: 'query',
-      description: 'another random variable',
-      style: 'spaceDelimited',
-      schema: { type: 'array',
-        items: {
-          type: 'integer',
-          format: 'int64',
-          example: 'queryParamExample1'
-        } } }] };
-  Utils.options.schemaFaker = true;
-  Utils.options.exampleParametersResolution = 'example';
-  Utils.options.requestParametersResolution = 'schema';
-
   it('Should creates an array having all the query params', function() {
-    let result = Utils.setQueryParamsToUrl(queryObject);
+    let queryObject = { query:
+      [{ name: 'variable2',
+        in: 'query',
+        description: 'another random variable',
+        style: 'spaceDelimited',
+        schema: { type: 'array',
+          items: {
+            type: 'integer',
+            format: 'int64',
+            example: 'queryParamExample'
+          } } },
+      { name: 'variable3',
+        in: 'query',
+        description: 'another random variable',
+        style: 'spaceDelimited',
+        schema: { type: 'array',
+          items: {
+            type: 'integer',
+            format: 'int64',
+            example: 'queryParamExample1'
+          } } }] },
+      result;
+    Utils.options.schemaFaker = true;
+    Utils.options.exampleParametersResolution = 'example';
+    Utils.options.requestParametersResolution = 'schema';
+    result = Utils.setQueryParamsToUrl(queryObject);
     expect(result[0]).to.equal('variable2=queryParamExample queryParamExample');
     expect(result[1]).to.equal('variable3=queryParamExample1 queryParamExample1');
   });
