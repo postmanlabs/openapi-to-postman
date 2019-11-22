@@ -1,0 +1,29 @@
+openapi: 3.0.0
+servers:
+  - url: 'http://petstore.swagger.io/v2'
+info:
+  description: >-
+    This is a sample server Petstore server.  You can find out more about
+    Swagger at http://swagger.io or on
+    irc.freenode.net, #swagger.  For this sample, you can use the api key
+    "special-key" to test the authorization filters
+  version: 1.0.0
+  title: Sample title
+  termsOfService: 'http://helloreverb.com/terms/'
+  contact:
+    email: apiteam@wordnik.com
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+paths:
+  # the params part will be converted to a path variable
+  # that will get added to the query.members of the SDK
+  # (but without a .descriptions property)
+  /pet/findByStatus?{params}:
+    get:
+      summary: Finds Pets by status
+      description: Multiple status values can be provided with comma seperated strings
+      operationId: findPetsByStatus
+      parameters:
+        - name: status
+          in: query

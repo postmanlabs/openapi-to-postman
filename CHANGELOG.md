@@ -1,5 +1,11 @@
 # OpenAPI-Postman Changelog
 
+#### v0.2.0 (Nov 22, 2019)
+* Handled cases where the URL query has no description property
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/117 - Maintaining descriptions for form-urlencoded body params
+* Added various options for converting OpenAPI specs into Postman Collections, including controlling how examples are generated
+* Request parameters now default to a schema-based value generation, response parameters default to example-based value generation.
+
 #### v0.1.0 (Oct 1, 2019)
 * Fix for https://github.com/postmanlabs/swagger2-postman2/issues/21 - Not creating folders at each path level unless required
 * Schemas with circular object definitions are imported successfully

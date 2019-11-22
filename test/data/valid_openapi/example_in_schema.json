@@ -1,0 +1,78 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Example",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/pet": {
+      "post": {
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "header",
+            "description": "How many items to return at one time (max 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": "header example"
+            }
+          },
+          {
+            "name": "variable2",
+            "in": "query",
+            "description": "another random variable",
+            "style": "spaceDelimited",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64",
+                "example": "queryParamExample"
+              }
+            }
+          },
+          {
+            "name": "variable3",
+            "in": "query",
+            "description": "another random variable",
+            "style": "spaceDelimited",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64",
+                "example": "queryParamExample1"
+              }
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "a": {
+                    "type": "string",
+                    "example": "example-a"
+                  },
+                  "b": {
+                    "type": "string",
+                    "example": "example-b"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "subscription successfully created"
+          }
+        }
+      }
+    }
+  }
+}

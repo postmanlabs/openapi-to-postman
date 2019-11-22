@@ -30,9 +30,10 @@ describe('UTILITY FUNCTION TESTS ', function () {
             }
           }
         },
-        bodyType = 'REQUEST';
+        parameterSource = 'REQUEST',
+        resolveTo = 'schema';
 
-      expect(Utils.safeSchemaFaker(schema, bodyType, components)).to.equal('<string>');
+      expect(Utils.safeSchemaFaker(schema, resolveTo, parameterSource, components)).to.equal('<string>');
       done();
     });
 
@@ -58,9 +59,10 @@ describe('UTILITY FUNCTION TESTS ', function () {
             }
           }
         },
-        bodyType = 'REQUEST',
+        parameterSource = 'REQUEST',
+        resolveTo = 'schema',
 
-        result = Utils.safeSchemaFaker(schema, bodyType, components),
+        result = Utils.safeSchemaFaker(schema, resolveTo, parameterSource, components),
         tooManyLevelsString = result[0].c[0].c[0].c[0].c[0].c.value;
 
       expect(result).to.not.equal(null);
@@ -96,10 +98,11 @@ describe('UTILITY FUNCTION TESTS ', function () {
             }
           }
         },
-        bodyType = 'REQUEST';
+        parameterSource = 'REQUEST',
+        resolveTo = 'schema';
 
       expect(function() {
-        Utils.safeSchemaFaker(schema, bodyType, components);
+        Utils.safeSchemaFaker(schema, resolveTo, parameterSource, components);
       }).to.throw(openApiErr, 'Invalid schema reference: #/components/schem2');
       done();
     });
@@ -478,7 +481,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
             format: 'int32'
           }
         },
-        retValSchema = Utils.convertToPmBodyData(bodyWithSchema, 'application/json');
+        retValSchema = Utils.convertToPmBodyData(bodyWithSchema, 'ROOT', 'application/json');
 
       expect(retValSchema).to.be.equal('<integer>');
     });
@@ -497,6 +500,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
 
     it('should work for examples', function() {
       Utils.options.schemaFaker = true;
+      Utils.options.requestParametersResolution = 'example';
       var bodyWithExamples = {
           examples: {
             foo: {
@@ -507,13 +511,14 @@ describe('UTILITY FUNCTION TESTS ', function () {
             }
           }
         },
-        retValExamples = Utils.convertToPmBodyData(bodyWithExamples, 'application/json');
+        retValExamples = Utils.convertToPmBodyData(bodyWithExamples, 'ROOT', 'application/json');
       expect(retValExamples.foo).to.equal(1);
       expect(retValExamples.bar).to.equal(2);
     });
 
     it('should work for examples with a $ref for non-json requests', function() {
       Utils.options.schemaFaker = true;
+      Utils.options.requestParametersResolution = 'example';
       Utils.components = {
         'examples': {
           'SampleExample': {
@@ -529,12 +534,13 @@ describe('UTILITY FUNCTION TESTS ', function () {
             '$ref': '#/components/examples/SampleExample/value'
           }
         },
-        retValExample = Utils.convertToPmBodyData(bodyWithExamples, 'text/plain');
+        retValExample = Utils.convertToPmBodyData(bodyWithExamples, 'ROOT', 'text/plain');
       expect(retValExample).to.equal('Hello');
     });
 
     it('should work for examples with a $ref for json requests', function() {
       Utils.options.schemaFaker = true;
+      Utils.options.requestParametersResolution = 'example';
       Utils.components = {
         'examples': {
           'SampleExample': {
@@ -550,7 +556,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
             '$ref': '#/components/examples/SampleExample/value'
           }
         },
-        retValExample = Utils.convertToPmBodyData(bodyWithExamples, 'application/json');
+        retValExample = Utils.convertToPmBodyData(bodyWithExamples, 'ROOT', 'application/json');
       expect(retValExample.name).to.equal('Example');
     });
   });
@@ -1462,7 +1468,8 @@ describe('UTILITY FUNCTION TESTS ', function () {
           },
           result, resultBody;
         Utils.options.schemaFaker = true;
-        result = Utils.convertToPmBody(requestBody);
+        Utils.options.requestParametersResolution = 'example';
+        result = Utils.convertToPmBody(requestBody, 'ROOT');
         resultBody = (result.body.raw);
         expect(resultBody).to.equal('"text/plain description"');
         expect(result.contentHeader).to.deep.include(
@@ -1904,5 +1911,58 @@ describe('Get header family function ', function() {
   it('should check for custom type xml header', function() {
     let result = Utils.getHeaderFamily('application/vnd.retailer+xml');
     expect(result).to.equal('xml');
+  });
+});
+
+describe('ResolveToExampleOrSchema function', function() {
+  it('Should return schema if the request type is root and option is set to schema', function() {
+    let result = Utils.resolveToExampleOrSchema('ROOT', 'schema', 'example');
+    expect(result).to.equal('schema');
+  });
+  it('Should return example if the request type is root and option is set to example', function() {
+    let result = Utils.resolveToExampleOrSchema('ROOT', 'example', 'example');
+    expect(result).to.equal('example');
+  });
+  it('Should return example if the request type is example and option is set to example', function() {
+    let result = Utils.resolveToExampleOrSchema('EXAMPLE', 'example', 'example');
+    expect(result).to.equal('example');
+  });
+  it('Should return schema if the request type is example and option is set to schema', function() {
+    let result = Utils.resolveToExampleOrSchema('EXAMPLE', 'example', 'schema');
+    expect(result).to.equal('schema');
+  });
+});
+
+describe('convertToPmQueryArray function', function() {
+  it('Should creates an array having all the query params', function() {
+    let queryObject = { query:
+      [{ name: 'variable2',
+        in: 'query',
+        description: 'another random variable',
+        style: 'spaceDelimited',
+        schema: { type: 'array',
+          items: {
+            type: 'integer',
+            format: 'int64',
+            example: 'queryParamExample'
+          } } },
+      { name: 'variable3',
+        in: 'query',
+        description: 'another random variable',
+        style: 'spaceDelimited',
+        schema: { type: 'array',
+          items: {
+            type: 'integer',
+            format: 'int64',
+            example: 'queryParamExample1'
+          } } }] },
+      requestType = 'EXAMPLE',
+      result;
+    Utils.options.schemaFaker = true;
+    Utils.options.exampleParametersResolution = 'example';
+    Utils.options.requestParametersResolution = 'schema';
+    result = Utils.convertToPmQueryArray(queryObject, requestType);
+    expect(result[0]).to.equal('variable2=queryParamExample queryParamExample');
+    expect(result[1]).to.equal('variable3=queryParamExample1 queryParamExample1');
   });
 });
