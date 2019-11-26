@@ -1967,19 +1967,19 @@ describe('convertToPmQueryArray function', function() {
   });
 });
 
-// describe('getSchemaStackSize function', function() {
-//   it('Should return 10 in case file size is less than equal to 5Mbs', function() {
-//     let result = Utils.getSchemaStackSize(4.3);
-//     expect(result).to.equal(10);
-//   });
+describe('getSchemaStackSize function', function() {
+  it('Should return 10 in case file size is less than equal to 5Mbs', function() {
+    let result = Utils.getSchemaStackSize(4.3);
+    expect(result).to.equal(10);
+  });
 
-//   it('Should return 6 in case file size is more than 5 and less than 10Mbs', function() {
-//     let result = Utils.getSchemaStackSize(8);
-//     expect(result).to.equal(6);
-//   });
+  it('Should return 6 in case file size is more than 5 and less than 10Mbs', function() {
+    let result = Utils.getSchemaStackSize(8);
+    expect(result).to.equal(6);
+  });
 
-//   it('Should return 4 in case file size is more than 10Mbs', function() {
-//     let result = Utils.getSchemaStackSize(12);
-//     expect(result).to.equal(4);
-//   });
-// });
+  it('Should return 4 in case file size is more than 10Mbs', function() {
+    let result = Utils.getSchemaStackSize(12);
+    expect(result).to.equal(4);
+  });
+});
