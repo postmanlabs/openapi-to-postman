@@ -72,10 +72,10 @@ describe('DEREF FUNCTION TESTS ', function() {
         }
       },
       parameterSource = 'REQUEST',
-      output = deref.resolveRefs(schema, parameterSource, components),
-      output_withdot = deref.resolveRefs(schemaWithDotInKey, parameterSource, components),
-      output_customFormat = deref.resolveRefs(schemaWithCustomFormat, parameterSource, components),
-      output_withAllOf = deref.resolveRefs(schemaWithAllOf, parameterSource, components);
+      output = deref.resolveRefs(schema, 10, parameterSource, components),
+      output_withdot = deref.resolveRefs(schemaWithDotInKey, 10, parameterSource, components),
+      output_customFormat = deref.resolveRefs(schemaWithCustomFormat, 10, parameterSource, components),
+      output_withAllOf = deref.resolveRefs(schemaWithAllOf, 10, parameterSource, components);
 
 
     expect(output).to.deep.include({ type: 'object',

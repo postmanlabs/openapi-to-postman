@@ -33,7 +33,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
         parameterSource = 'REQUEST',
         resolveTo = 'schema';
 
-      expect(Utils.safeSchemaFaker(schema, resolveTo, parameterSource, components)).to.equal('<string>');
+      expect(Utils.safeSchemaFaker(schema, 10, resolveTo, parameterSource, components)).to.equal('<string>');
       done();
     });
 
@@ -62,8 +62,8 @@ describe('UTILITY FUNCTION TESTS ', function () {
         parameterSource = 'REQUEST',
         resolveTo = 'schema',
 
-        result = Utils.safeSchemaFaker(schema, resolveTo, parameterSource, components),
-        tooManyLevelsString = result[0].c[0].c[0].c[0].c[0].c.value;
+        result = Utils.safeSchemaFaker(schema, 10, resolveTo, parameterSource, components),
+        tooManyLevelsString = result[0].c[0].c[0].value;
 
       expect(result).to.not.equal(null);
       expect(tooManyLevelsString).to.equal('<Error: Too many levels of nesting to fake this schema>');
@@ -102,7 +102,7 @@ describe('UTILITY FUNCTION TESTS ', function () {
         resolveTo = 'schema';
 
       expect(function() {
-        Utils.safeSchemaFaker(schema, resolveTo, parameterSource, components);
+        Utils.safeSchemaFaker(schema, 10, resolveTo, parameterSource, components);
       }).to.throw(openApiErr, 'Invalid schema reference: #/components/schem2');
       done();
     });
@@ -1964,5 +1964,22 @@ describe('convertToPmQueryArray function', function() {
     result = Utils.convertToPmQueryArray(queryObject, requestType);
     expect(result[0]).to.equal('variable2=queryParamExample queryParamExample');
     expect(result[1]).to.equal('variable3=queryParamExample1 queryParamExample1');
+  });
+});
+
+describe('getSchemaStackSize function', function() {
+  it('Should return 10 in case file size is less than equal to 5Mbs', function() {
+    let result = Utils.getSchemaStackSize(4.3);
+    expect(result).to.equal(10);
+  });
+
+  it('Should return 6 in case file size is more than 5 and less than 10Mbs', function() {
+    let result = Utils.getSchemaStackSize(8);
+    expect(result).to.equal(6);
+  });
+
+  it('Should return 4 in case file size is more than 10Mbs', function() {
+    let result = Utils.getSchemaStackSize(12);
+    expect(result).to.equal(4);
   });
 });
