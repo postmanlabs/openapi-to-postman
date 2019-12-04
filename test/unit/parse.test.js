@@ -1,6 +1,6 @@
 var expect = require('chai').expect,
   path = require('path'),
-  fs = require('fs'),
+  // fs = require('fs'),
   parse = require('../../lib/parse');
 
 
@@ -24,31 +24,31 @@ describe('Parse function tests', function() {
     });
   });
 
-  // describe('validateRoot function', function() {
-  //   it('Should return an object with result true', function() {
-  //     let oas = {
-  //         'openapi': '3.0.0',
-  //         'info': {
-  //           'title': 'sample title',
-  //           'version': '1.2.4'
-  //         },
-  //         'paths': {
-  //           '/': {}
-  //         }
-  //       },
-  //       result = parse.validateRoot(oas);
-  //     expect(result.result).to.equal(true);
-  //   });
-  // });
-
-  describe('getOasObject function', function() {
-    it('Should return a valid oas object from a yaml file', function() {
-      let filePath = '/Users/dhroovgupta/Postman/projects/openapi-to-postman' +
-      '/test/data/multiFile_with_one_root/index.yaml',
-        file = fs.readFileSync(filePath, 'utf8'),
-        result = parse.getOasObject(file);
-
-      expect(result.openapi).to.equal('3.0.0');
+  describe('validateRoot function', function() {
+    it('Should return an object with result true', function() {
+      let oas = {
+          'openapi': '3.0.0',
+          'info': {
+            'title': 'sample title',
+            'version': '1.2.4'
+          },
+          'paths': {
+            '/': {}
+          }
+        },
+        result = parse.validateRoot(oas);
+      expect(result.result).to.equal(true);
     });
   });
+
+  // describe('getOasObject function', function() {
+  //   it('Should return a valid oas object from a yaml file', function() {
+  //     let filePath = '/Users/dhroovgupta/Postman/projects/openapi-to-postman' +
+  //     '/test/data/multiFile_with_one_root/index.yaml',
+  //       file = fs.readFileSync(filePath, 'utf8'),
+  //       result = parse.getOasObject(file);
+
+  //     expect(result.openapi).to.equal('3.0.0');
+  //   });
+  // });
 });
