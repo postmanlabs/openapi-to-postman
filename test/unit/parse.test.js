@@ -1,5 +1,5 @@
 var expect = require('chai').expect,
-  // path = require('path'),
+  path = require('path'),
   fs = require('fs'),
   parse = require('../../lib/parse');
 
