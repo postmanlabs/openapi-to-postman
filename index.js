@@ -34,7 +34,7 @@ module.exports = {
         convertedSpecs = [],
         rootFiles = parse.getRootFiles(filesPathArray);
 
-      async.each(rootFiles, (rootFile, callback) => {
+      async.eachSeries(rootFiles, (rootFile, callback) => {
         loader
         // will merge all the files in the folder
           .loadSpec(rootFile, loaderOptions)
