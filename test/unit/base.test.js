@@ -245,57 +245,57 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
-    // it('Should create collection from folder having only one root file', function(done) {
-    //   let folderPath = path.join(__dirname, '../data/multiFile_with_one_root'),
-    //     array = [
-    //       { fileName: folderPath + '/index.yaml' },
-    //       { fileName: folderPath + '/definitions/index.yaml' },
-    //       { fileName: folderPath + '/definitions/User.yaml' },
-    //       { fileName: folderPath + '/info/index.yaml' },
-    //       { fileName: folderPath + '/paths/index.yaml' },
-    //       { fileName: folderPath + '/paths/foo.yaml' },
-    //       { fileName: folderPath + '/paths/bar.yaml' }
-    //     ];
+    it('Should create collection from folder having only one root file', function(done) {
+      let folderPath = path.join(__dirname, '../data/multiFile_with_one_root'),
+        array = [
+          { fileName: folderPath + '/index.yaml' },
+          { fileName: folderPath + '/definitions/index.yaml' },
+          { fileName: folderPath + '/definitions/User.yaml' },
+          { fileName: folderPath + '/info/index.yaml' },
+          { fileName: folderPath + '/paths/index.yaml' },
+          { fileName: folderPath + '/paths/foo.yaml' },
+          { fileName: folderPath + '/paths/bar.yaml' }
+        ];
 
-    //   Converter.convert({ type: 'folder', data: array }, {}, (err, result) => {
-    //     expect(result.result).to.equal(true);
-    //     expect(result.output.length).to.equal(1);
-    //     expect(result.output[0].type).to.have.equal('collection');
-    //     expect(result.output[0].data).to.have.property('info');
-    //     expect(result.output[0].data).to.have.property('item');
-    //     done();
-    //   });
-    // });
-    // it('Should create collection from folder having more than one root file', function(done) {
-    //   let folderPath = path.join(__dirname, '../data/multiFile_with_two_root'),
-    //     array = [
-    //       { fileName: folderPath + '/index.yaml' },
-    //       { fileName: folderPath + '/index1.yaml' },
-    //       { fileName: folderPath + '/definitions/index.yaml' },
-    //       { fileName: folderPath + '/definitions/User.yaml' },
-    //       { fileName: folderPath + '/info/index.yaml' },
-    //       { fileName: folderPath + '/info/index1.yaml' },
-    //       { fileName: folderPath + '/paths/index.yaml' },
-    //       { fileName: folderPath + '/paths/foo.yaml' },
-    //       { fileName: folderPath + '/paths/bar.yaml' }
-    //     ];
+      Converter.convert({ type: 'folder', data: array }, {}, (err, result) => {
+        expect(result.result).to.equal(true);
+        expect(result.output.length).to.equal(1);
+        expect(result.output[0].type).to.have.equal('collection');
+        expect(result.output[0].data).to.have.property('info');
+        expect(result.output[0].data).to.have.property('item');
+        done();
+      });
+    });
+    it('Should create collection from folder having more than one root file', function(done) {
+      let folderPath = path.join(__dirname, '../data/multiFile_with_two_root'),
+        array = [
+          { fileName: folderPath + '/index.yaml' },
+          { fileName: folderPath + '/index1.yaml' },
+          { fileName: folderPath + '/definitions/index.yaml' },
+          { fileName: folderPath + '/definitions/User.yaml' },
+          { fileName: folderPath + '/info/index.yaml' },
+          { fileName: folderPath + '/info/index1.yaml' },
+          { fileName: folderPath + '/paths/index.yaml' },
+          { fileName: folderPath + '/paths/foo.yaml' },
+          { fileName: folderPath + '/paths/bar.yaml' }
+        ];
 
-    //   Converter.convert({ type: 'folder', data: array }, {}, (err, result) => {
-    //     expect(result.result).to.equal(true);
-    //     expect(result.output.length).to.equal(2);
-    //     // first collection
-    //     expect(result.output[0].type).to.have.equal('collection');
-    //     expect(result.output[0].data).to.have.property('info');
-    //     expect(result.output[0].data).to.have.property('item');
-    //     expect(result.output[0].data.info.name).to.equal('Simple API');
-    //     // second collection
-    //     expect(result.output[1].type).to.have.equal('collection');
-    //     expect(result.output[1].data).to.have.property('info');
-    //     expect(result.output[1].data).to.have.property('item');
-    //     expect(result.output[1].data.info.name).to.equal('Simple API copy');
-    //     done();
-    //   });
-    // });
+      Converter.convert({ type: 'folder', data: array }, {}, (err, result) => {
+        expect(result.result).to.equal(true);
+        expect(result.output.length).to.equal(2);
+        // first collection
+        expect(result.output[0].type).to.have.equal('collection');
+        expect(result.output[0].data).to.have.property('info');
+        expect(result.output[0].data).to.have.property('item');
+        expect(result.output[0].data.info.name).to.equal('Simple API');
+        // second collection
+        expect(result.output[1].type).to.have.equal('collection');
+        expect(result.output[1].data).to.have.property('info');
+        expect(result.output[1].data).to.have.property('item');
+        expect(result.output[1].data.info.name).to.equal('Simple API copy');
+        done();
+      });
+    });
   });
   describe('for invalid requestNameSource option', function() {
     var pathPrefix = VALID_OPENAPI_PATH + '/test1.json',
