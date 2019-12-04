@@ -120,6 +120,14 @@ module.exports = {
         data = fs.readFileSync(input.data).toString();
         return validate(data);
       }
+      else if (input.type === 'folder') {
+        if (!_.isEmpty(parse.getRootFiles(input.data))) {
+          return {
+            result: true,
+            reason: 'valid input type'
+          };
+        }
+      }
       return {
         result: false,
         reason: 'input type is not valid'
