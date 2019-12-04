@@ -1,6 +1,6 @@
-var expect = require('chai').expect,
+const expect = require('chai').expect,
   path = require('path'),
-  // fs = require('fs'),
+  fs = require('fs'),
   parse = require('../../lib/parse');
 
 
@@ -41,14 +41,14 @@ describe('Parse function tests', function() {
     });
   });
 
-  // describe('getOasObject function', function() {
-  //   it('Should return a valid oas object from a yaml file', function() {
-  //     let filePath = '/Users/dhroovgupta/Postman/projects/openapi-to-postman' +
-  //     '/test/data/multiFile_with_one_root/index.yaml',
-  //       file = fs.readFileSync(filePath, 'utf8'),
-  //       result = parse.getOasObject(file);
+  describe('getOasObject function', function() {
+    it('Should return a valid oas object from a yaml file', function() {
+      let filePath = '/Users/dhroovgupta/Postman/projects/openapi-to-postman' +
+      '/test/data/multiFile_with_one_root/index.yaml',
+        file = fs.readFileSync(filePath, 'utf8'),
+        result = parse.getOasObject(file);
 
-  //     expect(result.openapi).to.equal('3.0.0');
-  //   });
-  // });
+      expect(result.openapi).to.equal('3.0.0');
+    });
+  });
 });
