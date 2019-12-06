@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 const expect = require('chai').expect,
   // path = require('path'),
   fs = require('fs'),
@@ -36,12 +37,12 @@ describe('PARSE FUNCTION TESTS', function() {
   //   expect(result.result).to.equal(true);
   // });
 
-  it('getOasObject function should return a valid oas object from a yaml file', function() {
-    let filePath = '/Users/dhroovgupta/Postman/projects/openapi-to-postman' +
-      '/test/data/multiFile_with_one_root/index.yaml',
-      file = fs.readFileSync(filePath, 'utf8'),
-      result = parse.getOasObject(file);
+  // it('getOasObject function should return a valid oas object from a yaml file', function() {
+  //   let filePath = '/Users/dhroovgupta/Postman/projects/openapi-to-postman' +
+  //     '/test/data/multiFile_with_one_root/index.yaml',
+  //     file = fs.readFileSync(filePath, 'utf8'),
+  //     result = parse.getOasObject(file);
 
-    expect(result.openapi).to.equal('3.0.0');
-  });
+  //   expect(result.openapi).to.equal('3.0.0');
+  // });
 });
