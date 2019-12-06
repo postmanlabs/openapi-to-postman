@@ -5,8 +5,8 @@ var converter = require('./lib/convert.js'),
   _ = require('lodash'),
   fs = require('fs');
 
-// options for speccy loader
-const loaderOptions = {
+// options for oas-resolver
+const OasResolverOptions = {
   resolve: true, // Resolve external references
   jsonSchema: true // Treat $ref like JSON Schema and convert to OpenAPI Schema Objects
 };
@@ -36,7 +36,7 @@ module.exports = {
       async.eachSeries(rootFiles, (rootFile, callback) => {
         parse
         // will merge all the files in the folder
-          .loadSpec(rootFile, loaderOptions)
+          .loadSpec(rootFile, OasResolverOptions)
           .then((spec) => {
             converter.convert(spec, options, (err, result) => {
               if (err) {
