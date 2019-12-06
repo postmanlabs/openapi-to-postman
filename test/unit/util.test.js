@@ -1,8 +1,8 @@
 var expect = require('chai').expect,
   _ = require('lodash'),
   Utils = require('../../lib/util.js'),
-  path = require('path'),
-  fs = require('fs'),
+  // path = require('path'),
+  // fs = require('fs'),
   parse = require('../../lib/parse.js'),
   openApiErr = require('../../lib/error.js');
 
