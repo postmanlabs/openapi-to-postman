@@ -1,10 +1,10 @@
 const expect = require('chai').expect,
   path = require('path'),
   fs = require('fs'),
-  parse = require('../../lib/parse');
+  parse = require('../../lib/parse.js');
 
-describe('getRootFiles function', function() {
-  it('Should return an array with only one root file path', function() {
+describe('PARSE FUNCTION TESTS', function() {
+  it('getRootFiles should return an array with only one root file path', function() {
     let folderPath = path.join(__dirname, '../data/multiFile_with_one_root'),
       array = [
         { fileName: folderPath + '/index.yaml' },
@@ -20,10 +20,8 @@ describe('getRootFiles function', function() {
     expect(result[0]).to.equal('/Users/dhroovgupta/Postman/projects/openapi-to-postman' +
       '/test/data/multiFile_with_one_root/index.yaml');
   });
-});
 
-describe('validateRoot function', function() {
-  it('Should return an object with result true', function() {
+  it('validateRoot function should return an object with result true', function() {
     let oas = {
         'openapi': '3.0.0',
         'info': {
@@ -37,10 +35,8 @@ describe('validateRoot function', function() {
       result = parse.validateRoot(oas);
     expect(result.result).to.equal(true);
   });
-});
 
-describe('getOasObject function', function() {
-  it('Should return a valid oas object from a yaml file', function() {
+  it('getOasObject function should return a valid oas object from a yaml file', function() {
     let filePath = '/Users/dhroovgupta/Postman/projects/openapi-to-postman' +
       '/test/data/multiFile_with_one_root/index.yaml',
       file = fs.readFileSync(filePath, 'utf8'),
