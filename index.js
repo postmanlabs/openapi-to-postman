@@ -2,7 +2,6 @@ var converter = require('./lib/convert.js'),
   validate = require('./lib/validate.js'),
   parse = require('./lib/parse.js'),
   async = require('async'),
-  loader = require('speccy/lib/loader'),
   _ = require('lodash'),
   fs = require('fs');
 
@@ -35,7 +34,7 @@ module.exports = {
         rootFiles = parse.getRootFiles(filesPathArray);
 
       async.eachSeries(rootFiles, (rootFile, callback) => {
-        loader
+        parse
         // will merge all the files in the folder
           .loadSpec(rootFile, loaderOptions)
           .then((spec) => {
