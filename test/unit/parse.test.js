@@ -22,20 +22,20 @@ describe('PARSE FUNCTION TESTS', function() {
       '/test/data/multiFile_with_one_root/index.yaml');
   });
 
-  it('validateRoot function should return an object with result true', function() {
-    let oas = {
-        'openapi': '3.0.0',
-        'info': {
-          'title': 'sample title',
-          'version': '1.2.4'
-        },
-        'paths': {
-          '/': {}
-        }
-      },
-      result = parse.validateRoot(oas);
-    expect(result.result).to.equal(true);
-  });
+  // it('validateRoot function should return an object with result true', function() {
+  //   let oas = {
+  //       'openapi': '3.0.0',
+  //       'info': {
+  //         'title': 'sample title',
+  //         'version': '1.2.4'
+  //       },
+  //       'paths': {
+  //         '/': {}
+  //       }
+  //     },
+  //     result = parse.validateRoot(oas);
+  //   expect(result.result).to.equal(true);
+  // });
 
   // it('getOasObject function should return a valid oas object from a yaml file', function() {
   //   let filePath = '/Users/dhroovgupta/Postman/projects/openapi-to-postman' +
