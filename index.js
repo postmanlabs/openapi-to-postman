@@ -59,13 +59,7 @@ module.exports = {
               reason: err
             });
           });
-      }, (err) => {
-        if (err) {
-          return cb(null, {
-            result: false,
-            reason: _.toString(err.reason)
-          });
-        }
+      }, () => {
 
         var conversionResult = false,
           convertedCollections = [],
