@@ -1,0 +1,58 @@
+{
+	"openapi": "3.0.0",
+	"info": {
+		"title": "Test",
+		"description": "Test Resources",
+		"contact": {},
+		"version": "1.0"
+	},
+	"servers": [
+		{
+			"url": "http://example.com",
+			"description": "example server"
+		}
+	],
+	"paths": {
+		"/v1/test/{id}": {
+			"get": {
+				"tags": [
+					"TEST"
+				],
+				"summary": "TEST",
+				"operationId": "test",
+				"Description": "Test",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"description": "This description doesn't show up.",
+						"schema": {
+							"type": "string",
+							"default": "123456"
+						}
+					},
+					{
+						"in": "query",
+						"name": "minTimestamp",
+						"description": "Restrict the results to be above minTimestamp",
+						"required": false,
+						"schema": {
+							"type": "number",
+							"default": 0
+						}
+					},
+					{
+						"in": "query",
+						"name": "maxTimestamp",
+						"description": "Restrict the results to be below maxTimestamp",
+						"required": false,
+						"schema": {
+							"type": "number",
+							"default": 1600290830
+						}
+					}
+				]
+			}
+		}
+	}
+}

@@ -23,7 +23,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       schemaWithoutExampleSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/example_not_present.json'),
       examplesOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/examples_outside_schema.json'),
       exampleOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/example_outside_schema.json'),
-      descriptionInBodyParams = path.join(__dirname, VALID_OPENAPI_PATH + '/description_in_body_params.json');
+      descriptionInBodyParams = path.join(__dirname, VALID_OPENAPI_PATH + '/description_in_body_params.json'),
+      zeroDefaultValueSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/zero_in_default_value.json');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
@@ -96,6 +97,15 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output[0].data.item[0].request.name).to.equal('find Pets');
         expect(conversionResult.output[0].data.item[0].request.method).to.equal('GET');
+        done();
+      });
+    });
+    it.only('abcd', function(done) {
+      var openapi = fs.readFileSync(zeroDefaultValueSpec, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output[0].data.item[0].request.url.query[0].value).to.equal('0');
         done();
       });
     });
