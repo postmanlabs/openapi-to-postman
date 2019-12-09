@@ -83,13 +83,11 @@ module.exports = {
             output: convertedCollections
           });
         }
-        // eslint-disable-next-line no-else-return
-        else {
-          return cb(null, {
-            result: false,
-            reason: reasonForFail
-          });
-        }
+
+        return cb(null, {
+          result: false,
+          reason: reasonForFail
+        });
       });
     }
     // eslint-disable-next-line no-else-return
