@@ -40,17 +40,10 @@ module.exports = {
           .then((spec) => {
             converter.convert(spec, options, (err, result) => {
               if (err) {
-                return callback(null, {
-                  result: false,
-                  reason: err
-                });
+                return callback(err);
               }
-              // eslint-disable-next-line no-else-return
-              else {
-                convertedSpecs.push(result);
-                return callback(null);
-              }
-
+              convertedSpecs.push(result);
+              return callback(null);
             });
           })
           .catch((err) => {
@@ -59,7 +52,14 @@ module.exports = {
               reason: err
             });
           });
-      }, () => {
+      }, (err) => {
+
+        if (err) {
+          return cb({
+            result: false,
+            reason: 'input type:' + input.type + ' is not valid'
+          });
+        }
 
         var conversionResult = false,
           convertedCollections = [],
@@ -73,6 +73,7 @@ module.exports = {
           else {
             conversionResult = convertedSpec.result;
             reasonForFail = convertedSpec.reason;
+            return false; // it will break out from the loop
           }
         });
 
@@ -116,8 +117,7 @@ module.exports = {
       else if (input.type === 'folder') {
         if (!_.isEmpty(parse.getRootFiles(input.data))) {
           return {
-            result: true,
-            reason: 'valid input type'
+            result: true
           };
         }
       }
