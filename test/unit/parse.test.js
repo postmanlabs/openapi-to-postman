@@ -59,4 +59,18 @@ describe('PARSE FUNCTION TESTS', function() {
       });
     });
   });
+
+  it('mergeFiles function should merge all files in the folder correctly', function() {
+    const filePath = path.join(__dirname, '../data/multiFile_with_one_root/index.yaml'),
+      OasResolverOptions = {
+        resolve: true,
+        jsonSchema: true
+      };
+    parse.mergeFiles(filePath, OasResolverOptions).then((result) => {
+      expect(JSON.stringify(result)).to.equal('{"openapi":"3.0.0","info":{"version":"0.0.0","title":"Simple API"},' +
+      '"paths":{"/foo":{"get":{"responses":{"200":{"description":"OK"}}}},"/bar":{"get":{"responses":{"200":' +
+      '{"description":"OK","schema":{}}}}}},"definitions":{"User":{"type":"object","properties":{"name":{"type":' +
+      '"string"}}}}}');
+    });
+  });
 });
