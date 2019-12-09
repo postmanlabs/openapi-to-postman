@@ -36,7 +36,7 @@ module.exports = {
       async.eachSeries(rootFiles, (rootFile, callback) => {
         parse
         // will merge all the files in the folder
-          .loadSpec(rootFile, OasResolverOptions)
+          .mergeFiles(rootFile, OasResolverOptions)
           .then((spec) => {
             converter.convert(spec, options, (err, result) => {
               if (err) {
