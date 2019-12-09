@@ -100,7 +100,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
-    it('[Github #113]: Should convert the default value in case of zero as well', function(done) {
+    it('[Github #113]: Should convert the default value in case of zero as well' +
+    zeroDefaultValueSpec, function(done) {
       var openapi = fs.readFileSync(zeroDefaultValueSpec, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
         expect(err).to.be.null;
