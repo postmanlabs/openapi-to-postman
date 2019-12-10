@@ -70,14 +70,14 @@ module.exports = {
             let result;
             conversionResult = conversionResult || convertedSpec.result;
 
-            function returnCollections (resultSpec) {
+            function returnCollection (resultSpec) {
               if (resultSpec.type === 'collection') {
                 return true;
               }
             }
 
             // filtering out the collections from the convertedSpec
-            result = convertedSpec.output.filter(returnCollections);
+            result = convertedSpec.output.filter(returnCollection);
             convertedCollections.push(result[0]);
           }
           else {
