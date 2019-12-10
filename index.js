@@ -47,10 +47,7 @@ module.exports = {
             });
           })
           .catch((err) => {
-            return callback(null, {
-              result: false,
-              reason: err
-            });
+            return callback(err);
           });
       }, (err) => {
 
