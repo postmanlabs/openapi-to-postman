@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 const expect = require('chai').expect,
   path = require('path'),
   fs = require('fs'),
