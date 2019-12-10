@@ -67,13 +67,24 @@ module.exports = {
 
         _.forEach(convertedSpecs, (convertedSpec) => {
           if (convertedSpec.result) {
-            conversionResult = convertedSpec.result;
-            convertedCollections.push(convertedSpec.output[0]);
+            let result;
+            conversionResult = conversionResult || convertedSpec.result;
+
+            function returnCollections (resultSpec) {
+              if (resultSpec.type === 'collection') {
+                return true;
+              }
+            }
+
+            // filtering out the collections from the convertedSpec
+            result = convertedSpec.output.filter(returnCollections);
+            result.forEach((collection) => {
+              convertedCollections.push(collection);
+            });
           }
           else {
-            conversionResult = convertedSpec.result;
+            conversionResult = conversionResult || convertedSpec.result;
             reasonForFail = convertedSpec.reason;
-            return false; // it will break out from the loop
           }
         });
 
