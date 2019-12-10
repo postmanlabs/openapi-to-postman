@@ -78,9 +78,7 @@ module.exports = {
 
             // filtering out the collections from the convertedSpec
             result = convertedSpec.output.filter(returnCollections);
-            result.forEach((collection) => {
-              convertedCollections.push(collection);
-            });
+            convertedCollections.push(result[0]);
           }
           else {
             conversionResult = conversionResult || convertedSpec.result;
