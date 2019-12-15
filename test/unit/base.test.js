@@ -250,12 +250,11 @@ describe('CONVERT FUNCTION TESTS ', function() {
     var pathPrefix = VALID_OPENAPI_PATH + '/test1.json',
       specPath = path.join(__dirname, pathPrefix);
 
-    it('for invalid request name, converter should throw an error', function(done) {
+    it('for invalid request name, converter should use the correct fallback value', function(done) {
       var openapi = fs.readFileSync(specPath, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { requestNameSource: 'uKnown' }, (err, conversionResult) => {
         expect(err).to.be.null;
-        expect(conversionResult.reason).to.equal(
-          'requestNameSource (uKnown) in options is invalid or property does not exist in pets');
+        expect(conversionResult.result).to.equal(true);
         done();
       });
     });
@@ -331,10 +330,10 @@ describe('INTERFACE FUNCTION TESTS ', function () {
     it('(type: some invalid value)', function(done) {
       var result = Converter.validate({ type: 'fil', data: 'invalid_path' });
       expect(result.result).to.equal(false);
-      expect(result.reason).to.equal('input type is not valid');
+      expect(result.reason).to.contain('input');
       Converter.convert({ type: 'fil', data: 'invalid_path' }, {}, function(err, conversionResult) {
         expect(conversionResult.result).to.equal(false);
-        expect(conversionResult.reason).to.equal('input type:fil is not valid');
+        expect(conversionResult.reason).to.equal('Invalid input type (fil). type must be one of file/json/string.');
         done();
       });
     });
@@ -344,8 +343,9 @@ describe('INTERFACE FUNCTION TESTS ', function () {
     it('(type: file)', function(done) {
       var result = Converter.validate({ type: 'file', data: 'invalid_path' });
       expect(result.result).to.equal(false);
-      Converter.convert({ type: 'file', data: 'invalid_path' }, {}, function(err) {
-        expect(err.toString()).to.equal('Error: ENOENT: no such file or directory, open \'invalid_path\'');
+      Converter.convert({ type: 'file', data: 'invalid_path' }, {}, function(err, result) {
+        expect(result.result).to.equal(false);
+        expect(result.reason).to.equal('ENOENT: no such file or directory, open \'invalid_path\'');
         done();
       });
     });
