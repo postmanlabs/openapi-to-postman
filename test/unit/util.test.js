@@ -1340,7 +1340,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         occupation: 'student'
       };
 
-      expect(SchemaUtils.getQueryStringWithStyle(param, '%20')).to.equal('name%20tuhin%20age%2022%20occupation%20student');
+      expect(SchemaUtils.getQueryStringWithStyle(param, '%20')).to.equal(
+        'name%20tuhin%20age%2022%20occupation%20student');
       expect(SchemaUtils.getQueryStringWithStyle(param, '|')).to.equal('name|tuhin|age|22|occupation|student');
       expect(SchemaUtils.getQueryStringWithStyle(param, ',')).to.equal('name,tuhin,age,22,occupation,student');
       done();
@@ -1359,8 +1360,6 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       done();
     });
   });
-
-
 
   describe('convertToPmBody function', function() {
     describe('should convert requestbody of media type', function() {
