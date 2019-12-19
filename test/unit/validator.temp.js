@@ -7,8 +7,8 @@ var expect = require('chai').expect,
   Converter = require('../../index.js'),
   fs = require('fs'),
   path = require('path'),
-  VALID_OPENAPI_PATH = '../data/.temp/specs/spec-to-validate-against.json',
-  HISTORY_PATH = '../data/.temp/specs/history_obj.json';
+  VALID_OPENAPI_PATH = '../data/validationData/spec-to-validate-against.json',
+  HISTORY_PATH = '../data/validationData/history_obj.json';
 
 describe('The converter must validate a history request against the schema', function () {
   var openapi = JSON.parse(fs.readFileSync(path.join(__dirname, VALID_OPENAPI_PATH), 'utf8')),

@@ -2,7 +2,7 @@
   {
     "id": "r1",
     "request": {
-      "url": "https://domain.com/petsa/hello",
+      "url": "https://domain.com/v1/petsa/{{hello}}",
       "method": "GET",
       "header": [
         {
