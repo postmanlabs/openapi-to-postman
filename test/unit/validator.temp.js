@@ -18,7 +18,7 @@ describe('The converter must validate a history request against the schema', fun
     let schemaPack = new Converter.SchemaPack({ type: 'json', data: openapi }, {});
     schemaPack.validateTransaction(historyRequest, (err, result) => {
       expect(err).to.be.null;
-      expect(result).to.be.an.object;
+      expect(result).to.be.an('object');
       done();
     });
   });
