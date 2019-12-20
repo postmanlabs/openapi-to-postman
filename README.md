@@ -38,7 +38,7 @@ $ npm install openapi-to-postmanv2
 In order to use the convert in your node application, you need to import the package using `require`.
 
 ```javascript
-var openapi-converter = require('openapi-to-postmanv2')
+var Converter = require('openapi-to-postmanv2')
 ```
 
 The converter provides the following functions:
@@ -106,10 +106,11 @@ function (err, result) {
 ### Sample Usage:
 ```javascript
 var fs = require('fs'),
-  Converter = require('openapi-to-postmanv2'),
-  openapiData = fs.readFileSync('sample-spec.yaml', {encoding: 'UTF8'});
 
- Converter.convert({ type: 'string', data: openapiData },
+Converter = require('openapi-to-postmanv2'),
+openapiData = fs.readFileSync('sample-spec.yaml', {encoding: 'UTF8'});
+
+Converter.convert({ type: 'string', data: openapiData },
   {}, (err, conversionResult) => {
     if (!conversionResult.result) {
       console.log('Could not convert', conversionResult.reason);
