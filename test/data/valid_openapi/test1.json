@@ -16,8 +16,8 @@
 					"enum":["v2.0","v2.1","v2.2","v2.3"],
 					"description":"version number"
                 }
-            }	
-			
+            }
+
 		}
 	],
 	"paths": {
@@ -137,12 +137,13 @@
                         "v2": {
                             "default":"v3.0"
                         }
-                    }	
+                    }
 				}
 			],
-			"parameters":[{
-				"$ref":"#/components/parameters/queryparam1"
-            },
+			"parameters":[
+        {
+				  "$ref":"#/components/parameters/queryparam1"
+        },
             {
                 "name": "variable3",
                 "in": "query",
@@ -273,9 +274,9 @@
 					}
 				}
 			}
-        },
-        "parameters": {
-            "queryparam1": {
+    },
+    "parameters": {
+      "queryparam1": {
 				"name": "limit",
 				"in": "query",
 				"description": "component level query param",

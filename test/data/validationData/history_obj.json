@@ -1,0 +1,85 @@
+[
+  {
+    "id": "r1",
+    "request": {
+      "url": "https://domain.com/v1/petsa/{{hello}}",
+      "method": "GET",
+      "header": [
+        {
+          "key": "limit",
+          "value": "3"
+        },
+        {
+          "key": "limit_2",
+          "value": "3f"
+        }
+      ],
+      "body": null
+    },
+    "response": [
+      {
+        "id": "r1s1",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": "{\"name\": \"pig\"}",
+        "code": 200
+      },
+      {
+        "id": "r1s2",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": "{\"name\": \"pig\"}",
+        "code": 403
+      }
+    ]
+  },
+  {
+    "id": "r2",
+    "request": {
+      "url": "https://domain.com/petsa/4",
+      "method": "GET",
+      "header": [
+        {
+          "key": "limit",
+          "value": "3"
+        }
+      ],
+      "body": {
+        "mode": "raw",
+        "raw": "{\"name\": \"dog\"}"
+      }
+    },
+    "response": [
+      {
+        "id": "r2s1",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": "{\"name\": \"dog\"}",
+        "code": 200
+      },
+      {
+        "id": "r2s2",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": "{\"name\": \"dog\"}",
+        "code": 403
+      }
+    ]
+  }
+]
