@@ -7,7 +7,8 @@ const optionIds = [
     'exampleParametersResolution',
     'folderStrategy',
     'indentCharacter',
-    'requestNameSource'
+    'requestNameSource',
+    'validationPropertiesToIgnore'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -59,6 +60,14 @@ const optionIds = [
       default: 'fallback',
       availableOptions: ['url', 'uKnown', 'fallback'],
       description: 'Option for setting source for a request name'
+    },
+    validationPropertiesToIgnore: {
+      name: 'Properties to ignore during validation',
+      type: 'array',
+      default: [],
+      description: 'Specific properties (parts of a request/response pair) to ignore during validation.' +
+          ' Must be sent as an array of strings. Valid inputs in the array: PATHVARIABLE, QUERYPARAM,' +
+          ' HEADER, BODY, RESPONSE_HEADER, RESPONSE_BODY'
     }
   };
 
