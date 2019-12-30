@@ -50,7 +50,7 @@
       //"array-callback-return": "error",
       "block-scoped-var": "error",
       "complexity": "off",
-      "consistent-return": "warn",
+      "consistent-return": "off",
       "curly": "error",
       "default-case": "error",
       "dot-location": ["error", "property"],
