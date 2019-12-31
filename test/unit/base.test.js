@@ -24,8 +24,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       examplesOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/examples_outside_schema.json'),
       exampleOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/example_outside_schema.json'),
       descriptionInBodyParams = path.join(__dirname, VALID_OPENAPI_PATH + '/description_in_body_params.json'),
-      zeroDefaultValueSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/zero_in_default_value.json'),
-      invalidVersionSpec = path.join(__dirname, VALID_OPENAPI_PATH, '/invalid_version.json');
+      zeroDefaultValueSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/zero_in_default_value.json');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
@@ -180,8 +179,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         });
     });
-    it('Should remove the version from generated collection if given spec does not follow semver', function(done) {
-      Converter.convert({ type: 'file', data: invalidVersionSpec }, { schemaFaker: true }, (err, conversionResult) => {
+    it('Should remove the version from generated collection for all specs', function(done) {
+      Converter.convert({ type: 'file', data: testSpec }, { schemaFaker: true }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output[0].data.info).to.not.have.property('version');
