@@ -459,7 +459,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       );
       expect(retVal).to.be.an('array');
       expect(retVal[0].key).to.equal('v3');
-      expect(retVal[0].description).to.equal('version number (This can only be one of v4.0,v5.0)');
+      expect(retVal[0].description).to.equal('version number (is one of v4.0,v5.0)');
       expect(retVal[0].value).to.equal('v6.0');
     });
 
@@ -477,7 +477,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       );
       expect(retVal).to.be.an('array');
       expect(retVal[0].key).to.equal('v3');
-      expect(retVal[0].description).to.equal('version number (This can only be one of v4.0,v5.0)');
+      expect(retVal[0].description).to.equal('version number (is one of v4.0,v5.0)');
       expect(retVal[0].value).to.equal('{{v3}}');
     });
 
