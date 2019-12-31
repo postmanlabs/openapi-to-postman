@@ -1,5 +1,12 @@
 # OpenAPI-Postman Changelog
 
+#### v1.0.0 (Dec 31, 2019)
+* New API to validate requests against a schema
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/113 - Correct description set for falsy values
+* Invalid file paths return a falsy result and a reason (instead of an error)
+* Invalid option values don't throw errors anymore
+* Readme typo fix (courtesy https://github.com/disposedtrolley)
+
 #### v0.2.0 (Nov 22, 2019)
 * Handled cases where the URL query has no description property
 * Fix for https://github.com/postmanlabs/openapi-to-postman/issues/117 - Maintaining descriptions for form-urlencoded body params
