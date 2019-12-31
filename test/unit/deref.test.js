@@ -24,58 +24,60 @@ describe('DEREF FUNCTION TESTS ', function() {
           }
         }]
       },
-      components = {
-        schemas: {
-          schema1: {
-            anyOf: [{
-              $ref: '#/components/schemas/schema2'
+      componentsAndPaths = {
+        components: {
+          schemas: {
+            schema1: {
+              anyOf: [{
+                $ref: '#/components/schemas/schema2'
+              },
+              {
+                $ref: '#/components/schemas/schema3'
+              }
+              ]
             },
-            {
-              $ref: '#/components/schemas/schema3'
-            }
-            ]
-          },
-          schema2: {
-            type: 'object',
-            required: [
-              'id'
-            ],
-            description: 'Schema 2',
-            properties: {
-              id: {
-                type: 'integer',
-                format: 'int64'
+            schema2: {
+              type: 'object',
+              required: [
+                'id'
+              ],
+              description: 'Schema 2',
+              properties: {
+                id: {
+                  type: 'integer',
+                  format: 'int64'
+                }
               }
-            }
-          },
-          'schema.four': {
-            type: 'object',
-            required: [
-              'id'
-            ],
-            properties: {
-              id: {
-                type: 'integer',
-                format: 'int64'
+            },
+            'schema.four': {
+              type: 'object',
+              required: [
+                'id'
+              ],
+              properties: {
+                id: {
+                  type: 'integer',
+                  format: 'int64'
+                }
               }
-            }
-          },
-          schema3: {
-            type: 'object',
-            properties: {
-              emailField: {
-                type: 'string',
-                format: 'email'
+            },
+            schema3: {
+              type: 'object',
+              properties: {
+                emailField: {
+                  type: 'string',
+                  format: 'email'
+                }
               }
             }
           }
         }
       },
       parameterSource = 'REQUEST',
-      output = deref.resolveRefs(schema, parameterSource, components),
-      output_withdot = deref.resolveRefs(schemaWithDotInKey, parameterSource, components),
-      output_customFormat = deref.resolveRefs(schemaWithCustomFormat, parameterSource, components),
-      output_withAllOf = deref.resolveRefs(schemaWithAllOf, parameterSource, components);
+      output = deref.resolveRefs(schema, parameterSource, componentsAndPaths),
+      output_withdot = deref.resolveRefs(schemaWithDotInKey, parameterSource, componentsAndPaths),
+      output_customFormat = deref.resolveRefs(schemaWithCustomFormat, parameterSource, componentsAndPaths),
+      output_withAllOf = deref.resolveRefs(schemaWithAllOf, parameterSource, componentsAndPaths);
 
 
     expect(output).to.deep.include({ type: 'object',
