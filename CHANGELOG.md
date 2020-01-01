@@ -1,5 +1,9 @@
 # OpenAPI-Postman Changelog
 
+#### v1.0.2 (Jan 01, 2020)
+* Exposing option to hide MISSING_IN_SCHEMA mismatches, hiding them by default
+* Consistent response formats, more resilient against invalid schemas
+
 #### v1.0.1 (Jan 01, 2020)
 * Deleting 'info.version' from generated collection JSON - it's not required and was causing versioning problems
 * Scope-related bugfixes in schema validation flows
