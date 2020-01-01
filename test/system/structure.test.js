@@ -8,7 +8,8 @@ const optionIds = [
     'folderStrategy',
     'indentCharacter',
     'requestNameSource',
-    'validationPropertiesToIgnore'
+    'validationPropertiesToIgnore',
+    'showMissingInSchemaErrors'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -68,6 +69,13 @@ const optionIds = [
       description: 'Specific properties (parts of a request/response pair) to ignore during validation.' +
           ' Must be sent as an array of strings. Valid inputs in the array: PATHVARIABLE, QUERYPARAM,' +
           ' HEADER, BODY, RESPONSE_HEADER, RESPONSE_BODY'
+    },
+    showMissingInSchemaErrors: {
+      name: 'Whether MISSING_IN_SCHEMA mismatches should be returned',
+      type: 'boolean',
+      default: false,
+      description: 'MISSING_IN_SCHEMA indicates that an extra parameter was included in the request. For most ' +
+        'use cases, this need not be considered an error.'
     }
   };
 
