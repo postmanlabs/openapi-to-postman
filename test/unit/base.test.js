@@ -179,6 +179,14 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         });
     });
+    it('Should remove the version from generated collection for all specs', function(done) {
+      Converter.convert({ type: 'file', data: testSpec }, { schemaFaker: true }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output[0].data.info).to.not.have.property('version');
+        done();
+      });
+    });
     describe('[Github #108]- Parameters resolution option', function() {
       it('Should respect schema faking for root request and example for example request' +
       examplesInSchemaSpec, function(done) {
