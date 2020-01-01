@@ -1,5 +1,9 @@
 # OpenAPI-Postman Changelog
 
+#### v1.0.1 (Jan 01, 2020)
+* Deleting 'info.version' from generated collection JSON - it's not required and was causing versioning problems
+* Scope-related bugfixes in schema validation flows
+
 #### v1.0.0 (Dec 31, 2019)
 * New API to validate requests against a schema
 * Fix for https://github.com/postmanlabs/openapi-to-postman/issues/113 - Correct description set for falsy values
