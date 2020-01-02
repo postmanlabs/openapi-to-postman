@@ -1,5 +1,10 @@
 # OpenAPI-Postman Changelog
 
+#### v1.1.0 (Jan 02, 2020)
+* Handling cases where API definition parameters have no schema
+* Validating input transaction schema before starting validation
+* Forcing path variable descriptions to be strings instead of objects
+
 #### v1.0.2 (Jan 01, 2020)
 * Exposing option to hide MISSING_IN_SCHEMA mismatches, hiding them by default
 * Consistent response formats, more resilient against invalid schemas
