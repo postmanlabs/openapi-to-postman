@@ -107,7 +107,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output[0].data.item[0].request.url.query[0].value).to.equal('0');
-        expect(conversionResult.output[0].data.item[0].request.url.variable[0].description.content)
+        expect(conversionResult.output[0].data.item[0].request.url.variable[0].description)
           .to.equal('This description doesn\'t show up.');
         done();
       });
