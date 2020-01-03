@@ -1,5 +1,9 @@
 # OpenAPI-Postman Changelog
 
+#### v1.1.1 (Jan 03, 2020)
+* Correct validation against JSON request/response bodies
+* Correct JSON paths in response mismatches
+
 #### v1.1.0 (Jan 02, 2020)
 * Handling cases where API definition parameters have no schema
 * Validating input transaction schema before starting validation
