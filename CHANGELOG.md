@@ -1,5 +1,10 @@
 # OpenAPI-Postman Changelog
 
+#### v1.1.2 (Jan 03, 2020)
+* Updated copy for mismatch reasons
+* Returning errors instead of exceptions for invalid schemas
+* Fix for duplicate mismatches
+
 #### v1.1.1 (Jan 03, 2020)
 * Correct validation against JSON request/response bodies
 * Correct JSON paths in response mismatches
