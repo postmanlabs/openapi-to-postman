@@ -1,8 +1,10 @@
 'use strict';
 
 const SchemaPack = require('./lib/schemapack.js').SchemaPack,
+  async = require('async'),
+  parse = require('./lib/parse.js'),
 
-// options for oas-resolver
+  // options for oas-resolver
   OasResolverOptions = {
     resolve: true, // Resolve external references
     jsonSchema: true // Treat $ref like JSON Schema and convert to OpenAPI Schema Objects
