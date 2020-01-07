@@ -1,12 +1,12 @@
 'use strict';
 
-const SchemaPack = require('./lib/schemapack.js').SchemaPack;
+const SchemaPack = require('./lib/schemapack.js').SchemaPack,
 
 // options for oas-resolver
-const OasResolverOptions = {
-  resolve: true, // Resolve external references
-  jsonSchema: true // Treat $ref like JSON Schema and convert to OpenAPI Schema Objects
-};
+  OasResolverOptions = {
+    resolve: true, // Resolve external references
+    jsonSchema: true // Treat $ref like JSON Schema and convert to OpenAPI Schema Objects
+  };
 
 module.exports = {
   // Old API wrapping the new API
