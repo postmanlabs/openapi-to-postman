@@ -23,7 +23,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       schemaWithoutExampleSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/example_not_present.json'),
       examplesOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/examples_outside_schema.json'),
       exampleOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/example_outside_schema.json'),
-      descriptionInBodyParams = path.join(__dirname, VALID_OPENAPI_PATH + '/description_in_body_params.json');
+      descriptionInBodyParams = path.join(__dirname, VALID_OPENAPI_PATH + '/description_in_body_params.json'),
+      zeroDefaultValueSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/zero_in_default_value.json');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
@@ -99,6 +100,18 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
+    it('[Github #113]: Should convert the default value in case of zero as well' +
+    zeroDefaultValueSpec, function(done) {
+      var openapi = fs.readFileSync(zeroDefaultValueSpec, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output[0].data.item[0].request.url.query[0].value).to.equal('0');
+        expect(conversionResult.output[0].data.item[0].request.url.variable[0].description)
+          .to.equal('This description doesn\'t show up.');
+        done();
+      });
+    });
     it('[Github #90] - Should create a request using local server instead of global server ' +
     serverOverRidingSpec, function(done) {
       Converter.convert({ type: 'file', data: serverOverRidingSpec }, { schemaFaker: true },
@@ -165,6 +178,14 @@ describe('CONVERT FUNCTION TESTS ', function() {
             .equal('Hey, this is the description.');
           done();
         });
+    });
+    it('Should remove the version from generated collection for all specs', function(done) {
+      Converter.convert({ type: 'file', data: testSpec }, { schemaFaker: true }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output[0].data.info).to.not.have.property('version');
+        done();
+      });
     });
     describe('[Github #108]- Parameters resolution option', function() {
       it('Should respect schema faking for root request and example for example request' +
@@ -301,12 +322,11 @@ describe('CONVERT FUNCTION TESTS ', function() {
     var pathPrefix = VALID_OPENAPI_PATH + '/test1.json',
       specPath = path.join(__dirname, pathPrefix);
 
-    it('for invalid request name, converter should throw an error', function(done) {
+    it('for invalid request name, converter should use the correct fallback value', function(done) {
       var openapi = fs.readFileSync(specPath, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { requestNameSource: 'uKnown' }, (err, conversionResult) => {
         expect(err).to.be.null;
-        expect(conversionResult.reason).to.equal(
-          'requestNameSource (uKnown) in options is invalid or property does not exist in pets');
+        expect(conversionResult.result).to.equal(true);
         done();
       });
     });
@@ -382,10 +402,10 @@ describe('INTERFACE FUNCTION TESTS ', function () {
     it('(type: some invalid value)', function(done) {
       var result = Converter.validate({ type: 'fil', data: 'invalid_path' });
       expect(result.result).to.equal(false);
-      expect(result.reason).to.equal('input type is not valid');
+      expect(result.reason).to.contain('input');
       Converter.convert({ type: 'fil', data: 'invalid_path' }, {}, function(err, conversionResult) {
         expect(conversionResult.result).to.equal(false);
-        expect(conversionResult.reason).to.equal('input type:fil is not valid');
+        expect(conversionResult.reason).to.equal('Invalid input type (fil). type must be one of file/json/string.');
         done();
       });
     });
@@ -395,8 +415,9 @@ describe('INTERFACE FUNCTION TESTS ', function () {
     it('(type: file)', function(done) {
       var result = Converter.validate({ type: 'file', data: 'invalid_path' });
       expect(result.result).to.equal(false);
-      Converter.convert({ type: 'file', data: 'invalid_path' }, {}, function(err) {
-        expect(err.toString()).to.equal('Error: ENOENT: no such file or directory, open \'invalid_path\'');
+      Converter.convert({ type: 'file', data: 'invalid_path' }, {}, function(err, result) {
+        expect(result.result).to.equal(false);
+        expect(result.reason).to.equal('ENOENT: no such file or directory, open \'invalid_path\'');
         done();
       });
     });

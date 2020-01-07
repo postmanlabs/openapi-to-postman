@@ -1,5 +1,34 @@
 # OpenAPI-Postman Changelog
 
+#### v1.1.2/v1.1.3 (Jan 03, 2020)
+* Updated copy for mismatch reasons
+* Returning errors instead of exceptions for invalid schemas
+* Fix for duplicate mismatches
+
+#### v1.1.1 (Jan 03, 2020)
+* Correct validation against JSON request/response bodies
+* Correct JSON paths in response mismatches
+
+#### v1.1.0 (Jan 02, 2020)
+* Handling cases where API definition parameters have no schema
+* Validating input transaction schema before starting validation
+* Forcing path variable descriptions to be strings instead of objects
+
+#### v1.0.2 (Jan 01, 2020)
+* Exposing option to hide MISSING_IN_SCHEMA mismatches, hiding them by default
+* Consistent response formats, more resilient against invalid schemas
+
+#### v1.0.1 (Jan 01, 2020)
+* Deleting 'info.version' from generated collection JSON - it's not required and was causing versioning problems
+* Scope-related bugfixes in schema validation flows
+
+#### v1.0.0 (Dec 31, 2019)
+* New API to validate requests against a schema
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/113 - Correct description set for falsy values
+* Invalid file paths return a falsy result and a reason (instead of an error)
+* Invalid option values don't throw errors anymore
+* Readme typo fix (courtesy https://github.com/disposedtrolley)
+
 #### v0.2.0 (Nov 22, 2019)
 * Handled cases where the URL query has no description property
 * Fix for https://github.com/postmanlabs/openapi-to-postman/issues/117 - Maintaining descriptions for form-urlencoded body params

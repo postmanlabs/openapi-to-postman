@@ -1,9 +1,6 @@
-var converter = require('./lib/convert.js'),
-  validate = require('./lib/validate.js'),
-  parse = require('./lib/parse.js'),
-  async = require('async'),
-  _ = require('lodash'),
-  fs = require('fs');
+'use strict';
+
+const SchemaPack = require('./lib/schemapack.js').SchemaPack;
 
 // options for oas-resolver
 const OasResolverOptions = {
@@ -12,21 +9,12 @@ const OasResolverOptions = {
 };
 
 module.exports = {
+  // Old API wrapping the new API
   convert: function(input, options, cb) {
-    if (input.type === 'string' || input.type === 'json') {
-      // no need for extra processing before calling the converter
-      // string can be JSON or YAML
-      return converter.convert(input.data, options, cb);
-    }
-    else if (input.type === 'file') {
-      return fs.readFile(input.data, 'utf8', function(err, data) {
-        if (err) {
-          return cb(err);
-        }
+    var schema = new SchemaPack(input, options);
 
-        // if the file contents were JSON or YAML
-        return converter.convert(data, options, cb);
-      });
+    if (schema.validated) {
+      return schema.convert(cb);
     }
     else if (input.type === 'folder') {
       let filesPathArray = input.data,
@@ -106,39 +94,14 @@ module.exports = {
   },
 
   validate: function(input) {
-    try {
-      var data;
-      if (input.type === 'string') {
-        return validate(input.data);
-      }
-      else if (input.type === 'json') {
-        return validate(input.data);
-      }
-      else if (input.type === 'file') {
-        data = fs.readFileSync(input.data).toString();
-        return validate(data);
-      }
-      else if (input.type === 'folder') {
-        if (!_.isEmpty(parse.getRootFiles(input.data))) {
-          return {
-            result: true
-          };
-        }
-      }
-      return {
-        result: false,
-        reason: 'input type is not valid'
-      };
-    }
-    catch (e) {
-      return {
-        result: false,
-        reason: e.toString()
-      };
-    }
+    var schema = new SchemaPack(input);
+    return schema.validationResult;
   },
 
   getOptions: function() {
-    return converter.getOptions();
-  }
+    return SchemaPack.getOptions();
+  },
+
+  // new API
+  SchemaPack
 };
