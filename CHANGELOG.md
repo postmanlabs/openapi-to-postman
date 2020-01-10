@@ -1,5 +1,10 @@
 # OpenAPI-Postman Changelog
 
+#### v1.1.5 (Jan 10, 2020)
+* Not throwing errors for invalid schema references
+* Not throwing errors for invalid schema.path entries
+* Not throwing errors for unknown schema types
+
 #### v1.1.4 (Jan 07, 2020)
 * More updated copy for mismatch reasons
 * Added missing dependency for async.js
