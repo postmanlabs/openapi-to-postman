@@ -103,6 +103,43 @@ describe('DEREF FUNCTION TESTS ', function() {
     done();
   });
 
+  it('should populate schemaResolutionCache having key as the ref provided', function (done) {
+    var schema = {
+        $ref: '#/components/schema/request'
+      },
+      componentsAndPaths = {
+        components: {
+          schema: {
+            request: {
+              properties: {
+                name: {
+                  type: 'string',
+                  example: 'example name'
+                }
+              }
+            }
+          }
+        }
+      },
+      parameterSource = 'REQUEST',
+      schemaResolutionCache = {},
+      resolvedSchema = deref.resolveRefs(schema, parameterSource, componentsAndPaths, schemaResolutionCache);
+    expect(schemaResolutionCache).to.deep.equal({
+      '#/components/schema/request': resolvedSchema
+    });
+    expect(resolvedSchema).to.deep.equal({
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          example: 'example name',
+          default: '<string>'
+        }
+      }
+    });
+    done();
+  });
+
   describe('_getEscaped should', function() {
     var rootObject = {
       person: {
