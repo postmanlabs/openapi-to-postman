@@ -24,7 +24,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       examplesOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/examples_outside_schema.json'),
       exampleOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/example_outside_schema.json'),
       descriptionInBodyParams = path.join(__dirname, VALID_OPENAPI_PATH + '/description_in_body_params.json'),
-      zeroDefaultValueSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/zero_in_default_value.json');
+      zeroDefaultValueSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/zero_in_default_value.json'),
+      multipleRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/multiple_refs.json');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
@@ -263,6 +264,39 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(err).to.be.null;
         expect(descriptionOne).to.equal('Description of Pet ID');
         expect(descriptionTwo).to.equal('Description of Pet name');
+        done();
+      });
+    });
+    it('should convert to the expected schema with use of schemaFaker and schemaResolution caches', function(done) {
+      Converter.convert({ type: 'file', data: multipleRefs }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        let items = conversionResult.output[0].data.item,
+          request = items[0].request,
+          response = items[0].response,
+          requestBody = JSON.parse(request.body.raw),
+          responseBody = JSON.parse(response[0].body);
+        expect(requestBody).to.deep.equal({
+          key1: {
+            requestId: '<long>',
+            requestName: '<string>'
+          },
+          key2: {
+            requestId: '<long>',
+            requestName: '<string>'
+          }
+        });
+        expect(responseBody).to.deep.equal({
+          key1: {
+            responseId: '234',
+            responseName: '200 OK Response'
+          },
+          key2: {
+            responseId: '234',
+            responseName: '200 OK Response'
+          }
+        });
+
         done();
       });
     });
