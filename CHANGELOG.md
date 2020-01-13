@@ -1,5 +1,8 @@
 # OpenAPI-Postman Changelog
 
+#### v1.1.6 (Jan 13, 2020)
+* Not throwing errors for missing schema path entries
+
 #### v1.1.5 (Jan 10, 2020)
 * Not throwing errors for invalid schema references
 * Not throwing errors for invalid schema.path entries

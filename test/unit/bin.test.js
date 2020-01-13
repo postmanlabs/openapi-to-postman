@@ -4,6 +4,14 @@ var expect = require('chai').expect,
   collection;
 
 describe('openapi2postmanv2 ', function() {
+  const tempOutputFile = 'tempOutput.json';
+
+  after(function () {
+    if (fs.existsSync(tempOutputFile)) {
+      fs.unlinkSync(tempOutputFile);
+    }
+  });
+
   it('should print to console', function(done) {
     exec('./bin/openapi2postmanv2.js -s test/data/valid_openapi/petstore.json', function(err, stdout) {
       expect(err).to.be.null;
@@ -15,7 +23,7 @@ describe('openapi2postmanv2 ', function() {
   it('should print to file', function(done) {
     exec('./bin/openapi2postmanv2.js -s test/data/valid_openapi/petstore.json -o tempOutput.json', function(err) {
       expect(err).to.be.null;
-      fs.readFile('tempOutput.json', 'utf8', (err, data) => {
+      fs.readFile(tempOutputFile, 'utf8', (err, data) => {
         collection = JSON.parse(data);
         expect(collection.info.name).to.equal('Swagger Petstore');
         expect(collection.item.length).to.equal(1);
