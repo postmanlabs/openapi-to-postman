@@ -267,27 +267,60 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
     it('Should create collection from folder having only one root file', function(done) {
-      let folderPath = path.join(__dirname, '../data/multiFile_with_one_root'),
+      let folderPath = path.join(__dirname, '../data/petstore-separate-yaml'),
         array = [
-          { fileName: folderPath + '/index.yaml' },
-          { fileName: folderPath + '/definitions/index.yaml' },
-          { fileName: folderPath + '/definitions/User.yaml' },
-          { fileName: folderPath + '/info/index.yaml' },
-          { fileName: folderPath + '/paths/index.yaml' },
-          { fileName: folderPath + '/paths/foo.yaml' },
-          { fileName: folderPath + '/paths/bar.yaml' }
+          { fileName: folderPath + '/common/Error.yaml' },
+          { fileName: folderPath + '/spec/Pet.yaml' },
+          { fileName: folderPath + '/spec/NewPet.yaml' },
+          { fileName: folderPath + '/spec/parameters.yaml' },
+          { fileName: folderPath + '/spec/swagger.yaml' }
         ];
 
-      Converter.convert({ type: 'folder', data: array }, {}, (err, result) => {
-        expect(result.result).to.equal(true);
-        expect(result.output.length).to.equal(1);
-        expect(result.output[0].type).to.have.equal('collection');
-        expect(result.output[0].data).to.have.property('info');
-        expect(result.output[0].data).to.have.property('item');
-        done();
+      Converter.mergeAndValidate({ type: 'folder', data: array }, (err, result) => {
+        if (err) {
+          expect.fail(null, null, err);
+        }
+        if (result.result) {
+          Converter.convert({ type: 'json', data: result.openapi }, {}, (err, result) => {
+            expect(result.result).to.equal(true);
+            expect(result.output.length).to.equal(1);
+            expect(result.output[0].type).to.have.equal('collection');
+            expect(result.output[0].data).to.have.property('info');
+            expect(result.output[0].data).to.have.property('item');
+            done();
+          });
+        }
       });
     });
-    it('Should create collection from folder having more than one root file', function(done) {
+
+    it('Should create collection from folder having one root file JSON', function(done) {
+      let folderPath = path.join(__dirname, '../data/petstore-separate'),
+        array = [
+          { fileName: folderPath + '/common/Error.json' },
+          { fileName: folderPath + '/spec/Pet.json' },
+          { fileName: folderPath + '/spec/NewPet.json' },
+          { fileName: folderPath + '/spec/parameters.json' },
+          { fileName: folderPath + '/spec/swagger.json' }
+        ];
+
+      Converter.mergeAndValidate({ type: 'folder', data: array }, (err, result) => {
+        if (err) {
+          expect.fail(null, null, err);
+        }
+        if (result.result) {
+          Converter.convert({ type: 'json', data: result.openapi }, {}, (err, result) => {
+            expect(result.result).to.equal(true);
+            expect(result.output.length).to.equal(1);
+            expect(result.output[0].type).to.have.equal('collection');
+            expect(result.output[0].data).to.have.property('info');
+            expect(result.output[0].data).to.have.property('item');
+            done();
+          });
+        }
+      });
+    });
+
+    it('Should return error for more than one root files', function(done) {
       let folderPath = path.join(__dirname, '../data/multiFile_with_two_root'),
         array = [
           { fileName: folderPath + '/index.yaml' },
@@ -301,19 +334,12 @@ describe('CONVERT FUNCTION TESTS ', function() {
           { fileName: folderPath + '/paths/bar.yaml' }
         ];
 
-      Converter.convert({ type: 'folder', data: array }, {}, (err, result) => {
-        expect(result.result).to.equal(true);
-        expect(result.output.length).to.equal(2);
-        // first collection
-        expect(result.output[0].type).to.have.equal('collection');
-        expect(result.output[0].data).to.have.property('info');
-        expect(result.output[0].data).to.have.property('item');
-        expect(result.output[0].data.info.name).to.equal('Simple API');
-        // second collection
-        expect(result.output[1].type).to.have.equal('collection');
-        expect(result.output[1].data).to.have.property('info');
-        expect(result.output[1].data).to.have.property('item');
-        expect(result.output[1].data.info.name).to.equal('Simple API copy');
+      Converter.mergeAndValidate({ type: 'folder', data: array }, (err, result) => {
+        if (err) {
+          expect.fail(null, null, err);
+        }
+        expect(result.result).to.be.eq(false);
+        expect(result.reason).to.be.equal('More than one root file not supported.');
         done();
       });
     });
