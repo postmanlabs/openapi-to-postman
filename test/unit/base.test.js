@@ -276,12 +276,16 @@ describe('CONVERT FUNCTION TESTS ', function() {
           { fileName: folderPath + '/spec/swagger.yaml' }
         ];
 
-      Converter.mergeAndValidate({ type: 'folder', data: array }, (err, result) => {
+      var schema = new Converter.SchemaPack({ type: 'folder', data: array });
+      schema.mergeAndValidate((err, status) => {
         if (err) {
           expect.fail(null, null, err);
         }
-        if (result.result) {
-          Converter.convert({ type: 'json', data: result.openapi }, {}, (err, result) => {
+        if (status.result) {
+          schema.convert((error, result) => {
+            if (error) {
+              expect.fail(null, null, err);
+            }
             expect(result.result).to.equal(true);
             expect(result.output.length).to.equal(1);
             expect(result.output[0].type).to.have.equal('collection');
@@ -302,13 +306,16 @@ describe('CONVERT FUNCTION TESTS ', function() {
           { fileName: folderPath + '/spec/parameters.json' },
           { fileName: folderPath + '/spec/swagger.json' }
         ];
-
-      Converter.mergeAndValidate({ type: 'folder', data: array }, (err, result) => {
+      var schema = new Converter.SchemaPack({ type: 'folder', data: array });
+      schema.mergeAndValidate((err, status) => {
         if (err) {
           expect.fail(null, null, err);
         }
-        if (result.result) {
-          Converter.convert({ type: 'json', data: result.openapi }, {}, (err, result) => {
+        if (status.result) {
+          schema.convert((error, result) => {
+            if (error) {
+              expect.fail(null, null, err);
+            }
             expect(result.result).to.equal(true);
             expect(result.output.length).to.equal(1);
             expect(result.output[0].type).to.have.equal('collection');
