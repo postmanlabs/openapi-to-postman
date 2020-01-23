@@ -294,6 +294,10 @@ describe('CONVERT FUNCTION TESTS ', function() {
             done();
           });
         }
+        else {
+          expect.fail(null, null, status.reason);
+          done();
+        }
       });
     });
 
@@ -344,6 +348,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       Converter.mergeAndValidate({ type: 'folder', data: array }, (err, result) => {
         if (err) {
           expect.fail(null, null, err);
+          done();
         }
         expect(result.result).to.be.eq(false);
         expect(result.reason).to.be.equal('More than one root file not supported.');
