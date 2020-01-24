@@ -328,6 +328,10 @@ describe('CONVERT FUNCTION TESTS ', function() {
             done();
           });
         }
+        else {
+          expect.fail(null, null, status.reason);
+          done();
+        }
       });
     });
 

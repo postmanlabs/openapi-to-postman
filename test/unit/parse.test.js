@@ -25,7 +25,7 @@ describe('PARSE FUNCTION TESTS', function() {
       file = fs.readFileSync(filePath, 'utf8'),
       result = parse.getOasObject(file);
 
-    expect(result.openapi).to.equal('3.0.0');
+    expect(result.oasObject.openapi).to.equal('3.0.0');
   });
 
   describe('readSpecFile function', function() {
