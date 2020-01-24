@@ -28,22 +28,6 @@ describe('PARSE FUNCTION TESTS', function() {
     expect(result.oasObject.openapi).to.equal('3.0.0');
   });
 
-  describe('readSpecFile function', function() {
-    it('Should return the content from a remote file', function() {
-      let file = 'https://raw.githubusercontent.com/OAI/OpenAPI-Specification' +
-      '/master/examples/v3.0/api-with-examples.yaml';
-      parse.readSpecFile(file).then((result) => {
-        expect(result.startsWith('openapi: "3.0.0"')).to.equal(true);
-      });
-    });
-    it('Should return the content from a local file', function() {
-      let file = path.join(__dirname, '../data/valid_openapi/petstore.yaml');
-      parse.readSpecFile(file).then((result) => {
-        expect(result.startsWith('openapi: 3.0.0')).to.equal(true);
-      });
-    });
-  });
-
   it('mergeFiles function should merge all files in the folder correctly', function() {
     const filePath = path.join(__dirname, '../data/multiFile_with_one_root/index.yaml'),
       OasResolverOptions = {
