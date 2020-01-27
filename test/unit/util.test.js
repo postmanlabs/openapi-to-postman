@@ -2,7 +2,11 @@ var expect = require('chai').expect,
   _ = require('lodash'),
   SchemaUtils = require('../../lib/schemaUtils.js'),
   Utils = require('../../lib/utils.js'),
-  deref = require('../../lib/deref.js');
+  deref = require('../../lib/deref.js'),
+  crypto = require('crypto'),
+  hash = (input) => {
+    return crypto.createHash('sha1').update(input).digest('base64');
+  };
 
 /* Utility function Unit tests */
 describe('UTILITY FUNCTION TESTS', function() {
@@ -159,7 +163,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           schemaFakerCache: {},
           schemaResolutionCache: {}
         },
-        key = 'resolveToSchema ' + JSON.stringify(resolvedSchema),
+        key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema)),
         fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, parameterSource,
           { components }, 'default', '  ', schemaCache);
 
@@ -195,7 +199,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           schemaResolutionCache: {}
         },
         resolvedSchema = deref.resolveRefs(schema, parameterSource, { components }, schemaCache.schemaResolutionCache),
-        key = 'resolveToExample ' + JSON.stringify(resolvedSchema),
+        key = hash('resolveToExample ' + JSON.stringify(resolvedSchema)),
         fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, parameterSource,
           { components }, 'default', '  ', schemaCache);
 
