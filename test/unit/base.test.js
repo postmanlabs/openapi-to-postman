@@ -375,7 +375,7 @@ describe('INTERFACE FUNCTION TESTS ', function () {
   describe('The converter should not throw error for empty spec', function () {
     var emptySpec = path.join(__dirname, INVALID_OPENAPI_PATH + '/empty-spec.yaml');
     it('should return `empty schema provided` error for input type string', function() {
-      Converter.convert({
+      Converter.validate({
         type: 'string',
         data: ''
       }, {}, (err, res) => {
@@ -386,7 +386,7 @@ describe('INTERFACE FUNCTION TESTS ', function () {
     });
 
     it('should return `empty schema provided` error for input type json', function() {
-      Converter.convert({
+      Converter.validate({
         type: 'json',
         data: {}
       }, {}, (err, res) => {
@@ -397,7 +397,7 @@ describe('INTERFACE FUNCTION TESTS ', function () {
     });
 
     it('should return `empty schema provided` error for input type file', function() {
-      Converter.convert({
+      Converter.validate({
         type: 'file',
         data: emptySpec
       }, {}, (err, res) => {
