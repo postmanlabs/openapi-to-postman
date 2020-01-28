@@ -50,7 +50,7 @@ paths:
           content:
             application/json:    
               schema:
-                $ref: "#/components/schemas/Pets"
+                $ref: "https://postman-echo.com/get"
         default:
           description: unexpected error
           content:
