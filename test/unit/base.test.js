@@ -24,6 +24,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       examplesOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/examples_outside_schema.json'),
       exampleOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/example_outside_schema.json'),
       descriptionInBodyParams = path.join(__dirname, VALID_OPENAPI_PATH + '/description_in_body_params.json'),
+      issue150 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#150.yml'),
       zeroDefaultValueSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/zero_in_default_value.json');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
@@ -263,6 +264,19 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(err).to.be.null;
         expect(descriptionOne).to.equal('Description of Pet ID');
         expect(descriptionTwo).to.equal('Description of Pet name');
+        done();
+      });
+    });
+
+    it('[GitHub #150] - should generate collection if examples are empty', function (done) {
+      var openapi = fs.readFileSync(issue150, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: false }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
         done();
       });
     });
