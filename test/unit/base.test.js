@@ -25,7 +25,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       exampleOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/example_outside_schema.json'),
       descriptionInBodyParams = path.join(__dirname, VALID_OPENAPI_PATH + '/description_in_body_params.json'),
       zeroDefaultValueSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/zero_in_default_value.json'),
-      requiredInParams = path.join(__dirname, VALID_OPENAPI_PATH, '/required_in_parameters.json');
+      requiredInParams = path.join(__dirname, VALID_OPENAPI_PATH, '/required_in_parameters.json'),
+      issue150 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#150.yml');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
@@ -108,7 +109,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output[0].data.item[0].request.url.query[0].value).to.equal('0');
-        expect(conversionResult.output[0].data.item[0].request.url.variable[0].description.content)
+        expect(conversionResult.output[0].data.item[0].request.url.variable[0].description)
           .to.equal('This description doesn\'t show up.');
         done();
       });
@@ -179,6 +180,14 @@ describe('CONVERT FUNCTION TESTS ', function() {
             .equal('Hey, this is the description.');
           done();
         });
+    });
+    it('Should remove the version from generated collection for all specs', function(done) {
+      Converter.convert({ type: 'file', data: testSpec }, { schemaFaker: true }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output[0].data.info).to.not.have.property('version');
+        done();
+      });
     });
     describe('[Github #108]- Parameters resolution option', function() {
       it('Should respect schema faking for root request and example for example request' +
@@ -259,7 +268,6 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
-
     it('[Github #137]- Should add `requried` keyword in parameters where ' +
       'required field is set to true', function() {
       Converter.convert({ type: 'file', data: requiredInParams }, { schemaFaker: true }, (err, conversionResult) => {
@@ -299,6 +307,19 @@ describe('CONVERT FUNCTION TESTS ', function() {
         // petId required
         request = requests[3].request;
         expect(request.url.variable[0].description.content).to.equal('(Required) The id of the pet to retrieve');
+        done();
+      });
+    });
+    it('[GitHub #150] - should generate collection if examples are empty', function (done) {
+      var openapi = fs.readFileSync(issue150, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: false }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        done();
       });
     });
   });

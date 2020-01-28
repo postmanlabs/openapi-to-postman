@@ -1,8 +1,7 @@
 var expect = require('chai').expect,
   _ = require('lodash'),
   SchemaUtils = require('../../lib/schemaUtils.js'),
-  Utils = require('../../lib/utils.js'),
-  openApiErr = require('../../lib/error.js');
+  Utils = require('../../lib/utils.js');
 
 /* Utility function Unit tests */
 describe('UTILITY FUNCTION TESTS', function() {
@@ -130,11 +129,10 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           }
         },
         parameterSource = 'REQUEST',
-        resolveTo = 'schema';
+        resolveTo = 'schema',
+        fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, parameterSource, { components });
 
-      expect(function() {
-        SchemaUtils.safeSchemaFaker(schema, resolveTo, parameterSource, { components });
-      }).to.throw(openApiErr, 'Invalid schema reference: #/components/schem2');
+      expect(fakedSchema.value).to.equal('reference #/components/schem2 not found in the OpenAPI spec');
       done();
     });
   });
