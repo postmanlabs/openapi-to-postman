@@ -306,8 +306,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         // GET pets/{petId}
         // petId required
         request = requests[3].request;
-        expect(request.url.variable[0].description.content).to.equal('(Required) The id of the pet to retrieve');
-        done();
+        expect(request.url.variable[0].description).to.equal('(Required) The id of the pet to retrieve');
       });
     });
     it('[GitHub #150] - should generate collection if examples are empty', function (done) {
