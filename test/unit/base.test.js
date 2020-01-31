@@ -24,8 +24,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
       examplesOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/examples_outside_schema.json'),
       exampleOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/example_outside_schema.json'),
       descriptionInBodyParams = path.join(__dirname, VALID_OPENAPI_PATH + '/description_in_body_params.json'),
-      issue150 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#150.yml'),
-      zeroDefaultValueSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/zero_in_default_value.json');
+      zeroDefaultValueSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/zero_in_default_value.json'),
+      multipleRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/multiple_refs.json'),
+      issue150 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#150.yml');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
@@ -267,7 +268,38 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
-
+    it('should convert to the expected schema with use of schemaFaker and schemaResolution caches', function(done) {
+      Converter.convert({ type: 'file', data: multipleRefs }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        let items = conversionResult.output[0].data.item,
+          request = items[0].request,
+          response = items[0].response,
+          requestBody = JSON.parse(request.body.raw),
+          responseBody = JSON.parse(response[0].body);
+        expect(requestBody).to.deep.equal({
+          key1: {
+            requestId: '<long>',
+            requestName: '<string>'
+          },
+          key2: {
+            requestId: '<long>',
+            requestName: '<string>'
+          }
+        });
+        expect(responseBody).to.deep.equal({
+          key1: {
+            responseId: '234',
+            responseName: '200 OK Response'
+          },
+          key2: {
+            responseId: '234',
+            responseName: '200 OK Response'
+          }
+        });
+        done();
+      });
+    });
     it('[GitHub #150] - should generate collection if examples are empty', function (done) {
       var openapi = fs.readFileSync(issue150, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: false }, (err, conversionResult) => {
