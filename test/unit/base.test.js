@@ -385,4 +385,40 @@ describe('INTERFACE FUNCTION TESTS ', function () {
       });
     });
   });
+
+  describe('The converter should not throw error for empty spec', function () {
+    var emptySpec = path.join(__dirname, INVALID_OPENAPI_PATH + '/empty-spec.yaml');
+    it('should return `empty schema provided` error for input type string', function() {
+      Converter.validate({
+        type: 'string',
+        data: ''
+      }, {}, (err, res) => {
+        expect(err).to.be.null;
+        expect(res.result).to.be.false;
+        expect(res.reason).to.equal('Empty input schema provided.');
+      });
+    });
+
+    it('should return `empty schema provided` error for input type json', function() {
+      Converter.validate({
+        type: 'json',
+        data: {}
+      }, {}, (err, res) => {
+        expect(err).to.be.null;
+        expect(res.result).to.be.false;
+        expect(res.reason).to.equal('Empty input schema provided.');
+      });
+    });
+
+    it('should return `empty schema provided` error for input type file', function() {
+      Converter.validate({
+        type: 'file',
+        data: emptySpec
+      }, {}, (err, res) => {
+        expect(err).to.be.null;
+        expect(res.result).to.be.false;
+        expect(res.reason).to.equal('Empty input schema provided.');
+      });
+    });
+  });
 });
