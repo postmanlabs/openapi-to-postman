@@ -1,0 +1,158 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+		"version": "1.0.0",
+		"title": "Swagger Petstore",
+		"license": {
+			"name": "MIT"
+		}
+	},
+	"servers": [
+		{
+			"url": "http://petstore.swagger.io/v1"
+    }
+  ],
+  "paths": {
+    "/pets": {
+      "get": {
+				"summary": "List all pets",
+				"operationId": "listPets",
+				"parameters": [
+					{
+						"name": "query1",
+            "in": "query",
+            "description": "Description of query1",
+						"required": true,
+						"schema": {
+							"type": "integer",
+							"format": "int32"
+						}
+					},
+					{
+						"name": "query2",
+            "in": "query",
+            "description": "Description of query2",
+						"schema": {
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+          },
+          {
+            "name": "header1",
+            "in": "header",
+            "description": "Description of header1",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "header2",
+            "in": "header",
+            "description": "Description of header2",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "headers": {
+              "responseHeader1": {
+                "description":"Description of responseHeader1",
+                "required": true,
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "responseHeader2": {
+                "description":"Description of responseHeader2",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Create a pet via multipart/form-data",
+        "operationId": "createPetsMultipart",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "formParam1": {
+                    "description": "Description of formParam1",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  },
+                  "formParam2": {
+                    "description": "Description of formParam2",
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+				}
+      },
+      "post": {
+				"summary": "Create a pet",
+        "operationId": "createPets",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "properties": {
+                  "urlencodedParam1": {
+                    "description": "Description of urlencodedParam1",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  },
+                  "urlencodedParam2": {
+                    "description": "Description of urlencodedParam2",
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+			}
+    },
+    "/pets/{petId}": {
+			"get": {
+				"summary": "Info for a specific pet",
+				"operationId": "showPetById",
+				"parameters": [
+					{
+						"name": "petId",
+						"in": "path",
+						"required": true,
+						"description": "The id of the pet to retrieve",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		}
+  }
+}
