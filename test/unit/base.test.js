@@ -24,7 +24,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
       examplesOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/examples_outside_schema.json'),
       exampleOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/example_outside_schema.json'),
       descriptionInBodyParams = path.join(__dirname, VALID_OPENAPI_PATH + '/description_in_body_params.json'),
-      zeroDefaultValueSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/zero_in_default_value.json');
+      zeroDefaultValueSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/zero_in_default_value.json'),
+      multipleRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/multiple_refs.json'),
+      issue150 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#150.yml');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
@@ -356,10 +358,57 @@ describe('CONVERT FUNCTION TESTS ', function() {
         }
         expect(result.result).to.be.eq(false);
         expect(result.reason).to.be.equal('More than one root file not supported.');
+        return done();
+      });
+    });
+
+    it('should convert to the expected schema with use of schemaFaker and schemaResolution caches', function(done) {
+      Converter.convert({ type: 'file', data: multipleRefs }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        let items = conversionResult.output[0].data.item,
+          request = items[0].request,
+          response = items[0].response,
+          requestBody = JSON.parse(request.body.raw),
+          responseBody = JSON.parse(response[0].body);
+        expect(requestBody).to.deep.equal({
+          key1: {
+            requestId: '<long>',
+            requestName: '<string>'
+          },
+          key2: {
+            requestId: '<long>',
+            requestName: '<string>'
+          }
+        });
+        expect(responseBody).to.deep.equal({
+          key1: {
+            responseId: '234',
+            responseName: '200 OK Response'
+          },
+          key2: {
+            responseId: '234',
+            responseName: '200 OK Response'
+          }
+        });
+        done();
+      });
+    });
+
+    it('[GitHub #150] - should generate collection if examples are empty', function (done) {
+      var openapi = fs.readFileSync(issue150, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: false }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
         done();
       });
     });
   });
+
   describe('for invalid requestNameSource option', function() {
     var pathPrefix = VALID_OPENAPI_PATH + '/test1.json',
       specPath = path.join(__dirname, pathPrefix);
@@ -461,6 +510,42 @@ describe('INTERFACE FUNCTION TESTS ', function () {
         expect(result.result).to.equal(false);
         expect(result.reason).to.equal('ENOENT: no such file or directory, open \'invalid_path\'');
         done();
+      });
+    });
+  });
+
+  describe('The converter should not throw error for empty spec', function () {
+    var emptySpec = path.join(__dirname, INVALID_OPENAPI_PATH + '/empty-spec.yaml');
+    it('should return `empty schema provided` error for input type string', function() {
+      Converter.validate({
+        type: 'string',
+        data: ''
+      }, {}, (err, res) => {
+        expect(err).to.be.null;
+        expect(res.result).to.be.false;
+        expect(res.reason).to.equal('Empty input schema provided.');
+      });
+    });
+
+    it('should return `empty schema provided` error for input type json', function() {
+      Converter.validate({
+        type: 'json',
+        data: {}
+      }, {}, (err, res) => {
+        expect(err).to.be.null;
+        expect(res.result).to.be.false;
+        expect(res.reason).to.equal('Empty input schema provided.');
+      });
+    });
+
+    it('should return `empty schema provided` error for input type file', function() {
+      Converter.validate({
+        type: 'file',
+        data: emptySpec
+      }, {}, (err, res) => {
+        expect(err).to.be.null;
+        expect(res.result).to.be.false;
+        expect(res.reason).to.equal('Empty input schema provided.');
       });
     });
   });
