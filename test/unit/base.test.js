@@ -268,6 +268,100 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
+    it('Should create collection from folder having only one root file', function(done) {
+      let folderPath = path.join(__dirname, '../data/petstore-separate-yaml'),
+        array = [
+          { fileName: folderPath + '/common/Error.yaml' },
+          { fileName: folderPath + '/spec/Pet.yaml' },
+          { fileName: folderPath + '/spec/NewPet.yaml' },
+          { fileName: folderPath + '/spec/parameters.yaml' },
+          { fileName: folderPath + '/spec/swagger.yaml' }
+        ];
+
+      var schema = new Converter.SchemaPack({ type: 'folder', data: array });
+      schema.mergeAndValidate((err, status) => {
+        if (err) {
+          expect.fail(null, null, err);
+        }
+        if (status.result) {
+          schema.convert((error, result) => {
+            if (error) {
+              expect.fail(null, null, err);
+            }
+            expect(result.result).to.equal(true);
+            expect(result.output.length).to.equal(1);
+            expect(result.output[0].type).to.have.equal('collection');
+            expect(result.output[0].data).to.have.property('info');
+            expect(result.output[0].data).to.have.property('item');
+            done();
+          });
+        }
+        else {
+          expect.fail(null, null, status.reason);
+          done();
+        }
+      });
+    });
+
+    it('Should create collection from folder having one root file JSON', function(done) {
+      let folderPath = path.join(__dirname, '../data/petstore-separate'),
+        array = [
+          { fileName: folderPath + '/common/Error.json' },
+          { fileName: folderPath + '/spec/Pet.json' },
+          { fileName: folderPath + '/spec/NewPet.json' },
+          { fileName: folderPath + '/spec/parameters.json' },
+          { fileName: folderPath + '/spec/swagger.json' }
+        ];
+      var schema = new Converter.SchemaPack({ type: 'folder', data: array });
+      schema.mergeAndValidate((err, status) => {
+        if (err) {
+          expect.fail(null, null, err);
+        }
+        if (status.result) {
+          schema.convert((error, result) => {
+            if (error) {
+              expect.fail(null, null, err);
+            }
+            expect(result.result).to.equal(true);
+            expect(result.output.length).to.equal(1);
+            expect(result.output[0].type).to.have.equal('collection');
+            expect(result.output[0].data).to.have.property('info');
+            expect(result.output[0].data).to.have.property('item');
+            done();
+          });
+        }
+        else {
+          expect.fail(null, null, status.reason);
+          done();
+        }
+      });
+    });
+
+    it('Should return error for more than one root files', function(done) {
+      let folderPath = path.join(__dirname, '../data/multiFile_with_two_root'),
+        array = [
+          { fileName: folderPath + '/index.yaml' },
+          { fileName: folderPath + '/index1.yaml' },
+          { fileName: folderPath + '/definitions/index.yaml' },
+          { fileName: folderPath + '/definitions/User.yaml' },
+          { fileName: folderPath + '/info/index.yaml' },
+          { fileName: folderPath + '/info/index1.yaml' },
+          { fileName: folderPath + '/paths/index.yaml' },
+          { fileName: folderPath + '/paths/foo.yaml' },
+          { fileName: folderPath + '/paths/bar.yaml' }
+        ];
+
+      Converter.mergeAndValidate({ type: 'folder', data: array }, (err, result) => {
+        if (err) {
+          expect.fail(null, null, err);
+          done();
+        }
+        expect(result.result).to.be.eq(false);
+        expect(result.reason).to.be.equal('More than one root file not supported.');
+        return done();
+      });
+    });
+
     it('should convert to the expected schema with use of schemaFaker and schemaResolution caches', function(done) {
       Converter.convert({ type: 'file', data: multipleRefs }, {}, (err, conversionResult) => {
         expect(err).to.be.null;
@@ -300,6 +394,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
+
     it('[GitHub #150] - should generate collection if examples are empty', function (done) {
       var openapi = fs.readFileSync(issue150, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: false }, (err, conversionResult) => {
@@ -313,6 +408,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
   });
+
   describe('for invalid requestNameSource option', function() {
     var pathPrefix = VALID_OPENAPI_PATH + '/test1.json',
       specPath = path.join(__dirname, pathPrefix);
