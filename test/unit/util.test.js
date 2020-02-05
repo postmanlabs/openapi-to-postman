@@ -1,7 +1,12 @@
 var expect = require('chai').expect,
   _ = require('lodash'),
   SchemaUtils = require('../../lib/schemaUtils.js'),
-  Utils = require('../../lib/utils.js');
+  Utils = require('../../lib/utils.js'),
+  deref = require('../../lib/deref.js'),
+  crypto = require('crypto'),
+  hash = (input) => {
+    return crypto.createHash('sha1').update(input).digest('base64');
+  };
 
 /* Utility function Unit tests */
 describe('UTILITY FUNCTION TESTS', function() {
@@ -134,6 +139,77 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
       expect(fakedSchema.value).to.equal('reference #/components/schem2 not found in the OpenAPI spec');
       done();
+    });
+
+    it('should populate the schemaFakerCache for resolveTo set as schema', function (done) {
+      var schema = {
+          $ref: '#/components/schema/request'
+        },
+        components = {
+          schema: {
+            request: {
+              properties: {
+                name: {
+                  type: 'string'
+                }
+              }
+            }
+          }
+        },
+        parameterSource = 'REQUEST',
+        resolveTo = 'schema',
+        resolvedSchema = deref.resolveRefs(schema, parameterSource, { components }, {}),
+        schemaCache = {
+          schemaFakerCache: {},
+          schemaResolutionCache: {}
+        },
+        key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema)),
+        fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, parameterSource,
+          { components }, 'default', '  ', schemaCache);
+
+      expect(schemaCache.schemaFakerCache).to.have.property(key);
+      expect(schemaCache.schemaFakerCache[key]).to.equal(fakedSchema);
+      expect(fakedSchema).to.eql({
+        name: '<string>'
+      });
+      done();
+
+    });
+
+    it('should populate the schemaFakerCache for resolveTo set as example', function (done) {
+      var schema = {
+          $ref: '#/components/schema/response'
+        },
+        components = {
+          schema: {
+            response: {
+              properties: {
+                name: {
+                  type: 'string',
+                  example: '200 OK Response'
+                }
+              }
+            }
+          }
+        },
+        parameterSource = 'RESPONSE',
+        resolveTo = 'example',
+        schemaCache = {
+          schemaFakerCache: {},
+          schemaResolutionCache: {}
+        },
+        resolvedSchema = deref.resolveRefs(schema, parameterSource, { components }, schemaCache.schemaResolutionCache),
+        key = hash('resolveToExample ' + JSON.stringify(resolvedSchema)),
+        fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, parameterSource,
+          { components }, 'default', '  ', schemaCache);
+
+      expect(schemaCache.schemaFakerCache).to.have.property(key);
+      expect(schemaCache.schemaFakerCache[key]).to.equal(fakedSchema);
+      expect(fakedSchema).to.eql({
+        name: '200 OK Response'
+      });
+      done();
+
     });
   });
 
