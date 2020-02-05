@@ -270,7 +270,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
     it('[Github #137]- Should add `requried` keyword in parameters where ' +
-      'required field is set to true', function() {
+      'required field is set to true', function(done) {
       Converter.convert({ type: 'file', data: requiredInParams }, { schemaFaker: true }, (err, conversionResult) => {
         expect(err).to.be.null;
         let requests = conversionResult.output[0].data.item[0].item,
