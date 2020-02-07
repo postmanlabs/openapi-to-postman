@@ -1,5 +1,11 @@
 # OpenAPI-Postman Changelog
 
+#### v1.1.7 (Feb 05, 2020)
+* Caching faked/resolved schemas for better performance
+* Empty input specs don't throw an error anymore
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/150 - empty examples don't throw exceptions during conversion
+* A `(Required)` annotation is added for required parameters
+
 #### v1.1.6 (Jan 13, 2020)
 * Not throwing errors for missing schema path entries
 
