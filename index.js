@@ -10,13 +10,17 @@ module.exports = {
     if (schema.validated) {
       return schema.convert(cb);
     }
-
     return cb(null, schema.validationResult);
   },
 
-  validate: function(input) {
+  validate: function (input) {
     var schema = new SchemaPack(input);
     return schema.validationResult;
+  },
+
+  mergeAndValidate: function (input, cb) {
+    var schema = new SchemaPack(input);
+    schema.mergeAndValidate(cb);
   },
 
   getOptions: function() {
