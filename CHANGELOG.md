@@ -1,5 +1,11 @@
 # OpenAPI-Postman Changelog
 
+#### v1.1.9 (Feb 17, 2020)
+* Support for multi-file schemas. Added a new input method 'folder'.
+
+#### v1.1.8 (Feb 15, 2020)
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/162
+
 #### v1.1.7 (Feb 05, 2020)
 * Caching faked/resolved schemas for better performance
 * Empty input specs don't throw an error anymore
