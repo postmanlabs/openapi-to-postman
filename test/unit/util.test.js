@@ -267,6 +267,66 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       expect(retVal[1].name).to.equal('variable');
       expect(retVal[1].description).to.equal('hello again');
     });
+
+    it('should return pathParam(array) if operationParam is not of type array', function () {
+      var operationParam = { name: 'limit', in: 'query', description: 'hello' },
+        pathParam = [
+          { name: 'limit', in: 'query', description: '' }
+        ],
+        retVal = SchemaUtils.getRequestParams(operationParam, pathParam, {});
+      expect(retVal).to.eql(pathParam);
+    });
+
+    it('should return operationParam(array) if pathParam is not of type array', function () {
+      var pathParam = { name: 'limit', in: 'query', description: 'hello' },
+        operationParam = [
+          { name: 'limit', in: 'query', description: '' }
+        ],
+        retVal = SchemaUtils.getRequestParams(operationParam, pathParam, {});
+      expect(retVal).to.eql(operationParam);
+    });
+
+    it('should return empty array if pathParam and operationParam are not of type array', function () {
+      var operationParam = { name: 'limit', in: 'query', description: 'hello' },
+        pathParam = { name: 'limit', in: 'query', description: '' },
+        retVal = SchemaUtils.getRequestParams(operationParam, pathParam, {});
+      expect(retVal).to.eql([]);
+    });
+
+    it('should not throw error if a parameter with invalid $ref is passed', function () {
+      var operationParam = [
+          { name: 'limit', in: 'query', $ref: '#/invalid/ref/1' }
+        ],
+        pathParam = [
+          { $ref: '#/components/schemas/searchParam' }
+        ],
+        componentsAndPaths = {
+          components: {
+            schemas: {
+              searchParam: {
+                name: 'search',
+                in: 'query',
+                schema: {
+                  type: 'string'
+                }
+              }
+            }
+          }
+        },
+        retVal = SchemaUtils.getRequestParams(operationParam, pathParam, componentsAndPaths);
+      expect(retVal).to.deep.equal([
+        {
+          value: 'Error reading #/invalid/ref/1. Can only use references from components and paths'
+        },
+        {
+          name: 'search',
+          in: 'query',
+          schema: {
+            type: 'string'
+          }
+        }
+      ]);
+    });
   });
 
   describe('generateTrieFromPaths Function ', function() {
