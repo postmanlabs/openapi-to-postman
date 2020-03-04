@@ -1,5 +1,8 @@
 # OpenAPI-Postman Changelog
 
+#### v1.1.10 (Mar 4, 2020)
+* Safely handling malformed URIs and schemas
+
 #### v1.1.9 (Feb 17, 2020)
 * Support for multi-file schemas. Added a new input method 'folder'.
 
