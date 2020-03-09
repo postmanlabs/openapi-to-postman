@@ -166,6 +166,50 @@
 					}
 				]
 			}
+		},
+		"/{path}({new-path-variable}={onemore})": {
+			"get": {
+				"summary": "List all pets",
+				"operationId": "listPets",
+				"tags": [
+					"pets"
+				],
+				"parameters": [
+					{
+						"name": "path",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": "string",
+              "pattern": "json|xml",
+              "example": "json"
+						}
+          },
+          {
+						"name": "new-path-variable",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": "string",
+              "pattern": "json|xml",
+              "example": "json"
+						}
+					},
+					{
+						"name": "onemore",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": "string",
+              "pattern": "json|xml",
+              "example": "json"
+						}
+					}
+				]
+			}
 		}
 	}
 }

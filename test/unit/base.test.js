@@ -47,7 +47,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it(' Fix for GITHUB#133: Should generate collection with proper Path and Collection variables', function(done) {
       var openapi = fs.readFileSync(issue133, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
-        // console.log(conversionResult.output[0].data);
+
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output.length).to.equal(1);
