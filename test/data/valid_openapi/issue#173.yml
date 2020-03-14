@@ -1,0 +1,30 @@
+openapi: "3.0.0"
+
+info:
+  version: "1.0.0"
+  title: "Sample API"
+
+paths:
+  /path1:
+    post:
+      parameters:
+        - in: header
+          name: access_token
+          description: Access token
+          schema:
+            type: string
+            example: X-access-token
+
+      responses:
+        200:
+          description: 200 Success
+        400:
+          description: 400 Bad Request
+        401:
+          description: 401 Unauthorized
+        403:
+         description: 403 Forbidden
+        404:
+          description: 404 Not Found
+        500:
+          description: 500 Internal Server Error

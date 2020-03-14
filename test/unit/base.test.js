@@ -27,7 +27,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       zeroDefaultValueSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/zero_in_default_value.json'),
       requiredInParams = path.join(__dirname, VALID_OPENAPI_PATH, '/required_in_parameters.json'),
       multipleRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/multiple_refs.json'),
-      issue150 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#150.yml');
+      issue150 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#150.yml'),
+      issue173 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#173.yml');
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
@@ -447,6 +448,28 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].type).to.equal('collection');
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
+        done();
+      });
+    });
+
+    it('[Github #173] - should add headers correctly to sample request in examples(responses)', function (done) {
+      var openapi = fs.readFileSync(issue173, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+        let responseArray;
+        expect(err).to.be.null;
+        responseArray = conversionResult.output[0].data.item[0].response;
+        expect(responseArray).to.be.an('array');
+        responseArray.forEach((response) => {
+          let headerArray = response.originalRequest.header;
+          expect(headerArray).to.be.an('array').that.is.not.empty;
+          expect(headerArray).to.eql([
+            {
+              key: 'access_token',
+              value: 'X-access-token',
+              description: 'Access token'
+            }
+          ]);
+        });
         done();
       });
     });
