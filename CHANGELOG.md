@@ -1,5 +1,8 @@
 # OpenAPI-Postman Changelog
 
+#### v1.1.11 (Mar 14, 2020)
+* Safely handling invalid reference schemas/properties
+
 #### v1.1.10 (Mar 4, 2020)
 * Safely handling malformed URIs and schemas
 
