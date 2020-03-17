@@ -8,7 +8,7 @@ var expect = require('chai').expect,
 describe('CONVERT FUNCTION TESTS ', function() {
   // these two covers remaining part of util.js
   describe('The convert Function', function() {
-    this.timeout(5000);
+
     var testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
       testSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/test1.json'),
       unique_items_schema = path.join(__dirname, VALID_OPENAPI_PATH + '/unique_items_schema.json'),
