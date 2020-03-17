@@ -72,7 +72,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       done();
     });
 
-    it('should resolve circular structures', function(done) {
+    it('should not resolve circular references', function(done) {
       let schema = {
           '$ref': '#/components/schemas/a'
         },
@@ -98,10 +98,10 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         resolveTo = 'schema',
 
         result = SchemaUtils.safeSchemaFaker(schema, resolveTo, parameterSource, { components }),
-        tooManyLevelsString = result[0].c[0].c[0].c[0].c[0].c.value;
+        tooManyLevelsString = result[0].c.value;
 
       expect(result).to.not.equal(null);
-      expect(tooManyLevelsString).to.equal('<Error: Too many levels of nesting to fake this schema>');
+      expect(tooManyLevelsString).to.equal('<Cicular reference to #/components/schemas/a detected>');
       done();
     });
 
