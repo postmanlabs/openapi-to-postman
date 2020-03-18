@@ -58,6 +58,29 @@
           }
         }
       }
+    },
+    "/new-path-with-many-circular-refs": {
+      "get": {
+        "tags": [
+          "circular reference"
+        ],
+        "summary": "circular reference",
+        "description": "circular reference",
+        "operationId": "circularReference",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Circular Reference",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/circularReferences"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "servers": [
@@ -72,6 +95,37 @@
   ],
   "components": {
     "schemas": {
+      "circularReferences": {
+        "type": "object",
+        "properties": {
+          "nextReference": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/circular"
+            }
+          }
+        },
+        "xml": {
+          "name": "circularReferences"
+        }
+      },
+      "circular": {
+        "type": "object",
+        "properties": {
+          "firstCircular": {
+            "$ref": "#/components/schemas/circular"
+          },
+          "nextCircular": {
+            "$ref": "#/components/schemas/circularReferences"
+          },
+          "anotherCircular": {
+            "$ref": "#/components/schemas/circularReferences"
+          }
+        },
+        "xml": {
+          "name": "circular"
+        }
+      },
       "FolderTree": {
         "type": "object",
         "properties": {

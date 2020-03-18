@@ -57,7 +57,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
 
-    it('Should not get stuck for a circular reference' +
+    it('Should not get stuck while resolving circular references' +
     unique_items_schema, function(done) {
       Converter.convert({ type: 'file', data:
       unique_items_schema }, { requestNameSource: 'url' }, (err, conversionResult) => {
