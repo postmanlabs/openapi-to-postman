@@ -101,7 +101,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         tooManyLevelsString = result[0].c.value;
 
       expect(result).to.not.equal(null);
-      expect(tooManyLevelsString).to.equal('<Cicular reference to #/components/schemas/a detected>');
+      expect(tooManyLevelsString).to.equal('<Circular reference to #/components/schemas/a detected>');
       done();
     });
 
