@@ -60,7 +60,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it('Should not get stuck while resolving circular references' +
     unique_items_schema, function(done) {
       Converter.convert({ type: 'file', data:
-      unique_items_schema }, { requestNameSource: 'url' }, (err, conversionResult) => {
+      unique_items_schema }, {}, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output.length).to.equal(1);
