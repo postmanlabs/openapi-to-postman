@@ -22,7 +22,7 @@
         "tags": [
           "Folder tree"
         ],
-        "summary": "List folder tree",
+        "summary": "folder tree",
         "description": "Returns a list of folders in a nested, tree structure.",
         "operationId": "listFolderTree",
         "parameters": [
@@ -87,7 +87,7 @@
         "tags": [
           "circular reference"
         ],
-        "summary": "circular reference",
+        "summary": "circular reference 2",
         "description": "circular reference",
         "operationId": "circularReference",
         "parameters": [],
