@@ -55,6 +55,11 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].type).to.equal('collection');
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data).to.have.property('variable');
+        expect(conversionResult.output[0].data.variable).to.be.an('array');
+        expect(conversionResult.output[0].data.variable[1].id).to.equal('format');
+        expect(conversionResult.output[0].data.variable[2].id).to.equal('path');
+        expect(conversionResult.output[0].data.variable[3].id).to.equal('new-path-variable');
         done();
       });
     });
