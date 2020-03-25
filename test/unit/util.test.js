@@ -2050,6 +2050,35 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
     });
   });
 
+  describe('sanitize function', function() {
+    it('should convert a url with scheme and path variables', function(done) {
+      var pathParams = [{ name: 'path',
+          in: 'path',
+          description: 'description',
+          required: true,
+          schema: { type: 'string', pattern: 'json|xml', example: 'json' } },
+        { name: 'new-path-variable',
+          in: 'path',
+          description: 'description',
+          required: true,
+          schema: { type: 'string', pattern: 'json|xml', example: 'json' } },
+        { name: 'onemore',
+          in: 'path',
+          description: 'description',
+          required: true,
+          schema: { type: 'string', pattern: 'json|xml', example: 'json' } }],
+        resultObj = SchemaUtils.sanitizeUrlPathParams('/anotherpath/{{path}}/{{new-path-variable}}.{{onemore}}',
+          pathParams);
+
+      expect(resultObj).to.have.property('reqUrl');
+      expect(resultObj.reqUrl).to.equal('/anotherpath/:path/{{new-path-variable}}.{{onemore}}');
+      expect(resultObj).to.have.property('pathVars');
+      expect(resultObj).to.have.property('collectionVars');
+
+      done();
+    });
+  });
+
 });
 
 describe('Get header family function ', function() {
