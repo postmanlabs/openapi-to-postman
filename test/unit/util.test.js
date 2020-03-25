@@ -2015,6 +2015,41 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       done();
     });
   });
+
+  describe('findPathVariablesFromPath function', function() {
+    it('should convert a url with scheme and path variables', function(done) {
+      var pathVars = SchemaUtils.findPathVariablesFromPath('/some/{{path}}');
+      expect(pathVars[0]).to.equal('/{{path}}');
+
+      pathVars = SchemaUtils.findPathVariablesFromPath('/next/{{path}}/{{new-path-variable}}');
+      expect(pathVars[0]).to.equal('/{{path}}');
+      expect(pathVars[1]).to.equal('/{{new-path-variable}}');
+
+      pathVars = SchemaUtils.findPathVariablesFromPath('/anotherpath/{{path}}/{{new-path-variable}}.{{onemore}');
+      expect(pathVars[0]).to.equal('/{{path}}');
+
+      pathVars = SchemaUtils.findPathVariablesFromPath('/send-sms.{{format}}');
+      expect(pathVars).to.equal(null);
+      done();
+    });
+  });
+  describe('findCollectionVariablesFromPath function', function() {
+    it('should convert a url with scheme and path variables', function(done) {
+
+      var collVars = SchemaUtils.findCollectionVariablesFromPath('/send-sms.{{format}}');
+      expect(collVars[0]).to.equal('{{format}}');
+
+      collVars = SchemaUtils.findCollectionVariablesFromPath('/next/:path/:new-path-variable');
+      expect(collVars).to.equal(null);
+
+      collVars = SchemaUtils.findCollectionVariablesFromPath('/anotherpath/:path/{{new-path-variable}}.{{onemore}}');
+      expect(collVars[0]).to.equal('{{new-path-variable}}');
+      expect(collVars[1]).to.equal('{{onemore}}');
+
+      done();
+    });
+  });
+
 });
 
 describe('Get header family function ', function() {
