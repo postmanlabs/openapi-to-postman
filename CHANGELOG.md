@@ -1,5 +1,11 @@
 # OpenAPI-Postman Changelog
 
+#### v1.1.12 (Mar 26, 2020)
+* Fix for https://github.com/postmanlabs/openapi-to-postman/issues/133 and https://github.com/postmanlabs/openapi-to-postman/issues/101
+* Ignore resolving circular references.
+* Upgrade commander from 2.3.0 to 2.20.3
+* Upgrade postman-collection from 3.5.1 to 3.5.5
+
 #### v1.1.11 (Mar 14, 2020)
 * Safely handling invalid reference schemas/properties
 

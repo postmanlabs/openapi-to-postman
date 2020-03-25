@@ -1,0 +1,209 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "description": "Sample API",
+    "version": "v1",
+    "title": "Sample API",
+    "termsOfService": "http://www.example.com/termsOfService",
+    "contact": {
+      "name": "Sample",
+      "url": "http://sample.com/",
+      "email": "sample@sample.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "Folder tree"
+    }
+  ],
+  "paths": {
+    "/folder-tree": {
+      "get": {
+        "tags": [
+          "Folder tree"
+        ],
+        "summary": "folder tree",
+        "description": "Returns a list of folders in a nested, tree structure.",
+        "operationId": "listFolderTree",
+        "parameters": [
+          {
+            "name": "myParam",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Auth token.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "token='{{token}}'"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderTree"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/new-path-with-many-circular-refs": {
+      "get": {
+        "tags": [
+          "circular reference"
+        ],
+        "summary": "circular reference",
+        "description": "circular reference",
+        "operationId": "circularReference",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Circular Reference",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/circularReferences"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/new-passth-with-many-circular-refs": {
+      "get": {
+        "tags": [
+          "circular reference"
+        ],
+        "summary": "circular reference 2",
+        "description": "circular reference",
+        "operationId": "circularReference",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Circular Reference",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/b"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://{host}/sample/api",
+      "variables": {
+        "host": {
+          "default": "unknown"
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "circularReferences": {
+        "type": "object",
+        "properties": {
+          "nextReference": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/circular"
+            }
+          }
+        },
+        "xml": {
+          "name": "circularReferences"
+        }
+      },
+      "circular": {
+        "type": "object",
+        "properties": {
+          "firstCircular": {
+            "$ref": "#/components/schemas/circular"
+          },
+          "nextCircular": {
+            "$ref": "#/components/schemas/circularReferences"
+          },
+          "anotherCircular": {
+            "$ref": "#/components/schemas/circularReferences"
+          }
+        },
+        "xml": {
+          "name": "circular"
+        }
+      },
+      "FolderTree": {
+        "type": "object",
+        "properties": {
+          "foobar": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "children": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/components/schemas/FolderTree"
+            }
+          }
+        }
+      },
+      "b": {
+        "type": "object",
+        "properties": {
+          "b": {
+            "properties": {
+              "c": {
+                "$ref": "#/components/schemas/a"
+              }
+            }
+          },
+          "a": {
+            "$ref": "#/components/schemas/a"
+          }
+        },
+        "xml": {
+          "name": "circular"
+        }
+      },
+      "a": {
+				"required": [
+					"id",
+					"name"
+				],
+				"properties": {
+					"id": {
+						"type": "integer",
+						"format": "int64"
+					},
+					"name": {
+						"type": "string"
+					},
+					"tag": {
+						"type": "string"
+					}
+				}
+			}
+    }
+  }
+}
