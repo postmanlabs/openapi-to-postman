@@ -11,6 +11,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
 
     var testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
       testSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/test1.json'),
+      issue133 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#133.json'),
+      unique_items_schema = path.join(__dirname, VALID_OPENAPI_PATH + '/unique_items_schema.json'),
       serverOverRidingSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/server_overriding.json'),
       infoHavingContactOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_contact_only.json'),
       infoHavingDescriptionOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_description_only.json'),
@@ -43,8 +45,28 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
+
+    it(' Fix for GITHUB#133: Should generate collection with proper Path and Collection variables', function(done) {
+      var openapi = fs.readFileSync(issue133, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data).to.have.property('variable');
+        expect(conversionResult.output[0].data.variable).to.be.an('array');
+        expect(conversionResult.output[0].data.variable[1].id).to.equal('format');
+        expect(conversionResult.output[0].data.variable[2].id).to.equal('path');
+        expect(conversionResult.output[0].data.variable[3].id).to.equal('new-path-variable');
+        done();
+      });
+    });
+
     it('Should generate collection conforming to schema for and fail if not valid ' +
-      testSpec1, function(done) {
+    testSpec1, function(done) {
       Converter.convert({ type: 'file', data: testSpec1 }, { requestNameSource: 'url' }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
@@ -56,6 +78,22 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
+
+    it('Should not get stuck while resolving circular references' +
+    unique_items_schema, function(done) {
+      Converter.convert({ type: 'file', data:
+      unique_items_schema }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+
+        done();
+      });
+    });
+
     it('Should generate collection with collapsing unnecessary folders ' +
     multipleFoldersSpec, function(done) {
       var openapi = fs.readFileSync(multipleFoldersSpec, 'utf8');
