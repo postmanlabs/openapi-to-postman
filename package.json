@@ -121,7 +121,7 @@
     "commander": "2.20.3",
     "js-yaml": "3.13.1",
     "lodash": "4.17.13",
-    "oas-resolver": "2.2.5",
+    "oas-resolver": "2.3.2",
     "postman-collection": "3.5.5"
   },
   "author": "Postman Labs <help@getpostman.com>",
