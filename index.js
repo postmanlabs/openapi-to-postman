@@ -3,15 +3,17 @@
 const SchemaPack = require('./lib/schemapack.js').SchemaPack;
 
 module.exports = {
-  // Old API wrapping the new API
-
   /**
+   * @description - Global callback type declaration
    * @callback responseCallback
    * @param {object} error - For handling error object
    * @param {object} result - For handling conversion/validation object
    */
 
+  // Old API wrapping the new API
+
   /**
+   * @description - Converts OpenAPI spec to a Postman collection
    * @param {object} input - Contains OpenAPI spec specified in YAML/JSON
    * @param {object} options - Holds user configurable properties like schemaFaker, requestNameSource, indentCharacter
    * @param {responseCallback} cb - For return
@@ -27,6 +29,7 @@ module.exports = {
   },
 
   /**
+   * @description - Checks that input is valid YAML/JSON
    * @param {object} input - Contains OpenAPI spec specified in YAML/JSON
    * @returns {object} Object with success/failure status of schema validation along with its reason
    */
@@ -36,6 +39,7 @@ module.exports = {
   },
 
   /**
+   * @description - Checks JSON/YAML input in file hierarchy with a root dir
    * @param {object} input - Contains OpenAPI spec specified in YAML/JSON
    * @param {responseCallback} cb - For return
    * @returns {responseCallback} Callback with success/failure status of schema validation along with its reason
@@ -46,6 +50,7 @@ module.exports = {
   },
 
   /**
+   * @description - Config options as kv-pairs passed to convert method
    * @returns {object} Options object with configurable kv-pairs
    */
   getOptions: function() {
