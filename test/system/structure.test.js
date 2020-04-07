@@ -26,9 +26,11 @@ const optionIds = [
       default: 'schema',
       availableOptions: ['example', 'schema'],
       description: 'Determines how request parameters (query parameters, path parameters, headers,' +
-       ' or the request body) should be generated. Setting this to schema will cause the importer to' +
-       ' use the parameter\'s schema as an indicator; `example` will cause the example (if provided)' +
-       ' to be picked up.'
+      ' or the request body) should be generated. Setting this to' +
+      ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject)' +
+      ' will cause the importer to use the parameter\'s schema as an indicator;' +
+      ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
+      ' will cause the example (if provided) to be picked up.'
     },
     exampleParametersResolution: {
       name: 'Set example request and response parameters type',
@@ -36,9 +38,11 @@ const optionIds = [
       default: 'example',
       availableOptions: ['example', 'schema'],
       description: 'Determines how response parameters (query parameters, path parameters, headers,' +
-       ' or the request body) should be generated. Setting this to schema will cause the importer to' +
-       ' use the parameter\'s schema as an indicator; `example` will cause the example (if provided)' +
-       ' to be picked up.'
+      ' or the request body) should be generated. Setting this to' +
+      ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject)' +
+      ' will cause the importer to use the parameter\'s schema as an indicator;' +
+      ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
+      ' will cause the example (if provided) to be picked up.'
     },
     folderStrategy: {
       name: 'Set folder strategy',
