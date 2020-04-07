@@ -17,8 +17,8 @@ const optionIds = [
       type: 'boolean',
       default: true,
       description: 'Determines whether the importer should attempt to collapse redundant folders into one.' +
-       'Folders are redundant if they have only one child element, and don\'t' +
-       'have any folder-level data to persist.'
+       ' Folders are redundant if they have only one child element, and don\'t' +
+       ' have any folder-level data to persist.'
     },
     requestParametersResolution: {
       name: 'Set root request parameters type',
@@ -26,9 +26,9 @@ const optionIds = [
       default: 'schema',
       availableOptions: ['example', 'schema'],
       description: 'Determines how request parameters (query parameters, path parameters, headers,' +
-       'or the request body) should be generated. Setting this to schema will cause the importer to' +
-       'use the parameter\'s schema as an indicator; `example` will cause the example (if provided)' +
-       'to be picked up.'
+       ' or the request body) should be generated. Setting this to schema will cause the importer to' +
+       ' use the parameter\'s schema as an indicator; `example` will cause the example (if provided)' +
+       ' to be picked up.'
     },
     exampleParametersResolution: {
       name: 'Set example request and response parameters type',
@@ -36,9 +36,9 @@ const optionIds = [
       default: 'example',
       availableOptions: ['example', 'schema'],
       description: 'Determines how response parameters (query parameters, path parameters, headers,' +
-       'or the request body) should be generated. Setting this to schema will cause the importer to' +
-       'use the parameter\'s schema as an indicator; `example` will cause the example (if provided)' +
-       'to be picked up.'
+       ' or the request body) should be generated. Setting this to schema will cause the importer to' +
+       ' use the parameter\'s schema as an indicator; `example` will cause the example (if provided)' +
+       ' to be picked up.'
     },
     folderStrategy: {
       name: 'Set folder strategy',
@@ -46,7 +46,7 @@ const optionIds = [
       default: 'paths',
       availableOptions: ['paths', 'tags'],
       description: 'Determines whether the importer should attempt to create the folders according' +
-       'to paths or tags which are given in the spec.'
+       ' to paths or tags which are given in the spec.'
     },
     indentCharacter: {
       name: 'Set indent character',
