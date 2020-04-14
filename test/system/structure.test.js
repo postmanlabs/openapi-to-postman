@@ -9,7 +9,8 @@ const optionIds = [
     'indentCharacter',
     'requestNameSource',
     'validationPropertiesToIgnore',
-    'showMissingInSchemaErrors'
+    'showMissingInSchemaErrors',
+    'detailedBlobValidation'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -76,6 +77,13 @@ const optionIds = [
       default: false,
       description: 'MISSING_IN_SCHEMA indicates that an extra parameter was included in the request. For most ' +
         'use cases, this need not be considered an error.'
+    },
+    detailedBlobValidation: {
+      name: 'Show detailed Blob Validation',
+      type: 'boolean',
+      default: false,
+      description: 'Determines whether to show detailed validation mismatches. When set to true validation ' +
+        'mismatches will also include keywords validation mismatches.'
     }
   };
 
