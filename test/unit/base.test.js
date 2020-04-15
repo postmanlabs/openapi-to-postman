@@ -30,7 +30,26 @@ describe('CONVERT FUNCTION TESTS ', function() {
       requiredInParams = path.join(__dirname, VALID_OPENAPI_PATH, '/required_in_parameters.json'),
       multipleRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/multiple_refs.json'),
       issue150 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#150.yml'),
-      issue173 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#173.yml');
+      issue173 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#173.yml'),
+      issue152 = path.join(__dirname, VALID_OPENAPI_PATH, '/path-refs-error.yaml');
+
+    it('Should generate collection conforming to schema for and fail if not valid ' +
+    issue152, function(done) {
+      var openapi = fs.readFileSync(issue152, 'utf8'),
+        refNotFound = 'reference #/paths/~1pets/get/responses/200/content/application~1json/schema/properties/newprop' +
+        ' not found in the OpenAPI spec';
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+        fs.writeFileSync('pathred2.json', JSON.stringify(conversionResult.output[0].data, null, 2));
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item[0].item[1].response[1].body).to.not.contain(refNotFound);
+        done();
+      });
+    });
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
