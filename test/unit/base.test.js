@@ -31,7 +31,26 @@ describe('CONVERT FUNCTION TESTS ', function() {
       multipleRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/multiple_refs.json'),
       issue150 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#150.yml'),
       issue173 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#173.yml'),
-      issue152 = path.join(__dirname, VALID_OPENAPI_PATH, '/path-refs-error.yaml');
+      issue152 = path.join(__dirname, VALID_OPENAPI_PATH, '/path-refs-error.yaml'),
+      tooManyRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/too-many-refs.json');
+
+    it('Should generate collection conforming to schema for and fail if not valid ' +
+    tooManyRefs, function(done) {
+      var openapi = fs.readFileSync(tooManyRefs, 'utf8'),
+        body;
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        body = conversionResult.output[0].data.item[1].response[0].body;
+        expect(body).to.not.contain('<Error: Too many levels of nesting to fake this schema>');
+        done();
+      });
+    });
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
     issue152, function(done) {
@@ -39,7 +58,6 @@ describe('CONVERT FUNCTION TESTS ', function() {
         refNotFound = 'reference #/paths/~1pets/get/responses/200/content/application~1json/schema/properties/newprop' +
         ' not found in the OpenAPI spec';
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
-        fs.writeFileSync('pathred2.json', JSON.stringify(conversionResult.output[0].data, null, 2));
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output.length).to.equal(1);
