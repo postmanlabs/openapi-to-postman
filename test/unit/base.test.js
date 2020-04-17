@@ -630,6 +630,22 @@ describe('INTERFACE FUNCTION TESTS ', function () {
     });
   });
 
+  describe('The converter must respect tags from input', function() {
+    var tagsSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/tags-spec.json'),
+      openapi = fs.readFileSync(tagsSpec, 'utf8');
+    Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(conversionResult.output.length).to.equal(1);
+      expect(conversionResult.output[0].type).to.equal('collection');
+      expect(conversionResult.output[0].data).to.have.property('info');
+      expect(conversionResult.output[0].data).to.have.property('item');
+      expect(conversionResult.output[0].data.item[0].name).to.equal('a');
+      // need at least two items to form a folder.
+      expect(conversionResult.output[0].data.item[1].name).to.equal('/preamble/123/b');
+    });
+  });
+
   describe('The converter must throw an error for invalid input type', function() {
     it('(type: some invalid value)', function(done) {
       var result = Converter.validate({ type: 'fil', data: 'invalid_path' });

@@ -37,6 +37,12 @@
             "url": "http://petstore.swagger.io/v1"
           }
         ],
+        "tags": [
+          {
+            "name": "pets",
+            "description": "my description of pets"
+          }
+        ],
         "paths": {
           "/pets": {
             "get": {

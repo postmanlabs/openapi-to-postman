@@ -1,0 +1,54 @@
+{
+    "openapi": "3.0.2",
+    "info": {
+      "version": "v1.20.0",
+      "title": "Group By Tags Test",
+      "description": "These paths should be grouped by tag"
+    },
+    "tags": [
+        {
+          "name": "a",
+          "description": "A Tag"
+        },
+        {
+          "name": "b",
+          "description": "B Tag"
+        }
+      ],
+    "paths": {
+        "/preamble/123/a": {
+            "get": {
+                "tags": [
+                    "a"
+                  ],
+                  "responses": {
+                    "200": {
+                      "description": "get successful response"
+                    }
+                }
+            },
+            "post": {
+              "tags": [
+                  "a"
+                ],
+                "responses": {
+                  "200": {
+                    "description": "modification successful response"
+                  }
+              }
+          }
+        },
+        "/preamble/123/b": {
+            "get": {
+                "tags": [
+                    "b"
+                  ],
+                  "responses": {
+                    "200": {
+                      "description": "successful response"
+                    }
+                }
+            }
+        }
+    }
+}
