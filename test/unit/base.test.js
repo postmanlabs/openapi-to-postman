@@ -179,12 +179,13 @@ describe('CONVERT FUNCTION TESTS ', function() {
           let request = conversionResult.output[0].data.item[1].request,
             protocol = request.url.protocol,
             host = request.url.host.join('.'),
+            port = request.url.port,
             path = request.url.path.join('/'),
-            endPoint = protocol + '://' + host + '/' + path,
+            endPoint = protocol + '://' + host + ':' + port + '/' + path,
             host1 = conversionResult.output[0].data.variable[0].value,
             path1 = conversionResult.output[0].data.item[0].request.url.path.join('/'),
             endPoint1 = host1 + '/' + path1;
-          expect(endPoint).to.equal('https://other-api.example.com/secondary-domain/fails');
+          expect(endPoint).to.equal('http://petstore.swagger.io:{{port}}/:basePath/secondary-domain/fails');
           expect(endPoint1).to.equal('https://api.example.com/primary-domain/works');
           done();
         });
