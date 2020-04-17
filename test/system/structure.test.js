@@ -79,11 +79,12 @@ const optionIds = [
         'use cases, this need not be considered an error.'
     },
     detailedBlobValidation: {
-      name: 'Show detailed Blob Validation',
+      name: 'Show detailed body validation messages',
+      id: 'detailedBlobValidation',
       type: 'boolean',
       default: false,
-      description: 'Determines whether to show detailed validation mismatches. When set to true validation ' +
-        'mismatches will also include keywords validation mismatches.'
+      description: 'Determines whether to show detailed mismatch information for application/json content ' +
+        'in the request/response body'
     }
   };
 
