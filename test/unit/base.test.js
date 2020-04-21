@@ -12,6 +12,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     var testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
       testSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/test1.json'),
       issue133 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#133.json'),
+      issue160 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#160.json'),
       unique_items_schema = path.join(__dirname, VALID_OPENAPI_PATH + '/unique_items_schema.json'),
       serverOverRidingSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/server_overriding.json'),
       infoHavingContactOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_contact_only.json'),
@@ -116,6 +117,21 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
 
+    it('#GITHUB-160 should generate correct display url for path containing servers' +
+    issue160, function(done) {
+      var openapi = fs.readFileSync(issue160, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item[0].item[0].request.url.host[0]).to.equal('{{petsUrl}}');
+        done();
+      });
+    });
+
     it('Should not get stuck while resolving circular references' +
     unique_items_schema, function(done) {
       Converter.convert({ type: 'file', data:
@@ -200,12 +216,13 @@ describe('CONVERT FUNCTION TESTS ', function() {
           let request = conversionResult.output[0].data.item[1].request,
             protocol = request.url.protocol,
             host = request.url.host.join('.'),
+            port = request.url.port,
             path = request.url.path.join('/'),
-            endPoint = protocol + '://' + host + '/' + path,
+            endPoint = protocol + '://' + host + ':' + port + '/' + path,
             host1 = conversionResult.output[0].data.variable[0].value,
             path1 = conversionResult.output[0].data.item[0].request.url.path.join('/'),
             endPoint1 = host1 + '/' + path1;
-          expect(endPoint).to.equal('https://other-api.example.com/secondary-domain/fails');
+          expect(endPoint).to.equal('http://petstore.swagger.io:{{port}}/:basePath/secondary-domain/fails');
           expect(endPoint1).to.equal('https://api.example.com/primary-domain/works');
           done();
         });

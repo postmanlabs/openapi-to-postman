@@ -22,7 +22,19 @@
           "summary": "Should use the other domain",
           "servers": [
             {
-              "url": "https://other-api.example.com"
+              "url": "http://petstore.swagger.io:{port}/{basePath}",
+             "variables": {
+                "port": {
+                  "enum": [
+                    "8443",
+                    "443"
+                  ],
+                  "default": "8443"
+                },
+                "basePath": {
+                  "default": "v2"
+                }
+             }
             }
           ]
         }
