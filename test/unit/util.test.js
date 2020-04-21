@@ -2070,8 +2070,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         resultObj = SchemaUtils.sanitizeUrlPathParams('/anotherpath/{{path}}/{{new-path-variable}}.{{onemore}}',
           pathParams);
 
-      expect(resultObj).to.have.property('reqUrl');
-      expect(resultObj.reqUrl).to.equal('/anotherpath/:path/{{new-path-variable}}.{{onemore}}');
+      expect(resultObj).to.have.property('url');
+      expect(resultObj.url).to.equal('/anotherpath/:path/{{new-path-variable}}.{{onemore}}');
       expect(resultObj).to.have.property('pathVars');
       expect(resultObj).to.have.property('collectionVars');
 
