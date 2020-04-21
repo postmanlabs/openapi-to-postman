@@ -1,0 +1,85 @@
+{
+	"info": {
+		"_postman_id": "7a1d1b7f-f6c3-4ce1-8c1f-1e93fc4a470d",
+		"name": "lets see",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"id": "req",
+			"name": "Sample endpoint: Returns details about a particular user",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/user?id=1",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"user"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "1",
+							"description": "(Required) ID of the user"
+						}
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"data\": [\n        {\n            \"id\": \"5e5792b234d88e12b8511b92\",\n            \"accountNumber\": \"1YNykgIi3T2NDeElON0IqcPOpPI\",\n            \"entityName\": \"Farmer Freddy's Veg\",\n            \"entityPhone\": \"+4420832132132\",\n            \"incType\": \"sole\",\n            \"companyNumber\": 10000,\n            \"needThisNot\": \"hello\",\n            \"website\": \"https://farmer-freddy.null\",\n            \"turnover\": 10000,\n            \"description\": \"def\",\n            \"status\": \"tradingAccepted\",\n            \"offers\": [\n                \"organic-vegetables\",\n                \"organic-fruits\",\n                \"101\"\n            ],\n            \"wants\": [\n                \"carpentry\",\n                \"beer\",\n            \"beer\"\n            ],\n            \"isFavorite\": true\n        }\n    ],\n    \"meta\": {\n        \"notNeeded\": 1,\n        \"numberOfResults\": 1,\n        \"totalPages\": 1\n    }\n}"
+				}
+			},
+			"response": [
+				{
+					"id": "res",
+					"name": "OK",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user?id=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"data\": [\n        {\n            \"id\": \"5e5792b234d88e12b8511b92\",\n            \"accountNumber\": \"1YNykgIi3T2NDeElON0IqcPOpPI\",\n            \"entityName\": \"Farmer Freddy's Veg\",\n            \"entityPhone\": \"+4420832132132\",\n            \"incType\": \"sole\",\n            \"companyNumber\": \"none\",\n            \"website\": \"https://farmer-freddy.null\",\n            \"turnover\": 10000,\n            \"description\": \"High quality carpentry at a reasonable price.\",\n            \"status\": \"wrongEnum\",\n            \"offers\": [\n                \"organic-vegetables\",\n                \"organic-fruits\"\n            ],\n            \"wants\": [\n                \"carpentry\",\n                \"beer\"\n            ],\n            \"isFavorite\": true\n        }\n    ],\n    \"meta\": {\n        \"numberOfResults\": 1,\n        \"totalPages\": 1\n    }\n}"
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"id": "baseUrl",
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	],
+	"protocolProfileBehavior": {}
+}
