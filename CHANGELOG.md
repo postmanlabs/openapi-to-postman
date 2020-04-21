@@ -1,4 +1,11 @@
 # OpenAPI-Postman Changelog
+#### v1.1.13 (April 21, 2020)
+* Added support for detailed validation body mismatches with option detailedBlobValidation.
+* Fixed unable to validate schema with type array. [#8098](https://github.com/postmanlabs/postman-app-support/issues/8098)
+* Fixed URIError for invalid Uri in transaction.
+* Fixed an issue where link in same file was not being resolved. [#152](https://github.com/postmanlabs/openapi-to-postman/issues/152)
+* Added proper handling for path variables in path and local servers. [#160](https://github.com/postmanlabs/openapi-to-postman/issues/160)
+* Unresolved refs will not be stored in schemaResolutionCache.
 
 #### v1.1.12 (Mar 26, 2020)
 * Fix for https://github.com/postmanlabs/openapi-to-postman/issues/133 and https://github.com/postmanlabs/openapi-to-postman/issues/101
