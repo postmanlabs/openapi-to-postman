@@ -26,16 +26,20 @@ const optionIds = [
       type: 'enum',
       default: 'Schema',
       availableOptions: ['Example', 'Schema'],
-      description: 'Select whether to generate the request parameters based on the schema or the' +
-      ' examples in the schema.'
+      description: 'Select whether to generate the request parameters based on the' +
+      ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the' +
+      ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
+      ' in the schema.'
     },
     exampleParametersResolution: {
       name: 'Response parameter generation',
       type: 'enum',
       default: 'Example',
       availableOptions: ['Example', 'Schema'],
-      description: 'Select whether to generate the response parameters based on the schema or the' +
-      ' examples in the schema.'
+      description: 'Select whether to generate the response parameters based on the' +
+      ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the' +
+      ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
+      ' in the schema.'
     },
     folderStrategy: {
       name: 'Folder organization',
