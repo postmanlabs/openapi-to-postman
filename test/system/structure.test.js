@@ -62,7 +62,7 @@ const optionIds = [
       availableOptions: ['Url', 'Fallback'],
       description: 'Determines how the requests inside the generated collection will be named.' +
       ' If “Fallback” is selected, the request will be named after one of the following schema' +
-      ' values: description, operationid, url.'
+      ' values: `description`, `operationid`, `url`.'
     },
     shortValidationErrors: {
       name: 'Short error messages during request <> schema validation',
@@ -125,6 +125,19 @@ describe('getOptions', function() {
       else {
         console.warn(`Option ${option.name} not present in the list of expected options.`);
       }
+    });
+  });
+
+  it('must return all valid options based on criteria', function () {
+    getOptions({ usage: ['CONVERSION'] }).forEach((option) => {
+      expect(option.id).to.be.oneOf(optionIds);
+      expect(option.usage).to.include('CONVERSION');
+    });
+
+    getOptions({ external: true, usage: ['VALIDATION'] }).forEach((option) => {
+      expect(option.id).to.be.oneOf(optionIds);
+      expect(option.external).to.eql(true);
+      expect(option.usage).to.include('VALIDATION');
     });
   });
 });
