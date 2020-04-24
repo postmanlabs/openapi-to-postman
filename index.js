@@ -23,8 +23,8 @@ module.exports = {
     schema.mergeAndValidate(cb);
   },
 
-  getOptions: function() {
-    return SchemaPack.getOptions();
+  getOptions: function(mode, criteria) {
+    return SchemaPack.getOptions(mode, criteria);
   },
 
   // new API
