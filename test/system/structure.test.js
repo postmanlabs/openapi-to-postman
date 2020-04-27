@@ -8,67 +8,75 @@ const optionIds = [
     'folderStrategy',
     'indentCharacter',
     'requestNameSource',
+    'shortValidationErrors',
     'validationPropertiesToIgnore',
-    'showMissingInSchemaErrors'
+    'showMissingInSchemaErrors',
+    'detailedBlobValidation'
   ],
   expectedOptions = {
     collapseFolders: {
-      name: 'Toggle for collapsing folder for long routes',
+      name: 'Collapse redundant folders',
       type: 'boolean',
       default: true,
-      description: 'Determines whether the importer should attempt to collapse redundant folders into one.' +
-       'Folders are redundant if they have only one child element, and don\'t' +
-       'have any folder-level data to persist.'
+      description: 'Importing will collapse all folders that have only one child element and lack ' +
+      'persistent folder-level data.'
     },
     requestParametersResolution: {
-      name: 'Set root request parameters type',
+      name: 'Request parameter generation',
       type: 'enum',
-      default: 'schema',
-      availableOptions: ['example', 'schema'],
-      description: 'Determines how request parameters (query parameters, path parameters, headers,' +
-       'or the request body) should be generated. Setting this to schema will cause the importer to' +
-       'use the parameter\'s schema as an indicator; `example` will cause the example (if provided)' +
-       'to be picked up.'
+      default: 'Schema',
+      availableOptions: ['Example', 'Schema'],
+      description: 'Select whether to generate the request parameters based on the' +
+      ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the' +
+      ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
+      ' in the schema.'
     },
     exampleParametersResolution: {
-      name: 'Set example request and response parameters type',
+      name: 'Response parameter generation',
       type: 'enum',
-      default: 'example',
-      availableOptions: ['example', 'schema'],
-      description: 'Determines how response parameters (query parameters, path parameters, headers,' +
-       'or the request body) should be generated. Setting this to schema will cause the importer to' +
-       'use the parameter\'s schema as an indicator; `example` will cause the example (if provided)' +
-       'to be picked up.'
+      default: 'Example',
+      availableOptions: ['Example', 'Schema'],
+      description: 'Select whether to generate the response parameters based on the' +
+      ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the' +
+      ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
+      ' in the schema.'
     },
     folderStrategy: {
-      name: 'Set folder strategy',
+      name: 'Folder organization',
       type: 'enum',
-      default: 'paths',
-      availableOptions: ['paths', 'tags'],
-      description: 'Determines whether the importer should attempt to create the folders according' +
-       'to paths or tags which are given in the spec.'
+      default: 'Paths',
+      availableOptions: ['Paths', 'Tags'],
+      description: 'Select whether to create folders according to the spec’s paths or tags.'
     },
     indentCharacter: {
       name: 'Set indent character',
       type: 'enum',
-      default: ' ',
-      availableOptions: [' ', '\t'],
+      default: 'Space',
+      availableOptions: ['Space', 'Tab'],
       description: 'Option for setting indentation character'
     },
     requestNameSource: {
-      name: 'Set request name source',
+      name: 'Naming requests',
       type: 'enum',
-      default: 'fallback',
-      availableOptions: ['url', 'uKnown', 'fallback'],
-      description: 'Option for setting source for a request name'
+      default: 'Fallback',
+      availableOptions: ['Url', 'Fallback'],
+      description: 'Determines how the requests inside the generated collection will be named.' +
+      ' If “Fallback” is selected, the request will be named after one of the following schema' +
+      ' values: `description`, `operationid`, `url`.'
+    },
+    shortValidationErrors: {
+      name: 'Short error messages during request <> schema validation',
+      type: 'boolean',
+      default: false,
+      description: 'Whether detailed error messages are required for request <> schema validation operations.'
     },
     validationPropertiesToIgnore: {
       name: 'Properties to ignore during validation',
       type: 'array',
       default: [],
       description: 'Specific properties (parts of a request/response pair) to ignore during validation.' +
-          ' Must be sent as an array of strings. Valid inputs in the array: PATHVARIABLE, QUERYPARAM,' +
-          ' HEADER, BODY, RESPONSE_HEADER, RESPONSE_BODY'
+        ' Must be sent as an array of strings. Valid inputs in the array: PATHVARIABLE, QUERYPARAM,' +
+        ' HEADER, BODY, RESPONSE_HEADER, RESPONSE_BODY'
     },
     showMissingInSchemaErrors: {
       name: 'Whether MISSING_IN_SCHEMA mismatches should be returned',
@@ -76,6 +84,14 @@ const optionIds = [
       default: false,
       description: 'MISSING_IN_SCHEMA indicates that an extra parameter was included in the request. For most ' +
         'use cases, this need not be considered an error.'
+    },
+    detailedBlobValidation: {
+      name: 'Show detailed body validation messages',
+      id: 'detailedBlobValidation',
+      type: 'boolean',
+      default: false,
+      description: 'Determines whether to show detailed mismatch information for application/json content ' +
+        'in the request/response body.'
     }
   };
 
@@ -109,6 +125,19 @@ describe('getOptions', function() {
       else {
         console.warn(`Option ${option.name} not present in the list of expected options.`);
       }
+    });
+  });
+
+  it('must return all valid options based on criteria', function () {
+    getOptions({ usage: ['CONVERSION'] }).forEach((option) => {
+      expect(option.id).to.be.oneOf(optionIds);
+      expect(option.usage).to.include('CONVERSION');
+    });
+
+    getOptions({ external: true, usage: ['VALIDATION'] }).forEach((option) => {
+      expect(option.id).to.be.oneOf(optionIds);
+      expect(option.external).to.eql(true);
+      expect(option.usage).to.include('VALIDATION');
     });
   });
 });
