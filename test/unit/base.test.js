@@ -377,6 +377,69 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
 
+    it('Should return meta data from folder having one root file JSON', function(done) {
+      let folderPath = path.join(__dirname, '../data/petstore-separate'),
+        array = [
+          { fileName: folderPath + '/common/Error.json' },
+          { fileName: folderPath + '/spec/Pet.json' },
+          { fileName: folderPath + '/spec/NewPet.json' },
+          { fileName: folderPath + '/spec/parameters.json' },
+          { fileName: folderPath + '/spec/swagger.json' }
+        ];
+      Converter.getMetaData({ type: 'folder', data: array }, (err, status) => {
+        if (err) {
+          expect.fail(null, null, err);
+        }
+        if (status.result) {
+          expect(status.result).to.be.eq(true);
+          expect(status.name).to.be.equal('Swagger Petstore');
+          expect(status.output[0].name).to.be.equal('Swagger Petstore');
+          expect(status.output[0].type).to.be.equal('collection');
+          done();
+        }
+        else {
+          expect.fail(null, null, status.reason);
+          done();
+        }
+      });
+    });
+    it('Should return meta data from a valid file', function(done) {
+      var openapi = fs.readFileSync(testSpec, 'utf8');
+      Converter.getMetaData({ type: 'json', data: openapi }, (err, status) => {
+        if (err) {
+          expect.fail(null, null, err);
+        }
+        if (status.result) {
+          expect(status.result).to.be.eq(true);
+          expect(status.name).to.be.equal('Swagger Petstore');
+          expect(status.output[0].name).to.be.equal('Swagger Petstore');
+          expect(status.output[0].type).to.be.equal('collection');
+          done();
+        }
+        else {
+          expect.fail(null, null, status.reason);
+          done();
+        }
+      });
+    });
+    it('Should return validation result for an invalid file', function(done) {
+      var invalidNoInfo = path.join(__dirname, INVALID_OPENAPI_PATH + '/invalid-no-info.yaml'),
+        openapi = fs.readFileSync(invalidNoInfo, 'utf8');
+      Converter.getMetaData({ type: 'json', data: openapi }, (err, status) => {
+        if (err) {
+          expect.fail(null, null, err);
+        }
+        if (!status.result) {
+          expect(status.result).to.be.eq(false);
+          done();
+        }
+        else {
+          expect.fail(null, null, status.reason);
+          done();
+        }
+      });
+    });
+
     it('Should return error for more than one root files', function(done) {
       let folderPath = path.join(__dirname, '../data/multiFile_with_two_root'),
         array = [

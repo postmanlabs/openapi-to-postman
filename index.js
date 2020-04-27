@@ -18,13 +18,9 @@ module.exports = {
     return schema.validationResult;
   },
 
-  getMetaData: function (input) {
+  getMetaData: function (input, cb) {
     var schema = new SchemaPack(input);
-    if (schema.metaData) {
-      return schema.metaData;
-    }
-
-    return schema.validationResult;
+    schema.getMetaData(cb);
   },
 
   mergeAndValidate: function (input, cb) {
