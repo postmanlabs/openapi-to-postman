@@ -5,7 +5,6 @@ const optionIds = [
     'collapseFolders',
     'requestParametersResolution',
     'exampleParametersResolution',
-    'folderStrategy',
     'indentCharacter',
     'requestNameSource',
     'shortValidationErrors',
@@ -40,13 +39,6 @@ const optionIds = [
       ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the' +
       ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
       ' in the schema.'
-    },
-    folderStrategy: {
-      name: 'Folder organization',
-      type: 'enum',
-      default: 'Paths',
-      availableOptions: ['Paths', 'Tags'],
-      description: 'Select whether to create folders according to the spec’s paths or tags.'
     },
     indentCharacter: {
       name: 'Set indent character',
