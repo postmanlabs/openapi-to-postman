@@ -12,6 +12,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     var testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
       testSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/test1.json'),
       issue133 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#133.json'),
+      issue160 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#160.json'),
       unique_items_schema = path.join(__dirname, VALID_OPENAPI_PATH + '/unique_items_schema.json'),
       serverOverRidingSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/server_overriding.json'),
       infoHavingContactOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_contact_only.json'),
@@ -30,7 +31,44 @@ describe('CONVERT FUNCTION TESTS ', function() {
       requiredInParams = path.join(__dirname, VALID_OPENAPI_PATH, '/required_in_parameters.json'),
       multipleRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/multiple_refs.json'),
       issue150 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#150.yml'),
-      issue173 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#173.yml');
+      issue173 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#173.yml'),
+      issue152 = path.join(__dirname, VALID_OPENAPI_PATH, '/path-refs-error.yaml'),
+      tooManyRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/too-many-refs.json');
+
+    it('Should generate collection conforming to schema for and fail if not valid ' +
+    tooManyRefs, function(done) {
+      var openapi = fs.readFileSync(tooManyRefs, 'utf8'),
+        body;
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        body = conversionResult.output[0].data.item[1].response[0].body;
+        expect(body).to.not.contain('<Error: Too many levels of nesting to fake this schema>');
+        done();
+      });
+    });
+
+    it('Should generate collection conforming to schema for and fail if not valid ' +
+    issue152, function(done) {
+      var openapi = fs.readFileSync(issue152, 'utf8'),
+        refNotFound = 'reference #/paths/~1pets/get/responses/200/content/application~1json/schema/properties/newprop' +
+        ' not found in the OpenAPI spec';
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item[0].item[1].response[1].body).to.not.contain(refNotFound);
+        done();
+      });
+    });
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
      testSpec, function(done) {
@@ -75,6 +113,21 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
 
+        done();
+      });
+    });
+
+    it('#GITHUB-160 should generate correct display url for path containing servers' +
+    issue160, function(done) {
+      var openapi = fs.readFileSync(issue160, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item[0].item[0].request.url.host[0]).to.equal('{{petsUrl}}');
         done();
       });
     });
@@ -163,12 +216,13 @@ describe('CONVERT FUNCTION TESTS ', function() {
           let request = conversionResult.output[0].data.item[1].request,
             protocol = request.url.protocol,
             host = request.url.host.join('.'),
+            port = request.url.port,
             path = request.url.path.join('/'),
-            endPoint = protocol + '://' + host + '/' + path,
+            endPoint = protocol + '://' + host + ':' + port + '/' + path,
             host1 = conversionResult.output[0].data.variable[0].value,
             path1 = conversionResult.output[0].data.item[0].request.url.path.join('/'),
             endPoint1 = host1 + '/' + path1;
-          expect(endPoint).to.equal('https://other-api.example.com/secondary-domain/fails');
+          expect(endPoint).to.equal('http://petstore.swagger.io:{{port}}/:basePath/secondary-domain/fails');
           expect(endPoint1).to.equal('https://api.example.com/primary-domain/works');
           done();
         });

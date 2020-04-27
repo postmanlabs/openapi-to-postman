@@ -24,6 +24,9 @@ describe('DEREF FUNCTION TESTS ', function() {
           }
         }]
       },
+      schemaWithTypeArray = {
+        $ref: '#/components/schemas/schemaTypeArray'
+      },
       componentsAndPaths = {
         components: {
           schemas: {
@@ -69,6 +72,14 @@ describe('DEREF FUNCTION TESTS ', function() {
                   format: 'email'
                 }
               }
+            },
+            schemaTypeArray: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              minItems: 5,
+              maxItems: 55
             }
           }
         }
@@ -77,7 +88,9 @@ describe('DEREF FUNCTION TESTS ', function() {
       output = deref.resolveRefs(schema, parameterSource, componentsAndPaths),
       output_withdot = deref.resolveRefs(schemaWithDotInKey, parameterSource, componentsAndPaths),
       output_customFormat = deref.resolveRefs(schemaWithCustomFormat, parameterSource, componentsAndPaths),
-      output_withAllOf = deref.resolveRefs(schemaWithAllOf, parameterSource, componentsAndPaths);
+      output_withAllOf = deref.resolveRefs(schemaWithAllOf, parameterSource, componentsAndPaths),
+      output_validationTypeArray = deref.resolveRefs(schemaWithTypeArray, parameterSource, componentsAndPaths,
+        {}, 'VALIDATION');
 
 
     expect(output).to.deep.include({ type: 'object',
@@ -98,6 +111,17 @@ describe('DEREF FUNCTION TESTS ', function() {
         id: { default: '<long>', type: 'integer' },
         test_prop: { default: '<string>', type: 'string' }
       }
+    });
+
+    // deref.resolveRef() should not change minItems and maxItems for VALIDATION
+    expect(output_validationTypeArray).to.deep.include({
+      type: 'array',
+      items: {
+        type: 'string',
+        default: '<string>'
+      },
+      minItems: 5,
+      maxItems: 55
     });
 
     done();
