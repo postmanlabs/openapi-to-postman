@@ -122,7 +122,8 @@
     "js-yaml": "3.13.1",
     "lodash": "4.17.13",
     "oas-resolver": "2.2.5",
-    "postman-collection": "3.5.5"
+    "postman-collection": "3.5.5",
+    "yaml": "1.8.3"
   },
   "author": "Postman Labs <help@getpostman.com>",
   "license": "Apache-2.0",
