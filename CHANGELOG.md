@@ -1,4 +1,7 @@
 # OpenAPI-Postman Changelog
+#### v1.1.15 (April 29, 2020)
+* Add missing yaml dependency.
+
 #### v1.1.14 (April 28, 2020)
 * Added a new function to get meta data from a schema.
 * Fix for [#169]https://github.com/postmanlabs/openapi-to-postman/issues/169 - Removed unused folderStrategy option.
