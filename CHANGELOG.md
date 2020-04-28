@@ -1,4 +1,8 @@
 # OpenAPI-Postman Changelog
+#### v1.1.14 (April 28, 2020)
+* Added a new function to get meta data from a schema.
+* Fix for [#169]https://github.com/postmanlabs/openapi-to-postman/issues/169 - Removed unused folderStrategy option.
+
 #### v1.1.13 (April 21, 2020)
 * Added support for detailed validation body mismatches with option detailedBlobValidation.
 * Fix for [#8098](https://github.com/postmanlabs/postman-app-support/issues/8098) - Unable to validate schema with type array. 
