@@ -630,17 +630,35 @@ describe('CONVERT FUNCTION TESTS ', function() {
     });
   });
 
-  describe('for invalid requestNameSource option', function() {
+  describe('requestNameSource option', function() {
     var pathPrefix = VALID_OPENAPI_PATH + '/test1.json',
       specPath = path.join(__dirname, pathPrefix);
 
-    it('for invalid request name, converter should use the correct fallback value', function(done) {
+    it('for invalid request name source, converter should use the correct fallback value', function(done) {
       var openapi = fs.readFileSync(specPath, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { requestNameSource: 'uKnown' }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         done();
       });
+    });
+
+    it('should name request based on url when option has value=`URL`', function (done) {
+      Converter.convert({ type: 'file', data: specPath }, { requestNameSource: 'URL' }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        let request = conversionResult.output[0].data.item[0].item[0].request;
+        expect(request.name).to.equal('http://petstore3.swagger.io/:v3/pets');
+        done();
+      });
+    });
+    it('should name request based on description when option has value=`Fallback`', function (done) {
+      Converter.convert({ type: 'file', data: specPath },
+        { requestNameSource: 'Fallback' }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          let request = conversionResult.output[0].data.item[0].item[0].request;
+          expect(request.name).to.equal('List all pets');
+          done();
+        });
     });
   });
 });
