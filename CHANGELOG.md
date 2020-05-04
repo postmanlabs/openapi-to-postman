@@ -1,5 +1,5 @@
 # OpenAPI-Postman Changelog
-#### v1.1.16 (May 3, 2020)
+#### v1.1.16 (May 4, 2020)
 * Change Url to URL in Naming Request option.
 
 #### v1.1.15 (April 29, 2020)
