@@ -635,14 +635,14 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(err).to.be.null;
         expect(conversionResult.result).to.be.false;
         expect(conversionResult.reason).to.not.include('undefined');
+      });
 
-        // invalid YAML
-        Converter.convert({ type: 'string', data: ' :' }, {}, (err, conversionResult) => {
-          expect(err).to.be.null;
-          expect(conversionResult.result).to.be.false;
-          expect(conversionResult.reason).to.not.include('undefined');
-          done();
-        });
+      // invalid YAML
+      Converter.convert({ type: 'string', data: ' :' }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.be.false;
+        expect(conversionResult.reason).to.not.include('undefined');
+        done();
       });
     });
 
