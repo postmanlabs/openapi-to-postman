@@ -630,12 +630,14 @@ describe('CONVERT FUNCTION TESTS ', function() {
     });
 
     it('should not return undefined in the error message if spec is not valid JSON/YAML', function(done) {
+      // invalid JSON
       Converter.convert({ type: 'string', data: '{"key": { "value" : } ' }, {}, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.be.false;
         expect(conversionResult.reason).to.not.include('undefined');
 
-        Converter.convert({ type: 'string', data: 'openapi: 3.0.1 :' }, {}, (err, conversionResult) => {
+        // invalid YAML
+        Converter.convert({ type: 'string', data: ' :' }, {}, (err, conversionResult) => {
           expect(err).to.be.null;
           expect(conversionResult.result).to.be.false;
           expect(conversionResult.reason).to.not.include('undefined');
