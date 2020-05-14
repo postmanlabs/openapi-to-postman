@@ -645,6 +645,18 @@ describe('CONVERT FUNCTION TESTS ', function() {
         });
       });
     });
+
+    it('should throw an invalid format error and not semantic version missing error when yaml.safeLoad ' +
+    'does not throw an error while parsing yaml', function(done) {
+      // YAML for which yaml.safeLoad does not throw an error
+      Converter.convert({ type: 'string', data: 'no error yaml' }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.be.false;
+        expect(conversionResult.reason).to.not.include('Specification must contain a semantic version number' +
+        ' of the OAS specification');
+        done();
+      });
+    });
   });
 
   describe('requestNameSource option', function() {
