@@ -1,4 +1,9 @@
 # OpenAPI-Postman Changelog
+#### v1.1.17 (May 15, 2020)
+* Fix for [#3](https://github.com/postmanlabs/openapi-to-postman/issues/3) [#57](https://github.com/postmanlabs/openapi-to-postman/issues/57) - Introduced a new option `folderStrategy`, can choose between `Tags` or `Path` while creating folders in Postman Collection.
+* Fixed an issue where undefined was returned as error message while trying to import invalid format.
+* Use `minItems` and `maxItems` values if available in schema with type array.
+
 #### v1.1.16 (May 4, 2020)
 * Change Url to URL in Naming Request option.
 
