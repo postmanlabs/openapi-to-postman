@@ -657,6 +657,34 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(responseBody.nomax).to.have.length(4);
         // default # of items when minItems and maxItems not defined
         expect(responseBody.nominmax).to.have.length(2);
+      });
+    });
+
+    it('should not return undefined in the error message if spec is not valid JSON/YAML', function(done) {
+      // invalid JSON
+      Converter.convert({ type: 'string', data: '{"key": { "value" : } ' }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.be.false;
+        expect(conversionResult.reason).to.not.include('undefined');
+      });
+
+      // invalid YAML
+      Converter.convert({ type: 'string', data: ' :' }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.be.false;
+        expect(conversionResult.reason).to.not.include('undefined');
+        done();
+      });
+    });
+
+    it('should throw an invalid format error and not semantic version missing error when yaml.safeLoad ' +
+    'does not throw an error while parsing yaml', function(done) {
+      // YAML for which yaml.safeLoad does not throw an error
+      Converter.convert({ type: 'string', data: 'no error yaml' }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.be.false;
+        expect(conversionResult.reason).to.not.include('Specification must contain a semantic version number' +
+        ' of the OAS specification');
         done();
       });
     });
