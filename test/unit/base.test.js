@@ -647,8 +647,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
         // Check for all cases (number of items generated are kept as valid and minimum as possible)
         // maxItems # of items when minItems not defined (and maxItems < 2)
         expect(responseBody.min).to.have.length(1);
-        // limit(100) # of items when minItems > 100
-        expect(responseBody.max).to.have.length(100);
+        // limit(20) # of items when minItems > 20
+        expect(responseBody.max).to.have.length(20);
         // minItems # of items when minItems and maxItems both is defined
         expect(responseBody.minmax).to.have.length(3);
         // default # of items when minItems not defined (and maxItems >= 2)

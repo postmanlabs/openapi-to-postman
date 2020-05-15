@@ -40,8 +40,8 @@ paths:
                       exmaple: hello
                     max:
                       type: array
-                      minItems: 105
-                      maxItems: 110
+                      minItems: 30
+                      maxItems: 40
                       items:
                         type: string
                       exmaple: hello
