@@ -35,6 +35,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       issue150 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#150.yml'),
       issue173 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#173.yml'),
       issue152 = path.join(__dirname, VALID_OPENAPI_PATH, '/path-refs-error.yaml'),
+      issue193 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#193.yml'),
       tooManyRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/too-many-refs.json'),
       tagsFolderSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed.yaml');
 
@@ -628,6 +629,34 @@ describe('CONVERT FUNCTION TESTS ', function() {
             }
           ]);
         });
+        done();
+      });
+    });
+
+    it('[Github #193] - should handle minItems and maxItems props for (type: array) appropriately', function (done) {
+      var openapi = fs.readFileSync(issue193, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+        let responseBody;
+
+        expect(err).to.be.null;
+        responseBody = JSON.parse(conversionResult.output[0].data.item[0].response[0].body);
+
+        expect(responseBody).to.be.an('object');
+        expect(responseBody).to.have.keys(['min', 'max', 'minmax', 'nomin', 'nomax', 'nominmax']);
+
+        // Check for all cases (number of items generated are kept as valid and minimum as possible)
+        // maxItems # of items when minItems not defined (and maxItems < 2)
+        expect(responseBody.min).to.have.length(1);
+        // limit(20) # of items when minItems > 20
+        expect(responseBody.max).to.have.length(20);
+        // minItems # of items when minItems and maxItems both is defined
+        expect(responseBody.minmax).to.have.length(3);
+        // default # of items when minItems not defined (and maxItems >= 2)
+        expect(responseBody.nomin).to.have.length(2);
+        // minItems # of items when maxItems not defined
+        expect(responseBody.nomax).to.have.length(4);
+        // default # of items when minItems and maxItems not defined
+        expect(responseBody.nominmax).to.have.length(2);
         done();
       });
     });

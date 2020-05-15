@@ -1,0 +1,53 @@
+openapi: 3.0.0
+info:
+  version: 1.0
+  title: Demo API dodo
+paths:
+  /api:
+    get:
+      summary: 'Demo invalid type'
+      responses:
+        '200':
+          description: 'Cannot use type boolean'
+          content:
+            application/json:
+                schema:
+                  type: object
+                  properties:
+                    nominmax:
+                      type: array
+                      items:
+                        type: string
+                      exmaple: hello
+                    nomin:
+                      type: array
+                      maxItems: 5
+                      items:
+                        type: string
+                      exmaple: hello
+                    nomax:
+                      type: array
+                      minItems: 4
+                      items:
+                        type: string
+                      exmaple: hello
+                    minmax:
+                      type: array
+                      minItems: 3
+                      maxItems: 5
+                      items:
+                        type: string
+                      exmaple: hello
+                    max:
+                      type: array
+                      minItems: 30
+                      maxItems: 40
+                      items:
+                        type: string
+                      exmaple: hello
+                    min:
+                      type: array
+                      minItems: 1
+                      items:
+                        type: string
+                      exmaple: hello
