@@ -657,6 +657,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(responseBody.nomax).to.have.length(4);
         // default # of items when minItems and maxItems not defined
         expect(responseBody.nominmax).to.have.length(2);
+        done();
       });
     });
 
