@@ -169,7 +169,10 @@ The converter can be used as a CLI tool as well. The following [command line opt
 - `-p`, `--pretty`  
   Used to pretty print the collection object while writing to a file
 
-- `-h`, `--help`  
+- `-c`, `--config`
+  Used to supply options to the converter
+
+- `-h`, `--help`
   Specifies all the options along with a few usage examples on the terminal
 
 
