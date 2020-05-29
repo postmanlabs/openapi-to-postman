@@ -44,8 +44,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
 
     it('Should add collection level auth with type as `bearer`' +
     securityTestCases, function(done) {
-      var openapi = fs.readFileSync(securityTestCases, 'utf8'),
-        auth;
+      var openapi = fs.readFileSync(securityTestCases, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
 
         expect(err).to.be.null;
@@ -56,9 +55,6 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data).to.have.property('item');
         expect(conversionResult.output[0].data.auth).to.have.property('type');
         expect(conversionResult.output[0].data.auth.type).to.equal('bearer');
-        auth = conversionResult.output[0].data.item[0].request.auth;
-        expect(auth).to.have.property('type');
-        expect(auth.type).to.be.equal('inherit');
         done();
       });
     });
