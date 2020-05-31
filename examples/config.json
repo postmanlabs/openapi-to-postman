@@ -1,0 +1,13 @@
+{
+    "requestNameSource": "Fallback",
+    "indentCharacter": "Space",
+    "collapseFolders": true,
+    "requestParametersResolution": "Schema",
+    "exampleParametersResolution": "Example",
+    "folderStrategy": "Paths",
+    "schemaFaker": true,
+    "shortValidationErrors": false,
+    "validationPropertiesToIgnore": [],
+    "showMissingInSchemaErrors": true,
+    "detailedBlobValidation": false
+}
