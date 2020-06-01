@@ -258,7 +258,7 @@ Current postman-testsuite JSON properties
       "openApiOperationId": "get-lists",
       "tests": [
         "pm.test('200 ok', function(){pm.response.to.have.status(200);});",
-        "pm.test('check userId after create', function(){Number.isInteger(responseBody);}); postman.setEnvironmentVariable(\"userId\", responseBody);"
+        "pm.test('check userId after create', function(){Number.isInteger(responseBody);});"
       ]
     }
   ]
@@ -270,8 +270,9 @@ The JSON test suite format consists out of 3 parts:
 - **generateTests** : which refers the default available generated postman tests. The default tests are grouped per type (response, request)
   - **responseChecks** : All response basic checks. (For now we have only included response checks).
 - **extendTests**:  which refers the custom additions of manual created postman tests. The manual tests are added during
-generation. The tests are mapped based on the OpenApi operationId.
+generation. The tests are mapped based on the OpenApi operationId. Anything added in `tests` array, will be added to the postman test scripts.
 
+## Postman test suite properties (V1)
 | name                                | id                  | type    | default/0 | availableOptions/0 | availableOptions/1 | description                                                                                                                                                  | external | usage/0         |
 |-------------------------------------|---------------------|---------|-----------|--------------------|--------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|-----------------|
 | Response status success (2xx) check | generaStatusSuccess | boolean | false     | enabled            |                    | Adds the check if the response of the postman request return a 2xx                                                                                           | true     | TEST GENERATION |
