@@ -1,14 +1,14 @@
 
-![postman icon](https://raw.githubusercontent.com/postmanlabs/postmanlabs.github.io/develop/global-artefacts/postman-logo%2Btext-320x132.png) 
+![postman icon](https://raw.githubusercontent.com/postmanlabs/postmanlabs.github.io/develop/global-artefacts/postman-logo%2Btext-320x132.png)
 
-*Supercharge your API workflow.*  
+*Supercharge your API workflow.*
 *Modern software is built on APIs. Postman helps you develop APIs faster.*
 
 # OpenAPI 3.0 to Postman Collection v2.1.0 Converter
 
 [![Build Status](https://travis-ci.org/postmanlabs/openapi-to-postman.svg?branch=master)](https://travis-ci.org/postmanlabs/openapi-to-postman)
 
-#### Contents 
+#### Contents
 
 1. [Getting Started](#getting-started)
 2. [Using the converter as a NodeJS module](#using-the-converter-as-a-nodejs-module)
@@ -95,7 +95,7 @@ function (err, result) {
 
 ### ConversionResult
 
-- `result` - Flag responsible for providing a status whether the conversion was successful or not 
+- `result` - Flag responsible for providing a status whether the conversion was successful or not
 
 - `reason` - Provides the reason for an unsuccessful conversion, defined only if result: false
 
@@ -154,22 +154,28 @@ The converter can be used as a CLI tool as well. The following [command line opt
 `openapi2postmanv2 [options]`
 
 ### Options
-- `-V`, `--version`  
+- `-V`, `--version`
   Specifies the version of the converter
 
-- `-s <source>`, `--spec <source>`  
+- `-s <source>`, `--spec <source>`
   Used to specify the OpenAPI specification (file path) which is to be converted
 
-- `-o <destination>`, `--output <destination>`  
+- `-o <destination>`, `--output <destination>`
   Used to specify the destination file in which the collection is to be written
 
-- `-t`, `--test`  
+- `-t`, `--test`
   Used to test the collection with an in-built sample specification
 
-- `-p`, `--pretty`  
+- `-p`, `--pretty`
   Used to pretty print the collection object while writing to a file
 
-- `-h`, `--help`  
+- `-c`, `--config <config>`
+  Used to supply options to the converter
+
+- `-g`, `--generate <generate>`
+  Used to generate postman tests given the JSON file with test options
+
+- `-h`, `--help`
   Specifies all the options along with a few usage examples on the terminal
 
 
@@ -188,6 +194,11 @@ $ openapi2postmanv2 -s spec.yaml -o collection.json -p
 $ openapi2postmanv2 --test
 ```
 
+- Generating additional postman tests for the OpenAPi specification
+```terminal
+$ openapi2postmanv2 -s spec.yaml -o collection.json -p -g postman-test.json
+```
+
 ## Conversion Schema
 
 | *postman* | *openapi* | *options* | *examples* |
@@ -204,3 +215,67 @@ $ openapi2postmanv2 --test
 | request.url.variables | parameter (`in = path`) | - | [link](#Header/Path-param-conversion-example) |
 | request.url.params | parameter (`in = query`) | - | {"key": param.name, "value": [link](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#style-examples)}|
 | api_key in (query or header) | components.securitySchemes.api_key | - ||
+
+## Postman test generation
+
+This CLI option will provide the option to add basic Postman test and/or add manual defined Postman tests.
+The goal is to allow easy usage of OpenApi based generated Postman collections with integrated tests, ready to be used
+by the Newman test runner.
+
+To generate the tests, define a JSON file like the example (postman-testsuite.json) below and run the CLI with the --generate option.
+
+```terminal
+$ openapi2postmanv2 -s spec.yaml -o collection.json -p -g postman-testsuite.json
+```
+
+Current postman-testsuite JSON properties
+
+```JSON
+{
+  "version": 1.0,
+  "generateTests": {
+    "responseChecks": {
+      "StatusSuccess": {
+        "enabled": true
+      },
+      "responseTime": {
+        "enabled": true,
+        "maxMs": 300
+      },
+      "contentType": {
+        "enabled": true
+      },
+      "jsonBody": {
+        "enabled": true
+      },
+      "schemaValidation": {
+        "enabled": true
+      }
+    }
+  },
+  "extendTests": [
+    {
+      "openApiOperationId": "get-lists",
+      "tests": [
+        "pm.test('200 ok', function(){pm.response.to.have.status(200);});",
+        "pm.test('check userId after create', function(){Number.isInteger(responseBody);}); postman.setEnvironmentVariable(\"userId\", responseBody);"
+      ]
+    }
+  ]
+}
+```
+
+The JSON test suite format consists out of 3 parts:
+- **version** : which refers the JSON test suite version (not relevant but might handy for future backward compatibility options).
+- **generateTests** : which refers the default available generated postman tests. The default tests are grouped per type (response, request)
+  - **responseChecks** : All response basic checks. (For now we have only included response checks).
+- **extendTests**:  which refers the custom additions of manual created postman tests. The manual tests are added during
+generation. The tests are mapped based on the OpenApi operationId.
+
+| name                                | id                  | type    | default/0 | availableOptions/0 | availableOptions/1 | description                                                                                                                                                  | external | usage/0         |
+|-------------------------------------|---------------------|---------|-----------|--------------------|--------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|-----------------|
+| Response status success (2xx) check | generaStatusSuccess | boolean | false     | enabled            |                    | Adds the check if the response of the postman request return a 2xx                                                                                           | true     | TEST GENERATION |
+| Response time check                 | responseTime        | boolean | false     | enabled            | maxMs 300          | Adds the check if the response of the postman request is within a number of ms.                                                                              | true     | TEST GENERATION |
+| Response content-type check         | contentType         | boolean | false     | enabled            |                    | Adds the check if the postman response header is matching the expected content-type defined in the OpenApi spec.                                             | true     | TEST GENERATION |
+| Response JSON body format check     | jsonBody            | boolean | false     | enabled            |                    | Adds the check if the postman response body is matching the expected content-type defined in the OpenApi spec.                                               | true     | TEST GENERATION |
+| Response Schema validation check    | jsonBody            | boolean | false     | enabled            |                    | Adds the check if the postman response body is matching the JSON schema defined in the OpenApi spec. The JSON schema is inserted inline in the postman test. | true     | TEST GENERATION |
