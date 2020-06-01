@@ -1,0 +1,43 @@
+openapi: 3.0.0
+info:
+  title: "Reproduce Authorization issue"
+  version: 0.0.1
+security:
+  - MyAuth: []
+paths:
+  /health:
+    get:
+      summary: "health"
+      description: "Health check - always returns OK"
+      operationId: "get_healthz"
+      responses:
+        '200':
+          description: "OK"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                default: "OK"
+  /status:
+    get:
+      summary: "status"
+      description: "Returns the service version"
+      operationId: "get_status"
+      responses:
+        '200':
+          description: "Service info multi-line string"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: token
+    MyAuth:
+      type: apiKey
+      description: "This is my auth"
+      name: Mera-Auth
+      in: header
