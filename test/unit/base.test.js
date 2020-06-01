@@ -59,7 +59,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
 
-    it('Should have noauth at the collection level ' +
+    it('Should have noauth at the collection level if auth type is api-key and properties in header' +
     emptySecurityTestCase, function(done) {
       var openapi = fs.readFileSync(emptySecurityTestCase, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
