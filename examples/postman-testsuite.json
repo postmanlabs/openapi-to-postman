@@ -24,7 +24,8 @@
     {
       "openApiOperationId": "get-lists",
       "tests": [
-        "pm.test('200 ok', function(){pm.response.to.have.status(200);}); pm.test('check userId after create', function(){Number.isInteger(responseBody);}); postman.setEnvironmentVariable(\"userId\", responseBody);"
+        "pm.test('200 ok', function(){pm.response.to.have.status(200);});",
+        "pm.test('check userId after create', function(){Number.isInteger(responseBody);}); "
       ]
     }
   ]
