@@ -1,4 +1,7 @@
 # OpenAPI-Postman Changelog
+#### v1.1.18 (June 1, 2020)
+* Fix for [#86](https://github.com/postmanlabs/openapi-to-postman/issues/86) - Now global security schemes will be added at the collection level.
+
 #### v1.1.17 (May 15, 2020)
 * Fix for [#3](https://github.com/postmanlabs/openapi-to-postman/issues/3) [#57](https://github.com/postmanlabs/openapi-to-postman/issues/57) - Introduced a new option `folderStrategy`, can choose between `Tags` or `Path` while creating folders in Postman Collection.
 * Fixed an issue where undefined was returned as error message while trying to import invalid format.
