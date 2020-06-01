@@ -24430,6 +24430,10 @@ function extend() {
       return dateTimeGenerator().slice(11);
   }
 
+  const FRAGMENT = '[a-zA-Z][a-zA-Z0-9+-.]*';
+  const URI_PATTERN = `https?://{hostname}(?:${FRAGMENT})+`;
+  const PARAM_PATTERN = '(?:\\?([a-z]{1,7}(=\\w{1,5})?&){0,3})?';
+
   /**
    * Predefined core formats
    * @type {[key: string]: string}
@@ -24438,9 +24442,24 @@ function extend() {
       email: '[a-zA-Z\\d][a-zA-Z\\d-]{1,13}[a-zA-Z\\d]@{hostname}',
       hostname: '[a-zA-Z]{1,33}\\.[a-z]{2,4}',
       ipv6: '[a-f\\d]{4}(:[a-f\\d]{4}){7}',
-      uri: 'https?://[a-zA-Z][a-zA-Z0-9+-.]*',
-      'uri-reference': '(https?://|#|/|)[a-zA-Z][a-zA-Z0-9+-.]*',
+      uri: URI_PATTERN,
+      slug: '[a-zA-Z\\d_-]+',
+    
+      // types from draft-0[67] (?)
+      'uri-reference': `${URI_PATTERN}${PARAM_PATTERN}`,
+      'uri-template': URI_PATTERN.replace('(?:', '(?:/\\{[a-z][:a-zA-Z0-9-]*\\}|'),
+      'json-pointer': `(/(?:${FRAGMENT.replace(']*', '/]*')}|~[01]))+`,
+    
+      // some types from https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#data-types (?)
+      uuid: '^(?:urn:uuid:)?[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$',
   };
+
+  regexps.iri = regexps['uri-reference'];
+  regexps['iri-reference'] = regexps['uri-reference'];
+
+  regexps['idn-email'] = regexps.email;
+  regexps['idn-hostname'] = regexps.hostname;
+
   /**
    * Generates randomized string basing on a built-in regex format
    *
@@ -24476,6 +24495,14 @@ function extend() {
           case 'ipv6':
           case 'uri':
           case 'uri-reference':
+          case 'iri':
+          case 'iri-reference':
+          case 'idn-email':
+          case 'idn-hostname':
+          case 'json-pointer':
+          case 'slug':
+          case 'uri-template':
+          case 'uuid':
               return coreFormatGenerator(value.format);
           default:
               if (typeof callback === 'undefined') {

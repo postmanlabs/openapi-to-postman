@@ -11,7 +11,8 @@ const optionIds = [
     'shortValidationErrors',
     'validationPropertiesToIgnore',
     'showMissingInSchemaErrors',
-    'detailedBlobValidation'
+    'detailedBlobValidation',
+    'suggestAvailableFixes'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -92,6 +93,12 @@ const optionIds = [
       default: false,
       description: 'Determines whether to show detailed mismatch information for application/json content ' +
         'in the request/response body.'
+    },
+    suggestAvailableFixes: {
+      name: 'Suggest fixes if available',
+      type: 'boolean',
+      default: false,
+      description: 'Whether to provide fixes for patching corresponding mismatches.'
     }
   };
 
