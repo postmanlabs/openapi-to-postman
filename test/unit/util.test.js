@@ -163,7 +163,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         parameterSource = 'REQUEST',
         resolveTo = 'schema',
         resolveFor = 'CONVERSION',
-        resolvedSchema = deref.resolveRefs(schema, parameterSource, { components }, {}, resolveFor),
+        resolvedSchema = deref.resolveRefs(schema, parameterSource, { components }, {}, resolveFor, resolveTo),
         schemaCache = {
           schemaFakerCache: {},
           schemaResolutionCache: {}
@@ -205,7 +205,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           schemaResolutionCache: {}
         },
         resolvedSchema = deref.resolveRefs(schema, parameterSource, { components }, schemaCache.schemaResolutionCache,
-          resolveFor),
+          resolveFor, resolveTo),
         key = hash('resolveToExample ' + JSON.stringify(resolvedSchema)),
         fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource,
           { components }, 'default', '  ', schemaCache);
@@ -640,7 +640,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       expect(retVal).to.be.an('array');
       expect(retVal[0].key).to.equal('varName');
       expect(retVal[0].description).to.equal('varDesc');
-      expect(retVal[0].value).to.equal('<integer>');
+      expect(retVal[0].value).to.be.a('number');
     });
   });
 
