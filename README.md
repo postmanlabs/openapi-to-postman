@@ -172,7 +172,7 @@ The converter can be used as a CLI tool as well. The following [command line opt
 - `-c`, `--config <config>`
   Used to supply options to the converter
 
-- `-g`, `--generate <generate>`
+- `-g <generate>``, `--generate <generate>`
   Used to generate postman tests given the JSON file with test options
 
 - `-h`, `--help`
@@ -196,7 +196,7 @@ $ openapi2postmanv2 --test
 
 - Generating additional postman tests for the OpenAPi specification
 ```terminal
-$ openapi2postmanv2 -s spec.yaml -o collection.json -p -g postman-test.json
+$ openapi2postmanv2 -s spec.yaml -o collection.json -p -g postman-testsuite.json
 ```
 
 ## Conversion Schema
@@ -280,7 +280,7 @@ Anything added in `tests` array, will be added to the postman test scripts.
   - **overwrite (Boolean true/false)** : Resets all generateTests and overwrites them with the defined tests from the `tests` array.
   Default: false
 
-See "postman-testsuite-advanced.json" for an advanced example of the setting options.
+See "postman-testsuite-advanced.json" file for an advanced example of the setting options.
 
 ## Postman test suite properties (V1)
 | name                                | id                  | type    | default/0 | availableOptions/0 | availableOptions/1 | description                                                                                                                                                  | external | usage/0         |
