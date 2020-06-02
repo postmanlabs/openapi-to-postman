@@ -266,11 +266,21 @@ Current postman-testsuite JSON properties
 ```
 
 The JSON test suite format consists out of 3 parts:
-- **version** : which refers the JSON test suite version (not relevant but might handy for future backward compatibility options).
-- **generateTests** : which refers the default available generated postman tests. The default tests are grouped per type (response, request)
+- **version** : which refers the JSON test suite version
+(not relevant but might handy for future backward compatibility options).
+- **generateTests** : which refers the default available generated postman tests.
+The default tests are grouped per type (response, request)
   - **responseChecks** : All response basic checks. (For now we have only included response checks).
-- **extendTests**:  which refers the custom additions of manual created postman tests. The manual tests are added during
-generation. The tests are mapped based on the OpenApi operationId. Anything added in `tests` array, will be added to the postman test scripts.
+- **extendTests**:  which refers the custom additions of manual created postman tests.
+The manual tests are added during generation. The tests are mapped based on the OpenApi operationId.
+Anything added in `tests` array, will be added to the postman test scripts.
+  - **openApiOperationId (String)** : Reference to the OpenApi operationId for which the tests will be extended
+  - **tests (Array)** : Array of additional postman test scripts.
+  - **responseChecks (array)** : Extends the generateTests `responseChecks` (see "Postman test suite properties") with specifics for the openApiOperationId.
+  - **overwrite (Boolean true/false)** : Resets all generateTests and overwrites them with the defined tests from the `tests` array.
+  Default: false
+
+See "postman-testsuite-advanced.json" for an advanced example of the setting options.
 
 ## Postman test suite properties (V1)
 | name                                | id                  | type    | default/0 | availableOptions/0 | availableOptions/1 | description                                                                                                                                                  | external | usage/0         |
