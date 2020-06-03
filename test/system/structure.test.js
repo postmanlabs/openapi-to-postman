@@ -12,7 +12,8 @@ const optionIds = [
     'validationPropertiesToIgnore',
     'showMissingInSchemaErrors',
     'detailedBlobValidation',
-    'suggestAvailableFixes'
+    'suggestAvailableFixes',
+    'validateMetadata'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -99,6 +100,12 @@ const optionIds = [
       type: 'boolean',
       default: false,
       description: 'Whether to provide fixes for patching corresponding mismatches.'
+    },
+    validateMetadata: {
+      name: 'Show Metadata validation messages',
+      type: 'boolean',
+      default: false,
+      description: 'Whether to show mismatches for incorrect name and description of request'
     }
   };
 
