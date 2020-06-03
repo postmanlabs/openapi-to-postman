@@ -109,10 +109,10 @@ const optionIds = [
       description: 'Whether to show mismatches for incorrect name and description of request'
     },
     ignoreUnresolvedVariables: {
-      name: 'Ignore mismatch for postman variables',
+      name: 'Ignore mismatch for unresolved postman variables',
       type: 'boolean',
       default: false,
-      description: 'Whether to ignore mismatch thrown upon validation of collection/environment variable'
+      description: 'Whether to ignore mismatch thrown upon validation of unresolved collection/environment variable'
     }
   };
 
