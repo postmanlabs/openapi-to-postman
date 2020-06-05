@@ -98,7 +98,8 @@ const optionIds = [
       name: 'Enable strict request matching',
       type: 'boolean',
       default: false,
-      description: 'Whether schema operations be strictly matched with collection request or not.'
+      description: 'Whether requests should be strictly matched with schema operations. Setting to true will not ' +
+        'include any matches where the URL path segments don\'t match exactly.'
     }
   };
 
