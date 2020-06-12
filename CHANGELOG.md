@@ -1,4 +1,7 @@
 # OpenAPI-Postman Changelog
+#### v1.1.19 (June 12, 2020)
+* Fix for [#232](https://github.com/postmanlabs/openapi-to-postman/issues/232) - Changes default auth of requests to null conforming to the JSON schema.
+
 #### v1.1.18 (June 1, 2020)
 * Fix for [#86](https://github.com/postmanlabs/openapi-to-postman/issues/86) - Now global security schemes will be added at the collection level.
 
