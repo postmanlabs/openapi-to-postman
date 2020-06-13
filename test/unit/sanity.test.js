@@ -15,6 +15,8 @@ describe('Runing validation tests for all files in `valid_openapi`', function ()
     it('should generte a valid collection ' + file, function () {
       file = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_PATH + '/' + file), 'utf8');
       Converter.convert({ data: file, type: 'string' }, {}, (err, converterResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
         var validator,
           validate;
         validator = new Ajv({
@@ -27,10 +29,10 @@ describe('Runing validation tests for all files in `valid_openapi`', function ()
 
         validate = validator.compile(COLLECTION_SCHEMAS.collection['2.1.0']);
         if (!validate(converterResult.output[0].data)) {
-          // let errorMessages = validate.errors.map((error) => { return error.message; });
-          //   // errorMessage = `Found ${validate.errors.length} errors with the supplied ` +
-          //   // `collection.\n${errorMessages.join('\n')}`;
-          expect.fail(null, null, 'errorMessage');
+          let errorMessages = validate.errors.map((error) => { return error.message; }),
+            errorMessage = `Found ${validate.errors.length} errors with the supplied ` +
+              `collection.\n${errorMessages.join('\n')}`;
+          expect.fail(null, null, errorMessage);
         }
         else {
           return cb(null);
