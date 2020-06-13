@@ -116,7 +116,6 @@
     "openapi2postmanv2": "./bin/openapi2postmanv2.js"
   },
   "dependencies": {
-    "ajv": "6.10.2",
     "async": "3.1.0",
     "commander": "2.20.3",
     "js-yaml": "3.13.1",
@@ -128,6 +127,7 @@
   "author": "Postman Labs <help@getpostman.com>",
   "license": "Apache-2.0",
   "devDependencies": {
+    "ajv": "6.10.2",
     "chai": "4.1.2",
     "editorconfig": "0.15.3",
     "eslint": "5.16.0",

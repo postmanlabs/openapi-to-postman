@@ -901,32 +901,6 @@ describe('INTERFACE FUNCTION TESTS ', function () {
     });
   });
 
-  describe('The converter must generate a collection conforming to the schema', function () {
-    var pathPrefix = VALID_OPENAPI_PATH,
-      sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix));
-
-    sampleSpecs.map((sample) => {
-      var specPath = path.join(__dirname, pathPrefix, sample);
-      it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
-        // var openapi = fs.readFileSync(specPath, 'utf8');
-        var result = Converter.validate({ type: 'file', data: specPath });
-        expect(result.result).to.equal(true);
-        Converter.convert({ type: 'file', data: specPath },
-          {}, (err, conversionResult) => {
-            expect(err).to.be.null;
-
-            expect(conversionResult.result).to.equal(true);
-            expect(conversionResult.output.length).to.equal(1);
-            expect(conversionResult.output[0].type).to.equal('collection');
-            expect(conversionResult.output[0].data).to.have.property('info');
-            expect(conversionResult.output[0].data).to.have.property('item');
-
-            done();
-          });
-      });
-    });
-  });
-
   describe('The converter must throw an error for invalid input type', function() {
     it('(type: some invalid value)', function(done) {
       var result = Converter.validate({ type: 'fil', data: 'invalid_path' });
