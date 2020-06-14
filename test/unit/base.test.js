@@ -303,12 +303,12 @@ describe('CONVERT FUNCTION TESTS ', function() {
               .equal('{\n    "a": "example-a",\n    "b": "example-b"\n}');
             // Request header
             expect(rootRequest.header[0].value).to.equal('<integer>');
-            expect(exampleRequest.header[0].value).to.equal('header example');
+            expect(exampleRequest.header[0].value).to.equal(123);
             // Request query parameters
             expect(rootRequest.url.query[0].value).to.equal('<long> <long>');
             expect(rootRequest.url.query[1].value).to.equal('<long> <long>');
-            expect(exampleRequest.url.query[0].value).to.equal('queryParamExample queryParamExample');
-            expect(exampleRequest.url.query[1].value).to.equal('queryParamExample1 queryParamExample1');
+            expect(exampleRequest.url.query[0].value).to.equal('123 123');
+            expect(exampleRequest.url.query[1].value).to.equal('456 456');
             done();
           });
       });
@@ -591,11 +591,11 @@ describe('CONVERT FUNCTION TESTS ', function() {
         });
         expect(responseBody).to.deep.equal({
           key1: {
-            responseId: '234',
+            responseId: 234,
             responseName: '200 OK Response'
           },
           key2: {
-            responseId: '234',
+            responseId: 234,
             responseName: '200 OK Response'
           }
         });
@@ -875,6 +875,9 @@ describe('INTERFACE FUNCTION TESTS ', function () {
       var specPath = path.join(__dirname, pathPrefix, sample);
       it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
         // var openapi = fs.readFileSync(specPath, 'utf8');
+
+        // Increase timeout for larger schema
+        this.timeout(15000);
         var result = Converter.validate({ type: 'file', data: specPath });
         expect(result.result).to.equal(true);
         Converter.convert({ type: 'file', data: specPath },
