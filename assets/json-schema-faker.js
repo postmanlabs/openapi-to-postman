@@ -24432,6 +24432,11 @@ function extend() {
       return dateTimeGenerator().slice(11);
   }
 
+  /**
+   * Added few formats from latest json-schema-faker. see below for source
+   * https://github.com/json-schema-faker/json-schema-faker/blob/master/src/lib/generators/coreFormat.js
+   *
+   */
   const FRAGMENT = '[a-zA-Z][a-zA-Z0-9+-.]*';
   const URI_PATTERN = `https?://{hostname}(?:${FRAGMENT})+`;
   const PARAM_PATTERN = '(?:\\?([a-z]{1,7}(=\\w{1,5})?&){0,3})?';
