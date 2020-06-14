@@ -16,7 +16,7 @@
             "schema": {
               "type": "integer",
               "format": "int32",
-              "example": "header example"
+              "example": 123
             }
           },
           {
@@ -29,7 +29,7 @@
               "items": {
                 "type": "integer",
                 "format": "int64",
-                "example": "queryParamExample"
+                "example": 123
               }
             }
           },
@@ -43,7 +43,7 @@
               "items": {
                 "type": "integer",
                 "format": "int64",
-                "example": "queryParamExample1"
+                "example": 456
               }
             }
           }

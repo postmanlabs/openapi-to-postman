@@ -81,7 +81,7 @@
           "responseId": {
             "type": "integer",
             "format": "int64",
-            "example": "234"
+            "example": 234
           },
           "responseName": {
             "type":"string",

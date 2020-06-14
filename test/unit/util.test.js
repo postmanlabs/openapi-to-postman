@@ -66,9 +66,11 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           }
         },
         parameterSource = 'REQUEST',
-        resolveTo = 'schema';
+        resolveTo = 'schema',
+        resolveFor = 'CONVERSION';
 
-      expect(SchemaUtils.safeSchemaFaker(schema, resolveTo, parameterSource, { components })).to.equal('<string>');
+      expect(SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource, { components }))
+        .to.equal('<string>');
       done();
     });
 
@@ -96,8 +98,9 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         },
         parameterSource = 'REQUEST',
         resolveTo = 'schema',
+        resolveFor = 'CONVERSION',
 
-        result = SchemaUtils.safeSchemaFaker(schema, resolveTo, parameterSource, { components }),
+        result = SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource, { components }),
         tooManyLevelsString = result[0].c.value;
 
       expect(result).to.not.equal(null);
@@ -135,7 +138,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         },
         parameterSource = 'REQUEST',
         resolveTo = 'schema',
-        fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, parameterSource, { components });
+        resolveFor = 'CONVERSION',
+        fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource, { components });
 
       expect(fakedSchema.value).to.equal('reference #/components/schem2 not found in the OpenAPI spec');
       done();
@@ -158,13 +162,14 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         },
         parameterSource = 'REQUEST',
         resolveTo = 'schema',
-        resolvedSchema = deref.resolveRefs(schema, parameterSource, { components }, {}),
+        resolveFor = 'CONVERSION',
+        resolvedSchema = deref.resolveRefs(schema, parameterSource, { components }, {}, resolveFor, resolveTo),
         schemaCache = {
           schemaFakerCache: {},
           schemaResolutionCache: {}
         },
         key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema)),
-        fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, parameterSource,
+        fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource,
           { components }, 'default', '  ', schemaCache);
 
       expect(schemaCache.schemaFakerCache).to.have.property(key);
@@ -194,13 +199,15 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         },
         parameterSource = 'RESPONSE',
         resolveTo = 'example',
+        resolveFor = 'CONVERSION',
         schemaCache = {
           schemaFakerCache: {},
           schemaResolutionCache: {}
         },
-        resolvedSchema = deref.resolveRefs(schema, parameterSource, { components }, schemaCache.schemaResolutionCache),
+        resolvedSchema = deref.resolveRefs(schema, parameterSource, { components }, schemaCache.schemaResolutionCache,
+          resolveFor, resolveTo),
         key = hash('resolveToExample ' + JSON.stringify(resolvedSchema)),
-        fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, parameterSource,
+        fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource,
           { components }, 'default', '  ', schemaCache);
 
       expect(schemaCache.schemaFakerCache).to.have.property(key);
@@ -633,7 +640,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       expect(retVal).to.be.an('array');
       expect(retVal[0].key).to.equal('varName');
       expect(retVal[0].description).to.equal('varDesc');
-      expect(retVal[0].value).to.equal('<integer>');
+      expect(retVal[0].value).to.be.a('number');
     });
   });
 
@@ -2123,7 +2130,7 @@ describe('convertToPmQueryArray function', function() {
           items: {
             type: 'integer',
             format: 'int64',
-            example: 'queryParamExample'
+            example: 123
           } } },
       { name: 'variable3',
         in: 'query',
@@ -2133,7 +2140,7 @@ describe('convertToPmQueryArray function', function() {
           items: {
             type: 'integer',
             format: 'int64',
-            example: 'queryParamExample1'
+            example: 456
           } } }] },
       requestType = 'EXAMPLE',
       result;
@@ -2142,7 +2149,7 @@ describe('convertToPmQueryArray function', function() {
       exampleParametersResolution: 'example',
       requestParametersResolution: 'schema'
     });
-    expect(result[0]).to.equal('variable2=queryParamExample queryParamExample');
-    expect(result[1]).to.equal('variable3=queryParamExample1 queryParamExample1');
+    expect(result[0]).to.equal('variable2=123 123');
+    expect(result[1]).to.equal('variable3=456 456');
   });
 });
