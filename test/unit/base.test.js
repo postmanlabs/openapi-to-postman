@@ -37,7 +37,48 @@ describe('CONVERT FUNCTION TESTS ', function() {
       issue152 = path.join(__dirname, VALID_OPENAPI_PATH, '/path-refs-error.yaml'),
       issue193 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#193.yml'),
       tooManyRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/too-many-refs.json'),
-      tagsFolderSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed.yaml');
+      tagsFolderSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed.yaml'),
+      securityTestCases = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-cases.yaml'),
+      emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml');
+
+
+    it('Should add collection level auth with type as `bearer`' +
+    securityTestCases, function(done) {
+      var openapi = fs.readFileSync(securityTestCases, 'utf8'),
+        auth;
+      Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+
+        auth = conversionResult.output[0].data.item[0].request.auth;
+
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(auth).to.be.null;
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.auth).to.have.property('type');
+        expect(conversionResult.output[0].data.auth.type).to.equal('bearer');
+        done();
+      });
+    });
+
+    it('Should have noauth at the collection level if auth type is api-key and properties in header' +
+    emptySecurityTestCase, function(done) {
+      var openapi = fs.readFileSync(emptySecurityTestCase, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.auth).to.have.property('type');
+        expect(conversionResult.output[0].data.auth.type).to.equal('noauth');
+        done();
+      });
+    });
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
     tooManyRefs, function(done) {

@@ -14,7 +14,8 @@ const optionIds = [
     'detailedBlobValidation',
     'suggestAvailableFixes',
     'validateMetadata',
-    'ignoreUnresolvedVariables'
+    'ignoreUnresolvedVariables',
+    'strictRequestMatching'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -113,6 +114,13 @@ const optionIds = [
       type: 'boolean',
       default: false,
       description: 'Whether to ignore mismatches resulting from unresolved variables in the Postman request'
+    },
+    strictRequestMatching: {
+      name: 'Enable strict request matching',
+      type: 'boolean',
+      default: false,
+      description: 'Whether requests should be strictly matched with schema operations. Setting to true will not ' +
+        'include any matches where the URL path segments don\'t match exactly.'
     }
   };
 
