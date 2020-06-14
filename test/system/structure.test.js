@@ -13,7 +13,8 @@ const optionIds = [
     'showMissingInSchemaErrors',
     'detailedBlobValidation',
     'suggestAvailableFixes',
-    'validateMetadata'
+    'validateMetadata',
+    'ignoreUnresolvedVariables'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -106,6 +107,12 @@ const optionIds = [
       type: 'boolean',
       default: false,
       description: 'Whether to show mismatches for incorrect name and description of request'
+    },
+    ignoreUnresolvedVariables: {
+      name: 'Ignore mismatch for unresolved postman variables',
+      type: 'boolean',
+      default: false,
+      description: 'Whether to ignore mismatches resulting from unresolved variables in the Postman request'
     }
   };
 

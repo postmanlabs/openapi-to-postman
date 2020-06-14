@@ -10,6 +10,8 @@
  * Date: 2018-04-09 17:23:23.954Z
  */
 
+var validateSchema = require('../lib/ajvValidation').validateSchema;
+
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
@@ -24547,7 +24549,12 @@ function extend() {
           return;
       }
       if (optionAPI('useExamplesValue') && 'example' in schema) {
-        return schema.example;
+        var result = validateSchema(schema, schema.example);
+
+        // Use example only if valid 
+        if (result && result.length === 0) {
+          return schema.example;
+        }
       }
       if (optionAPI('useDefaultValue') && 'default' in schema) {
           return schema.default;
