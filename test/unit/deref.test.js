@@ -117,8 +117,7 @@ describe('DEREF FUNCTION TESTS ', function() {
     expect(output_validationTypeArray).to.deep.include({
       type: 'array',
       items: {
-        type: 'string',
-        default: '<string>'
+        type: 'string'
       },
       minItems: 5,
       maxItems: 55

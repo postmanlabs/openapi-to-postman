@@ -12,6 +12,9 @@ const optionIds = [
     'validationPropertiesToIgnore',
     'showMissingInSchemaErrors',
     'detailedBlobValidation',
+    'suggestAvailableFixes',
+    'validateMetadata',
+    'ignoreUnresolvedVariables',
     'strictRequestMatching'
   ],
   expectedOptions = {
@@ -93,6 +96,24 @@ const optionIds = [
       default: false,
       description: 'Determines whether to show detailed mismatch information for application/json content ' +
         'in the request/response body.'
+    },
+    suggestAvailableFixes: {
+      name: 'Suggest fixes if available',
+      type: 'boolean',
+      default: false,
+      description: 'Whether to provide fixes for patching corresponding mismatches.'
+    },
+    validateMetadata: {
+      name: 'Show Metadata validation messages',
+      type: 'boolean',
+      default: false,
+      description: 'Whether to show mismatches for incorrect name and description of request'
+    },
+    ignoreUnresolvedVariables: {
+      name: 'Ignore mismatch for unresolved postman variables',
+      type: 'boolean',
+      default: false,
+      description: 'Whether to ignore mismatches resulting from unresolved variables in the Postman request'
     },
     strictRequestMatching: {
       name: 'Enable strict request matching',
