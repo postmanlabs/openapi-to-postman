@@ -11,7 +11,8 @@ const optionIds = [
     'shortValidationErrors',
     'validationPropertiesToIgnore',
     'showMissingInSchemaErrors',
-    'detailedBlobValidation'
+    'detailedBlobValidation',
+    'strictRequestMatching'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -92,6 +93,13 @@ const optionIds = [
       default: false,
       description: 'Determines whether to show detailed mismatch information for application/json content ' +
         'in the request/response body.'
+    },
+    strictRequestMatching: {
+      name: 'Enable strict request matching',
+      type: 'boolean',
+      default: false,
+      description: 'Whether requests should be strictly matched with schema operations. Setting to true will not ' +
+        'include any matches where the URL path segments don\'t match exactly.'
     }
   };
 
