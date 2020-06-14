@@ -2130,7 +2130,7 @@ describe('convertToPmQueryArray function', function() {
           items: {
             type: 'integer',
             format: 'int64',
-            example: 'queryParamExample'
+            example: 123
           } } },
       { name: 'variable3',
         in: 'query',
@@ -2140,7 +2140,7 @@ describe('convertToPmQueryArray function', function() {
           items: {
             type: 'integer',
             format: 'int64',
-            example: 'queryParamExample1'
+            example: 456
           } } }] },
       requestType = 'EXAMPLE',
       result;
@@ -2149,7 +2149,7 @@ describe('convertToPmQueryArray function', function() {
       exampleParametersResolution: 'example',
       requestParametersResolution: 'schema'
     });
-    expect(result[0]).to.equal('variable2=queryParamExample queryParamExample');
-    expect(result[1]).to.equal('variable3=queryParamExample1 queryParamExample1');
+    expect(result[0]).to.equal('variable2=123 123');
+    expect(result[1]).to.equal('variable3=456 456');
   });
 });
