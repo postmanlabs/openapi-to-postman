@@ -1,5 +1,5 @@
 # OpenAPI-Postman Changelog
-#### v1.1.20 (June 14, 2020)
+#### v1.2.0 (June 14, 2020)
 * Added support for stricter request matching via option for validation.
 * Added missing endpoints from collection info in result of validation.
 * Suggest fixes in collection for violated properties in validation.
