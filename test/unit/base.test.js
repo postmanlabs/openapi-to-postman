@@ -318,10 +318,13 @@ describe('CONVERT FUNCTION TESTS ', function() {
           { schemaFaker: true, requestParametersResolution: 'example', exampleParametersResolution: 'example' },
           (err, conversionResult) => {
             let rootRequestBody = JSON.parse(conversionResult.output[0].data.item[0].request.body.raw),
-              exampleRequestBody = JSON.parse(conversionResult.output[0].data.item[0].response[0]
-                .originalRequest.body.raw);
+              exampleRequestBody = JSON.parse(conversionResult.output[0].data.item[0]
+                .response[0].originalRequest.body.raw);
+
+            expect(rootRequestBody).to.have.all.keys(['a', 'b']);
             expect(rootRequestBody.a).to.be.a('string');
             expect(rootRequestBody.b).to.be.a('string');
+            expect(exampleRequestBody).to.have.all.keys(['a', 'b']);
             expect(exampleRequestBody.a).to.be.a('string');
             expect(exampleRequestBody.b).to.be.a('string');
             done();
