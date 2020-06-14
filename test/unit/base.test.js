@@ -243,8 +243,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
     });
     it('Should respects readOnly and writeOnly properties in requestBody or response schema' +
      readOnlySpec, function(done) {
-      var openapi = fs.readFileSync(readOnlySpec, 'utf8');
-      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+      var openapi = fs.readFileSync(readOnlySpec, 'utf8'),
+        options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+      Converter.convert({ type: 'string', data: openapi }, options, (err, conversionResult) => {
         let requestBody = conversionResult.output[0].data.item[0].item[1].request.body.raw,
           responseBody = conversionResult.output[0].data.item[0].item[0].response[0].body;
         expect(err).to.be.null;
@@ -302,26 +303,27 @@ describe('CONVERT FUNCTION TESTS ', function() {
               .equal('{\n    "a": "example-a",\n    "b": "example-b"\n}');
             // Request header
             expect(rootRequest.header[0].value).to.equal('<integer>');
-            expect(exampleRequest.header[0].value).to.equal('header example');
+            expect(exampleRequest.header[0].value).to.equal(123);
             // Request query parameters
             expect(rootRequest.url.query[0].value).to.equal('<long> <long>');
             expect(rootRequest.url.query[1].value).to.equal('<long> <long>');
-            expect(exampleRequest.url.query[0].value).to.equal('queryParamExample queryParamExample');
-            expect(exampleRequest.url.query[1].value).to.equal('queryParamExample1 queryParamExample1');
+            expect(exampleRequest.url.query[0].value).to.equal('123 123');
+            expect(exampleRequest.url.query[1].value).to.equal('456 456');
             done();
           });
       });
-      it('Should fallback to schema if the example is not present in the spec and the option is set to example' +
+      it('Should fallback to faked value if the example is not present in the spec and the option is set to example' +
       schemaWithoutExampleSpec, function(done) {
         Converter.convert({ type: 'file', data: schemaWithoutExampleSpec },
           { schemaFaker: true, requestParametersResolution: 'example', exampleParametersResolution: 'example' },
           (err, conversionResult) => {
-            let rootRequest = conversionResult.output[0].data.item[0].request,
-              exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
-            expect(exampleRequest.body.raw).to
-              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
-            expect(rootRequest.body.raw).to
-              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+            let rootRequestBody = JSON.parse(conversionResult.output[0].data.item[0].request.body.raw),
+              exampleRequestBody = JSON.parse(conversionResult.output[0].data.item[0].response[0]
+                .originalRequest.body.raw);
+            expect(rootRequestBody.a).to.be.a('string');
+            expect(rootRequestBody.b).to.be.a('string');
+            expect(exampleRequestBody.a).to.be.a('string');
+            expect(exampleRequestBody.b).to.be.a('string');
             done();
           });
       });
@@ -586,11 +588,11 @@ describe('CONVERT FUNCTION TESTS ', function() {
         });
         expect(responseBody).to.deep.equal({
           key1: {
-            responseId: '234',
+            responseId: 234,
             responseName: '200 OK Response'
           },
           key2: {
-            responseId: '234',
+            responseId: 234,
             responseName: '200 OK Response'
           }
         });
@@ -693,10 +695,12 @@ describe('CONVERT FUNCTION TESTS ', function() {
     describe('[Github #57] - folderStrategy option (value: Tags) ' + tagsFolderSpec, function() {
       async.series({
         pathsOutput: (cb) => {
-          Converter.convert({ type: 'file', data: tagsFolderSpec }, { folderStrategy: 'Paths' }, cb);
+          Converter.convert({ type: 'file', data: tagsFolderSpec },
+            { folderStrategy: 'Paths', exampleParametersResolution: 'schema' }, cb);
         },
         tagsOutput: (cb) => {
-          Converter.convert({ type: 'file', data: tagsFolderSpec }, { folderStrategy: 'Tags' }, cb);
+          Converter.convert({ type: 'file', data: tagsFolderSpec },
+            { folderStrategy: 'Tags', exampleParametersResolution: 'schema' }, cb);
         }
       }, (err, res) => {
         var collectionItems,
@@ -868,6 +872,9 @@ describe('INTERFACE FUNCTION TESTS ', function () {
       var specPath = path.join(__dirname, pathPrefix, sample);
       it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
         // var openapi = fs.readFileSync(specPath, 'utf8');
+
+        // Increase timeout for larger schema
+        this.timeout(15000);
         var result = Converter.validate({ type: 'file', data: specPath });
         expect(result.result).to.equal(true);
         Converter.convert({ type: 'file', data: specPath },
