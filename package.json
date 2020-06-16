@@ -121,7 +121,7 @@
     "commander": "2.20.3",
     "js-yaml": "3.13.1",
     "lodash": "4.17.13",
-    "oas-kit": "git+https://github.com/umeshp7/oas-kit.git#feature/oas-resolver-update",
+    "oas-resolver-browser": "2.3.3",
     "postman-collection": "3.5.5",
     "yaml": "1.8.3"
   },
