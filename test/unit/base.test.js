@@ -412,6 +412,50 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
+
+    it('Should create collection from folder having one root file for browser', function(done) {
+      let folderPath = path.join(__dirname, '../data/petstore-separate-yaml'),
+        files = [],
+        array = [
+          { fileName: folderPath + '/common/Error.yaml' },
+          { fileName: folderPath + '/spec/Pet.yaml' },
+          { fileName: folderPath + '/spec/NewPet.yaml' },
+          { fileName: folderPath + '/spec/parameters.yaml' },
+          { fileName: folderPath + '/spec/swagger.yaml' }
+        ];
+
+      array.forEach((item) => {
+        files.push({
+          content: fs.readFileSync(item.fileName, 'utf8'),
+          fileName: item.fileName
+        });
+      });
+
+      var schema = new Converter.SchemaPack({ type: 'folder', data: files });
+      schema.mergeAndValidate((err, status) => {
+        if (err) {
+          expect.fail(null, null, err);
+        }
+        if (status.result) {
+          schema.convert((error, result) => {
+            if (error) {
+              expect.fail(null, null, err);
+            }
+            expect(result.result).to.equal(true);
+            expect(result.output.length).to.equal(1);
+            expect(result.output[0].type).to.have.equal('collection');
+            expect(result.output[0].data).to.have.property('info');
+            expect(result.output[0].data).to.have.property('item');
+            done();
+          });
+        }
+        else {
+          expect.fail(null, null, status.reason);
+          done();
+        }
+      });
+    });
+
     it('Should create collection from folder having only one root file', function(done) {
       let folderPath = path.join(__dirname, '../data/petstore-separate-yaml'),
         array = [
@@ -457,6 +501,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
           { fileName: folderPath + '/spec/swagger.json' }
         ];
       var schema = new Converter.SchemaPack({ type: 'folder', data: array });
+
       schema.mergeAndValidate((err, status) => {
         if (err) {
           expect.fail(null, null, err);
