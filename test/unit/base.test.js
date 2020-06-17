@@ -414,7 +414,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     });
 
     it('Should create collection from folder having one root file for browser', function(done) {
-      let folderPath = path.join(__dirname, '../data/petstore-separate-yaml'),
+      let folderPath = path.join(__dirname, '../data/petstore separate yaml'),
         files = [],
         array = [
           { fileName: folderPath + '/common/Error.yaml' },
@@ -456,8 +456,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
 
-    it('Should create collection from folder having only one root file', function(done) {
-      let folderPath = path.join(__dirname, '../data/petstore-separate-yaml'),
+    it('Should create collection from folder having only one root file and spaces in folder name', function(done) {
+      let folderPath = path.join(__dirname, '../data/petstore separate yaml'),
         array = [
           { fileName: folderPath + '/common/Error.yaml' },
           { fileName: folderPath + '/spec/Pet.yaml' },
