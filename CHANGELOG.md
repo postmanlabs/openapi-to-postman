@@ -1,4 +1,7 @@
 # OpenAPI-Postman Changelog
+#### v1.2.1 (June 18, 2020)
+* Added support for validating content-type header.
+
 #### v1.2.0 (June 14, 2020)
 * Added support for stricter request matching via option for validation.
 * Added missing endpoints from collection info in result of validation.
