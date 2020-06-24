@@ -13,8 +13,12 @@ describe('Runing validation tests for all files in `valid_openapi`', function ()
   var validOpenapiFolder = fs.readdirSync(folderPath);
   async.each(validOpenapiFolder, function (file, cb) {
     it('should generte a valid collection ' + file, function () {
-      file = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_PATH + '/' + file), 'utf8');
-      Converter.convert({ data: file, type: 'string' }, {}, (err, converterResult) => {
+      let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_PATH + '/' + file), 'utf8');
+
+      // Increase timeout for larger schema
+      this.timeout(15000);
+
+      Converter.convert({ data: fileData, type: 'string' }, {}, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         var validator,
@@ -28,7 +32,7 @@ describe('Runing validation tests for all files in `valid_openapi`', function ()
         validator.addMetaSchema(META_SCHEMA);
 
         validate = validator.compile(COLLECTION_SCHEMAS.collection['2.1.0']);
-        if (!validate(converterResult.output[0].data)) {
+        if (!validate(conversionResult.output[0].data)) {
           let errorMessages = validate.errors.map((error) => { return error.message; }),
             errorMessage = `Found ${validate.errors.length} errors with the supplied ` +
               `collection.\n${errorMessages.join('\n')}`;
