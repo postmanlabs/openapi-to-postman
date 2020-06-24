@@ -1,4 +1,17 @@
 # OpenAPI-Postman Changelog
+#### v1.2.1 (June 18, 2020)
+* Added support for validating content-type header.
+
+#### v1.2.0 (June 14, 2020)
+* Added support for stricter request matching via option for validation.
+* Added missing endpoints from collection info in result of validation.
+* Suggest fixes in collection for violated properties in validation.
+* Introduced option to validate metadata for validation.
+* Use faked value instead of fallback to schema for parameter resolution when set to example.
+* Use faked value instead of invalid schema defined example.
+* Introduced option to ignore unresolved postman variable mismatches.
+* Fixed invalid generated collection for body type formdata.
+
 #### v1.1.19 (June 12, 2020)
 * Fix for [#232](https://github.com/postmanlabs/openapi-to-postman/issues/232) - Changes default auth of requests to null conforming to the JSON schema.
 
