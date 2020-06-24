@@ -344,7 +344,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
               .equal('{\n    "a": "example-a",\n    "b": "example-b"\n}');
             // Request header
             expect(rootRequest.header[0].value).to.equal('<integer>');
-            expect(exampleRequest.header[0].value).to.equal(123);
+            expect(exampleRequest.header[0].value).to.equal('123');
             // Request query parameters
             expect(rootRequest.url.query[0].value).to.equal('<long> <long>');
             expect(rootRequest.url.query[1].value).to.equal('<long> <long>');
