@@ -344,7 +344,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
               .equal('{\n    "a": "example-a",\n    "b": "example-b"\n}');
             // Request header
             expect(rootRequest.header[0].value).to.equal('<integer>');
-            expect(exampleRequest.header[0].value).to.equal(123);
+            expect(exampleRequest.header[0].value).to.equal('123');
             // Request query parameters
             expect(rootRequest.url.query[0].value).to.equal('<long> <long>');
             expect(rootRequest.url.query[1].value).to.equal('<long> <long>');
@@ -904,35 +904,6 @@ describe('INTERFACE FUNCTION TESTS ', function () {
           expect(conversionResult.result).to.equal(false);
           done();
         });
-      });
-    });
-  });
-
-  describe('The converter must generate a collection conforming to the schema', function () {
-    var pathPrefix = VALID_OPENAPI_PATH,
-      sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix));
-
-    sampleSpecs.map((sample) => {
-      var specPath = path.join(__dirname, pathPrefix, sample);
-      it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
-        // var openapi = fs.readFileSync(specPath, 'utf8');
-
-        // Increase timeout for larger schema
-        this.timeout(15000);
-        var result = Converter.validate({ type: 'file', data: specPath });
-        expect(result.result).to.equal(true);
-        Converter.convert({ type: 'file', data: specPath },
-          {}, (err, conversionResult) => {
-            expect(err).to.be.null;
-
-            expect(conversionResult.result).to.equal(true);
-            expect(conversionResult.output.length).to.equal(1);
-            expect(conversionResult.output[0].type).to.equal('collection');
-            expect(conversionResult.output[0].data).to.have.property('info');
-            expect(conversionResult.output[0].data).to.have.property('item');
-
-            done();
-          });
       });
     });
   });
