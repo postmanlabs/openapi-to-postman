@@ -1,6 +1,6 @@
 {
   "name": "openapi-to-postmanv2",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "description": "Convert a given OpenAPI specification to Postman Collection v2.0",
   "homepage": "https://github.com/postmanlabs/openapi-to-postman",
   "bugs": "https://github.com/postmanlabs/openapi-to-postman/issues",
@@ -121,7 +121,8 @@
     "commander": "2.20.3",
     "js-yaml": "3.13.1",
     "lodash": "4.17.13",
-    "oas-resolver": "2.2.5",
+    "oas-resolver-browser": "2.3.3",
+    "path-browserify": "1.0.1",
     "postman-collection": "3.5.5",
     "yaml": "1.8.3"
   },

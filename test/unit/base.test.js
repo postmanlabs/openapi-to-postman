@@ -344,7 +344,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
               .equal('{\n    "a": "example-a",\n    "b": "example-b"\n}');
             // Request header
             expect(rootRequest.header[0].value).to.equal('<integer>');
-            expect(exampleRequest.header[0].value).to.equal(123);
+            expect(exampleRequest.header[0].value).to.equal('123');
             // Request query parameters
             expect(rootRequest.url.query[0].value).to.equal('<long> <long>');
             expect(rootRequest.url.query[1].value).to.equal('<long> <long>');
@@ -412,8 +412,52 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
-    it('Should create collection from folder having only one root file', function(done) {
-      let folderPath = path.join(__dirname, '../data/petstore-separate-yaml'),
+
+    it('Should create collection from folder having one root file for browser', function(done) {
+      let folderPath = path.join(__dirname, '../data/petstore separate yaml'),
+        files = [],
+        array = [
+          { fileName: folderPath + '/common/Error.yaml' },
+          { fileName: folderPath + '/spec/Pet.yaml' },
+          { fileName: folderPath + '/spec/NewPet.yaml' },
+          { fileName: folderPath + '/spec/parameters.yaml' },
+          { fileName: folderPath + '/spec/swagger.yaml' }
+        ];
+
+      array.forEach((item) => {
+        files.push({
+          content: fs.readFileSync(item.fileName, 'utf8'),
+          fileName: item.fileName
+        });
+      });
+
+      var schema = new Converter.SchemaPack({ type: 'folder', data: files });
+      schema.mergeAndValidate((err, status) => {
+        if (err) {
+          expect.fail(null, null, err);
+        }
+        if (status.result) {
+          schema.convert((error, result) => {
+            if (error) {
+              expect.fail(null, null, err);
+            }
+            expect(result.result).to.equal(true);
+            expect(result.output.length).to.equal(1);
+            expect(result.output[0].type).to.have.equal('collection');
+            expect(result.output[0].data).to.have.property('info');
+            expect(result.output[0].data).to.have.property('item');
+            done();
+          });
+        }
+        else {
+          expect.fail(null, null, status.reason);
+          done();
+        }
+      });
+    });
+
+    it('Should create collection from folder having only one root file and spaces in folder name', function(done) {
+      let folderPath = path.join(__dirname, '../data/petstore separate yaml'),
         array = [
           { fileName: folderPath + '/common/Error.yaml' },
           { fileName: folderPath + '/spec/Pet.yaml' },
@@ -457,6 +501,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
           { fileName: folderPath + '/spec/swagger.json' }
         ];
       var schema = new Converter.SchemaPack({ type: 'folder', data: array });
+
       schema.mergeAndValidate((err, status) => {
         if (err) {
           expect.fail(null, null, err);
@@ -904,35 +949,6 @@ describe('INTERFACE FUNCTION TESTS ', function () {
           expect(conversionResult.result).to.equal(false);
           done();
         });
-      });
-    });
-  });
-
-  describe('The converter must generate a collection conforming to the schema', function () {
-    var pathPrefix = VALID_OPENAPI_PATH,
-      sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix));
-
-    sampleSpecs.map((sample) => {
-      var specPath = path.join(__dirname, pathPrefix, sample);
-      it('Should generate collection conforming to schema for and fail if not valid ' + specPath, function(done) {
-        // var openapi = fs.readFileSync(specPath, 'utf8');
-
-        // Increase timeout for larger schema
-        this.timeout(15000);
-        var result = Converter.validate({ type: 'file', data: specPath });
-        expect(result.result).to.equal(true);
-        Converter.convert({ type: 'file', data: specPath },
-          {}, (err, conversionResult) => {
-            expect(err).to.be.null;
-
-            expect(conversionResult.result).to.equal(true);
-            expect(conversionResult.output.length).to.equal(1);
-            expect(conversionResult.output[0].type).to.equal('collection');
-            expect(conversionResult.output[0].data).to.have.property('info');
-            expect(conversionResult.output[0].data).to.have.property('item');
-
-            done();
-          });
       });
     });
   });

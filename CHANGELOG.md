@@ -1,4 +1,12 @@
 # OpenAPI-Postman Changelog
+#### v1.2.2 (June 29, 2020)
+* Added support for collection request as suggested value for missing endpoints.
+* Use forked version of oas-resolver to make folder imports work in browser.
+* Fixed issues with collection conforimg to JSON schema validation as per [v2.1.0](https://schema.getpostman.com/json/draft-07/collection/v2.1.0/) schema.
+
+#### v1.2.1 (June 18, 2020)
+* Added support for validating content-type header.
+
 #### v1.2.0 (June 14, 2020)
 * Added support for stricter request matching via option for validation.
 * Added missing endpoints from collection info in result of validation.
