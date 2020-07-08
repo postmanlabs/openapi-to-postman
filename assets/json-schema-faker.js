@@ -24105,7 +24105,7 @@ function extend() {
       }
       items.forEach(walk);
       // TODO: find a better solution?
-      var limit = 100;
+      var limit = 10;
       while (tmp.length !== items.length) {
           walk(traverseCallback(value.items || sample, path, resolve));
           if (!limit--) {
