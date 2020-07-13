@@ -272,6 +272,7 @@ The JSON test suite format consists out of 3 parts:
 - **generateTests** : which refers the default available generated postman tests.
 The default tests are grouped per type (response, request)
   - **responseChecks** : All response basic checks. (For now we have only included response checks).
+  - **limitOperations**: refers to a list of operation IDs for which tests will be generated. (Default not set, so test will be generated for **all** operations).
 - **extendTests**:  which refers the custom additions of manual created postman tests.
 The manual tests are added during generation. The tests are mapped based on the OpenApi operationId.
 Anything added in `tests` array, will be added to the postman test scripts.
