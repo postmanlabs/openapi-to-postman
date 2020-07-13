@@ -863,7 +863,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       var paramsExplode = {
           explode: true,
           style: 'form',
-          name: 'arrayParam',
+          name: 'paramsExplode',
           in: 'query',
           schema: {
             type: 'array'
@@ -871,7 +871,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         },
         paramsSpace = {
           style: 'spaceDelimited',
-          name: 'arrayParam',
+          name: 'paramsSpace',
           in: 'query',
           schema: {
             type: 'array'
@@ -879,15 +879,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         },
         paramsPipe = {
           style: 'pipeDelimited',
-          name: 'arrayParam',
-          in: 'query',
-          schema: {
-            type: 'array'
-          }
-        },
-        paramsDeep = {
-          style: 'deepObject',
-          name: 'arrayParam',
+          name: 'paramsPipe',
           in: 'query',
           schema: {
             type: 'array'
@@ -895,11 +887,12 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         },
         paramsForm = {
           style: 'form',
-          name: 'arrayParam',
+          name: 'paramsForm',
           in: 'query',
           schema: {
             type: 'array'
-          }
+          },
+          explode: false
         },
         paramValue = ['1', '2'],
         retVal;
@@ -915,19 +908,12 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       retVal = SchemaUtils.convertParamsWithStyle(paramsSpace, paramValue);
       expect(retVal).be.an('array').with.length(1);
       expect(retVal[0].key).to.equal(paramsSpace.name);
-      expect(retVal[0].value).to.equal('1 2');
+      expect(retVal[0].value).to.equal('1%202');
 
       retVal = SchemaUtils.convertParamsWithStyle(paramsPipe, paramValue);
       expect(retVal).be.an('array').with.length(1);
       expect(retVal[0].key).to.equal(paramsPipe.name);
       expect(retVal[0].value).to.equal('1|2');
-
-      retVal = SchemaUtils.convertParamsWithStyle(paramsDeep, paramValue);
-      expect(retVal).be.an('array').with.length(2);
-      expect(retVal[0].key).to.equal(paramsDeep.name + '[]');
-      expect(retVal[0].value).to.equal('1');
-      expect(retVal[1].key).to.equal(paramsDeep.name + '[]');
-      expect(retVal[1].value).to.equal('2');
 
       retVal = SchemaUtils.convertParamsWithStyle(paramsForm, paramValue);
       expect(retVal).be.an('array').with.length(1);
@@ -936,37 +922,47 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
     });
 
     it('should work for different styles of objects', function() {
-      var paramsSpace = {
-          style: 'spaceDelimited',
-          name: 'arrayParam',
-          in: 'query',
-          schema: {
-            type: 'object'
+      var paramSchema = {
+          type: 'object',
+          properties: {
+            a: {
+              type: 'integer'
+            },
+            b: {
+              type: 'integer'
+            }
           }
+        },
+        paramsSpace = {
+          style: 'spaceDelimited',
+          name: 'paramsSpace',
+          in: 'query',
+          schema: paramSchema
         },
         paramsPipe = {
           style: 'pipeDelimited',
-          name: 'arrayParam',
+          name: 'paramsPipe',
           in: 'query',
-          schema: {
-            type: 'object'
-          }
+          schema: paramSchema
         },
         paramsDeep = {
           style: 'deepObject',
-          name: 'arrayParam',
+          name: 'paramsDeep',
           in: 'query',
-          schema: {
-            type: 'object'
-          }
+          schema: paramSchema
         },
         paramsForm = {
           style: 'form',
-          name: 'arrayParam',
+          name: 'paramsForm',
           in: 'query',
-          schema: {
-            type: 'object'
-          }
+          explode: false,
+          schema: paramSchema
+        },
+        paramsFormExplode = { // explode is default if not specified for style = form
+          style: 'form',
+          name: 'paramsFormExplode',
+          in: 'query',
+          schema: paramSchema
         },
         paramValue = { a: 1, b: 2 },
         retVal = SchemaUtils.convertParamsWithStyle(paramsSpace, paramValue);
@@ -991,6 +987,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       expect(retVal).be.an('array').with.length(1);
       expect(retVal[0].key).to.equal(paramsForm.name);
       expect(retVal[0].value).to.equal('a,1,b,2');
+
+      retVal = SchemaUtils.convertParamsWithStyle(paramsFormExplode, paramValue);
+      expect(retVal).be.an('array').with.length(2);
+      expect(retVal[0].key).to.equal('a');
+      expect(retVal[0].value).to.equal(1);
+      expect(retVal[1].key).to.equal('b');
+      expect(retVal[1].value).to.equal(2);
     });
   });
 
