@@ -346,10 +346,10 @@ describe('CONVERT FUNCTION TESTS ', function() {
             expect(rootRequest.header[0].value).to.equal('<integer>');
             expect(exampleRequest.header[0].value).to.equal('123');
             // Request query parameters
-            expect(rootRequest.url.query[0].value).to.equal('<long> <long>');
-            expect(rootRequest.url.query[1].value).to.equal('<long> <long>');
-            expect(exampleRequest.url.query[0].value).to.equal('123 123');
-            expect(exampleRequest.url.query[1].value).to.equal('456 456');
+            expect(rootRequest.url.query[0].value).to.equal('<long>%20<long>');
+            expect(rootRequest.url.query[1].value).to.equal('<long>%20<long>');
+            expect(exampleRequest.url.query[0].value).to.equal('123%20123');
+            expect(exampleRequest.url.query[1].value).to.equal('456%20456');
             done();
           });
       });
