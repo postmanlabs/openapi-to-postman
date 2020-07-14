@@ -539,7 +539,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       expect(root.children.nonpet.children, 'Nonpet should have direct requests, not a child')
         .to.not.have.any.keys('');
       expect(root.children.nonpet.requestCount).to.equal(2);
-      expect(collectionVariables).to.have.key('petUrl');
+      expect(collectionVariables).to.have.key('pet-Url');
       done();
     });
 
@@ -629,6 +629,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         [
           {
             name: 'varName',
+            in: 'path',
             description: 'varDesc',
             schema: {
               type: 'integer',
@@ -640,7 +641,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       expect(retVal).to.be.an('array');
       expect(retVal[0].key).to.equal('varName');
       expect(retVal[0].description).to.equal('varDesc');
-      expect(retVal[0].value).to.be.a('number');
+      expect(retVal[0].value).to.be.a('string');
     });
   });
 
@@ -863,7 +864,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       var paramsExplode = {
           explode: true,
           style: 'form',
-          name: 'arrayParam',
+          name: 'paramsExplode',
           in: 'query',
           schema: {
             type: 'array'
@@ -871,7 +872,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         },
         paramsSpace = {
           style: 'spaceDelimited',
-          name: 'arrayParam',
+          name: 'paramsSpace',
           in: 'query',
           schema: {
             type: 'array'
@@ -879,15 +880,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         },
         paramsPipe = {
           style: 'pipeDelimited',
-          name: 'arrayParam',
-          in: 'query',
-          schema: {
-            type: 'array'
-          }
-        },
-        paramsDeep = {
-          style: 'deepObject',
-          name: 'arrayParam',
+          name: 'paramsPipe',
           in: 'query',
           schema: {
             type: 'array'
@@ -895,11 +888,12 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         },
         paramsForm = {
           style: 'form',
-          name: 'arrayParam',
+          name: 'paramsForm',
           in: 'query',
           schema: {
             type: 'array'
-          }
+          },
+          explode: false
         },
         paramValue = ['1', '2'],
         retVal;
@@ -915,19 +909,12 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       retVal = SchemaUtils.convertParamsWithStyle(paramsSpace, paramValue);
       expect(retVal).be.an('array').with.length(1);
       expect(retVal[0].key).to.equal(paramsSpace.name);
-      expect(retVal[0].value).to.equal('1 2');
+      expect(retVal[0].value).to.equal('1%202');
 
       retVal = SchemaUtils.convertParamsWithStyle(paramsPipe, paramValue);
       expect(retVal).be.an('array').with.length(1);
       expect(retVal[0].key).to.equal(paramsPipe.name);
       expect(retVal[0].value).to.equal('1|2');
-
-      retVal = SchemaUtils.convertParamsWithStyle(paramsDeep, paramValue);
-      expect(retVal).be.an('array').with.length(2);
-      expect(retVal[0].key).to.equal(paramsDeep.name + '[]');
-      expect(retVal[0].value).to.equal('1');
-      expect(retVal[1].key).to.equal(paramsDeep.name + '[]');
-      expect(retVal[1].value).to.equal('2');
 
       retVal = SchemaUtils.convertParamsWithStyle(paramsForm, paramValue);
       expect(retVal).be.an('array').with.length(1);
@@ -936,37 +923,47 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
     });
 
     it('should work for different styles of objects', function() {
-      var paramsSpace = {
-          style: 'spaceDelimited',
-          name: 'arrayParam',
-          in: 'query',
-          schema: {
-            type: 'object'
+      var paramSchema = {
+          type: 'object',
+          properties: {
+            a: {
+              type: 'integer'
+            },
+            b: {
+              type: 'integer'
+            }
           }
+        },
+        paramsSpace = {
+          style: 'spaceDelimited',
+          name: 'paramsSpace',
+          in: 'query',
+          schema: paramSchema
         },
         paramsPipe = {
           style: 'pipeDelimited',
-          name: 'arrayParam',
+          name: 'paramsPipe',
           in: 'query',
-          schema: {
-            type: 'object'
-          }
+          schema: paramSchema
         },
         paramsDeep = {
           style: 'deepObject',
-          name: 'arrayParam',
+          name: 'paramsDeep',
           in: 'query',
-          schema: {
-            type: 'object'
-          }
+          schema: paramSchema
         },
         paramsForm = {
           style: 'form',
-          name: 'arrayParam',
+          name: 'paramsForm',
           in: 'query',
-          schema: {
-            type: 'object'
-          }
+          explode: false,
+          schema: paramSchema
+        },
+        paramsFormExplode = { // explode is default if not specified for style = form
+          style: 'form',
+          name: 'paramsFormExplode',
+          in: 'query',
+          schema: paramSchema
         },
         paramValue = { a: 1, b: 2 },
         retVal = SchemaUtils.convertParamsWithStyle(paramsSpace, paramValue);
@@ -991,6 +988,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       expect(retVal).be.an('array').with.length(1);
       expect(retVal[0].key).to.equal(paramsForm.name);
       expect(retVal[0].value).to.equal('a,1,b,2');
+
+      retVal = SchemaUtils.convertParamsWithStyle(paramsFormExplode, paramValue);
+      expect(retVal).be.an('array').with.length(2);
+      expect(retVal[0].key).to.equal('a');
+      expect(retVal[0].value).to.equal(1);
+      expect(retVal[1].key).to.equal('b');
+      expect(retVal[1].value).to.equal(2);
     });
   });
 
@@ -1067,7 +1071,9 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           });
           it('schemaFaker = false', function (done) {
             let pmParam = SchemaUtils.convertToPmQueryParameters(param, 'root', null, { schemaFaker: false });
-            expect(pmParam).to.eql([]);
+            expect(pmParam[0].key).to.equal(param.name);
+            expect(pmParam[0].description).to.equal(param.description);
+            expect(pmParam[0].value).to.equal('');
             done();
           });
         });
@@ -1119,7 +1125,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           let pmParam = SchemaUtils.convertToPmQueryParameters(param);
           expect(pmParam[0].key).to.equal(param.name);
           expect(pmParam[0].description).to.equal(param.description);
-          expect(pmParam[0].value).to.have.string(' ');
+          expect(pmParam[0].value).to.have.string('%20');
           done();
         });
         it('schemaFaker = false', function (done) {
@@ -1169,17 +1175,19 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           description: 'query param',
           style: 'deepObject',
           schema: {
-            type: 'array',
-            maxItems: 2,
-            minItems: 2,
-            items: {
-              type: 'string'
+            type: 'object',
+            properties: {
+              R: { type: 'integer' },
+              G: { type: 'integer' },
+              B: { type: 'integer' }
             }
           }
         };
         it('schemaFaker = true', function (done) {
           let pmParam = SchemaUtils.convertToPmQueryParameters(param);
-          expect(pmParam[0].key).to.equal(param.name + '[]');
+          expect(pmParam[0].key).to.equal(param.name + '[R]');
+          expect(pmParam[1].key).to.equal(param.name + '[G]');
+          expect(pmParam[2].key).to.equal(param.name + '[B]');
           expect(pmParam[0].description).to.equal(param.description);
           done();
         });
@@ -1195,6 +1203,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         var param = {
           name: 'X-Header-One',
           in: 'query',
+          explode: false,
           description: 'query param',
           schema: {
             type: 'array',
@@ -1261,7 +1270,9 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             let pmParam = SchemaUtils.convertToPmQueryParameters(param, 'request', {}, {
               schemaFaker: false
             });
-            expect(pmParam).to.eql([]);
+            expect(pmParam[0].key).to.equal(param.name);
+            expect(pmParam[0].description).to.equal(param.description);
+            expect(pmParam[0].value).to.equal('');
             done();
           });
         });
@@ -1436,6 +1447,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           name: 'X-Header-One',
           in: 'query',
           description: 'query param',
+          explode: false,
           schema: {
             type: 'object',
             required: [
@@ -1457,7 +1469,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           let pmParam = SchemaUtils.convertToPmQueryParameters(param);
           expect(pmParam[0].key).to.equal(param.name);
           expect(pmParam[0].description).to.equal(param.description);
-          expect(typeof pmParam[0].value).to.equal('object');
+          expect(typeof pmParam[0].value).to.equal('string');
           done();
         });
         it('schemaFaker = false', function (done) {
@@ -1466,39 +1478,10 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           });
           expect(pmParam[0].key).to.equal(param.name);
           expect(pmParam[0].description).to.equal(param.description);
-          expect(typeof pmParam[0].value).to.equal('object');
+          expect(typeof pmParam[0].value).to.equal('string');
           done();
         });
       });
-    });
-  });
-
-  describe('getQueryStringWithStyle function', function () {
-    it('Should correctly return the query string with the appropriate delimiter', function (done) {
-      var param = {
-        name: 'tuhin',
-        age: 22,
-        occupation: 'student'
-      };
-
-      expect(SchemaUtils.getQueryStringWithStyle(param, '%20')).to.equal(
-        'name%20tuhin%20age%2022%20occupation%20student');
-      expect(SchemaUtils.getQueryStringWithStyle(param, '|')).to.equal('name|tuhin|age|22|occupation|student');
-      expect(SchemaUtils.getQueryStringWithStyle(param, ',')).to.equal('name,tuhin,age,22,occupation,student');
-      done();
-    });
-
-    it('Should add the delimiter if the value is undefined', function (done) {
-      var param = {
-        name: 'tuhin',
-        age: undefined,
-        occupation: 'student'
-      };
-
-      expect(SchemaUtils.getQueryStringWithStyle(param, '%20')).to.equal('name%20tuhin%20age%20occupation%20student');
-      expect(SchemaUtils.getQueryStringWithStyle(param, '|')).to.equal('name|tuhin|age|occupation|student');
-      expect(SchemaUtils.getQueryStringWithStyle(param, ',')).to.equal('name,tuhin,age,occupation,student');
-      done();
     });
   });
 
@@ -2149,7 +2132,7 @@ describe('convertToPmQueryArray function', function() {
       exampleParametersResolution: 'example',
       requestParametersResolution: 'schema'
     });
-    expect(result[0]).to.equal('variable2=123 123');
-    expect(result[1]).to.equal('variable3=456 456');
+    expect(result[0]).to.equal('variable2=123%20123');
+    expect(result[1]).to.equal('variable3=456%20456');
   });
 });
