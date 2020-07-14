@@ -15,6 +15,7 @@ const optionIds = [
     'suggestAvailableFixes',
     'validateMetadata',
     'ignoreUnresolvedVariables',
+    'optimizeConversion',
     'strictRequestMatching'
   ],
   expectedOptions = {
@@ -51,6 +52,14 @@ const optionIds = [
       default: 'Paths',
       availableOptions: ['Paths', 'Tags'],
       description: 'Select whether to create folders according to the spec’s paths or tags.'
+    },
+    optimizeConversion: {
+      name: 'Optimize conversion',
+      id: 'optimizeConversion',
+      type: 'boolean',
+      default: true,
+      description: 'Optimizes conversion for large specification, disabling this option might affect' +
+        'the performance of conversion.'
     },
     indentCharacter: {
       name: 'Set indent character',
