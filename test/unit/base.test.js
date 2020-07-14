@@ -172,7 +172,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].type).to.equal('collection');
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
-        expect(conversionResult.output[0].data.item[0].item[0].request.url.host[0]).to.equal('{{petsUrl}}');
+        expect(conversionResult.output[0].data.item[0].item[0].request.url.host[0]).to.equal('{{pets-Url}}');
         done();
       });
     });

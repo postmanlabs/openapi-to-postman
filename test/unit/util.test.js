@@ -539,7 +539,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       expect(root.children.nonpet.children, 'Nonpet should have direct requests, not a child')
         .to.not.have.any.keys('');
       expect(root.children.nonpet.requestCount).to.equal(2);
-      expect(collectionVariables).to.have.key('petUrl');
+      expect(collectionVariables).to.have.key('pet-Url');
       done();
     });
 
