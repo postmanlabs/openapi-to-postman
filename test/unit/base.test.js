@@ -172,7 +172,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].type).to.equal('collection');
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
-        expect(conversionResult.output[0].data.item[0].item[0].request.url.host[0]).to.equal('{{petsUrl}}');
+        expect(conversionResult.output[0].data.item[0].item[0].request.url.host[0]).to.equal('{{pets-Url}}');
         done();
       });
     });
@@ -346,10 +346,10 @@ describe('CONVERT FUNCTION TESTS ', function() {
             expect(rootRequest.header[0].value).to.equal('<integer>');
             expect(exampleRequest.header[0].value).to.equal('123');
             // Request query parameters
-            expect(rootRequest.url.query[0].value).to.equal('<long> <long>');
-            expect(rootRequest.url.query[1].value).to.equal('<long> <long>');
-            expect(exampleRequest.url.query[0].value).to.equal('123 123');
-            expect(exampleRequest.url.query[1].value).to.equal('456 456');
+            expect(rootRequest.url.query[0].value).to.equal('<long>%20<long>');
+            expect(rootRequest.url.query[1].value).to.equal('<long>%20<long>');
+            expect(exampleRequest.url.query[0].value).to.equal('123%20123');
+            expect(exampleRequest.url.query[1].value).to.equal('456%20456');
             done();
           });
       });
