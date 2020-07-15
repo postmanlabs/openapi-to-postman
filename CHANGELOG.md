@@ -1,4 +1,7 @@
 # OpenAPI-Postman Changelog
+#### v1.2.4 (July 15, 2020)
+* Introducing a new option `Optimize conversion` for improving performance of conversion for larger schemas.
+
 #### v1.2.3 (July 14, 2020)
 * Added support for parameter serialisation in conversion and deserialisation in validation.
 * Skipped validation for headers/query-params added by security scheme.
