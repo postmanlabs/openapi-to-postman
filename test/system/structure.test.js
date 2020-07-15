@@ -59,7 +59,7 @@ const optionIds = [
       type: 'boolean',
       default: true,
       description: 'Optimizes conversion for large specification, disabling this option might affect' +
-        'the performance of conversion.'
+        ' the performance of conversion.'
     },
     indentCharacter: {
       name: 'Set indent character',
