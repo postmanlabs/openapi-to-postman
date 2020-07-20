@@ -57,7 +57,7 @@
 				]
 			}
     },
-    "/new/{path}.{new-path-variable}": {
+    "/new/{path}.{new-path-variable-1}": {
 			"get": {
 				"summary": "List all pets",
 				"operationId": "listPets",
@@ -72,19 +72,21 @@
 						"required": true,
 						"schema": {
 							"type": "string",
-              "pattern": "json|xml",
-              "example": "json"
+              "example": "send-email"
 						}
           },
           {
-						"name": "new-path-variable",
+						"name": "new-path-variable-1",
 						"in": "path",
 						"description": "description",
 						"required": true,
 						"schema": {
-							"type": "string",
-              "pattern": "json|xml",
-              "example": "json"
+							"type": "object",
+              "properties": {
+								"R": { "type": "integer", "example": 100 },
+								"G": { "type": "integer", "example": 200 },
+								"B": { "type": "integer", "example": 150 }
+							}
 						}
 					}
 				]
@@ -123,7 +125,7 @@
 				]
 			}
 		},
-		"/anotherpath/{path}/{new-path-variable}.{onemore}": {
+		"/anotherpath/{path}/{new-path-variable-2}.{onemore}": {
 			"get": {
 				"summary": "List all pets",
 				"operationId": "listPets",
@@ -143,14 +145,16 @@
 						}
           },
           {
-						"name": "new-path-variable",
+						"name": "new-path-variable-2",
 						"in": "path",
 						"description": "description",
 						"required": true,
 						"schema": {
-							"type": "string",
-              "pattern": "json|xml",
-              "example": "json"
+							"type": "array",
+              "items": {
+								"type": "string",
+								"example": "exampleString"
+							}
 						}
 					},
 					{
