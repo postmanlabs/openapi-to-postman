@@ -1,4 +1,30 @@
 # OpenAPI-Postman Changelog
+#### v1.2.5 (July 21, 2020)
+* Fixed incorrect variable name in schemapack.js.
+
+#### v1.2.4 (July 15, 2020)
+* Introducing a new option `Optimize conversion` for improving performance of conversion for larger schemas.
+
+#### v1.2.3 (July 14, 2020)
+* Added support for parameter serialisation in conversion and deserialisation in validation.
+* Skipped validation for headers/query-params added by security scheme.
+* Fixed incorrect Url and collection variable when path level server is present.
+* Fixed issue where empty description property caused mismatch.
+* Fixed issue where mismatch was happening even when correct path variable is present.
+* Fixed dataPath handling for root property when dataPath is empty string.
+* Fixed collection variable ignoring when pattern property is present.
+* Added support for collection variables for local servers in suggested request for validation.
+* Fixed TypeError happening when empty parameter is provided.
+* Fixed invalid transaction json path for headers.
+
+#### v1.2.2 (June 29, 2020)
+* Added support for collection request as suggested value for missing endpoints.
+* Use forked version of oas-resolver to make folder imports work in browser.
+* Fixed issues with collection conforimg to JSON schema validation as per [v2.1.0](https://schema.getpostman.com/json/draft-07/collection/v2.1.0/) schema.
+
+#### v1.2.1 (June 18, 2020)
+* Added support for validating content-type header.
+
 #### v1.2.0 (June 14, 2020)
 * Added support for stricter request matching via option for validation.
 * Added missing endpoints from collection info in result of validation.
