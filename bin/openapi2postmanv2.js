@@ -6,6 +6,7 @@ var program = require('commander'),
   inputFile,
   outputFile,
   prettyPrintFlag,
+  configFile,
   testFlag,
   swaggerInput,
   swaggerData;
@@ -15,7 +16,8 @@ program
   .option('-s, --spec <spec>', 'Convert given OPENAPI 3.0.0 spec to Postman Collection v2.0')
   .option('-o, --output <output>', 'Write the collection to an output file')
   .option('-t, --test', 'Test the OPENAPI converter')
-  .option('-p, --pretty', 'Pretty print the JSON file');
+  .option('-p, --pretty', 'Pretty print the JSON file')
+  .option('-c, --config <config>', 'JSON file containing Converter options');
 
 
 program.on('--help', function() {
@@ -41,6 +43,7 @@ inputFile = program.spec;
 outputFile = program.output || false;
 testFlag = program.test || false;
 prettyPrintFlag = program.pretty || false;
+configFile = program.config || false;
 swaggerInput;
 swaggerData;
 
@@ -73,10 +76,17 @@ function writetoFile(prettyPrintFlag, file, collection) {
  * @returns {void}
  */
 function convert(swaggerData) {
+  let options = {};
+  if (configFile) {
+    configFile = path.resolve(configFile);
+    console.log("Config file: ", configFile);
+    options = JSON.parse(fs.readFileSync(configFile, "utf8"));
+  }
+
   Converter.convert({
     type: 'string',
     data: swaggerData
-  }, {}, (err, status) => {
+  }, options, (err, status) => {
     if (err) {
       return console.error(err);
     }
