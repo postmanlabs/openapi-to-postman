@@ -2136,3 +2136,15 @@ describe('convertToPmQueryArray function', function() {
     expect(result[1]).to.equal('variable3=456%20456');
   });
 });
+
+describe('getPostmanUrlSchemaMatchScore function', function() {
+  it('Should correctly match root level path with matching request endpoint', function () {
+    let schemaPath = '/',
+      pmPath = '/',
+      endpointMatchScore = SchemaUtils.getPostmanUrlSchemaMatchScore(schemaPath, pmPath, {});
+
+    // root level paths should match with max score
+    expect(endpointMatchScore.match).to.eql(true);
+    expect(endpointMatchScore.score).to.eql(1);
+  });
+});
