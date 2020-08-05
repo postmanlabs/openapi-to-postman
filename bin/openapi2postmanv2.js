@@ -8,13 +8,16 @@ var program = require('commander'),
   prettyPrintFlag,
   configFile,
   testFlag,
+  sourceMapFile,
   swaggerInput,
-  swaggerData;
+  swaggerData,
+  sourceMapData;
 
 program
   .version(require('../package.json').version, '-v, --version')
   .option('-s, --spec <spec>', 'Convert given OPENAPI 3.0.0 spec to Postman Collection v2.0')
   .option('-o, --output <output>', 'Write the collection to an output file')
+  .option('-m, --sourceMap <source-map>', 'Source map to use for operation to request mapping')
   .option('-t, --test', 'Test the OPENAPI converter')
   .option('-p, --pretty', 'Pretty print the JSON file')
   .option('-c, --config <config>', 'JSON file containing Converter options');
@@ -44,6 +47,7 @@ outputFile = program.output || false;
 testFlag = program.test || false;
 prettyPrintFlag = program.pretty || false;
 configFile = program.config || false;
+sourceMapFile = program.sourceMap;
 swaggerInput;
 swaggerData;
 
@@ -55,7 +59,7 @@ swaggerData;
  * @param {Object} collection - POSTMAN collection object
  * @returns {void}
  */
-function writetoFile(prettyPrintFlag, file, collection) {
+function writetoFile(prettyPrintFlag, file, collection, sourceMapFile, sourceMap) {
   if (prettyPrintFlag) {
     fs.writeFile(file, JSON.stringify(collection, null, 4), (err) => {
       if (err) { console.log('Could not write to file', err); }
@@ -68,6 +72,13 @@ function writetoFile(prettyPrintFlag, file, collection) {
       console.log('Conversion successful', 'Collection written to file');
     });
   }
+
+  if (sourceMapFile) {
+    fs.writeFile(sourceMapFile, JSON.stringify(sourceMap), (err) => {
+      if (err) { console.log('Could not write to source map file', err); }
+      console.log('Source Map written to file');
+    });
+  }
 }
 
 /**
@@ -75,7 +86,7 @@ function writetoFile(prettyPrintFlag, file, collection) {
  * @param {String} swaggerData - swagger data used for conversion input
  * @returns {void}
  */
-function convert(swaggerData) {
+function convert(swaggerData, sourceMapData) {
   let options = {};
   if (configFile) {
     configFile = path.resolve(configFile);
@@ -85,7 +96,8 @@ function convert(swaggerData) {
 
   Converter.convert({
     type: 'string',
-    data: swaggerData
+    data: swaggerData,
+    sourceMap: sourceMapData ? JSON.parse(sourceMapData) : ''
   }, options, (err, status) => {
     if (err) {
       return console.error(err);
@@ -97,7 +109,7 @@ function convert(swaggerData) {
     else if (outputFile) {
       let file = path.resolve(outputFile);
       console.log('Writing to file: ', prettyPrintFlag, file, status); // eslint-disable-line no-console
-      writetoFile(prettyPrintFlag, file, status.output[0].data);
+      writetoFile(prettyPrintFlag, file, status.output[0].data, sourceMapFile, status.sourceMap);
     }
     else {
       console.log(status.output[0].data); // eslint-disable-line no-console
@@ -117,7 +129,14 @@ else if (inputFile) {
   // this will fix https://github.com/postmanlabs/openapi-to-postman/issues/4
   // inputFile should be read from the cwd, not the path of the executable
   swaggerData = fs.readFileSync(inputFile, 'utf8');
-  convert(swaggerData);
+  if (sourceMapFile) {
+    try {
+      sourceMapData = fs.readFileSync(sourceMapFile, 'utf8');
+    } catch (_e) {
+      sourceMapData = '{}';
+    }
+  }
+  convert(swaggerData, sourceMapData);
 }
 else {
   program.emit('--help');
