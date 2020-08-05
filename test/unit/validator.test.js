@@ -455,5 +455,39 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         done();
       });
     });
+
+    it('Should correctly suggest value when property is vioalting multiple keywords', function (done) {
+      let doubleValidationFixSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/doubleValidationFixSpec.yaml'), 'utf-8'),
+        options = { suggestAvailableFixes: true },
+        resultObj,
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: doubleValidationFixSpec }, options);
+
+      schemaPack.convert((err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+
+        let historyRequest = [];
+
+        getAllTransactions(conversionResult.output[0].data, historyRequest);
+
+        schemaPack.validateTransaction(historyRequest, (err, result) => {
+          expect(err).to.be.null;
+          expect(result).to.be.an('object');
+          resultObj = result.requests[historyRequest[0].id].endpoints[0];
+
+          expect(resultObj.mismatches).to.have.lengthOf(1);
+
+          /**
+            The spec contains request body which has name and identifier props as required which is
+            violated in collection. We expect both props to be present and valid according to schema.
+          */
+          expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.contain.keys(['name', 'identifier']);
+          expect(resultObj.mismatches[0].suggestedFix.suggestedValue.name).to.be.a('string');
+          expect(resultObj.mismatches[0].suggestedFix.suggestedValue.identifier).to.be.a('string');
+          done();
+        });
+      });
+    });
   });
 });
