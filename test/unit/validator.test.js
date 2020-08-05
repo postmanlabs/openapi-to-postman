@@ -376,3 +376,84 @@ describe('The Validation option', function () {
     });
   });
 });
+
+describe('VALIDATE FUNCTION TESTS ', function () {
+  describe('validateTransaction function', function () {
+    it('Should not fail if spec to validate contains empty parameters', function (done) {
+      let emptyParameterSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/emptyParameterSpec.yaml'), 'utf-8'),
+        emptyParameterCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/emptyParameterCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: emptyParameterSpec }, {});
+
+      getAllTransactions(JSON.parse(emptyParameterCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+        expect(resultObj.mismatches).to.have.lengthOf(0);
+        done();
+      });
+    });
+
+    it('Should correctly handle transactionPath property when Implicit headers are present', function (done) {
+      let implicitHeaderSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/implicitHeaderSpec.yaml'), 'utf-8'),
+        implicitHeaderCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/implicitHeaderCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: implicitHeaderSpec }, {});
+
+      getAllTransactions(JSON.parse(implicitHeaderCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+
+        expect(resultObj.mismatches).to.have.lengthOf(1);
+
+        /**
+          header-1 is invalid according to schema, as request contains other 2 implicit headers(Content-Type and Accept)
+          the mismatch for header-1 should contain correct index as in request.
+        */
+        expect(_.endsWith(resultObj.mismatches[0].transactionJsonPath, '[2].value')).to.eql(true);
+        done();
+      });
+    });
+
+    it('Should correctly suggest value when violated keyword is at root level', function () {
+      let rootKeywordViolationSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/rootKeywordViolationSpec.yaml'), 'utf-8'),
+        rootKeywordViolationCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/rootKeywordViolationCollection.json'), 'utf-8'),
+        options = { suggestAvailableFixes: true },
+        resultObj,
+        historyRequest = [],
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: rootKeywordViolationSpec }, options);
+
+      getAllTransactions(JSON.parse(rootKeywordViolationCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+
+        expect(resultObj.mismatches).to.have.lengthOf(1);
+
+        /**
+          The spec contains "POST /pet" endpoint with request body as Pet object which requires minimum property of 4
+          as this property is root (Json path to prop is ''(empty), we expect suggested value to be according to spec)
+        */
+        expect(_.keys(resultObj.mismatches[0].suggestedFix.actualValue)).to.have.lengthOf(3);
+        expect(_.keys(resultObj.mismatches[0].suggestedFix.suggestedValue)).to.have.lengthOf(4);
+        done();
+      });
+    });
+  });
+});
