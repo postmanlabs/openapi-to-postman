@@ -1,4 +1,7 @@
 # OpenAPI-Postman Changelog
+#### v1.2.5 (July 21, 2020)
+* Fixed incorrect variable name in schemapack.js.
+
 #### v1.2.4 (July 15, 2020)
 * Introducing a new option `Optimize conversion` for improving performance of conversion for larger schemas.
 
