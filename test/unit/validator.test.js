@@ -450,8 +450,8 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           The spec contains "POST /pet" endpoint with request body as Pet object which requires minimum property of 4
           as this property is root (Json path to prop is ''(empty), we expect suggested value to be according to spec)
         */
-        expect(_.keys(resultObj.mismatches[0].suggestedFix.actualValue)).to.eql(3);
-        expect(_.keys(resultObj.mismatches[0].suggestedFix.suggestedValue)).to.eql(4);
+        expect(_.keys(resultObj.mismatches[0].suggestedFix.actualValue)).to.have.lengthOf(3);
+        expect(_.keys(resultObj.mismatches[0].suggestedFix.suggestedValue)).to.have.lengthOf(4);
         done();
       });
     });
