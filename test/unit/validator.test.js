@@ -459,7 +459,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
     it('Should correctly suggest value when property is vioalting multiple keywords', function (done) {
       let doubleValidationFixSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
           '/doubleValidationFixSpec.yaml'), 'utf-8'),
-        options = { suggestAvailableFixes: true },
+        options = { requestParametersResolution: 'Example', suggestAvailableFixes: true },
         resultObj,
         schemaPack = new Converter.SchemaPack({ type: 'string', data: doubleValidationFixSpec }, options);
 
