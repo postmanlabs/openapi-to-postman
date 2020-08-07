@@ -39,7 +39,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       tooManyRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/too-many-refs.json'),
       tagsFolderSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed.yaml'),
       securityTestCases = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-cases.yaml'),
-      emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml');
+      emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml'),
+      rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -885,6 +886,23 @@ describe('CONVERT FUNCTION TESTS ', function() {
           getAllRequestsFromCollection(tagsCollection, allTagsRequest);
           expect(allTagsRequest).to.deep.equal(allPathsRequest);
         });
+      });
+    });
+
+    it('Should correctly define URL for root server with base URL variables', function (done) {
+      var openapi = fs.readFileSync(rootUrlServerWithVariables, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+        let requestUrl,
+          collectionVars;
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.be.true;
+
+        requestUrl = conversionResult.output[0].data.item[0].request.url;
+        collectionVars = conversionResult.output[0].data.variable;
+        expect(requestUrl.host).to.eql(['{{baseUrl}}']);
+        expect(_.find(collectionVars, { id: 'baseUrl' }).value).to.eql('{{BASE_URI}}/api');
+        expect(_.find(collectionVars, { id: 'BASE_URI' }).value).to.eql('https://api.example.com');
+        done();
       });
     });
   });

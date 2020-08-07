@@ -1,0 +1,32 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Root server with URL variables",
+    "version": "2.0.0"
+  },
+  "servers": [
+    {
+      "url": "{BASE_URI}/api",
+      "description": "Development server",
+      "variables": {
+        "BASE_URI": {
+          "default": "https://api.example.com",
+          "description": "Server base URI"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/primary-domain/works": {
+      "get": {
+        "operationId": "get_authorize",
+        "summary": "Should keep the same domain",
+        "responses": {
+          "201": {
+            "description": "Null response"
+          }
+        }
+      }
+    }
+  }
+}
