@@ -167,23 +167,14 @@ describe('The Validation option', function () {
 
         For strictRequestMatching = false, both collection request matches with all 3 endpoints from schema,
           and no endpoint will be present in missingEndpoints
+        For strictRequestMatching = true, we have matches as following
         */
-        _.forEach(historyRequest, (req) => {
-          let resultObj = result.requests[req.id], // corresponding result object for request
-            schemaPath = req.request.description; // actual schema path is stored as description
+        // for endpoint "/users/admin/:userId" we should only one match with "/users/admin/{userId}"
+        expect(result.requests[historyRequest[0].id].endpoints).to.have.lengthOf(1);
 
-          // for endpoint "/users/admin/:userId" we should only one match with "/users/admin/{userId}"
-          if (schemaPath === '/users/admin/{userId}') {
-            expect(resultObj.endpoints).to.have.lengthOf(1);
-            expect(resultObj.endpoints[0].endpoint).to.have.string(schemaPath);
-          }
-          // for endpoint "/users/admin/profile" we should have two matches first match with "/users/admin/profile"
-          // and second with "/users/admin/{userId}" as first match has more fixed matched segments
-          else if (schemaPath === '/users/admin/profile') {
-            expect(resultObj.endpoints).to.have.length(2);
-            expect(resultObj.endpoints[0].endpoint).to.have.string(schemaPath);
-          }
-        });
+        // for endpoint "/users/admin/profile" we should have two matches first match with "/users/admin/profile"
+        // and second with "/users/admin/{userId}" as first match has more fixed matched segments
+        expect(result.requests[historyRequest[1].id].endpoints).to.have.lengthOf(2);
 
         // endpoint "/admin/{adminId}"" should be present as missing endpoint
         expect(result.missingEndpoints).to.have.lengthOf(1);
