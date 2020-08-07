@@ -2248,4 +2248,27 @@ describe('getPostmanUrlSchemaMatchScore function', function() {
     expect(endpointMatchScore.match).to.eql(true);
     expect(endpointMatchScore.score).to.eql(1);
   });
+
+  it('Should correctly match path with fixed and variable path segment to matching request endpoint', function () {
+    let schemaPath = '/user/send-sms.{format}',
+      pmPath = '/user/send-sms.{{format}}',
+      endpointMatchScore = SchemaUtils.getPostmanUrlSchemaMatchScore(pmPath, schemaPath, {});
+
+    // both paths should match with max score
+    expect(endpointMatchScore.match).to.eql(true);
+    expect(endpointMatchScore.score).to.eql(1);
+    // no path var should be identified as format will be stored as collection variable
+    expect(endpointMatchScore.pathVars).to.have.lengthOf(0);
+
+    schemaPath = '/spaces/{spaceId}/{path}_{pathSuffix}';
+    pmPath = '/spaces/:spaceId/{{path}}_{{pathSuffix}}';
+    endpointMatchScore = SchemaUtils.getPostmanUrlSchemaMatchScore(pmPath, schemaPath, {});
+
+    // both paths should match with max score
+    expect(endpointMatchScore.match).to.eql(true);
+    expect(endpointMatchScore.score).to.eql(1);
+    // only one path var (spaceId) should be identified as others will be stored as collection variable
+    expect(endpointMatchScore.pathVars).to.have.lengthOf(1);
+    expect(endpointMatchScore.pathVars[0]).to.eql({ key: 'spaceId', value: ':spaceId' });
+  });
 });
