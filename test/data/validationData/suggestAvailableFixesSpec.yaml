@@ -1,0 +1,90 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: 
+  license:
+    name: MIT
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /pets/{petId}:
+    post:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: integer
+            example: 'Not an Integer'
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: number
+            example: 'Not a Number'
+        - name: pet-quantity
+          in: header
+          required: true
+          schema:
+            type: boolean
+            example: 'Not a Boolean'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Pet"
+      responses:
+        default:
+          description: unexpected error
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period
+              schema:
+                type: integer
+                example: '<string>'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    Pet:
+      type: object
+      required:
+      - petId
+      - name
+      - tag
+      - breeds
+      properties:
+        petId:
+          type: integer
+          format: int64
+        name:
+          type: string
+          minLength: 30
+        tag:
+          type: string
+        breeds:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            type: string
+            enum: ["Bulldog", "Retriever", "Timberwolf", "Grizzly", "Husky"]
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          multipleOf: 7
+        message:
+          type: string
+      example:
+        code: '{{codeVar}}'
+        message: 123.456
