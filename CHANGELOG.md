@@ -1,5 +1,15 @@
 # OpenAPI-Postman Changelog
 #### v1.2.5 (July 21, 2020)
+* Fixed TypeError happening when null parameter value provided.
+* Fixed an issue where suggested value for mismatch did not fix corresponding mismatch upon applying.
+* Fixed issue where root path was not matched during validation.
+* Fixed an issue where transaction was not matching if path had segment with fix and variable parts during valiadtion.
+* Fixed issue where URL did not contain baseUrl as host when base url variables are present.
+* Fixed issue where collection variable generated for path variables had empty values.
+* Fixed issue where invalid deserialisation was happening for param style matrix.
+* Added validation tests to improve code coverage.
+
+#### v1.2.5 (July 21, 2020)
 * Fixed incorrect variable name in schemapack.js.
 
 #### v1.2.4 (July 15, 2020)

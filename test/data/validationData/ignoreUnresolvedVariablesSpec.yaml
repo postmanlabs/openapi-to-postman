@@ -1,0 +1,76 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: 
+  license:
+    name: MIT
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /pets/{samplePathVar}:
+    post:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: samplePathVar
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: integer
+          example: '{{petIdCollectionVar}}'
+        - name: sampleQueryParam
+          in: query
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: number
+          example: '{{sampleQueryParamCollectionVar}}'
+        - name: sampleHeader
+          in: header
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: boolean
+          example: '{{sampleHeaderCollectionVar}}'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Pet"
+      responses:
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    Pet:
+      type: object
+      properties:
+        petId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        tag:
+          type: string
+      example:
+        petId: '{{petIdVar}}'
+        name: '{{nameVar}}'
+        tag: '{{tagVar}}'
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      example:
+        code: '{{codeVar}}'
+        message: '{{messageVar}}'
