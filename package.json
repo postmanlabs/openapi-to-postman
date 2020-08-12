@@ -137,7 +137,7 @@
     "eslint-plugin-security": "1.4.0",
     "expect.js": "0.3.1",
     "istanbul": "0.4.5",
-    "mocha": "5.2.0",
+    "mocha": "6.2.3",
     "parse-gitignore": "0.4.0"
   },
   "scripts": {
