@@ -124,7 +124,7 @@
     "oas-resolver-browser": "2.3.3",
     "path-browserify": "1.0.1",
     "postman-collection": "3.6.5",
-    "yaml": "1.8.3"
+    "yaml": "1.10.0"
   },
   "author": "Postman Labs <help@getpostman.com>",
   "license": "Apache-2.0",
