@@ -10,6 +10,9 @@
         "enabled": true,
         "maxMs": 300
       },
+      "headersPresent": {
+        "enabled": true
+      },
       "contentType": {
         "enabled": true
       },
