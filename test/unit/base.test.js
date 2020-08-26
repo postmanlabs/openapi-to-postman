@@ -64,7 +64,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
 
-    it('Should have noauth at the collection level if auth type is api-key and properties in header' +
+    it('Should add collection level auth with type as `apiKey`' +
     emptySecurityTestCase, function(done) {
       var openapi = fs.readFileSync(emptySecurityTestCase, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
@@ -76,7 +76,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
         expect(conversionResult.output[0].data.auth).to.have.property('type');
-        expect(conversionResult.output[0].data.auth.type).to.equal('noauth');
+        expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
         done();
       });
     });

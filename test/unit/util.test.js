@@ -2170,6 +2170,48 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       });
     });
   });
+
+  describe('getResponseAuthHelper function', function () {
+    var authTypes = {
+      'basic': 'Basic <credentials>',
+      'bearer': 'Bearer <token>',
+      'digest': 'Digest <credentials>',
+      'oauth1': 'OAuth <credentials>',
+      'oauth2': '<token>'
+    };
+
+    it('should correctly generate params needed for securityScheme: apikey', function () {
+      let apiKeyHeaderHelper = SchemaUtils.getResponseAuthHelper({
+          type: 'apikey',
+          apikey: [{ key: 'in', value: 'header' }, { key: 'key', value: 'api-key-header' }]
+        }),
+        apiKeyQueryHelper = SchemaUtils.getResponseAuthHelper({
+          type: 'apikey',
+          apikey: [{ key: 'in', value: 'query' }, { key: 'key', value: 'api-key-query' }]
+        });
+
+      expect(apiKeyHeaderHelper.header).to.have.lengthOf(1);
+      expect(apiKeyHeaderHelper.query).to.have.lengthOf(0);
+      expect(apiKeyHeaderHelper.header[0].key).to.eql('api-key-header');
+
+      expect(apiKeyQueryHelper.query).to.have.lengthOf(1);
+      expect(apiKeyQueryHelper.header).to.have.lengthOf(0);
+      expect(apiKeyQueryHelper.query[0].key).to.eql('api-key-query');
+    });
+
+    _.forEach(authTypes, (authHeaderValue, authType) => {
+      it('should correctly generate params needed for securityScheme: ' + authType, function () {
+        let authHelper = SchemaUtils.getResponseAuthHelper({
+          type: authType
+        });
+
+        expect(authHelper.header).to.have.lengthOf(1);
+        expect(authHelper.query).to.have.lengthOf(0);
+        expect(authHelper.header[0].key).to.eql('Authorization');
+        expect(authHelper.header[0].value).to.eql(authHeaderValue);
+      });
+    });
+  });
 });
 
 describe('Get header family function ', function() {
