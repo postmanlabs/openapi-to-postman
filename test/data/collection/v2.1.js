@@ -14,12 +14,13 @@ module.exports.schemas = {
           'description': 'Items are the basic unit for a Postman collection. You can think of them as corresponding to a single API endpoint. Each Item has one request and may have multiple API responses associated with it.',
           'items': {
             'title': 'Items',
-            'oneOf': [{
-              '$ref': '#/definitions/item'
-            },
-            {
-              '$ref': '#/definitions/item-group'
-            }
+            'oneOf': [
+              {
+                '$ref': '#/definitions/item'
+              },
+              {
+                '$ref': '#/definitions/item-group'
+              }
             ]
           }
         },
@@ -30,13 +31,17 @@ module.exports.schemas = {
           '$ref': '#/definitions/variable-list'
         },
         'auth': {
-          'oneOf': [{
+          'oneOf': [
+            {
               'type': 'null'
             },
             {
               '$ref': '#/definitions/auth'
             }
           ]
+        },
+        'protocolProfileBehavior': {
+          '$ref': '#/definitions/protocol-profile-behavior'
         }
       },
       'required': [
@@ -71,6 +76,7 @@ module.exports.schemas = {
             'type': {
               'type': 'string',
               'enum': [
+                'apikey',
                 'awsv4',
                 'basic',
                 'bearer',
@@ -83,6 +89,14 @@ module.exports.schemas = {
               ]
             },
             'noauth': {},
+            'apikey': {
+              'type': 'array',
+              'title': 'API Key Authentication',
+              'description': 'The attributes for API Key Authentication.',
+              'items': {
+                '$ref': '#/definitions/auth-attribute'
+              }
+            },
             'awsv4': {
               'type': 'array',
               'title': 'AWS Signature v4',
@@ -274,7 +288,8 @@ module.exports.schemas = {
           '$schema': 'http://json-schema.org/draft-07/schema#',
           '$id': '#/definitions/description',
           'description': 'A Description can be a raw text, or be an object, which holds the description along with its format.',
-          'oneOf': [{
+          'oneOf': [
+            {
               'type': 'object',
               'title': 'Description',
               'properties': {
@@ -428,7 +443,8 @@ module.exports.schemas = {
               'type': 'array',
               'items': {
                 'title': 'Items',
-                'anyOf': [{
+                'anyOf': [
+                  {
                     '$ref': '#/definitions/item'
                   },
                   {
@@ -441,13 +457,17 @@ module.exports.schemas = {
               '$ref': '#/definitions/event-list'
             },
             'auth': {
-              'oneOf': [{
+              'oneOf': [
+                {
                   'type': 'null'
                 },
                 {
                   '$ref': '#/definitions/auth'
                 }
               ]
+            },
+            'protocolProfileBehavior': {
+              '$ref': '#/definitions/protocol-profile-behavior'
             }
           },
           'required': [
@@ -488,21 +508,19 @@ module.exports.schemas = {
               }
             },
             'protocolProfileBehavior': {
-              'type': 'object',
-              'title': 'Protocol Profile Behavior',
-              'description': 'Set of configurations used to alter the usual behavior of sending the request',
-              'properties': {
-                'disableBodyPruning': {
-                  'type': 'boolean',
-                  'default': false,
-                  'description': 'Disable body pruning for GET, COPY, HEAD, PURGE and UNLOCK request methods.'
-                }
-              }
+              '$ref': '#/definitions/protocol-profile-behavior'
             }
           },
           'required': [
             'request'
           ]
+        },
+        'protocol-profile-behavior': {
+          '$schema': 'http://json-schema.org/draft-07/schema#',
+          'type': 'object',
+          'title': 'Protocol Profile Behavior',
+          '$id': '#/definitions/protocol-profile-behavior',
+          'description': 'Set of configurations used to alter the usual behavior of sending the request'
         },
         'proxy-config': {
           '$schema': 'http://json-schema.org/draft-07/schema#',
@@ -543,7 +561,8 @@ module.exports.schemas = {
           '$id': '#/definitions/request',
           'title': 'Request',
           'description': 'A request represents an HTTP request. If a string, the string is assumed to be the request URL and the method is assumed to be \'GET\'.',
-          'oneOf': [{
+          'oneOf': [
+            {
               'type': 'object',
               'title': 'Request',
               'properties': {
@@ -551,7 +570,8 @@ module.exports.schemas = {
                   '$ref': '#/definitions/url'
                 },
                 'auth': {
-                  'oneOf': [{
+                  'oneOf': [
+                    {
                       'type': 'null'
                     },
                     {
@@ -566,7 +586,8 @@ module.exports.schemas = {
                   '$ref': '#/definitions/certificate'
                 },
                 'method': {
-                  'anyOf': [{
+                  'anyOf': [
+                    {
                       'description': 'The Standard HTTP method associated with this request.',
                       'type': 'string',
                       'enum': [
@@ -597,7 +618,8 @@ module.exports.schemas = {
                   '$ref': '#/definitions/description'
                 },
                 'header': {
-                  'oneOf': [{
+                  'oneOf': [
+                    {
                       '$ref': '#/definitions/header-list'
                     },
                     {
@@ -606,7 +628,8 @@ module.exports.schemas = {
                   ]
                 },
                 'body': {
-                  'oneOf': [{
+                  'oneOf': [
+                    {
                       'type': 'object',
                       'description': 'This field contains the data usually contained in the request body.',
                       'properties': {
@@ -616,11 +639,15 @@ module.exports.schemas = {
                             'raw',
                             'urlencoded',
                             'formdata',
-                            'file'
+                            'file',
+                            'graphql'
                           ]
                         },
                         'raw': {
                           'type': 'string'
+                        },
+                        'graphql': {
+                          'type': 'object'
                         },
                         'urlencoded': {
                           'type': 'array',
@@ -652,7 +679,8 @@ module.exports.schemas = {
                           'items': {
                             'type': 'object',
                             'title': 'FormParameter',
-                            'oneOf': [{
+                            'oneOf': [
+                              {
                                 'properties': {
                                   'key': {
                                     'type': 'string'
@@ -688,6 +716,7 @@ module.exports.schemas = {
                                   },
                                   'src': {
                                     'type': [
+                                      'array',
                                       'string',
                                       'null'
                                     ]
@@ -720,7 +749,8 @@ module.exports.schemas = {
                           'type': 'object',
                           'properties': {
                             'src': {
-                              'oneOf': [{
+                              'oneOf': [
+                                {
                                   'type': 'string',
                                   'description': 'Contains the name of the file to upload. _Not the path_.'
                                 },
@@ -776,14 +806,24 @@ module.exports.schemas = {
               ],
               'description': 'The time taken by the request to complete. If a number, the unit is milliseconds. If the response is manually created, this can be set to `null`.'
             },
+            'timings': {
+              'title': 'Response Timings',
+              'description': 'Set of timing information related to request and response in milliseconds',
+              'type': [
+                'object',
+                'null'
+              ]
+            },
             'header': {
               'title': 'Headers',
-              'oneOf': [{
+              'oneOf': [
+                {
                   'type': 'array',
                   'title': 'Header',
                   'description': 'No HTTP request is complete without its headers, and the same is true for a Postman request. This field is an array containing all the headers.',
                   'items': {
-                    'oneOf': [{
+                    'oneOf': [
+                      {
                         '$ref': '#/definitions/header'
                       },
                       {
@@ -808,7 +848,10 @@ module.exports.schemas = {
               }
             },
             'body': {
-              'type': 'string',
+              'type': [
+                'null',
+                'string'
+              ],
               'description': 'The raw text of the response.'
             },
             'status': {
@@ -837,7 +880,8 @@ module.exports.schemas = {
               'type': 'string'
             },
             'exec': {
-              'oneOf': [{
+              'oneOf': [
+                {
                   'type': 'array',
                   'description': 'This is an array of strings, where each line represents a single line of code. Having lines separate makes it possible to easily track changes made to scripts.',
                   'items': {
@@ -863,7 +907,8 @@ module.exports.schemas = {
           'description': 'If object, contains the complete broken-down URL for this request. If string, contains the literal request URL.',
           '$id': '#/definitions/url',
           'title': 'Url',
-          'oneOf': [{
+          'oneOf': [
+            {
               'type': 'object',
               'properties': {
                 'raw': {
@@ -877,7 +922,8 @@ module.exports.schemas = {
                 'host': {
                   'title': 'Host',
                   'description': 'The host for the URL, E.g: api.yourdomain.com. Can be stored as a string or as an array of strings.',
-                  'oneOf': [{
+                  'oneOf': [
+                    {
                       'type': 'string'
                     },
                     {
@@ -890,14 +936,16 @@ module.exports.schemas = {
                   ]
                 },
                 'path': {
-                  'oneOf': [{
+                  'oneOf': [
+                    {
                       'type': 'string'
                     },
                     {
                       'type': 'array',
                       'description': 'The complete path of the current url, broken down into segments. A segment could be a string, or a path variable.',
                       'items': {
-                        'oneOf': [{
+                        'oneOf': [
+                          {
                             'type': 'string'
                           },
                           {
@@ -1023,7 +1071,8 @@ module.exports.schemas = {
               'default': false
             }
           },
-          'anyOf': [{
+          'anyOf': [
+            {
               'required': [
                 'id'
               ]
@@ -1046,7 +1095,8 @@ module.exports.schemas = {
           '$id': '#/definitions/version',
           'title': 'Collection Version',
           'description': 'Postman allows you to version your collections as they grow, and this field holds the version number. While optional, it is recommended that you use this field to its fullest extent!',
-          'oneOf': [{
+          'oneOf': [
+            {
               'type': 'object',
               'properties': {
                 'major': {
