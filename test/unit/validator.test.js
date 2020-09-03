@@ -480,5 +480,35 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         });
       });
     });
+
+    it('Should correctly match and validate valid json content type with collection req/res body', function (done) {
+      let differentContentTypesSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/differentContentTypesSpec.yaml'), 'utf-8'),
+        differentContentTypesCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/differentContentTypesCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        options = {
+          suggestAvailableFixes: true
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: differentContentTypesSpec }, options);
+
+      getAllTransactions(JSON.parse(differentContentTypesCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+
+        /**
+         * Both req and res body should match with schema content object and each have one mismatch
+         */
+        expect(resultObj.mismatches).to.have.lengthOf(1);
+        expect(resultObj.mismatches[0].property).to.equal('BODY');
+        expect(resultObj.responses[_.keys(resultObj.responses)[0]].mismatches).to.have.lengthOf(1);
+        expect(resultObj.responses[_.keys(resultObj.responses)[0]].mismatches[0].property).to.equal('RESPONSE_BODY');
+        done();
+      });
+    });
   });
 });
