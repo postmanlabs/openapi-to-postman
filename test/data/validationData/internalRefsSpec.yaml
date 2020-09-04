@@ -1,0 +1,188 @@
+openapi: 3.0.0
+servers:
+  - description: Internal $refs
+    url: https://example.com
+info:
+  description: This is a simple API
+  version: "1.0.0"
+  title: Simple Inventory API
+  contact:
+    email: you@your-company.com
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+paths:
+  /inventory/{searchString}:
+    parameters:
+      - $ref: '#/components/parameters/searchString'
+    post:
+      summary: searches inventory
+      operationId: searchInventory
+      description: |
+        By passing in the appropriate options, you can search for
+        available inventory in the system
+      parameters:
+        - $ref: '#/components/parameters/skip'
+        - $ref: '#/components/parameters/limit'
+      requestBody:
+        $ref: '#/components/requestBodies/inventoryBody'
+      responses:
+        '200':
+          description: 'An array of profiles'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          headers:
+            x-date:
+              $ref: '#/components/headers/x-date'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+components:
+  headers:
+    x-date:
+      description: The date.
+      schema:
+        type: string
+        format: date
+  parameters:
+    limit:
+      in: header
+      name: limit
+      description: maximum number of records to return
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 50
+    searchString:
+      in: path
+      name: searchString
+      description: pass an optional search string for looking up inventory
+      required: false
+      schema:
+        $ref: '#/components/schemas/SearchString'
+    skip:
+      in: query
+      name: skip
+      description: number of records to skip for pagination
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+  requestBodies:
+    inventoryBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InventoryItem'
+      description: Inventory item to add
+  responses:
+    UnexpectedError:
+      description: An unexpected error has occured
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 'PROFILE-107-500'
+            message: 'fixing problems'
+    Unauthorized:
+      description: The user is unauthorized for this action
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 'PROFILE-108-401'
+            message: 'you do not have appropriate credentials'
+    Forbidden:
+      description: The user in forbidden from completing that action
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 'PROFILE-109-403'
+            message: 'thou shall not pass for you are forbidden'
+    NotFound:
+      description: The resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 'PROFILE-110-404'
+            message: 'resource was not found'
+  schemas:
+    SearchString:
+      type: string
+    InventoryItem:
+      type: object
+      required:
+        - id
+        - name
+        - manufacturer
+        - releaseDate
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        name:
+          type: string
+          example: Widget Adapter
+        releaseDate:
+          type: string
+          format: date-time
+          example: '2016-08-29T09:12:33.001Z'
+        manufacturer:
+          $ref: '#/components/schemas/Manufacturer'
+    Manufacturer:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: ACME Corporation
+        homePage:
+          type: string
+          format: url
+          example: 'https://www.acme-corp.com'
+        phone:
+          type: string
+          example: 408-867-5309
+      type: object
+    Profile:
+      type: object
+      required:
+        - id
+        - name
+        - given_name
+        - family_name
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "ioneyed"
+        given_name:
+          type: string
+          example: "Robert"
+        family_name:
+          type: string
+          example: "Buchanan"
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          pattern: 'PROFILE-\d{3}-\d{3}'
+          example: "PROFILE-100-507"
+        message:
+          type: string
+          example: "we have run out of storage; this is embarrassing, and someone have been paged"
