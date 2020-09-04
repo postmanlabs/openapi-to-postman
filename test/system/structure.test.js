@@ -8,6 +8,7 @@ const optionIds = [
     'folderStrategy',
     'indentCharacter',
     'requestNameSource',
+    'includeAuthInfoInResponse',
     'shortValidationErrors',
     'validationPropertiesToIgnore',
     'showMissingInSchemaErrors',
@@ -76,6 +77,12 @@ const optionIds = [
       description: 'Determines how the requests inside the generated collection will be named.' +
       ' If “Fallback” is selected, the request will be named after one of the following schema' +
       ' values: `description`, `operationid`, `url`.'
+    },
+    includeAuthInfoInResponse: {
+      name: 'Include Auth info in Example request',
+      type: 'boolean',
+      default: true,
+      description: 'Select whether to include authentication parameters in example request or not.'
     },
     shortValidationErrors: {
       name: 'Short error messages during request <> schema validation',
