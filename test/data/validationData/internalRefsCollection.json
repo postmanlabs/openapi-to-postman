@@ -1,0 +1,175 @@
+{
+    "item": [
+      {
+        "id": "9b8ff406-3176-49ca-b91a-e99277130d40",
+        "name": "searches inventory",
+        "request": {
+          "name": "searches inventory",
+          "description": {
+            "content": "By passing in the appropriate options, you can search for\navailable inventory in the system\n",
+            "type": "text/plain"
+          },
+          "url": {
+            "path": [
+              "inventory",
+              ":searchString"
+            ],
+            "host": [
+              "{{baseUrl}}"
+            ],
+            "query": [
+              {
+                "description": "number of records to skip for pagination",
+                "key": "skip",
+                "value": "71616628"
+              }
+            ],
+            "variable": [
+              {
+                "description": "pass an optional search string for looking up inventory",
+                "type": "any",
+                "value": "magna",
+                "key": "searchString"
+              }
+            ]
+          },
+          "header": [
+            {
+              "description": "maximum number of records to return",
+              "key": "limit",
+              "value": "25"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "auth": null,
+          "body": {
+            "mode": "raw",
+            "raw": "{\n    \"id\": \"d290f1ee-6c54-4b01-90e6-d701748f0851\",\n    \"name\": \"Widget Adapter\",\n    \"manufacturer\": {\n        \"name\": \"ACME Corporation\",\n        \"homePage\": \"https://www.acme-corp.com\",\n        \"phone\": \"408-867-5309\"\n    },\n    \"releaseDate\": \"2016-08-29T09:12:33.001Z\"\n}"
+          }
+        },
+        "response": [
+          {
+            "id": "103e959b-3d59-4a3b-9a0f-eef9206733e9",
+            "name": "An array of profiles",
+            "originalRequest": {
+              "url": {
+                "path": [
+                  "inventory",
+                  ":searchString"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [
+                  {
+                    "key": "skip",
+                    "value": "<integer>"
+                  }
+                ],
+                "variable": [
+                  {
+                    "type": "any",
+                    "key": "searchString"
+                  }
+                ]
+              },
+              "header": [
+                {
+                  "description": "maximum number of records to return",
+                  "key": "limit",
+                  "value": "<integer>"
+                }
+              ],
+              "method": "POST",
+              "body": {}
+            },
+            "status": "OK",
+            "code": 200,
+            "header": [
+              {
+                "description": "The date.",
+                "key": "x-date",
+                "value": "2012-06-15"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n \"id\": \"urn:uuid:986f1de0-b002-2c4e-63a7-724ac665365b\",\n \"name\": \"ioneyed\",\n \"given_name\": \"Robert\",\n \"family_name\": \"Buchanan\"\n}",
+            "cookie": [],
+            "_postman_previewlanguage": "json"
+          },
+          {
+            "id": "7e2062e0-d928-4ae5-924b-858d3bcce494",
+            "name": "The user is unauthorized for this action",
+            "originalRequest": {
+              "url": {
+                "path": [
+                  "inventory",
+                  ":searchString"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [
+                  {
+                    "key": "skip",
+                    "value": "<integer>"
+                  }
+                ],
+                "variable": [
+                  {
+                    "type": "any",
+                    "key": "searchString"
+                  }
+                ]
+              },
+              "header": [
+                {
+                  "description": "maximum number of records to return",
+                  "key": "limit",
+                  "value": "<integer>"
+                }
+              ],
+              "method": "POST",
+              "body": {}
+            },
+            "status": "Unauthorized",
+            "code": 401,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "{\n \"code\": \"PROFILE-108-401\",\n \"message\": \"you do not have appropriate credentials\"\n}",
+            "cookie": [],
+            "_postman_previewlanguage": "json"
+          }
+        ],
+        "event": []
+      }
+    ],
+    "event": [],
+    "variable": [
+      {
+        "id": "baseUrl",
+        "type": "string",
+        "value": "https://example.com"
+      }
+    ],
+    "info": {
+      "_postman_id": "758b4b2c-df93-4250-a287-6e526f194a75",
+      "name": "Simple Inventory API",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "description": {
+        "content": "This is a simple API\n\nContact Support:\n Email: you@your-company.com",
+        "type": "text/plain"
+      }
+    }
+  }
