@@ -2169,6 +2169,52 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(retVal).to.eql(deserialisedParamValue);
       });
     });
+
+    it('should not override original parameter schema after execution', function () {
+      let param = {
+        name: 'id',
+        in: 'query',
+        description: 'ID of the object to fetch',
+        required: false,
+        schema: {
+          type: 'array',
+          items: {
+            type: 'string'
+          }
+        },
+        style: 'form',
+        explode: true
+      };
+
+      SchemaUtils.deserialiseParamValue(param, 'id=id1&id=id2', 'REQUEST', {}, {});
+      expect(param.schema).to.have.property('type', 'array');
+      expect(param.schema.items).to.have.property('type', 'string');
+      expect(param.schema).to.not.have.property('default');
+    });
+  });
+
+  describe('getParamSerialisationInfo function', function () {
+    it('should not override original parameter schema after execution', function () {
+      let param = {
+        name: 'id',
+        in: 'query',
+        description: 'ID of the object to fetch',
+        required: false,
+        schema: {
+          type: 'array',
+          items: {
+            type: 'string'
+          }
+        },
+        style: 'form',
+        explode: true
+      };
+
+      SchemaUtils.getParamSerialisationInfo(param, 'REQUEST', {}, {});
+      expect(param.schema).to.have.property('type', 'array');
+      expect(param.schema.items).to.have.property('type', 'string');
+      expect(param.schema).to.not.have.property('default');
+    });
   });
 
   describe('parseMediaType function', function () {
