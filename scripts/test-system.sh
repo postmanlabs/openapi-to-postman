@@ -28,17 +28,17 @@ echo -en "\033[0m\033[2mmocha `mocha --version`\033[0m";
 # set mocha reporter
 if [ "$CI" = "true" ]; then
   MOCHA_REPORTER="xunit";
-  ISTANBUL_REPORT="--report cobertura";
+  COVERAGE_REPORT="--report cobertura";
 else
   MOCHA_REPORTER="spec";
-  ISTANBUL_REPORT="";
+  COVERAGE_REPORT="";
 fi
 
 # delete old repor directory
 [ -d .coverage ] && rm -rf .coverage && mkdir .coverage;
 
 # run test
-node --max-old-space-size=2048 node_modules/.bin/istanbul cover ${ISTANBUL_REPORT} \
-  --dir ./.coverage -x **/assets/** --print both _mocha -- \
+node --max-old-space-size=2048 ./node_modules/.bin/nyc ${COVERAGE_REPORT} --report-dir ./.coverage \
+  -x **/assets/** --print both ./node_modules/.bin/_mocha \
   --reporter ${MOCHA_REPORTER} --reporter-options output=${XUNIT_FILE} \
   test/system/*.test.js --recursive --prof --grep "$1";
