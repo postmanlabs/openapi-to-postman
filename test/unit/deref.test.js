@@ -29,6 +29,9 @@ describe('DEREF FUNCTION TESTS ', function() {
         schemaWithTypeArray = {
           $ref: '#/components/schemas/schemaTypeArray'
         },
+        schemaWithEmptyObject = {
+          $ref: '#/components/schemas/schemaWithEmptyObject'
+        },
         componentsAndPaths = {
           components: {
             schemas: {
@@ -82,6 +85,9 @@ describe('DEREF FUNCTION TESTS ', function() {
                 },
                 minItems: 5,
                 maxItems: 55
+              },
+              schemaWithEmptyObject: {
+                type: 'object'
               }
             }
           }
@@ -92,7 +98,8 @@ describe('DEREF FUNCTION TESTS ', function() {
         output_customFormat = deref.resolveRefs(schemaWithCustomFormat, parameterSource, componentsAndPaths),
         output_withAllOf = deref.resolveRefs(schemaWithAllOf, parameterSource, componentsAndPaths),
         output_validationTypeArray = deref.resolveRefs(schemaWithTypeArray, parameterSource, componentsAndPaths,
-          {}, 'VALIDATION');
+          {}, 'VALIDATION'),
+        output_emptyObject = deref.resolveRefs(schemaWithEmptyObject, parameterSource, componentsAndPaths);
 
       expect(output).to.deep.include({ type: 'object',
         required: ['id'],
@@ -122,6 +129,11 @@ describe('DEREF FUNCTION TESTS ', function() {
         },
         minItems: 5,
         maxItems: 55
+      });
+
+      // object without no properties should not resolve to string
+      expect(output_emptyObject).to.deep.include({
+        type: 'object'
       });
 
       done();
