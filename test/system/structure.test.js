@@ -79,10 +79,10 @@ const optionIds = [
       ' values: `description`, `operationid`, `url`.'
     },
     includeAuthInfoInResponse: {
-      name: 'Include Auth info in Example request',
+      name: 'Include auth info in example requests',
       type: 'boolean',
       default: true,
-      description: 'Select whether to include authentication parameters in example request or not.'
+      description: 'Select whether to include authentication parameters in the example request'
     },
     shortValidationErrors: {
       name: 'Short error messages during request <> schema validation',
