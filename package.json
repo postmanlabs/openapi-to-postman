@@ -138,7 +138,7 @@
     "expect.js": "0.3.1",
     "nyc": "14.1.1",
     "mocha": "5.2.0",
-    "parse-gitignore": "0.4.0"
+    "parse-gitignore": "0.5.1"
   },
   "scripts": {
     "test": "./scripts/test.sh",
