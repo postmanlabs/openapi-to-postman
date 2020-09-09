@@ -6,7 +6,7 @@ servers:
   - url: 'http://localhost:3000'
 paths:
   /user:
-    get:
+    post:
       summary: 'Sample endpoint: Returns details about a particular user'
       operationId: listUser
       tags:
@@ -31,6 +31,8 @@ paths:
                     $ref: '#/components/schemas/Entity'
                 meta:
                   type: object
+                  maxProperties: 1
+                  additionalProperties: false
                   properties:
                     numberOfResults:
                       type: number
@@ -41,28 +43,6 @@ paths:
       responses:
         200:
           description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Entity'
-                  meta:
-                    type: object
-                    maxProperties: 1
-                    additionalProperties: false
-                    propertyNames:
-                      pattern: '^_'
-                    properties:
-                      numberOfResults:
-                        type: number
-                        format: int32
-                      totalPages:
-                        type: number
-                        format: int32
 components:
   schemas:
     Entity:
@@ -70,11 +50,11 @@ components:
       title: Entity
       description: A single and unique entity linked to a user
       minProperties: 50
-      required: [id, needThis]
+      required: [entityId, needThis]
       dependencies:
         id: [needThis, accountNumber]
       properties:
-        id:
+        entityId:
           type: string
           maxLength: 5
         accountNumber:
@@ -87,7 +67,7 @@ components:
           type: string
         incType:
           type: string
-          const: 'Postman'
+          enum: ['Postman']
         companyNumber:
           type: number
           exclusiveMinimum: 10000
@@ -109,13 +89,6 @@ components:
             - tradingPending
             - tradingAccepted
             - tradingRejected
-        offers:
-          type: array
-          items: [
-            type: string,
-            type: string
-          ]
-          additionalItems: false
         wants:
           type: array
           uniqueItems: true

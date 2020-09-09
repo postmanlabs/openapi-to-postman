@@ -59,8 +59,8 @@
 		"schemas": {
 			"RequestBody": {
 				"required": [
-					"id",
-					"name"
+					"requestId",
+					"requestName"
 				],
 				"properties": {
 					"requestId": {
@@ -74,8 +74,8 @@
       },
       "ResponseBody": {
         "required": [
-          "id",
-          "name"
+          "responseId",
+          "responseName"
         ],
         "properties": {
           "responseId": {

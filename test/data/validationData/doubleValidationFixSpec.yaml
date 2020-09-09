@@ -1,0 +1,98 @@
+openapi: 3.0.0
+info:
+  title: Products
+  description: This is the OpenAPI for the Union Fashion product catalog.
+  version: '1.0'
+servers:
+  - url: '{{baseUrl}}'
+paths:
+  /products:
+    post:
+      summary: Add Productz
+      description: Creates a new productz.
+      operationId: addProduct
+      tags:
+        - Products
+      requestBody:
+        description: A product schema.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+            example:
+              category: Jeans
+              brand: Union
+              color: black
+              gender: m
+              unitPrice: 49.99
+              unitSalePrice: 29.99
+      security:
+        - api_key: []
+      responses:
+        default:
+          description: 'Sample desc.'
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: x-api-key
+      in: header
+  schemas:
+    Products:
+      type: array
+      items:
+        $ref: '#/components/schemas/Product'
+    Product:
+      title: Product
+      required:
+        - identifier
+        - name
+      type: object
+      properties:
+        identifier:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        image:
+          type: string
+        url:
+          type: string
+        brand:
+          type: string
+        category:
+          type: string
+        color:
+          type: string
+        logo:
+          type: string
+        manufacturer:
+          type: string
+        material:
+          type: string
+        model:
+          type: string
+        releaseDate:
+          type: string
+        sku:
+          type: string
+        width:
+          type: string
+        weight:
+          type: string
+        depth:
+          type: string
+        height:
+          type: string
+      example:
+        id: XYZ-JEAN-123
+        category: Jeans
+        brand: Union
+        color: black
+        gender: m
+        unitPrice: 49.99
+        unitSalePrice: 29.99
+tags:
+  - name: Products
+    description: A product object.

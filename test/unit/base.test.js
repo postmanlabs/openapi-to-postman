@@ -39,7 +39,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       tooManyRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/too-many-refs.json'),
       tagsFolderSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed.yaml'),
       securityTestCases = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-cases.yaml'),
-      emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml');
+      emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml'),
+      rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -63,7 +64,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
 
-    it('Should have noauth at the collection level if auth type is api-key and properties in header' +
+    it('Should add collection level auth with type as `apiKey`' +
     emptySecurityTestCase, function(done) {
       var openapi = fs.readFileSync(emptySecurityTestCase, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
@@ -75,7 +76,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
         expect(conversionResult.output[0].data.auth).to.have.property('type');
-        expect(conversionResult.output[0].data.auth.type).to.equal('noauth');
+        expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
         done();
       });
     });
@@ -131,21 +132,29 @@ describe('CONVERT FUNCTION TESTS ', function() {
 
     it(' Fix for GITHUB#133: Should generate collection with proper Path and Collection variables', function(done) {
       var openapi = fs.readFileSync(issue133, 'utf8');
-      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+      Converter.convert({ type: 'string', data: openapi },
+        { requestParametersResolution: 'Example', schemaFaker: true }, (err, conversionResult) => {
 
-        expect(err).to.be.null;
-        expect(conversionResult.result).to.equal(true);
-        expect(conversionResult.output.length).to.equal(1);
-        expect(conversionResult.output[0].type).to.equal('collection');
-        expect(conversionResult.output[0].data).to.have.property('info');
-        expect(conversionResult.output[0].data).to.have.property('item');
-        expect(conversionResult.output[0].data).to.have.property('variable');
-        expect(conversionResult.output[0].data.variable).to.be.an('array');
-        expect(conversionResult.output[0].data.variable[1].id).to.equal('format');
-        expect(conversionResult.output[0].data.variable[2].id).to.equal('path');
-        expect(conversionResult.output[0].data.variable[3].id).to.equal('new-path-variable');
-        done();
-      });
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data).to.have.property('variable');
+          expect(conversionResult.output[0].data.variable).to.be.an('array');
+          expect(conversionResult.output[0].data.variable[1].id).to.equal('format');
+          expect(conversionResult.output[0].data.variable[1].value).to.equal('json');
+          expect(conversionResult.output[0].data.variable[2].id).to.equal('path');
+          expect(conversionResult.output[0].data.variable[2].value).to.equal('send-email');
+          expect(conversionResult.output[0].data.variable[3].id).to.equal('new-path-variable-1');
+          // serialised value for object { R: 100, G: 200, B: 150 }
+          expect(conversionResult.output[0].data.variable[3].value).to.equal('R,100,G,200,B,150');
+          expect(conversionResult.output[0].data.variable[4].id).to.equal('new-path-variable-2');
+          // serialised value for array ["exampleString", "exampleString"]
+          expect(conversionResult.output[0].data.variable[4].value).to.equal('exampleString,exampleString');
+          done();
+        });
     });
 
     it('Should generate collection conforming to schema for and fail if not valid ' +
@@ -877,6 +886,23 @@ describe('CONVERT FUNCTION TESTS ', function() {
           getAllRequestsFromCollection(tagsCollection, allTagsRequest);
           expect(allTagsRequest).to.deep.equal(allPathsRequest);
         });
+      });
+    });
+
+    it('Should correctly define URL for root server with base URL variables', function (done) {
+      var openapi = fs.readFileSync(rootUrlServerWithVariables, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+        let requestUrl,
+          collectionVars;
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.be.true;
+
+        requestUrl = conversionResult.output[0].data.item[0].request.url;
+        collectionVars = conversionResult.output[0].data.variable;
+        expect(requestUrl.host).to.eql(['{{baseUrl}}']);
+        expect(_.find(collectionVars, { id: 'baseUrl' }).value).to.eql('{{BASE_URI}}/api');
+        expect(_.find(collectionVars, { id: 'BASE_URI' }).value).to.eql('https://api.example.com');
+        done();
       });
     });
   });

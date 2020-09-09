@@ -1,4 +1,25 @@
 # OpenAPI-Postman Changelog
+#### v1.2.7 (September 9, 2020)
+* Fixed issue where schema type object with no properties reolved to string.
+* Fix for [#8474](https://github.com/postmanlabs/postman-app-support/issues/8474) - Unable to validate primitive data types in req/res body.
+* Added support for handling correct media types which were throwing mismatches for validation.
+* Added support for internal $ref resolution in validation flows.
+* Fixed issue where parameter resolution was "schema" when "example" was specified.
+* Add supported formats for schema resolution (deref).
+* Fix for [#7643](https://github.com/postmanlabs/postman-app-support/issues/7643), [#7914](https://github.com/postmanlabs/postman-app-support/issues/7914), [#9004](https://github.com/postmanlabs/postman-app-support/issues/9004) - Added support for Auth params in response/example. 
+* Bumped up multiple dependecies and dev-dependencies versions to keep them up-to-date.
+* Updated code coverage tool from deprecated istanbul to nyc.
+
+#### v1.2.6 (August 10, 2020)
+* Fixed TypeError happening when null parameter value provided.
+* Fixed an issue where suggested value for mismatch did not fix corresponding mismatch upon applying.
+* Fixed issue where root path was not matched during validation.
+* Fixed an issue where transaction was not matching if path had segment with fix and variable parts during valiadtion.
+* Fixed issue where URL did not contain baseUrl as host when base url variables are present.
+* Fixed issue where collection variable generated for path variables had empty values.
+* Fixed issue where invalid deserialisation was happening for param style matrix.
+* Added validation tests to improve code coverage.
+
 #### v1.2.5 (July 21, 2020)
 * Fixed incorrect variable name in schemapack.js.
 
