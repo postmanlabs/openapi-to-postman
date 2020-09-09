@@ -2217,6 +2217,76 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
     });
   });
 
+  describe('parseMediaType function', function () {
+    it('should parse invalid media type with result containing empty strings', function () {
+      let mediaTypeString = 'not-a-valida-mediatype',
+        parsedMediaType = SchemaUtils.parseMediaType(mediaTypeString);
+
+      expect(parsedMediaType.type).to.eql('');
+      expect(parsedMediaType.subtype).to.eql('');
+    });
+
+    it('should correctly parse media type with optional parameter', function () {
+      let mediaTypeString = 'application/json; charset=utf-8',
+        parsedMediaType = SchemaUtils.parseMediaType(mediaTypeString);
+
+      expect(parsedMediaType.type).to.eql('application');
+      expect(parsedMediaType.subtype).to.eql('json');
+    });
+
+    it('should correctly parse media type with +format at the end of media type', function () {
+      let mediaTypeString = 'application/github.vnd+json',
+        parsedMediaType = SchemaUtils.parseMediaType(mediaTypeString);
+
+      expect(parsedMediaType.type).to.eql('application');
+      expect(parsedMediaType.subtype).to.eql('github.vnd+json');
+    });
+  });
+
+  describe('getJsonContentType function', function () {
+    it('should be able to get correct JSON media type that contains optional parameters', function () {
+      let contentObj = {
+          'application/json; charset=utf-8': {
+            schema: { type: 'string' }
+          },
+          'application/xml': {
+            schema: { type: 'integer' }
+          }
+        },
+        jsonContentType = SchemaUtils.getJsonContentType(contentObj);
+
+      expect(jsonContentType).to.eql('application/json; charset=utf-8');
+    });
+
+    it('should be able to get correct JSON media type with +format at the end of media type', function () {
+      let contentObj = {
+          'application/github.vnd+json': {
+            schema: { type: 'string' }
+          },
+          'application/xml': {
+            schema: { type: 'integer' }
+          }
+        },
+        jsonContentType = SchemaUtils.getJsonContentType(contentObj);
+
+      expect(jsonContentType).to.eql('application/github.vnd+json');
+    });
+
+    it('should correctly handle content object with no json media type', function () {
+      let contentObj = {
+          'application/javascript': {
+            schema: { type: 'string' }
+          },
+          'application/xml': {
+            schema: { type: 'integer' }
+          }
+        },
+        jsonContentType = SchemaUtils.getJsonContentType(contentObj);
+
+      expect(jsonContentType).to.be.undefined;
+    });
+  });
+
   describe('getResponseAuthHelper function', function () {
     var authTypes = {
       'basic': 'Basic <credentials>',
