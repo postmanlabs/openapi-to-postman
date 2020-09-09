@@ -480,5 +480,106 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         });
       });
     });
+
+    it('Should correctly handle internal $ref when present', function (done) {
+      let internalRefsSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/internalRefsSpec.yaml'), 'utf-8'),
+        internalRefsCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/internalRefsCollection.json'), 'utf-8'),
+        resultObj,
+        options = {
+          showMissingInSchemaErrors: true,
+          strictRequestMatching: true,
+          ignoreUnresolvedVariables: true,
+          validateMetadata: true,
+          suggestAvailableFixes: true,
+          detailedBlobValidation: false
+        },
+        historyRequest = [],
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: internalRefsSpec }, options);
+
+      getAllTransactions(JSON.parse(internalRefsCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+
+        // no mismatches should be found when resolved correctly
+        expect(resultObj.matched).to.be.true;
+        expect(resultObj.mismatches).to.have.lengthOf(0);
+        _.forEach(resultObj.responses, (response) => {
+          expect(response.matched).to.be.true;
+          expect(response.mismatches).to.have.lengthOf(0);
+        });
+        done();
+      });
+    });
+
+    it('Should correctly match and validate valid json content type with collection req/res body', function (done) {
+      let differentContentTypesSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/differentContentTypesSpec.yaml'), 'utf-8'),
+        differentContentTypesCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/differentContentTypesCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        options = {
+          suggestAvailableFixes: true
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: differentContentTypesSpec }, options);
+
+      getAllTransactions(JSON.parse(differentContentTypesCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+
+        /**
+         * Both req and res body should match with schema content object and each have one mismatch
+         */
+        expect(resultObj.mismatches).to.have.lengthOf(1);
+        expect(resultObj.mismatches[0].property).to.equal('BODY');
+        expect(resultObj.responses[_.keys(resultObj.responses)[0]].mismatches).to.have.lengthOf(1);
+        expect(resultObj.responses[_.keys(resultObj.responses)[0]].mismatches[0].property).to.equal('RESPONSE_BODY');
+        done();
+      });
+    });
+
+    it('Should be able to validate and suggest correct value for body with primitive data type', function (done) {
+      let primitiveDataTypeBodySpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/primitiveDataTypeBodySpec.yaml'), 'utf-8'),
+        primitiveDataTypeBodyCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/primitiveDataTypeBodyCollection.json'), 'utf-8'),
+        resultObj,
+        responseObj,
+        historyRequest = [],
+        options = {
+          showMissingInSchemaErrors: true,
+          strictRequestMatching: true,
+          ignoreUnresolvedVariables: true,
+          validateMetadata: true,
+          suggestAvailableFixes: true,
+          detailedBlobValidation: false
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: primitiveDataTypeBodySpec }, options);
+
+      getAllTransactions(JSON.parse(primitiveDataTypeBodyCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        // request body is boolean
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+        expect(resultObj.mismatches).to.have.lengthOf(0);
+
+        // request body is integer
+        responseObj = resultObj.responses[_.keys(resultObj.responses)[0]];
+        expect(responseObj.mismatches).to.have.lengthOf(1);
+        expect(responseObj.mismatches[0].suggestedFix.suggestedValue).to.be.within(5, 10);
+        done();
+      });
+    });
   });
 });

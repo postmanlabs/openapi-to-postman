@@ -1,0 +1,22 @@
+openapi: 3.0.0
+info:
+  version: 1.0
+  title: Demo API
+paths:
+  /api:
+    post:
+      summary: 'Demo invalid type'
+      requestBody:
+        description: 'Cannot use type boolean'
+        content:
+          application/json:
+              schema:
+                type: boolean
+      responses:
+        '200':
+          content:
+            application/json:
+                schema:
+                  type: integer
+                  minimum: 5
+                  maximum: 10

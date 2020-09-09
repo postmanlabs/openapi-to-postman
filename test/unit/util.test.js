@@ -2169,6 +2169,164 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(retVal).to.eql(deserialisedParamValue);
       });
     });
+
+    it('should not override original parameter schema after execution', function () {
+      let param = {
+        name: 'id',
+        in: 'query',
+        description: 'ID of the object to fetch',
+        required: false,
+        schema: {
+          type: 'array',
+          items: {
+            type: 'string'
+          }
+        },
+        style: 'form',
+        explode: true
+      };
+
+      SchemaUtils.deserialiseParamValue(param, 'id=id1&id=id2', 'REQUEST', {}, {});
+      expect(param.schema).to.have.property('type', 'array');
+      expect(param.schema.items).to.have.property('type', 'string');
+      expect(param.schema).to.not.have.property('default');
+    });
+  });
+
+  describe('getParamSerialisationInfo function', function () {
+    it('should not override original parameter schema after execution', function () {
+      let param = {
+        name: 'id',
+        in: 'query',
+        description: 'ID of the object to fetch',
+        required: false,
+        schema: {
+          type: 'array',
+          items: {
+            type: 'string'
+          }
+        },
+        style: 'form',
+        explode: true
+      };
+
+      SchemaUtils.getParamSerialisationInfo(param, 'REQUEST', {}, {});
+      expect(param.schema).to.have.property('type', 'array');
+      expect(param.schema.items).to.have.property('type', 'string');
+      expect(param.schema).to.not.have.property('default');
+    });
+  });
+
+  describe('parseMediaType function', function () {
+    it('should parse invalid media type with result containing empty strings', function () {
+      let mediaTypeString = 'not-a-valida-mediatype',
+        parsedMediaType = SchemaUtils.parseMediaType(mediaTypeString);
+
+      expect(parsedMediaType.type).to.eql('');
+      expect(parsedMediaType.subtype).to.eql('');
+    });
+
+    it('should correctly parse media type with optional parameter', function () {
+      let mediaTypeString = 'application/json; charset=utf-8',
+        parsedMediaType = SchemaUtils.parseMediaType(mediaTypeString);
+
+      expect(parsedMediaType.type).to.eql('application');
+      expect(parsedMediaType.subtype).to.eql('json');
+    });
+
+    it('should correctly parse media type with +format at the end of media type', function () {
+      let mediaTypeString = 'application/github.vnd+json',
+        parsedMediaType = SchemaUtils.parseMediaType(mediaTypeString);
+
+      expect(parsedMediaType.type).to.eql('application');
+      expect(parsedMediaType.subtype).to.eql('github.vnd+json');
+    });
+  });
+
+  describe('getJsonContentType function', function () {
+    it('should be able to get correct JSON media type that contains optional parameters', function () {
+      let contentObj = {
+          'application/json; charset=utf-8': {
+            schema: { type: 'string' }
+          },
+          'application/xml': {
+            schema: { type: 'integer' }
+          }
+        },
+        jsonContentType = SchemaUtils.getJsonContentType(contentObj);
+
+      expect(jsonContentType).to.eql('application/json; charset=utf-8');
+    });
+
+    it('should be able to get correct JSON media type with +format at the end of media type', function () {
+      let contentObj = {
+          'application/github.vnd+json': {
+            schema: { type: 'string' }
+          },
+          'application/xml': {
+            schema: { type: 'integer' }
+          }
+        },
+        jsonContentType = SchemaUtils.getJsonContentType(contentObj);
+
+      expect(jsonContentType).to.eql('application/github.vnd+json');
+    });
+
+    it('should correctly handle content object with no json media type', function () {
+      let contentObj = {
+          'application/javascript': {
+            schema: { type: 'string' }
+          },
+          'application/xml': {
+            schema: { type: 'integer' }
+          }
+        },
+        jsonContentType = SchemaUtils.getJsonContentType(contentObj);
+
+      expect(jsonContentType).to.be.undefined;
+    });
+  });
+
+  describe('getResponseAuthHelper function', function () {
+    var authTypes = {
+      'basic': 'Basic <credentials>',
+      'bearer': 'Bearer <token>',
+      'digest': 'Digest <credentials>',
+      'oauth1': 'OAuth <credentials>',
+      'oauth2': '<token>'
+    };
+
+    it('should correctly generate params needed for securityScheme: apikey', function () {
+      let apiKeyHeaderHelper = SchemaUtils.getResponseAuthHelper({
+          type: 'apikey',
+          apikey: [{ key: 'in', value: 'header' }, { key: 'key', value: 'api-key-header' }]
+        }),
+        apiKeyQueryHelper = SchemaUtils.getResponseAuthHelper({
+          type: 'apikey',
+          apikey: [{ key: 'in', value: 'query' }, { key: 'key', value: 'api-key-query' }]
+        });
+
+      expect(apiKeyHeaderHelper.header).to.have.lengthOf(1);
+      expect(apiKeyHeaderHelper.query).to.have.lengthOf(0);
+      expect(apiKeyHeaderHelper.header[0].key).to.eql('api-key-header');
+
+      expect(apiKeyQueryHelper.query).to.have.lengthOf(1);
+      expect(apiKeyQueryHelper.header).to.have.lengthOf(0);
+      expect(apiKeyQueryHelper.query[0].key).to.eql('api-key-query');
+    });
+
+    _.forEach(authTypes, (authHeaderValue, authType) => {
+      it('should correctly generate params needed for securityScheme: ' + authType, function () {
+        let authHelper = SchemaUtils.getResponseAuthHelper({
+          type: authType
+        });
+
+        expect(authHelper.header).to.have.lengthOf(1);
+        expect(authHelper.query).to.have.lengthOf(0);
+        expect(authHelper.header[0].key).to.eql('Authorization');
+        expect(authHelper.header[0].value).to.eql(authHeaderValue);
+      });
+    });
   });
 });
 
