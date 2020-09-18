@@ -17,7 +17,8 @@ const optionIds = [
     'validateMetadata',
     'ignoreUnresolvedVariables',
     'optimizeConversion',
-    'strictRequestMatching'
+    'strictRequestMatching',
+    'disableOptionalParameters'
   ],
   expectedOptions = {
     collapseFolders: {
