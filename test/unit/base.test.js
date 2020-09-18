@@ -908,7 +908,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
     });
 
     it('[Github #31] - should set optional params as disabled', function(done) {
-      Converter.convert({ type: 'file', data: requiredInParams }, { schemaFaker: true, disableOptionalParameters: true }, (err, conversionResult) => {
+      let options = { schemaFaker: true, disableOptionalParameters: true };
+      Converter.convert({ type: 'file', data: requiredInParams }, options, (err, conversionResult) => {
         expect(err).to.be.null;
         let requests = conversionResult.output[0].data.item[0].item,
           request;
