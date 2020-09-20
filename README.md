@@ -89,9 +89,8 @@ function (err, result) {
 ```
 
 ### Options:
-* `'schemaFaker'(boolean)`:  whether to use json-schema-faker for schema conversion. Default: `true`
-* `'requestNameSource'(string)`: The strategy to use to generate request names. url: use the request's URL as the name, fallback: Use the summary/operationId/URL (in that order) Default: `fallback`
-* `'indentCharacter' (string)`: The character to use per level of indentation for JSON/XML data. Default: `' '(space)`
+
+Check out complete list of options and their usage at [OPTIONS.md](/OPTIONS.md)
 
 ### ConversionResult
 
@@ -169,6 +168,12 @@ The converter can be used as a CLI tool as well. The following [command line opt
 - `-p`, `--pretty`  
   Used to pretty print the collection object while writing to a file
 
+- `-O`, `--options`
+  Used to supply options to the converter, for complete options details see [here](/OPTIONS.md)
+
+- `-c`, `--options-config`  
+  Used to supply options to the converter through config file, for complete options details see [here](/OPTIONS.md)
+
 - `-h`, `--help`  
   Specifies all the options along with a few usage examples on the terminal
 
@@ -178,9 +183,9 @@ The converter can be used as a CLI tool as well. The following [command line opt
 **Sample usage examples of the converter CLI**
 
 
-- Takes a specification (spec.yaml) as an input and writes to a file (collection.json) with pretty printing
+- Takes a specification (spec.yaml) as an input and writes to a file (collection.json) with pretty printing and using  provided options
 ```terminal
-$ openapi2postmanv2 -s spec.yaml -o collection.json -p
+$ openapi2postmanv2 -s spec.yaml -o collection.json -p -O folderStrategy=Tags,includeAuthInfoInExample=false
 ```
 
 - Testing the converter
