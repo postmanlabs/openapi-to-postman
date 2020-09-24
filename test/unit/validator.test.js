@@ -56,9 +56,6 @@ describe('The validator must validate generated collection from schema against s
         },
         schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options);
 
-      // Increase timeout for larger schema
-      this.timeout(15000);
-
       schemaPack.convert((err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
