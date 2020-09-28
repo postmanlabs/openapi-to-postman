@@ -38,7 +38,7 @@ function parseOptions (value) {
       }
     }
     else {
-      console.warn('\x1b[33m%s\x1b[0m', 'Warning: Invalid defined option ', option[0]);
+      console.warn('\x1b[33m%s\x1b[0m', 'Warning: Invalid option supplied ', option[0]);
     }
   });
   return parsedOptions;
