@@ -19,7 +19,10 @@ const optionIds = [
     'validateMetadata',
     'ignoreUnresolvedVariables',
     'optimizeConversion',
-    'strictRequestMatching'
+    'strictRequestMatching',
+    'requireCommonProps',
+    'outputFormat',
+    'includeExamples'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -139,6 +142,25 @@ const optionIds = [
       default: false,
       description: 'Whether requests should be strictly matched with schema operations. Setting to true will not ' +
         'include any matches where the URL path segments don\'t match exactly.'
+    },
+    requireCommonProps: {
+      name: 'Require common properties',
+      type: 'boolean',
+      default: false,
+      description: 'Whether to set common schema properties among musltiple requests as required.'
+    },
+    outputFormat: {
+      name: 'Output format for converted Specification',
+      type: 'enum',
+      default: 'YAML',
+      availableOptions: ['YAML', 'JSON'],
+      description: 'Select whether to generate the output specification in YAML or the JSON format.'
+    },
+    includeExamples: {
+      name: 'Include examples when available',
+      type: 'boolean',
+      default: false,
+      description: 'Whether to include data present in request as OpenAPI example(s) object.'
     }
   };
 

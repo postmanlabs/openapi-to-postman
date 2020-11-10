@@ -125,6 +125,7 @@
     "oas-resolver-browser": "2.3.3",
     "path-browserify": "1.0.1",
     "postman-collection": "3.6.6",
+    "to-json-schema": "0.2.5",
     "yaml": "1.8.3"
   },
   "author": "Postman Labs <help@getpostman.com>",
