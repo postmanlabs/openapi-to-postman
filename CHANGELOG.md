@@ -1,4 +1,10 @@
 # OpenAPI-Postman Changelog
+#### v2.0.0 (October 15, 2020)
+* Updated minimum supported node version to v8.
+* Fixed issue where schemas in allOf were not resolved correctly.
+* Added support for options in CLI converter.
+* Bumped up few dev-dependency versions.
+
 #### v1.2.7 (September 9, 2020)
 * Fixed issue where schema type object with no properties reolved to string.
 * Fix for [#8474](https://github.com/postmanlabs/postman-app-support/issues/8474) - Unable to validate primitive data types in req/res body.
