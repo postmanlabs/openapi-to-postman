@@ -21,7 +21,7 @@
     1. [Options](#options)
     2. [Usage](#usage)
 4. [Conversion Schema](#conversion-schema)
-5. [Postman test suite generation options](/OPTIONS.md)
+5. [Postman test suite generation options](/TESTGENERATION.md)
 
 ---
 
