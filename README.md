@@ -175,8 +175,8 @@ The converter can be used as a CLI tool as well. The following [command line opt
 - `-c`, `--options-config`
   Used to supply options to the converter through config file, for complete options details see [here](/OPTIONS.md)
 
-`-g <generate>`, `--generate <generate>`
-  Used to generate postman tests given the JSON file with test options, for complete options details see [here](/TESTGENERAION.md)
+- `-g <generate>`, `--generate <generate>`
+  Used to generate postman tests given the JSON file with test options, for complete options details see [here](/TESTGENERATION.md)
 
 - `-h`, `--help`
   Specifies all the options along with a few usage examples on the terminal
