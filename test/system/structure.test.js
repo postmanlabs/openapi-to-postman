@@ -22,7 +22,8 @@ const optionIds = [
     'strictRequestMatching',
     'requireCommonProps',
     'outputFormat',
-    'includeExamples'
+    'includeExamples',
+    'extractionLevels'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -161,6 +162,12 @@ const optionIds = [
       type: 'boolean',
       default: false,
       description: 'Whether to include data present in request as OpenAPI example(s) object.'
+    },
+    extractionLevels: {
+      name: 'Extraction level for component extraction',
+      type: 'integer',
+      default: 2,
+      description: 'Choose how much deeper common component extraction happen in nested schemas'
     }
   };
 

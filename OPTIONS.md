@@ -19,3 +19,4 @@ strictRequestMatching|boolean|-|false|Whether requests should be strictly matche
 requireCommonProps|boolean|-|false|Whether to set common schema properties among musltiple requests as required.|SPEC_CONVERSION
 outputFormat|enum|YAML, JSON|YAML|Select whether to generate the output specification in YAML or the JSON format.|SPEC_CONVERSION
 includeExamples|boolean|-|false|Whether to include data present in request as OpenAPI example(s) object.|SPEC_CONVERSION
+extractionLevels|integer|-|2|Choose how much deeper common component extraction happen in nested schemas|SPEC_CONVERSION
