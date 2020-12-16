@@ -15,9 +15,6 @@ describe('Runing validation tests for all files in `valid_openapi`', function ()
     it('should generte a valid collection ' + file, function () {
       let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_PATH + '/' + file), 'utf8');
 
-      // Increase timeout for larger schema
-      this.timeout(15000);
-
       Converter.convert({ data: fileData, type: 'string' }, {}, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);

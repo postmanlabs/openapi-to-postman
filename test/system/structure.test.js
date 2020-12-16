@@ -10,6 +10,8 @@ const optionIds = [
     'folderStrategy',
     'indentCharacter',
     'requestNameSource',
+    'resolveRemoteRefs',
+    'sourceUrl',
     'includeAuthInfoInExample',
     'shortValidationErrors',
     'validationPropertiesToIgnore',
@@ -79,6 +81,18 @@ const optionIds = [
       description: 'Determines how the requests inside the generated collection will be named.' +
       ' If “Fallback” is selected, the request will be named after one of the following schema' +
       ' values: `description`, `operationid`, `url`.'
+    },
+    resolveRemoteRefs: {
+      name: 'Resolve remote references',
+      type: 'boolean',
+      default: false,
+      description: 'Select whether to resolve remote references.'
+    },
+    sourceUrl: {
+      name: 'Source URL of definition',
+      type: 'string',
+      default: '',
+      description: 'Specify source URL of definition to resolve remote references mentioned in it.'
     },
     includeAuthInfoInExample: {
       name: 'Include auth info in example requests',

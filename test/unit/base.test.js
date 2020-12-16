@@ -40,7 +40,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       tagsFolderSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed.yaml'),
       securityTestCases = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-cases.yaml'),
       emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml'),
-      rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json');
+      rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json'),
+      remoteRefs = path.join(__dirname, VALID_OPENAPI_PATH + '/remote-refs.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -905,6 +906,36 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
+
+    it('should correctly resolve remote refs when option resolveRemoteRefs enabled and sourceUrl is provided',
+      function (done) {
+        var openapi = fs.readFileSync(remoteRefs, 'utf8'),
+          options = {
+            resolveRemoteRefs: true,
+            sourceUrl: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman' +
+              '/develop/test/data/petstore%20separate%20yaml/openapi.yaml'
+          };
+
+        Converter.convert({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+          let collection,
+            collectionRequest;
+
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.be.true;
+
+          collection = conversionResult.output[0].data;
+          expect(collection.item).to.have.lengthOf(1);
+
+          collectionRequest = collection.item[0];
+          expect(collectionRequest.request.url.query).to.have.lengthOf(2);
+          expect(collectionRequest.request.url.query[0].key).to.eql('tags');
+          expect(collectionRequest.request.url.query[1].key).to.eql('limit');
+
+          expect(JSON.parse(collectionRequest.response[0].body)).to.have.keys('id', 'name', 'tag');
+          expect(JSON.parse(collectionRequest.response[1].body)).to.have.keys('code', 'message');
+          done();
+        });
+      });
   });
 
   describe('requestNameSource option', function() {
