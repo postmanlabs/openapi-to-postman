@@ -78,7 +78,7 @@ inputFile = program.spec;
 outputFile = program.output || false;
 testFlag = program.test || false;
 prettyPrintFlag = program.pretty || false;
-configFile = program.config || false;
+configFile = program.optionsConfig || false;
 definedOptions = program.options || {};
 testsuiteFile = program.generate || false;
 swaggerInput;
