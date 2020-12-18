@@ -125,7 +125,7 @@ function convert(swaggerData) {
   }
 
   // override options provided via cli
-  if (definedOptions) {
+  if (definedOptions && !_.isEmpty(definedOptions)) {
     options = definedOptions;
   }
 
