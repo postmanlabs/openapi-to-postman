@@ -154,7 +154,7 @@ The converter can be used as a CLI tool as well. The following [command line opt
 `openapi2postmanv2 [options]`
 
 ### Options
-- `-V`, `--version`
+- `-v`, `--version`  
   Specifies the version of the converter
 
 - `-s <source>`, `--spec <source>`
