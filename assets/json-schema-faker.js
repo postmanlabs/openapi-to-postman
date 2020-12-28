@@ -24561,7 +24561,7 @@ function extend() {
 
         // avoid minItems and maxItems while checking for valid examples
         if (optionAPI('avoidExampleItemsLength') && _.get(schema, 'type') === 'array') {
-          clonedSchema = _.cloneDeep(schema);
+          clonedSchema = _.clone(schema);
           _.unset(clonedSchema, 'minItems');
           _.unset(clonedSchema, 'maxItems');
 
