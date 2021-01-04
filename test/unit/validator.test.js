@@ -4,6 +4,7 @@ var expect = require('chai').expect,
   path = require('path'),
   async = require('async'),
   _ = require('lodash'),
+  schemaUtils = require('../../lib/schemaUtils'),
   VALIDATION_DATA_FOLDER_PATH = '../data/validationData',
   VALID_OPENAPI_FOLDER_PATH = '../data/valid_openapi';
 
@@ -580,6 +581,23 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         expect(responseObj.mismatches[0].suggestedFix.suggestedValue).to.be.within(5, 10);
         done();
       });
+    });
+  });
+
+  describe('getPostmanUrlSuffixSchemaScore function', function () {
+    it('Should maintain correct order in which path vaiables occur in result', function (done) {
+      let pmSuffix = ['pets', '123', '456', '789'],
+        schemaPath = ['pets', '{petId1}', '{petId2}', '{petId3}'],
+        result;
+
+      result = schemaUtils.getPostmanUrlSuffixSchemaScore(pmSuffix, schemaPath, { strictRequestMatching: true });
+
+      expect(result.match).to.be.true;
+      expect(result.pathVars).to.have.lengthOf(3);
+      expect(result.pathVars[0]).to.deep.equal({ key: 'petId1', value: pmSuffix[1] });
+      expect(result.pathVars[1]).to.deep.equal({ key: 'petId2', value: pmSuffix[2] });
+      expect(result.pathVars[2]).to.deep.equal({ key: 'petId3', value: pmSuffix[3] });
+      done();
     });
   });
 });
