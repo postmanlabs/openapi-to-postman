@@ -581,5 +581,32 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         done();
       });
     });
+
+    it('Should correctly validate schema having path with multiple path variables', function (done) {
+      let multiplePathVarSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/multiplePathVarSpec.json'), 'utf-8'),
+        multiplePathVarCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/multiplePathVarCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        options = {
+          showMissingInSchemaErrors: true,
+          strictRequestMatching: true,
+          ignoreUnresolvedVariables: true,
+          suggestAvailableFixes: true
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: multiplePathVarSpec }, options);
+
+      getAllTransactions(JSON.parse(multiplePathVarCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+        expect(resultObj.mismatches).to.have.lengthOf(0);
+        done();
+      });
+    });
   });
 });
