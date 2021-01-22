@@ -51,7 +51,7 @@ program
   .option('-t, --test', 'Test the OPENAPI converter')
   .option('-p, --pretty', 'Pretty print the JSON file')
   .option('-c, --options-config <optionsConfig>', 'JSON file containing Converter options')
-  .option('-O, --options-cli <optionsCli>', 'comma separated list of options', parseOptions)
+  .option('-O, --options-cli <optionsCli>', 'comma separated list of options', parseOptions);
 
 program.on('--help', function() {
   /* eslint-disable */
