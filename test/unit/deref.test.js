@@ -218,6 +218,55 @@ describe('DEREF FUNCTION TESTS ', function() {
     });
   });
 
+  describe('resolveAllOf Function', function () {
+    it('should resolve allOf schemas correctly', function (done) {
+      var allOfschema = [
+        {
+          'type': 'object',
+          'properties': {
+            'source': {
+              'type': 'string',
+              'format': 'uuid'
+            },
+            'actionId': { 'type': 'integer', 'minimum': 5 },
+            'result': { 'type': 'object' }
+          },
+          'required': ['source', 'actionId', 'result']
+        },
+        {
+          'properties': {
+            'result': {
+              'type': 'object',
+              'properties': {
+                'err': { 'type': 'string' },
+                'data': { 'type': 'object' }
+              }
+            }
+          }
+        }
+      ];
+
+      expect(deref.resolveAllOf(allOfschema, 'REQUEST', {}, {}, null, 'example')).to.deep.include({
+        type: 'object',
+        properties: {
+          source: {
+            type: 'string',
+            format: 'uuid'
+          },
+          actionId: { 'type': 'integer', 'minimum': 5 },
+          result: {
+            type: 'object',
+            properties: {
+              err: { 'type': 'string' },
+              data: { 'type': 'object' }
+            }
+          }
+        }
+      });
+      done();
+    });
+  });
+
   describe('_getEscaped should', function() {
     var rootObject = {
       person: {

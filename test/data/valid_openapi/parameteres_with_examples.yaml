@@ -1,0 +1,47 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  license:
+    name: MIT
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /pets/{petId}:
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: string
+            format: uuid
+            example: 8bjbjbbjh-3b7-4bad-9bdd-2b0d7b3dcb6d
+          example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+        - name: limit
+          in: query
+          description: How many items to return at one time (max 100)
+          required: false
+          schema:
+            type: integer
+          examples:
+            example1:
+              value: 123
+            example2:
+              value: 456
+        - name: x-date
+          in: header
+          description: How many items to return at one time (max 100)
+          required: false
+          schema:
+            type: string
+            format: date
+          example: '2003-02-17'
+      responses:
+        '200':
+          description: Expected response to a valid request
