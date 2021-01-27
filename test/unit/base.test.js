@@ -726,7 +726,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
             {
               key: 'access_token',
               value: 'X-access-token',
-              description: 'Access token'
+              description: 'Access token',
+              disabled: false
             }
           ]);
         });
@@ -903,6 +904,26 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(requestUrl.host).to.eql(['{{baseUrl}}']);
         expect(_.find(collectionVars, { id: 'baseUrl' }).value).to.eql('{{BASE_URI}}/api');
         expect(_.find(collectionVars, { id: 'BASE_URI' }).value).to.eql('https://api.example.com');
+        done();
+      });
+    });
+
+    it('[Github #31] - should set optional params as disabled', function(done) {
+      let options = { schemaFaker: true, disableOptionalParameters: true };
+      Converter.convert({ type: 'file', data: requiredInParams }, options, (err, conversionResult) => {
+        expect(err).to.be.null;
+        let requests = conversionResult.output[0].data.item[0].item,
+          request;
+
+        // GET /pets
+        // query1 required, query2 optional
+        // header1 required, header2 optional
+        request = requests[0].request;
+        expect(request.url.query[0].disabled).to.be.false;
+        expect(request.url.query[1].disabled).to.be.true;
+        expect(request.header[0].disabled).to.be.false;
+        expect(request.header[1].disabled).to.be.true;
+
         done();
       });
     });
