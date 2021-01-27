@@ -4,6 +4,7 @@ var expect = require('chai').expect,
   path = require('path'),
   async = require('async'),
   _ = require('lodash'),
+  schemaUtils = require('../../lib/schemaUtils'),
   VALIDATION_DATA_FOLDER_PATH = '../data/validationData',
   VALID_OPENAPI_FOLDER_PATH = '../data/valid_openapi';
 
@@ -580,6 +581,50 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         expect(responseObj.mismatches[0].suggestedFix.suggestedValue).to.be.within(5, 10);
         done();
       });
+    });
+
+    it('Should correctly validate schema having path with multiple path variables', function (done) {
+      let multiplePathVarSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/multiplePathVarSpec.json'), 'utf-8'),
+        multiplePathVarCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/multiplePathVarCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        options = {
+          showMissingInSchemaErrors: true,
+          strictRequestMatching: true,
+          ignoreUnresolvedVariables: true,
+          suggestAvailableFixes: true
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: multiplePathVarSpec }, options);
+
+      getAllTransactions(JSON.parse(multiplePathVarCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+        expect(resultObj.mismatches).to.have.lengthOf(0);
+        done();
+      });
+    });
+  });
+
+  describe('getPostmanUrlSuffixSchemaScore function', function () {
+    it('Should maintain correct order in which path vaiables occur in result', function (done) {
+      let pmSuffix = ['pets', '123', '456', '789'],
+        schemaPath = ['pets', '{petId1}', '{petId2}', '{petId3}'],
+        result;
+
+      result = schemaUtils.getPostmanUrlSuffixSchemaScore(pmSuffix, schemaPath, { strictRequestMatching: true });
+
+      expect(result.match).to.be.true;
+      expect(result.pathVars).to.have.lengthOf(3);
+      expect(result.pathVars[0]).to.deep.equal({ key: 'petId1', value: pmSuffix[1] });
+      expect(result.pathVars[1]).to.deep.equal({ key: 'petId2', value: pmSuffix[2] });
+      expect(result.pathVars[2]).to.deep.equal({ key: 'petId3', value: pmSuffix[3] });
+      done();
     });
   });
 });
