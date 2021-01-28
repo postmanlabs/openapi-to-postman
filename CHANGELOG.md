@@ -1,6 +1,11 @@
 # OpenAPI-Postman Changelog
 
 #### v2.1.0 (January 27, 2021)
+* Fixed [issue](https://community.postman.com/t/openapi-import-with-multi-file-support/9439/8) with import folder flow on respective platform.
+* Fixed issue where collection did not contain name for specification with empty string as title.
+* Updated description of option to disable optional parameters.
+
+#### v2.1.0 (January 27, 2021)
 * Fix for [#9404](https://github.com/postmanlabs/postman-app-support/issues/9404) - Fixed issue where incorrect mismatches were reported for valid path variables.
 * Fixed issue where validation result contained incorrect path variable indices.
 * Fix for [#9344](https://github.com/postmanlabs/postman-app-support/issues/9344) - Fixed issue where for type array examples with more than 2 elements were not used.
