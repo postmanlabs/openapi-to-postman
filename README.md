@@ -187,9 +187,14 @@ The converter can be used as a CLI tool as well. The following [command line opt
 **Sample usage examples of the converter CLI**
 
 
-- Takes a specification (spec.yaml) as an input and writes to a file (collection.json) with pretty printing and using  provided options
+- Takes a specification (spec.yaml) as an input and writes to a file (collection.json) with pretty printing and using provided options
 ```terminal
 $ openapi2postmanv2 -s spec.yaml -o collection.json -p -O folderStrategy=Tags,includeAuthInfoInExample=false
+```
+
+- Takes a specification (spec.yaml) as an input and writes to a file (collection.json) with pretty printing and using provided options via config file
+```terminal
+$ openapi2postmanv2 -s spec.yaml -o collection.json -p  -c ./examples/cli-options-config.json
 ```
 
 - Testing the converter

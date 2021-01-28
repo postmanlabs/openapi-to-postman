@@ -10,7 +10,8 @@
  * Date: 2018-04-09 17:23:23.954Z
  */
 
-var validateSchema = require('../lib/ajvValidation').validateSchema;
+var _ = require('lodash'),
+  validateSchema = require('../lib/ajvValidation').validateSchema;
 
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
@@ -23566,6 +23567,7 @@ function extend() {
               data['optionalsProbability'] = 0.0;
               data['useDefaultValue'] = false;
               data['useExamplesValue'] = false;
+              data['avoidExampleItemsLength'] = false;
               data['requiredOnly'] = false;
               data['minItems'] = 0;
               data['maxItems'] = null;
@@ -24554,7 +24556,20 @@ function extend() {
           return;
       }
       if (optionAPI('useExamplesValue') && 'example' in schema) {
-        var result = validateSchema(schema, schema.example);
+        var clonedSchema,
+          result;
+
+        // avoid minItems and maxItems while checking for valid examples
+        if (optionAPI('avoidExampleItemsLength') && _.get(schema, 'type') === 'array') {
+          clonedSchema = _.clone(schema);
+          _.unset(clonedSchema, 'minItems');
+          _.unset(clonedSchema, 'maxItems');
+
+          result = validateSchema(clonedSchema, schema.example);
+        }
+        else {
+          result = validateSchema(schema, schema.example);
+        }
 
         // Use example only if valid 
         if (result && result.length === 0) {

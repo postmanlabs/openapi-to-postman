@@ -40,7 +40,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       tagsFolderSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed.yaml'),
       securityTestCases = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-cases.yaml'),
       emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml'),
-      rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json');
+      rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json'),
+      parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -725,7 +726,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
             {
               key: 'access_token',
               value: 'X-access-token',
-              description: 'Access token'
+              description: 'Access token',
+              disabled: false
             }
           ]);
         });
@@ -904,6 +906,44 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(_.find(collectionVars, { id: 'BASE_URI' }).value).to.eql('https://api.example.com');
         done();
       });
+    });
+
+    it('[Github #31] - should set optional params as disabled', function(done) {
+      let options = { schemaFaker: true, disableOptionalParameters: true };
+      Converter.convert({ type: 'file', data: requiredInParams }, options, (err, conversionResult) => {
+        expect(err).to.be.null;
+        let requests = conversionResult.output[0].data.item[0].item,
+          request;
+
+        // GET /pets
+        // query1 required, query2 optional
+        // header1 required, header2 optional
+        request = requests[0].request;
+        expect(request.url.query[0].disabled).to.be.false;
+        expect(request.url.query[1].disabled).to.be.true;
+        expect(request.header[0].disabled).to.be.false;
+        expect(request.header[1].disabled).to.be.true;
+
+        done();
+      });
+    });
+
+    it('Should prefer and use example from parameter object over schema example while faking schema', function(done) {
+      Converter.convert({ type: 'file', data: parameterExamples },
+        { schemaFaker: true, requestParametersResolution: 'example' },
+        (err, conversionResult) => {
+          let rootRequest = conversionResult.output[0].data.item[0].request;
+
+          expect(rootRequest.url.query[0].key).to.equal('limit');
+          expect(rootRequest.url.query[0].value).to.equal('123');
+
+          expect(rootRequest.url.variable[0].key).to.equal('petId');
+          expect(rootRequest.url.variable[0].value).to.equal('9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d');
+
+          expect(rootRequest.header[0].key).to.equal('x-date');
+          expect(rootRequest.header[0].value).to.equal('2003-02-17');
+          done();
+        });
     });
   });
 
