@@ -76,8 +76,8 @@ inputFile = program.spec;
 outputFile = program.output || false;
 testFlag = program.test || false;
 prettyPrintFlag = program.pretty || false;
-configFile = program.config || false;
-definedOptions = program.options || {};
+configFile = program.optionsConfig || false;
+definedOptions = (!(program.options instanceof Array) ? program.options : {});
 swaggerInput;
 swaggerData;
 
@@ -122,7 +122,7 @@ function convert(swaggerData) {
   }
 
   // override options provided via cli
-  if (definedOptions) {
+  if (definedOptions && !_.isEmpty(definedOptions)) {
     options = definedOptions;
   }
 
