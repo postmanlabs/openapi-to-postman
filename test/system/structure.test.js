@@ -19,7 +19,8 @@ const optionIds = [
     'validateMetadata',
     'ignoreUnresolvedVariables',
     'optimizeConversion',
-    'strictRequestMatching'
+    'strictRequestMatching',
+    'disableOptionalParameters'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -139,6 +140,12 @@ const optionIds = [
       default: false,
       description: 'Whether requests should be strictly matched with schema operations. Setting to true will not ' +
         'include any matches where the URL path segments don\'t match exactly.'
+    },
+    disableOptionalParameters: {
+      name: 'Disable optional parameters',
+      type: 'boolean',
+      default: false,
+      description: 'Whether to set optional parameters as disabled'
     }
   };
 

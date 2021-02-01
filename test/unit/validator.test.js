@@ -4,6 +4,7 @@ var expect = require('chai').expect,
   path = require('path'),
   async = require('async'),
   _ = require('lodash'),
+  schemaUtils = require('../../lib/schemaUtils'),
   VALIDATION_DATA_FOLDER_PATH = '../data/validationData',
   VALID_OPENAPI_FOLDER_PATH = '../data/valid_openapi';
 
@@ -582,42 +583,86 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       });
     });
 
-    it('Should be able to validate schema with request body of content type "application/x-www-form-urlencoded" ' +
-      'against transaction with valid UrlEncoded body correctly', function (done) {
-      let urlencodedBodySpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
-        '/urlencodedBodySpec.yaml'), 'utf-8'),
-        urlencodedBodyCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
-          '/urlencodedBodyCollection.json'), 'utf-8'),
+    it('Should correctly validate schema having path with multiple path variables', function (done) {
+      let multiplePathVarSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/multiplePathVarSpec.json'), 'utf-8'),
+        multiplePathVarCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/multiplePathVarCollection.json'), 'utf-8'),
         resultObj,
         historyRequest = [],
-        schemaPack = new Converter.SchemaPack({ type: 'string', data: urlencodedBodySpec },
-          { suggestAvailableFixes: true });
+        options = {
+          showMissingInSchemaErrors: true,
+          strictRequestMatching: true,
+          ignoreUnresolvedVariables: true,
+          suggestAvailableFixes: true
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: multiplePathVarSpec }, options);
 
-      getAllTransactions(JSON.parse(urlencodedBodyCollection), historyRequest);
+      getAllTransactions(JSON.parse(multiplePathVarCollection), historyRequest);
 
       schemaPack.validateTransaction(historyRequest, (err, result) => {
         expect(err).to.be.null;
         expect(result).to.be.an('object');
+
         resultObj = result.requests[historyRequest[0].id].endpoints[0];
-        expect(resultObj.mismatches).to.have.lengthOf(3);
-
-        // for explodable property of type object named "propObjectExplodable",
-        // second property named "prop2" is incorrect, while property "prop1" is correct
-        expect(resultObj.mismatches[0].transactionJsonPath).to.eql('$.request.body.urlencoded.[1].value');
-        expect(resultObj.mismatches[0].suggestedFix.actualValue).to.eql('false');
-        expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.eql('world');
-
-        // for non explodable property of type object, entire property with updated value should be suggested
-        expect(resultObj.mismatches[1].transactionJsonPath).to.eql('$.request.body.urlencoded.[2].value');
-        expect(resultObj.mismatches[1].suggestedFix.actualValue).to.eql('prop3,hello,prop4,true');
-        expect(resultObj.mismatches[1].suggestedFix.suggestedValue).to.eql('prop3,hello,prop4,world');
-
-        // for type array property named "propArray" second element is incorrect
-        expect(resultObj.mismatches[2].transactionJsonPath).to.eql('$.request.body.urlencoded.[4].value');
-        expect(resultObj.mismatches[2].suggestedFix.actualValue).to.eql('999');
-        expect(resultObj.mismatches[2].suggestedFix.suggestedValue).to.eql('exampleString');
+        expect(resultObj.mismatches).to.have.lengthOf(0);
         done();
       });
+    });
+  });
+
+  describe('getPostmanUrlSuffixSchemaScore function', function () {
+    it('Should maintain correct order in which path vaiables occur in result', function (done) {
+      let pmSuffix = ['pets', '123', '456', '789'],
+        schemaPath = ['pets', '{petId1}', '{petId2}', '{petId3}'],
+        result;
+
+      result = schemaUtils.getPostmanUrlSuffixSchemaScore(pmSuffix, schemaPath, { strictRequestMatching: true });
+
+      expect(result.match).to.be.true;
+      expect(result.pathVars).to.have.lengthOf(3);
+      expect(result.pathVars[0]).to.deep.equal({ key: 'petId1', value: pmSuffix[1] });
+      expect(result.pathVars[1]).to.deep.equal({ key: 'petId2', value: pmSuffix[2] });
+      expect(result.pathVars[2]).to.deep.equal({ key: 'petId3', value: pmSuffix[3] });
+      done();
+    });
+  });
+
+  it('Should be able to validate schema with request body of content type "application/x-www-form-urlencoded" ' +
+    'against transaction with valid UrlEncoded body correctly', function (done) {
+    let urlencodedBodySpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+      '/urlencodedBodySpec.yaml'), 'utf-8'),
+      urlencodedBodyCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+        '/urlencodedBodyCollection.json'), 'utf-8'),
+      resultObj,
+      historyRequest = [],
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: urlencodedBodySpec },
+        { suggestAvailableFixes: true });
+
+    getAllTransactions(JSON.parse(urlencodedBodyCollection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+      resultObj = result.requests[historyRequest[0].id].endpoints[0];
+      expect(resultObj.mismatches).to.have.lengthOf(3);
+
+      // for explodable property of type object named "propObjectExplodable",
+      // second property named "prop2" is incorrect, while property "prop1" is correct
+      expect(resultObj.mismatches[0].transactionJsonPath).to.eql('$.request.body.urlencoded.[1].value');
+      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.eql('false');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.eql('world');
+
+      // for non explodable property of type object, entire property with updated value should be suggested
+      expect(resultObj.mismatches[1].transactionJsonPath).to.eql('$.request.body.urlencoded.[2].value');
+      expect(resultObj.mismatches[1].suggestedFix.actualValue).to.eql('prop3,hello,prop4,true');
+      expect(resultObj.mismatches[1].suggestedFix.suggestedValue).to.eql('prop3,hello,prop4,world');
+
+      // for type array property named "propArray" second element is incorrect
+      expect(resultObj.mismatches[2].transactionJsonPath).to.eql('$.request.body.urlencoded.[4].value');
+      expect(resultObj.mismatches[2].suggestedFix.actualValue).to.eql('999');
+      expect(resultObj.mismatches[2].suggestedFix.suggestedValue).to.eql('exampleString');
+      done();
     });
   });
 });

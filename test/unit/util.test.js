@@ -1483,6 +1483,27 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         });
       });
     });
+
+    describe('Should convert queryParam with schema {type:object, properties: undefined, explode: true, ', function() {
+      let emptyObjParam = {
+        name: 'empty-obj',
+        in: 'query',
+        description: 'query param',
+        schema: { type: 'object' }
+      };
+
+      it('style:deepObject } to pm param', function (done) {
+        let pmParam = SchemaUtils.convertToPmQueryParameters(_.assign(emptyObjParam, { style: 'deepObject' }));
+        expect(pmParam).to.eql([]);
+        done();
+      });
+
+      it('style:form } to pm param', function (done) {
+        let pmParam = SchemaUtils.convertToPmQueryParameters(_.assign(emptyObjParam, { style: 'form' }));
+        expect(pmParam).to.eql([]);
+        done();
+      });
+    });
   });
 
   describe('convertToPmBody function', function() {
