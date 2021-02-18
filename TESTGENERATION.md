@@ -47,7 +47,7 @@ Current postman-testsuite JSON properties
   "overwriteRequests": [
     {
       "openApiOperationId": "post-accounts",
-      "overwriteKeyValues": [
+      "overwriteRequestBody": [
         {
           "key": "name",
           "value": "--{{$randomInt}}",
@@ -104,11 +104,11 @@ Anything added in `tests` array, will be added to the postman test scripts.
 
 To facilitate automation, you might want to modify property values with "randomized" or specific values.
 The overwrites are mapped based on the OpenApi operationId.
-Anything added in `overwriteKeyValues` array, will be used to modify to the postman request body.
+Anything added in `overwriteRequestBody` array, will be used to modify to the postman request body.
 
 Properties explained:
 - **openApiOperationId (String)** : Reference to the OpenApi operationId for which the Postman Request Body will be extended
-- **overwriteKeyValues (Array)** : Array of key/value pairs to overwrite in the Postman Request Body.
+- **overwriteRequestBody (Array)** : Array of key/value pairs to overwrite in the Postman Request Body.
 
 - **key (string)** : The key that will be targetted in the request body to overwrite/extend.
 - **value (string)** : The value that will be used to overwrite/extend the key in the request body OR use the [Postman Dynamic variables](https://learning.postman.com/docs/writing-scripts/script-references/variables-list/) to use dynamic values like `{{$guid}}` or `{{randomInt}}`.
@@ -160,7 +160,7 @@ OpenAPI to Postman Testsuite Configuration:
   "overwriteRequests": [
     {
       "openApiOperationId": "post-accounts",
-      "overwriteKeyValues": [
+      "overwriteRequestBody": [
         {
           "key": "name",
           "value": "--{{$randomInt}}",

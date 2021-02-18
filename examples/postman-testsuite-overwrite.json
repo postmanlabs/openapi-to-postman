@@ -30,7 +30,7 @@
   "overwriteRequests": [
     {
       "openApiOperationId": "post-accounts",
-      "overwriteKeyValues": [
+      "overwriteRequestBody": [
         {
           "key": "name",
           "value": "--{{$randomInt}}",
