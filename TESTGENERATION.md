@@ -167,7 +167,7 @@ OpenAPI to Postman Testsuite Configuration:
           "overwrite": false
         },
         {
-          "key": "clientId",
+          "key": "clientGuid",
           "value": "{{$guid}}",
           "overwrite": true
         }
