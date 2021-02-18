@@ -113,3 +113,79 @@ Properties explained:
 - **key (string)** : The key that will be targetted in the request body to overwrite/extend.
 - **value (string)** : The value that will be used to overwrite/extend the key in the request body OR use the [Postman Dynamic variables](https://learning.postman.com/docs/writing-scripts/script-references/variables-list/) to use dynamic values like `{{$guid}}` or `{{randomInt}}`.
 - **overwrite (Boolean true/false)** : Overwrites the request body value OR attach the value to the original request body value.
+
+Postman request body before:
+
+```JSON
+{
+  "name": "account0-test",
+  "clientGuid": "ABC-123-DEF-456"
+}
+```
+
+OpenAPI to Postman Testsuite Configuration:
+
+```JSON
+{
+  "version": 1.0,
+  "generateTests": {
+    "responseChecks": {
+      "StatusSuccess": {
+        "enabled": true
+      },
+      "responseTime": {
+        "enabled": true,
+        "maxMs": 300
+      },
+      "contentType": {
+        "enabled": true
+      },
+      "jsonBody": {
+        "enabled": true
+      },
+      "schemaValidation": {
+        "enabled": true
+      }
+    }
+  },
+  "extendTests": [
+    {
+      "openApiOperationId": "get-lists",
+      "tests": [
+        "pm.test('200 ok', function(){pm.response.to.have.status(200);});",
+        "pm.test('check userId after create', function(){Number.isInteger(responseBody);});"
+      ]
+    }
+  ],
+  "overwriteRequests": [
+    {
+      "openApiOperationId": "post-accounts",
+      "overwriteKeyValues": [
+        {
+          "key": "name",
+          "value": "--{{$randomInt}}",
+          "overwrite": false
+        },
+        {
+          "key": "clientId",
+          "value": "{{$guid}}",
+          "overwrite": true
+        }
+      ]
+    }
+  ]
+}
+
+```
+
+This will extend the "name" value with the "--{{$randomInt}}" and overwrite the "clientGuid" with the "{{$guid}}".
+
+Postman request body after:
+```JSON
+{
+  "name": "account0-test--{{$randomInt}}",
+  "clientGuid": "{{$guid}}"
+}
+```
+
+This is an example where we leverage the Postman Dynamic variables, but also static values can be used to overwrite/extend.
