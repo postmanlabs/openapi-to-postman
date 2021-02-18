@@ -415,6 +415,10 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           the mismatch for header-1 should contain correct index as in request.
         */
         expect(_.endsWith(resultObj.mismatches[0].transactionJsonPath, '[2].value')).to.eql(true);
+        _.forEach(resultObj.responses, (response) => {
+          expect(response.matched).to.be.true;
+          expect(response.mismatches).to.have.lengthOf(0);
+        });
         done();
       });
     });
