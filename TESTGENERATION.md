@@ -43,8 +43,26 @@ Current postman-testsuite JSON properties
         "pm.test('check userId after create', function(){Number.isInteger(responseBody);});"
       ]
     }
+  ],
+  "overwriteRequests": [
+    {
+      "openApiOperationId": "post-accounts",
+      "overwriteKeyValues": [
+        {
+          "key": "name",
+          "value": "--{{$randomInt}}",
+          "overwrite": false
+        },
+        {
+          "key": "clientId",
+          "value": "{{$guid}}",
+          "overwrite": true
+        }
+      ]
+    }
   ]
 }
+
 ```
 
 The JSON test suite format consists out of 3 parts:
@@ -54,14 +72,8 @@ The JSON test suite format consists out of 3 parts:
 The default tests are grouped per type (response, request)
   - **responseChecks** : All response basic checks. (For now we have only included response checks).
   - **limitOperations**: refers to a list of operation IDs for which tests will be generated. (Default not set, so test will be generated for **all** operations).
-- **extendTests**:  which refers the custom additions of manual created postman tests.
-The manual tests are added during generation. The tests are mapped based on the OpenApi operationId.
-Anything added in `tests` array, will be added to the postman test scripts.
-  - **openApiOperationId (String)** : Reference to the OpenApi operationId for which the tests will be extended
-  - **tests (Array)** : Array of additional postman test scripts.
-  - **responseChecks (array)** : Extends the generateTests `responseChecks` (see [Postman test suite properties](#postman-test-suite-properties)) with specifics for the openApiOperationId.
-  - **overwrite (Boolean true/false)** : Resets all generateTests and overwrites them with the defined tests from the `tests` array.
-  Default: false
+- **extendTests**:  which refers the custom additions of manual created postman tests. (see [Postman test suite extendTests](#postman-test-suite-extendtests))
+- **overwriteRequests**:  which refers the custom additions/modifications of the OpenAPI request body. (see [Postman test suite overwriteRequests](#postman-test-suite-overwriterequests))
 
 See "postman-testsuite-advanced.json" file for an advanced example of the setting options.
 
@@ -77,3 +89,27 @@ Version 1.0
 | Response JSON body format check     | jsonBody            | boolean | false     | enabled            |                    | Adds the check if the postman response body is matching the expected content-type defined in the OpenApi spec.                                               | true     | TEST GENERATION |
 | Response Schema validation check    | schemaValidation    | boolean | false     | enabled            |                    | Adds the check if the postman response body is matching the JSON schema defined in the OpenApi spec. The JSON schema is inserted inline in the postman test. | true     | TEST GENERATION |
 | Response Header presence check      | headersPresent      | boolean | false     | enabled            |                    | Adds the check if the postman response header has the header names present, like defined in the OpenApi spec.                                                | true     | TEST GENERATION |
+
+## Postman test suite extendTests
+
+The manual tests are added during generation. The tests are mapped based on the OpenApi operationId.
+Anything added in `tests` array, will be added to the postman test scripts.
+- **openApiOperationId (String)** : Reference to the OpenApi operationId for which the tests will be extended
+- **tests (Array)** : Array of additional postman test scripts.
+- **responseChecks (array)** : Extends the generateTests `responseChecks` (see [Postman test suite properties](#postman-test-suite-properties)) with specifics for the openApiOperationId.
+- **overwrite (Boolean true/false)** : Resets all generateTests and overwrites them with the defined tests from the `tests` array.
+  Default: false
+
+## Postman test suite overwriteRequests
+
+To facilitate automation, you might want to modify property values with "randomized" or specific values.
+The overwrites are mapped based on the OpenApi operationId.
+Anything added in `overwriteKeyValues` array, will be used to modify to the postman request body.
+
+Properties explained:
+- **openApiOperationId (String)** : Reference to the OpenApi operationId for which the tests will be extended
+- **overwriteKeyValues (Array)** : Array of additional postman test scripts.
+
+- **key (string)** : The key that will be targetted in the request body to overwrite/extend.
+- **value (string)** : The value that will be used to overwrite/extend the key in the request body OR use the [Postman Dynamic variables](https://learning.postman.com/docs/writing-scripts/script-references/variables-list/) to use dynamic values like `{{$guid}}` or `{{randomInt}}`.
+- **overwrite (Boolean true/false)** : Overwrites the request body value OR attach the value to the original request body value.

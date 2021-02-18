@@ -1,0 +1,47 @@
+{
+  "version": 1.0,
+  "generateTests": {
+    "limitOperations": [
+      "get-lists"
+    ],
+    "responseChecks": {
+      "StatusSuccess": {
+        "enabled": true
+      },
+      "responseTime": {
+        "enabled": true,
+        "maxMs": 300
+      },
+      "headersPresent": {
+        "enabled": true
+      },
+      "contentType": {
+        "enabled": true
+      },
+      "jsonBody": {
+        "enabled": true
+      },
+      "schemaValidation": {
+        "enabled": true
+      }
+    }
+  },
+  "extendTests": [],
+  "overwriteRequests": [
+    {
+      "openApiOperationId": "post-accounts",
+      "overwriteKeyValues": [
+        {
+          "key": "name",
+          "value": "--{{$randomInt}}",
+          "overwrite": false
+        },
+        {
+          "key": "clientGuid",
+          "value": "{{$guid}}",
+          "overwrite": true
+        }
+      ]
+    }
+  ]
+}
