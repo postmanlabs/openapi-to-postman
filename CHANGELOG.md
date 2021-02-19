@@ -1,6 +1,10 @@
 # OpenAPI-Postman Changelog
 
-#### v2.1.0 (January 27, 2021)
+#### v2.3.0 (February 19, 2021)
+* Fixed [issue](https://community.postman.com/t/user-feedback-updating-api-elements/13308/13) where content type header was reported missing in validation even if present.
+* Feature request [#9046](https://github.com/postmanlabs/postman-app-support/issues/9046) - Added support for validation of request body of type urlencoded.
+
+#### v2.2.0 (January 28, 2021)
 * Fixed [issue](https://community.postman.com/t/openapi-import-with-multi-file-support/9439/8) with import folder flow on respective platform.
 * Fixed issue where collection did not contain name for specification with empty string as title.
 * Updated description of option to disable optional parameters.
