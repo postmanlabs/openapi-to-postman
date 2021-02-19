@@ -144,14 +144,14 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data).to.have.property('item');
           expect(conversionResult.output[0].data).to.have.property('variable');
           expect(conversionResult.output[0].data.variable).to.be.an('array');
-          expect(conversionResult.output[0].data.variable[1].id).to.equal('format');
+          expect(conversionResult.output[0].data.variable[1].key).to.equal('format');
           expect(conversionResult.output[0].data.variable[1].value).to.equal('json');
-          expect(conversionResult.output[0].data.variable[2].id).to.equal('path');
+          expect(conversionResult.output[0].data.variable[2].key).to.equal('path');
           expect(conversionResult.output[0].data.variable[2].value).to.equal('send-email');
-          expect(conversionResult.output[0].data.variable[3].id).to.equal('new-path-variable-1');
+          expect(conversionResult.output[0].data.variable[3].key).to.equal('new-path-variable-1');
           // serialised value for object { R: 100, G: 200, B: 150 }
           expect(conversionResult.output[0].data.variable[3].value).to.equal('R,100,G,200,B,150');
-          expect(conversionResult.output[0].data.variable[4].id).to.equal('new-path-variable-2');
+          expect(conversionResult.output[0].data.variable[4].key).to.equal('new-path-variable-2');
           // serialised value for array ["exampleString", "exampleString"]
           expect(conversionResult.output[0].data.variable[4].value).to.equal('exampleString,exampleString');
           done();
@@ -902,8 +902,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
         requestUrl = conversionResult.output[0].data.item[0].request.url;
         collectionVars = conversionResult.output[0].data.variable;
         expect(requestUrl.host).to.eql(['{{baseUrl}}']);
-        expect(_.find(collectionVars, { id: 'baseUrl' }).value).to.eql('{{BASE_URI}}/api');
-        expect(_.find(collectionVars, { id: 'BASE_URI' }).value).to.eql('https://api.example.com');
+        expect(_.find(collectionVars, { key: 'baseUrl' }).value).to.eql('{{BASE_URI}}/api');
+        expect(_.find(collectionVars, { key: 'BASE_URI' }).value).to.eql('https://api.example.com');
         done();
       });
     });
