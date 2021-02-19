@@ -631,4 +631,42 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       done();
     });
   });
+
+  it('Should be able to validate schema with request body of content type "application/x-www-form-urlencoded" ' +
+    'against transaction with valid UrlEncoded body correctly', function (done) {
+    let urlencodedBodySpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+      '/urlencodedBodySpec.yaml'), 'utf-8'),
+      urlencodedBodyCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+        '/urlencodedBodyCollection.json'), 'utf-8'),
+      resultObj,
+      historyRequest = [],
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: urlencodedBodySpec },
+        { suggestAvailableFixes: true });
+
+    getAllTransactions(JSON.parse(urlencodedBodyCollection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+      resultObj = result.requests[historyRequest[0].id].endpoints[0];
+      expect(resultObj.mismatches).to.have.lengthOf(3);
+
+      // for explodable property of type object named "propObjectExplodable",
+      // second property named "prop2" is incorrect, while property "prop1" is correct
+      expect(resultObj.mismatches[0].transactionJsonPath).to.eql('$.request.body.urlencoded[1].value');
+      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.eql('false');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.eql('world');
+
+      // for non explodable property of type object, entire property with updated value should be suggested
+      expect(resultObj.mismatches[1].transactionJsonPath).to.eql('$.request.body.urlencoded[2].value');
+      expect(resultObj.mismatches[1].suggestedFix.actualValue).to.eql('prop3,hello,prop4,true');
+      expect(resultObj.mismatches[1].suggestedFix.suggestedValue).to.eql('prop3,hello,prop4,world');
+
+      // for type array property named "propArray" second element is incorrect
+      expect(resultObj.mismatches[2].transactionJsonPath).to.eql('$.request.body.urlencoded[4].value');
+      expect(resultObj.mismatches[2].suggestedFix.actualValue).to.eql('999');
+      expect(resultObj.mismatches[2].suggestedFix.suggestedValue).to.eql('exampleString');
+      done();
+    });
+  });
 });
