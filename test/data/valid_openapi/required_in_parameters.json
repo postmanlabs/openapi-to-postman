@@ -91,15 +91,11 @@
                   "formParam1": {
                     "description": "Description of formParam1",
                     "required": true,
-                    "schema": {
-                      "type": "string"
-                    }
+                    "type": "string"
                   },
                   "formParam2": {
                     "description": "Description of formParam2",
-                    "schema": {
-                      "type": "string"
-                    }
+                    "type": "string"
                   }
                 }
               }
@@ -120,15 +116,11 @@
                   "urlencodedParam1": {
                     "description": "Description of urlencodedParam1",
                     "required": true,
-                    "schema": {
-                      "type": "string"
-                    }
+                    "type": "string"
                   },
                   "urlencodedParam2": {
                     "description": "Description of urlencodedParam2",
-                    "schema": {
-                      "type": "string"
-                    }
+                    "type": "string"
                   }
                 }
               }
