@@ -649,17 +649,17 @@ describe('VALIDATE FUNCTION TESTS ', function () {
 
       // for explodable property of type object named "propObjectExplodable",
       // second property named "prop2" is incorrect, while property "prop1" is correct
-      expect(resultObj.mismatches[0].transactionJsonPath).to.eql('$.request.body.urlencoded.[1].value');
+      expect(resultObj.mismatches[0].transactionJsonPath).to.eql('$.request.body.urlencoded[1].value');
       expect(resultObj.mismatches[0].suggestedFix.actualValue).to.eql('false');
       expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.eql('world');
 
       // for non explodable property of type object, entire property with updated value should be suggested
-      expect(resultObj.mismatches[1].transactionJsonPath).to.eql('$.request.body.urlencoded.[2].value');
+      expect(resultObj.mismatches[1].transactionJsonPath).to.eql('$.request.body.urlencoded[2].value');
       expect(resultObj.mismatches[1].suggestedFix.actualValue).to.eql('prop3,hello,prop4,true');
       expect(resultObj.mismatches[1].suggestedFix.suggestedValue).to.eql('prop3,hello,prop4,world');
 
       // for type array property named "propArray" second element is incorrect
-      expect(resultObj.mismatches[2].transactionJsonPath).to.eql('$.request.body.urlencoded.[4].value');
+      expect(resultObj.mismatches[2].transactionJsonPath).to.eql('$.request.body.urlencoded[4].value');
       expect(resultObj.mismatches[2].suggestedFix.actualValue).to.eql('999');
       expect(resultObj.mismatches[2].suggestedFix.suggestedValue).to.eql('exampleString');
       done();
