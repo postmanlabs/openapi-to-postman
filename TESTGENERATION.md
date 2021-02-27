@@ -108,11 +108,14 @@ Anything added in `overwriteRequestBody` array, will be used to modify to the po
 
 Properties explained:
 - **openApiOperationId (String)** : Reference to the OpenApi operationId for which the Postman Request Body will be extended
+- **overwriteRequestPathVariables (Array)** : Array of key/value pairs to overwrite in the Postman Request Path Variables.
+  - **key (string)** : The key that will be targeted in the request Path variables to overwrite/extend.
+  - **value (string)** : The value that will be used to overwrite/extend the value in the request path variable OR use the [Postman Dynamic variables](https://learning.postman.com/docs/writing-scripts/script-references/variables-list/) to use dynamic values like `{{$guid}}` or `{{randomInt}}`.
+  - **overwrite (Boolean true/false)** : Overwrites the request body value OR attach the value to the original request Path variable value.
 - **overwriteRequestBody (Array)** : Array of key/value pairs to overwrite in the Postman Request Body.
-
-- **key (string)** : The key that will be targetted in the request body to overwrite/extend.
-- **value (string)** : The value that will be used to overwrite/extend the key in the request body OR use the [Postman Dynamic variables](https://learning.postman.com/docs/writing-scripts/script-references/variables-list/) to use dynamic values like `{{$guid}}` or `{{randomInt}}`.
-- **overwrite (Boolean true/false)** : Overwrites the request body value OR attach the value to the original request body value.
+  - **key (string)** : The key that will be targeted in the request body to overwrite/extend.
+  - **value (string)** : The value that will be used to overwrite/extend the key in the request body OR use the [Postman Dynamic variables](https://learning.postman.com/docs/writing-scripts/script-references/variables-list/) to use dynamic values like `{{$guid}}` or `{{randomInt}}`.
+  - **overwrite (Boolean true/false)** : Overwrites the request body value OR attach the value to the original request body value.
 
 Postman request body before:
 
@@ -172,13 +175,24 @@ OpenAPI to Postman Testsuite Configuration:
           "overwrite": true
         }
       ]
+    },
+    {
+      "openApiOperationId": "delete-account",
+      "overwriteRequestPathVariables": [
+        {
+          "key": "id",
+          "value": "99",
+          "overwrite": true
+        }
+      ]
     }
   ]
 }
 
 ```
 
-This will extend the "name" value with the "--{{$randomInt}}" and overwrite the "clientGuid" with the "{{$guid}}".
+The `overwriteRequestBody` example will extend the "name" value with the "--{{$randomInt}}" and overwrite the "clientGuid" with the "{{$guid}}".
+This will only be applied on the OpenAPI operationId
 
 Postman request body after:
 ```JSON
@@ -189,3 +203,5 @@ Postman request body after:
 ```
 
 This is an example where we leverage the Postman Dynamic variables, but also static values can be used to overwrite/extend.
+
+The `overwriteRequestPathVariables` example will overwrite the "id" path variable value with the "99", for the "delete-account" OpenAPI operationId.
