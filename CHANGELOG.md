@@ -1,5 +1,14 @@
 # OpenAPI-Postman Changelog
 
+#### v2.3.0 (February 19, 2021)
+* Fixed [issue](https://community.postman.com/t/user-feedback-updating-api-elements/13308/13) where content type header was reported missing in validation even if present.
+* Feature request [#9046](https://github.com/postmanlabs/postman-app-support/issues/9046) - Added support for validation of request body of type urlencoded.
+
+#### v2.2.0 (January 28, 2021)
+* Fixed [issue](https://community.postman.com/t/openapi-import-with-multi-file-support/9439/8) with import folder flow on respective platform.
+* Fixed issue where collection did not contain name for specification with empty string as title.
+* Updated description of option to disable optional parameters.
+
 #### v2.1.0 (January 27, 2021)
 * Fix for [#9404](https://github.com/postmanlabs/postman-app-support/issues/9404) - Fixed issue where incorrect mismatches were reported for valid path variables.
 * Fixed issue where validation result contained incorrect path variable indices.
@@ -22,7 +31,7 @@
 * Added support for internal $ref resolution in validation flows.
 * Fixed issue where parameter resolution was "schema" when "example" was specified.
 * Add supported formats for schema resolution (deref).
-* Fix for [#7643](https://github.com/postmanlabs/postman-app-support/issues/7643), [#7914](https://github.com/postmanlabs/postman-app-support/issues/7914), [#9004](https://github.com/postmanlabs/postman-app-support/issues/9004) - Added support for Auth params in response/example. 
+* Fix for [#7643](https://github.com/postmanlabs/postman-app-support/issues/7643), [#7914](https://github.com/postmanlabs/postman-app-support/issues/7914), [#9004](https://github.com/postmanlabs/postman-app-support/issues/9004) - Added support for Auth params in response/example.
 * Bumped up multiple dependecies and dev-dependencies versions to keep them up-to-date.
 * Updated code coverage tool from deprecated istanbul to nyc.
 
@@ -95,7 +104,7 @@
 
 #### v1.1.13 (April 21, 2020)
 * Added support for detailed validation body mismatches with option detailedBlobValidation.
-* Fix for [#8098](https://github.com/postmanlabs/postman-app-support/issues/8098) - Unable to validate schema with type array. 
+* Fix for [#8098](https://github.com/postmanlabs/postman-app-support/issues/8098) - Unable to validate schema with type array.
 * Fixed URIError for invalid URI in transaction.
 * Fix for [#152](https://github.com/postmanlabs/openapi-to-postman/issues/152) - Path references not resolved due to improver handling of special characters.
 * Fix for [#160](https://github.com/postmanlabs/openapi-to-postman/issues/160) - Added handling for variables in local servers not a part of a URL segment. All path servers to be added as collection variables.

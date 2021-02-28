@@ -1,0 +1,161 @@
+{
+  "item": [
+    {
+      "id": "f5983708-1a61-43a4-919b-ca40a34fe2a3",
+      "name": "pet",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "9c4d4bf3-c8f6-47f5-83d6-6e25f89c1314",
+          "name": "Updates a pet in the store with form data",
+          "request": {
+            "name": "Updates a pet in the store with form data",
+            "description": {},
+            "url": {
+              "path": [
+                "pets",
+                ":petId"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "description": "(Required) ID of pet that needs to be updated",
+                  "type": "any",
+                  "value": "elit nulla",
+                  "key": "petId"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "method": "POST",
+            "auth": null,
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "prop1",
+                  "value": "hello"
+                },
+                {
+                  "key": "prop2",
+                  "value": "false"
+                },
+                {
+                  "key": "propObjectNonExplodable",
+                  "value": "prop3,hello,prop4,true"
+                },
+                {
+                  "key": "propArray",
+                  "value": "str1"
+                },
+                {
+                  "key": "propArray",
+                  "value": "999"
+                },
+                {
+                  "key": "propSimple",
+                  "value": "123"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "613fc0d2-9836-48a6-9518-8f239ba9427f",
+              "name": "Pet updated.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "pets",
+                    ":petId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "type": "any",
+                      "key": "petId"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "prop1",
+                      "value": "hello"
+                    },
+                    {
+                      "key": "prop2",
+                      "value": "world"
+                    },
+                    {
+                      "key": "propObjectNonExplodable",
+                      "value": "prop1,hello,prop2,world"
+                    },
+                    {
+                      "key": "propArray",
+                      "value": "str1"
+                    },
+                    {
+                      "key": "propArray",
+                      "value": "str2"
+                    },
+                    {
+                      "key": "propSimple",
+                      "value": "123"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "body": "",
+              "cookie": [],
+              "_postman_previewlanguage": "text"
+            }
+          ],
+          "event": []
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "id": "baseUrl",
+      "type": "string",
+      "value": "http://petstore.swagger.io/v1"
+    }
+  ],
+  "info": {
+    "_postman_id": "acd16ff0-eda5-48b4-b0de-4d35138da21d",
+    "name": "Swagger Petstore",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "",
+      "type": "text/plain"
+    }
+  }
+}
