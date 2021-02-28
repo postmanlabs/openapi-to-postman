@@ -108,14 +108,18 @@ Anything added in `overwriteRequestBody` array, will be used to modify to the po
 
 Properties explained:
 - **openApiOperationId (String)** : Reference to the OpenApi operationId for which the Postman Request Body will be extended
+- **overwriteRequestQueryParams (Array)** : Array of key/value pairs to overwrite in the Postman Request Query params.
+  - **key (string)** : The key that will be targeted in the request Query Param to overwrite/extend.
+  - **value (string)** : The value that will be used to overwrite/extend the value in the request Query Param OR use the [Postman Dynamic variables](https://learning.postman.com/docs/writing-scripts/script-references/variables-list/) to use dynamic values like `{{$guid}}` or `{{randomInt}}`.
+  - **overwrite (Boolean true/false | Default: true)** : Overwrites the request body value OR attach the value to the original request Path variable value.
 - **overwriteRequestPathVariables (Array)** : Array of key/value pairs to overwrite in the Postman Request Path Variables.
   - **key (string)** : The key that will be targeted in the request Path variables to overwrite/extend.
   - **value (string)** : The value that will be used to overwrite/extend the value in the request path variable OR use the [Postman Dynamic variables](https://learning.postman.com/docs/writing-scripts/script-references/variables-list/) to use dynamic values like `{{$guid}}` or `{{randomInt}}`.
-  - **overwrite (Boolean true/false)** : Overwrites the request body value OR attach the value to the original request Path variable value.
+  - **overwrite (Boolean true/false | Default: true)** : Overwrites the request body value OR attach the value to the original request Path variable value.
 - **overwriteRequestBody (Array)** : Array of key/value pairs to overwrite in the Postman Request Body.
   - **key (string)** : The key that will be targeted in the request body to overwrite/extend.
   - **value (string)** : The value that will be used to overwrite/extend the key in the request body OR use the [Postman Dynamic variables](https://learning.postman.com/docs/writing-scripts/script-references/variables-list/) to use dynamic values like `{{$guid}}` or `{{randomInt}}`.
-  - **overwrite (Boolean true/false)** : Overwrites the request body value OR attach the value to the original request body value.
+  - **overwrite (Boolean true/false | Default: true)** : Overwrites the request body value OR attach the value to the original request body value.
 
 Postman request body before:
 
@@ -162,6 +166,21 @@ OpenAPI to Postman Testsuite Configuration:
   ],
   "overwriteRequests": [
     {
+      "openApiOperationId": "get-accounts",
+      "overwriteRequestQueryParams": [
+        {
+          "key": "$count",
+          "value": true,
+          "overwrite": true
+        },
+        {
+          "key": "$filter",
+          "value": "{{$randomInt}}",
+          "overwrite": false
+        }
+      ]
+    },
+    {
       "openApiOperationId": "post-accounts",
       "overwriteRequestBody": [
         {
@@ -190,8 +209,11 @@ OpenAPI to Postman Testsuite Configuration:
 }
 
 ```
+The `overwriteRequestQueryParams` example will overwrite the "$count" query param value with the boolean "true" and the
+"$filter" with dynamic value for "$randomInt", for the "get-accounts" OpenAPI operationId.
 
-The `overwriteRequestBody` example will extend the "name" value with the "--{{$randomInt}}" and overwrite the "clientGuid" with the "{{$guid}}".
+The `overwriteRequestBody` example will extend the "name" value with the "--{{$randomInt}}" and overwrite the
+"clientGuid" with the "{{$guid}}".
 This will only be applied on the OpenAPI operationId
 
 Postman request body after:
@@ -204,4 +226,5 @@ Postman request body after:
 
 This is an example where we leverage the Postman Dynamic variables, but also static values can be used to overwrite/extend.
 
-The `overwriteRequestPathVariables` example will overwrite the "id" path variable value with the "99", for the "delete-account" OpenAPI operationId.
+The `overwriteRequestPathVariables` example will overwrite the "id" path variable value with the "99", for the
+"delete-account" OpenAPI operationId.
