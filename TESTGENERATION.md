@@ -77,6 +77,8 @@ The JSON test suite format consists out of 3 parts:
     will be generated for **all** operations).
 - **extendTests**:  which refers the custom additions of manual created postman tests. (
   see [Postman test suite extendTests](#postman-test-suite-extendtests))
+- **assignPmVariables**:  which refers to specific Postman environment variables for easier automation. (
+  see [Postman test suite assignPmVariables](#postman-test-suite-assignpmvariables))
 - **overwriteRequests**:  which refers the custom additions/modifications of the OpenAPI request body. (
   see [Postman test suite overwriteRequests](#postman-test-suite-overwriterequests))
 
@@ -106,6 +108,81 @@ in `tests` array, will be added to the postman test scripts.
   see [Postman test suite properties](#postman-test-suite-properties)) with specifics for the openApiOperationId.
 - **overwrite (Boolean true/false)** : Resets all generateTests and overwrites them with the defined tests from
   the `tests` array. Default: false
+
+## Postman test suite assignPmVariables
+
+To facilitate automation, we provide the option set "pm.environment" variables with values from the response.
+The assigning of the pm.environment are mapped based on the OpenApi operationId.
+
+REMARK: By default the test suite will create pm.environment variable for the ID property in the response object, if
+ID is present in the reponse.
+
+Anything added in `assignPmVariables` array, will be used to generate specific pm.environment variables based on the
+postman response body.
+
+Properties explained:
+
+- **openApiOperationId (String)** : Reference to the OpenApi operationId for which the Postman pm.environment variable
+  will be set.
+- **environmentVariables (Array)** : Array of key/value pairs to overwrite in the Postman Request Query params.
+  - **responseProp (string)** : The property for which the value will be taken in the response body and set as the
+    pm.environment value.
+  - **name (string OPTIONAL | Default: openApiOperationId.responseProp)** : The name that will be used to overwrite
+    the default generated variable name
+
+Example:
+
+```JSON
+{
+  "assignPmVariables": [
+    {
+      "openApiOperationId": "post-accounts",
+      "environmentVariables": [
+        {
+          "responseProp": "clientGuid",
+          "name": "client-ID"
+        }
+      ]
+    },
+    {
+      "openApiOperationId": "get-accounts",
+      "environmentVariables": [
+        {
+          "responseProp": "value[0].servers[0]",
+          "name": "server-address"
+        }
+      ]
+    }
+  ]
+}
+```
+
+This will generate the following:
+- pm.environment for "post-accounts.id" - use {{post-accounts.id}} as variable for "reponse.id
+- pm.environment for "get-accounts" - use {{server-address}} as variable for "reponse.value[0].servers[0]"
+
+This information on the assignment of the pm.environment will be published in the Postman Test script and during
+the conversion via the CLI
+
+This results in the following functions on the Postman Test pane:
+
+```javascript
+
+// Set response object as internal variable
+let jsonData = pm.response.json();
+
+// pm.environment - Set post-accounts.id as environment variable
+if (jsonData.id) {
+   pm.environment.set("post-accounts.id",jsonData.id);
+   console.log("pm.environment - use {{post-accounts.id}} as variable for value", jsonData.id);
+};
+
+// pm.environment - Set post-accounts.servers[0] as environment variable
+if (jsonData.value[0].servers[0]) {
+   pm.environment.set("server-address",jsonData.value[0].servers[0]);
+   console.log("pm.environment - use {{server-address}} as variable for value", jsonData.value[0].servers[0]);
+};
+```
 
 ## Postman test suite overwriteRequests
 
@@ -187,6 +264,26 @@ OpenAPI to Postman Testsuite Configuration:
       "tests": [
         "pm.test('200 ok', function(){pm.response.to.have.status(200);});",
         "pm.test('check userId after create', function(){Number.isInteger(responseBody);});"
+      ]
+    }
+  ],
+  "assignPmVariables": [
+    {
+      "openApiOperationId": "post-accounts",
+      "environmentVariables": [
+        {
+          "responseProp": "clientGuid",
+          "name": "client-ID"
+        }
+      ]
+    },
+    {
+      "openApiOperationId": "get-accounts",
+      "environmentVariables": [
+        {
+          "responseProp": "value[0].servers[0]",
+          "name": "server-address"
+        }
       ]
     }
   ],
