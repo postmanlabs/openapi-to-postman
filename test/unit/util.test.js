@@ -231,7 +231,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         },
         retVal = SchemaUtils.convertToPmCollectionVariables(serverVariables, null, null);
       expect(retVal).to.be.an('array');
-      expect(retVal[0].id).to.equal('v1');
+      expect(retVal[0].key).to.equal('v1');
       expect(retVal[0].value).to.equal('v2.0');
     });
 
@@ -249,9 +249,9 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
       expect(retVal).to.be.an('array');
 
-      expect(retVal[0].id).to.equal('v1');
+      expect(retVal[0].key).to.equal('v1');
       expect(retVal[0].value).to.equal('v2.0');
-      expect(retVal[1].id).to.equal('baseUrl');
+      expect(retVal[1].key).to.equal('baseUrl');
       expect(retVal[1].value).to.equal('hello.com');
     });
   });
