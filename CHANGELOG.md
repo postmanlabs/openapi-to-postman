@@ -1,5 +1,11 @@
 # OpenAPI-Postman Changelog
 
+#### v2.4.0 (March 08, 2021)
+* Fix for [#9396](https://github.com/postmanlabs/postman-app-support/issues/9396) - Fixed validation issue where result contained matched endpoints in incorrect order.
+* Fix for [#328](https://github.com/postmanlabs/openapi-to-postman/issues/328) - Fixed incorrect usage of id field in sdk.variable and used key.
+* Fix for [issue](https://community.postman.com/t/user-feedback-updating-api-elements/13308/13) where implicit headers generation and validation.
+* Fix for [#329](https://github.com/postmanlabs/openapi-to-postman/issues/329) - Fixed issue where --test was failing for cli.
+
 #### v2.3.0 (February 19, 2021)
 * Fixed [issue](https://community.postman.com/t/user-feedback-updating-api-elements/13308/13) where content type header was reported missing in validation even if present.
 * Feature request [#9046](https://github.com/postmanlabs/postman-app-support/issues/9046) - Added support for validation of request body of type urlencoded.
