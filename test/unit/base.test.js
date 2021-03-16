@@ -908,12 +908,13 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
 
-    it('[Github #31] - should set optional params as disabled', function(done) {
+    it('[Github #31] & [GitHub #337] - should set optional params as disabled', function(done) {
       let options = { schemaFaker: true, disableOptionalParameters: true };
       Converter.convert({ type: 'file', data: requiredInParams }, options, (err, conversionResult) => {
         expect(err).to.be.null;
         let requests = conversionResult.output[0].data.item[0].item,
-          request;
+          request,
+          urlencodedBody;
 
         // GET /pets
         // query1 required, query2 optional
@@ -924,6 +925,13 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(request.header[0].disabled).to.be.false;
         expect(request.header[1].disabled).to.be.true;
 
+        // POST /pets
+        // urlencoded body
+        urlencodedBody = requests[2].request.body.urlencoded;
+        expect(urlencodedBody[0].key).to.eql('urlencodedParam1');
+        expect(urlencodedBody[0].disabled).to.be.false;
+        expect(urlencodedBody[1].key).to.eql('urlencodedParam2');
+        expect(urlencodedBody[1].disabled).to.be.true;
         done();
       });
     });
