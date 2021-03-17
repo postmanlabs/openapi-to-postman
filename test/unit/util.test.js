@@ -2017,6 +2017,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
       expect(SchemaUtils.fixPathVariablesInUrl('{{a}}')).to.equal('{{a}}');
 
+      expect(SchemaUtils.fixPathVariablesInUrl('/agents/{agentId}}')).to.equal('/agents/{{agentId}}}');
+
       expect(SchemaUtils.fixPathVariablesInUrl('{{a}}://{b}.com/{pathvar}/{morevar}'))
         .to.equal('{{a}}://{{b}}.com/{{pathvar}}/{{morevar}}');
 
