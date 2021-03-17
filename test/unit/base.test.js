@@ -409,6 +409,20 @@ describe('CONVERT FUNCTION TESTS ', function() {
             done();
           });
       });
+
+      it('[Github #338] Should contain non-truthy example from examples outside of schema instead of faked value' +
+      examplesOutsideSchema, function(done) {
+        Converter.convert({ type: 'file', data: examplesOutsideSchema },
+          { schemaFaker: true, requestParametersResolution: 'example', exampleParametersResolution: 'example' },
+          (err, conversionResult) => {
+            let rootRequest = conversionResult.output[0].data.item[0].request;
+
+            expect(err).to.be.null;
+            expect(rootRequest.url.query[0].key).to.eql('limit');
+            expect(rootRequest.url.query[0].value).to.eql('0');
+            done();
+          });
+      });
     });
     it('[Github #117]- Should add the description in body params in case of urlencoded' +
     descriptionInBodyParams, function(done) {
