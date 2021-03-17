@@ -54,13 +54,25 @@ paths:
                 propSimple:
                   type: integer
                   example: 123
+                propObjectMissing:
+                  type: object
+                  properties:
+                    prop1:
+                      type: string
+                      example: hola
+                    prop2:
+                      type: string
+                      example: world!
               required:
-              - status
+              - propObjectMissing
             encoding:
               propObjectExplodable:
                 style: form
                 explode: true
               propObjectNonExplodable:
+                style: form
+                explode: false
+              propObjectMissing:
                 style: form
                 explode: false
       responses:
