@@ -216,6 +216,23 @@ describe('DEREF FUNCTION TESTS ', function() {
       });
       done();
     });
+
+    it('should not contain format property in resolved schema if pattern is already defined', function(done) {
+      var schema = {
+          'type': 'string',
+          'format': 'date-time',
+          'pattern': '^([0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])' +
+            '( (2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9]))?$'
+        },
+        parameterSource = 'REQUEST',
+        output;
+
+      output = deref.resolveRefs(schema, parameterSource, {});
+      expect(output.type).to.equal('string');
+      expect(output.format).to.be.undefined;
+      expect(output.pattern).to.eql(schema.pattern);
+      done();
+    });
   });
 
   describe('resolveAllOf Function', function () {
