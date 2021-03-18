@@ -1,5 +1,11 @@
 # OpenAPI-Postman Changelog
 
+#### v2.5.0 (March 18, 2021)
+* Fix for [#337](https://github.com/postmanlabs/openapi-to-postman/issues/337) - Fixed issue where non-required params were not disbled for urlencoded body.
+* Fix for [#338](https://github.com/postmanlabs/openapi-to-postman/issues/338) - Fixed issue where examples which had non-truthy value were not present in converted collection.
+* Fixed issue where resolved schema contain conflicting info regarding pattern and format resulting in validation mismatches.
+* Fixed issue where definition for path variable in path caused no matched request for certain paths in validation.
+
 #### v2.4.0 (March 08, 2021)
 * Fix for [#9396](https://github.com/postmanlabs/postman-app-support/issues/9396) - Fixed validation issue where result contained matched endpoints in incorrect order.
 * Fix for [#328](https://github.com/postmanlabs/openapi-to-postman/issues/328) - Fixed incorrect usage of id field in sdk.variable and used key.
