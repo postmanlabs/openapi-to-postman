@@ -1,5 +1,8 @@
 # OpenAPI-Postman Changelog
 
+#### v2.5.1 (March 19, 2021)
+* Fixed wrongly defined maxLength and minLength options for schemaFaker.
+
 #### v2.5.0 (March 18, 2021)
 * Fix for [#337](https://github.com/postmanlabs/openapi-to-postman/issues/337) - Fixed issue where non-required params were not disbled for urlencoded body.
 * Fix for [#338](https://github.com/postmanlabs/openapi-to-postman/issues/338) - Fixed issue where examples which had non-truthy value were not present in converted collection.
