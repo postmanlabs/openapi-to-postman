@@ -967,7 +967,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         });
     });
-    it('[GitHub #349] - The converter should return auth type noauth for empty security object', function (done) {
+    it('[GitHub #349] - The converter should return auth type noauth for an empty security object', function (done) {
       var emptyAuthSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/noauth.yaml'),
         openapi = fs.readFileSync(emptyAuthSpec, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { requestNameSource: 'URL' },
