@@ -646,30 +646,30 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
   });
 
   describe('convertToPmBodyData', function() {
-    it('should work for schemas', function() {
+    it('should work for schemas', async function() {
       var bodyWithSchema = {
           schema: {
             type: 'integer',
             format: 'int32'
           }
         },
-        retValSchema = SchemaUtils.convertToPmBodyData(bodyWithSchema, 'ROOT', 'application/json');
+        retValSchema = await SchemaUtils.convertToPmBodyData(bodyWithSchema, 'ROOT', 'application/json');
 
       expect(retValSchema).to.be.equal('<integer>');
     });
 
-    it('should work for example', function() {
+    it('should work for example', async function() {
       var bodyWithExample = {
           example: {
             value: 'This is a sample value'
           }
         },
-        retValExample = SchemaUtils.convertToPmBodyData(bodyWithExample, 'application/json');
+        retValExample = await SchemaUtils.convertToPmBodyData(bodyWithExample, 'application/json');
 
       expect(retValExample).to.equal('This is a sample value');
     });
 
-    it('should work for examples', function() {
+    it('should work for examples', async function() {
       var bodyWithExamples = {
           examples: {
             foo: {
@@ -680,19 +680,19 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           }
         },
-        retValExamples = SchemaUtils.convertToPmBodyData(bodyWithExamples, 'ROOT', 'application/json',
+        retValExamples = await SchemaUtils.convertToPmBodyData(bodyWithExamples, 'ROOT', 'application/json',
           'request', ' ', null, { requestParametersResolution: 'example' });
       expect(retValExamples.foo).to.equal(1);
       expect(retValExamples.bar).to.equal(2);
     });
 
-    it('should work for examples with a $ref for non-json requests', function() {
+    it('should work for examples with a $ref for non-json requests', async function() {
       var bodyWithExamples = {
           'example': {
             '$ref': '#/components/examples/SampleExample/value'
           }
         },
-        retValExample = SchemaUtils.convertToPmBodyData(bodyWithExamples, 'ROOT', 'text/plain',
+        retValExample = await SchemaUtils.convertToPmBodyData(bodyWithExamples, 'ROOT', 'text/plain',
           'request', ' ', {
             components: {
               examples: {
@@ -708,13 +708,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       expect(retValExample).to.equal('Hello');
     });
 
-    it('should work for examples with a $ref for json requests', function() {
+    it('should work for examples with a $ref for json requests', async function() {
       var bodyWithExamples = {
           'example': {
             '$ref': '#/components/examples/SampleExample/value'
           }
         },
-        retValExample = SchemaUtils.convertToPmBodyData(bodyWithExamples, 'ROOT', 'application/json',
+        retValExample = await SchemaUtils.convertToPmBodyData(bodyWithExamples, 'ROOT', 'application/json',
           'request', ' ', {
             'components': {
               'examples': {
@@ -1508,7 +1508,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
   describe('convertToPmBody function', function() {
     describe('should convert requestbody of media type', function() {
-      it(' application/json', function(done) {
+      it(' application/json', async function() {
         var requestBody = {
             description: 'body description',
             content: {
@@ -1537,14 +1537,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           result, resultBody;
-        result = SchemaUtils.convertToPmBody(requestBody);
+        result = await SchemaUtils.convertToPmBody(requestBody);
         resultBody = JSON.parse(result.body.raw);
         expect(resultBody.id).to.equal('<long>');
         expect(resultBody.name).to.equal('<string>');
         expect(result.contentHeader).to.deep.include({ key: 'Content-Type', value: 'application/json' });
-        done();
       });
-      it(' application/x-www-form-urlencoded', function(done) {
+      it(' application/x-www-form-urlencoded', async function() {
         var requestBody = {
             description: 'body description',
             content: {
@@ -1554,14 +1553,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           result, resultBody;
-        result = SchemaUtils.convertToPmBody(requestBody);
+        result = await SchemaUtils.convertToPmBody(requestBody);
         resultBody = (result.body.urlencoded.toJSON());
         expect(resultBody).to.eql([]);
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'application/x-www-form-urlencoded' });
-        done();
       });
-      it(' multipart/form-data', function(done) {
+      it(' multipart/form-data', async function() {
         var requestBody = {
             description: 'body description',
             content: {
@@ -1582,14 +1580,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           result, resultBody;
-        result = SchemaUtils.convertToPmBody(requestBody);
+        result = await SchemaUtils.convertToPmBody(requestBody);
         resultBody = (result.body.formdata.toJSON());
         expect(resultBody[0].key).to.equal('file');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'multipart/form-data' });
-        done();
       });
-      it(' text/xml', function(done) { // not properly done
+      it(' text/xml', async function() { // not properly done
         var requestBody = {
             description: 'body description',
             content: {
@@ -1604,16 +1601,15 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           result, resultBody;
-        result = SchemaUtils.convertToPmBody(requestBody, 'ROOT', {}, {
+        result = await SchemaUtils.convertToPmBody(requestBody, 'ROOT', {}, {
           requestParametersResolution: 'example'
         });
         resultBody = (result.body.raw);
         expect(resultBody).to.equal('"text/plain description"');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/xml' });
-        done();
       });
-      it(' text/plain', function(done) {
+      it(' text/plain', async function() {
         var requestBody = {
             description: 'body description',
             content: {
@@ -1626,14 +1622,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           result, resultBody;
-        result = SchemaUtils.convertToPmBody(requestBody);
+        result = await SchemaUtils.convertToPmBody(requestBody);
         resultBody = result.body.raw;
         expect(resultBody).to.equal('"text/plain description"');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/plain' });
-        done();
       });
-      it(' text/html', function(done) {
+      it(' text/html', async function() {
         var requestBody = {
             description: 'body description',
             content: {
@@ -1646,14 +1641,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           result, resultBody;
-        result = SchemaUtils.convertToPmBody(requestBody);
+        result = await SchemaUtils.convertToPmBody(requestBody);
         resultBody = (result.body.raw);
         expect(resultBody).to.equal('"<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>"');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/html' });
-        done();
       });
-      it(' application/javascript', function(done) { // not properly done
+      it(' application/javascript', async function() { // not properly done
         var requestBody = {
             description: 'body description',
             content: {
@@ -1662,12 +1656,11 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           result, resultBody;
-        result = SchemaUtils.convertToPmBody(requestBody);
+        result = await SchemaUtils.convertToPmBody(requestBody);
         resultBody = (result.body.raw);
         expect(typeof resultBody).to.equal('string');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'application/javascript' });
-        done();
       });
       // things remaining : application/xml
     });
@@ -1675,13 +1668,14 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
   describe('convertToPmResponseBody function', function() {
     describe('should convert content object to response body data', function() {
-      it('with undefined ContentObj', function() {
+      it('with undefined ContentObj', async function() {
         var contentObj,
           pmResponseBody;
-        pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj).responseBody;
+        pmResponseBody = await SchemaUtils.convertToPmResponseBody(contentObj);
+        pmResponseBody = pmResponseBody.responseBody;
         expect(pmResponseBody).to.equal('');
       });
-      it('with Content-Type application/json', function() {
+      it('with Content-Type application/json', async function() {
         var contentObj = {
             'application/json': {
               'schema': {
@@ -1703,11 +1697,12 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           pmResponseBody;
-        pmResponseBody = JSON.parse(SchemaUtils.convertToPmResponseBody(contentObj).responseBody);
+        pmResponseBody = await SchemaUtils.convertToPmResponseBody(contentObj);
+        pmResponseBody = JSON.parse(pmResponseBody.responseBody);
         expect(pmResponseBody.id).to.equal('<long>');
         expect(pmResponseBody.name).to.equal('<string>');
       });
-      it('with Content-Type application/vnd.retailer.v2+json', function() {
+      it('with Content-Type application/vnd.retailer.v2+json', async function() {
         var contentObj = {
             'application/vnd.retailer.v2+json': {
               'schema': {
@@ -1729,11 +1724,12 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           pmResponseBody;
-        pmResponseBody = JSON.parse(SchemaUtils.convertToPmResponseBody(contentObj).responseBody);
+        pmResponseBody = await SchemaUtils.convertToPmResponseBody(contentObj);
+        pmResponseBody = JSON.parse(pmResponseBody.responseBody);
         expect(pmResponseBody.id).to.equal('<long>');
         expect(pmResponseBody.name).to.equal('<string>');
       });
-      it('with Content-Type application/vnd.api+json', function() {
+      it('with Content-Type application/vnd.api+json', async function() {
         var contentObj = {
             'application/vnd.api+json': {
               'schema': {
@@ -1755,11 +1751,12 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           pmResponseBody;
-        pmResponseBody = JSON.parse(SchemaUtils.convertToPmResponseBody(contentObj).responseBody);
+        pmResponseBody = await SchemaUtils.convertToPmResponseBody(contentObj);
+        pmResponseBody = JSON.parse(pmResponseBody.responseBody);
         expect(pmResponseBody.id).to.equal('<long>');
         expect(pmResponseBody.name).to.equal('<string>');
       });
-      it('with Content-Type application/json and specified indentCharacter', function() {
+      it('with Content-Type application/json and specified indentCharacter', async function() {
         var contentObj = {
             'application/json': {
               'schema': {
@@ -1773,12 +1770,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           pmResponseBody;
-        pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj, {}, {
+        pmResponseBody = await SchemaUtils.convertToPmResponseBody(contentObj, {}, {
           indentCharacter: '\t'
-        }).responseBody;
+        });
+        pmResponseBody = pmResponseBody.responseBody;
         expect(pmResponseBody).to.equal('{\n\t"id": "<integer>"\n}');
       });
-      it('with Content-Type text/plain', function() {
+      it('with Content-Type text/plain', async function() {
         var contentObj = {
             'text/plain': {
               'schema': {
@@ -1787,10 +1785,11 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           pmResponseBody;
-        pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj).responseBody;
+        pmResponseBody = await SchemaUtils.convertToPmResponseBody(contentObj);
+        pmResponseBody = pmResponseBody.responseBody;
         expect(typeof pmResponseBody).to.equal('string');
       });
-      it('with Content-Type application/xml', function() {
+      it('with Content-Type application/xml', async function() {
         var contentObj = {
             'application/xml': {
               'schema': {
@@ -1813,9 +1812,10 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           pmResponseBody;
-        pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj, {}, {
+        pmResponseBody = await SchemaUtils.convertToPmResponseBody(contentObj, {}, {
           indentCharacter: ' '
-        }).responseBody;
+        });
+        pmResponseBody = pmResponseBody.responseBody;
         expect(pmResponseBody).to.equal(
           [
             '<Person id="(integer)">',
@@ -1829,16 +1829,17 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             '</Person>'
           ].join('\n'));
       });
-      it('with Content-Type application/javascript', function() {
+      it('with Content-Type application/javascript', async function() {
         var contentObj = {
             'application/javascript': {
             }
           },
           pmResponseBody;
-        pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj).responseBody;
+        pmResponseBody = await SchemaUtils.convertToPmResponseBody(contentObj);
+        pmResponseBody = pmResponseBody.responseBody;
         expect(typeof pmResponseBody).to.equal('string');
       });
-      it('with Content-Type unsupported', function() {
+      it('with Content-Type unsupported', async function() {
         var contentObj = {
             'application/vnd.api+json+unsupported': {
               'schema': {
@@ -1860,7 +1861,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           pmResponseBody;
-        pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj).responseBody;
+        pmResponseBody = await SchemaUtils.convertToPmResponseBody(contentObj);
+        pmResponseBody = pmResponseBody.responseBody;
         expect(pmResponseBody).to.equal('');
       });
       // things remaining application/xml, application/javascript
@@ -1868,7 +1870,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
   });
 
   describe('convertToPmResponse function', function() {
-    it('should convert response with JSON content field', function(done) {
+    it('should convert response with JSON content field', async function() {
       var response = {
           'description': 'A list of pets.',
           'content': {
@@ -1895,7 +1897,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         code = '20X',
         pmResponse, responseBody;
 
-      pmResponse = SchemaUtils.convertToPmResponse(response, code).toJSON();
+      pmResponse = await SchemaUtils.convertToPmResponse(response, code);
+      pmResponse = pmResponse.toJSON();
       responseBody = JSON.parse(pmResponse.body);
       expect(pmResponse.name).to.equal(response.description);
       expect(pmResponse.code).to.equal(200);
@@ -1906,9 +1909,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       });
       expect(responseBody.id).to.equal('<long>');
       expect(responseBody.name).to.equal('<string>');
-      done();
     });
-    it('should convert response with XML content field', function(done) {
+    it('should convert response with XML content field', async function() {
       var response = {
           'description': 'A list of pets.',
           'content': {
@@ -1935,7 +1937,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         code = '20X',
         pmResponse;
 
-      pmResponse = SchemaUtils.convertToPmResponse(response, code).toJSON();
+      pmResponse = await SchemaUtils.convertToPmResponse(response, code);
+      pmResponse = pmResponse.toJSON();
       expect(pmResponse.body).to.equal('<element>\n <id>(integer)</id>\n <name>(string)</name>\n</element>');
       expect(pmResponse.name).to.equal(response.description);
       expect(pmResponse.code).to.equal(200);
@@ -1944,16 +1947,16 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         'key': 'Content-Type',
         'value': 'application/xml'
       });
-      done();
     });
-    it('should convert response without content field', function(done) {
+    it('should convert response without content field', async function() {
       var response = {
           'description': 'A list of pets.'
         },
         code = '201',
         pmResponse;
 
-      pmResponse = SchemaUtils.convertToPmResponse(response, code).toJSON();
+      pmResponse = await SchemaUtils.convertToPmResponse(response, code);
+      pmResponse = pmResponse.toJSON();
       expect(pmResponse.name).to.equal(response.description);
       expect(pmResponse.code).to.equal(201);
       expect(pmResponse.body).to.equal('');
@@ -1961,9 +1964,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         'key': 'Content-Type',
         'value': 'text/plain'
       });
-      done();
     });
-    it('should convert headers with refs', function(done) {
+    it('should convert headers with refs', async function() {
       var response = {
           'description': '`Too Many Requests`\\n',
           'headers': {
@@ -1973,7 +1975,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           }
         },
         code = '200',
-        pmResponse = SchemaUtils.convertToPmResponse(response, code, null, {
+        pmResponse = await SchemaUtils.convertToPmResponse(response, code, null, {
           components: {
             'responses': {
               'TooManyRequests': {
@@ -2006,7 +2008,6 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
       expect(pmResponse.headers.members[0].key).to.equal('Retry-After');
       expect(pmResponse.headers.members[0].description).to.equal('Some description');
-      done();
     });
   });
 
