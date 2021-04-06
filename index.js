@@ -4,11 +4,11 @@ const SchemaPack = require('./lib/schemapack.js').SchemaPack;
 
 module.exports = {
   // Old API wrapping the new API
-  convert: function(input, options, cb) {
+  convert: async function(input, options, cb) {
     var schema = new SchemaPack(input, options);
 
     if (schema.validated) {
-      return schema.convert(cb);
+      return await schema.convert(cb);
     }
     return cb(null, schema.validationResult);
   },
