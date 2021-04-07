@@ -1,6 +1,6 @@
 var path = '../../',
   expect = require('expect.js'),
-  pack = require(path),
+  pkg = require(path),
   packageJson = require(path + '/package.json');
 
 /* global describe, it */
@@ -17,18 +17,18 @@ describe('Plugin ' + packageJson.name, function() {
   });
 
   it('should expose the required functions', function (done) {
-    expect(typeof pack.validate).to.equal('function');
-    expect(typeof pack.convert).to.equal('function');
+    expect(typeof pkg.validate).to.equal('function');
+    expect(typeof pkg.convert).to.equal('function');
     done();
   });
 
   it('should validate the sample input correctly', function (done) {
-    expect(pack.validate(sampleInput).result).to.equal(true);
+    expect(pkg.validate(sampleInput).result).to.equal(true);
     done();
   });
 
   it('should convert the sample input correctly', function (done) {
-    pack.convert(sampleInput, {}, function(err, result) {
+    pkg.convert(sampleInput, {}, function(err, result) {
       expect(err).to.be(null);
       expect(result.result).to.equal(true);
       result.output.forEach(function (element) {
