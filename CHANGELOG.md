@@ -1,5 +1,20 @@
 # OpenAPI-Postman Changelog
 
+#### v2.5.1 (March 19, 2021)
+* Fixed wrongly defined maxLength and minLength options for schemaFaker.
+
+#### v2.5.0 (March 18, 2021)
+* Fix for [#337](https://github.com/postmanlabs/openapi-to-postman/issues/337) - Fixed issue where non-required params were not disbled for urlencoded body.
+* Fix for [#338](https://github.com/postmanlabs/openapi-to-postman/issues/338) - Fixed issue where examples which had non-truthy value were not present in converted collection.
+* Fixed issue where resolved schema contain conflicting info regarding pattern and format resulting in validation mismatches.
+* Fixed issue where definition for path variable in path caused no matched request for certain paths in validation.
+
+#### v2.4.0 (March 08, 2021)
+* Fix for [#9396](https://github.com/postmanlabs/postman-app-support/issues/9396) - Fixed validation issue where result contained matched endpoints in incorrect order.
+* Fix for [#328](https://github.com/postmanlabs/openapi-to-postman/issues/328) - Fixed incorrect usage of id field in sdk.variable and used key.
+* Fix for [issue](https://community.postman.com/t/user-feedback-updating-api-elements/13308/13) where implicit headers generation and validation.
+* Fix for [#329](https://github.com/postmanlabs/openapi-to-postman/issues/329) - Fixed issue where --test was failing for cli.
+
 #### v2.3.0 (February 19, 2021)
 * Fixed [issue](https://community.postman.com/t/user-feedback-updating-api-elements/13308/13) where content type header was reported missing in validation even if present.
 * Feature request [#9046](https://github.com/postmanlabs/postman-app-support/issues/9046) - Added support for validation of request body of type urlencoded.

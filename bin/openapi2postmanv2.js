@@ -160,7 +160,7 @@ function convert(swaggerData) {
 }
 
 if (testFlag) {
-  swaggerData = fs.readFileSync('../examples/sample-swagger.yaml', 'utf8');
+  swaggerData = fs.readFileSync(path.resolve(__dirname, '..', 'examples', 'sample-swagger.yaml'), 'utf8');
   convert(swaggerData);
 }
 else if (inputFile) {

@@ -669,4 +669,42 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       done();
     });
   });
+
+  describe('findMatchingRequestFromSchema function', function () {
+    it('#GITHUB-9396 Should maintain correct order of matched endpoint', function (done) {
+      let schema = {
+          paths: {
+            '/lookups': {
+              'get': { 'summary': 'Lookup Job Values' }
+            },
+            '/{jobid}': {
+              'get': {
+                'summary': 'Get Job by ID',
+                'parameters': [
+                  {
+                    'in': 'path',
+                    'name': 'jobid',
+                    'schema': {
+                      'type': 'string'
+                    },
+                    'required': true,
+                    'description': 'Unique identifier for a job to retrieve.',
+                    'example': '{{jobid}}'
+                  }
+                ]
+              }
+            }
+          }
+        },
+        schemaPath = '{{baseUrl}}/{{jobid}}',
+        result;
+
+      result = schemaUtils.findMatchingRequestFromSchema('GET', schemaPath, schema, { strictRequestMatching: true });
+
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].name).to.eql('GET /{jobid}');
+      expect(result[1].name).to.eql('GET /lookups');
+      done();
+    });
+  });
 });
