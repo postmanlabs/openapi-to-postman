@@ -973,8 +973,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       Converter.convert({ type: 'string', data: openapi }, { requestNameSource: 'URL' },
         (err, conversionResult) => {
           expect(err).to.be.null;
-          let request = conversionResult.output[0].data.item[0].response;
-          expect(request.length).to.equal(2);
+          let response = conversionResult.output[0].data.item[0].response;
+          expect(response.length).to.equal(2);
           done();
         });
     });
