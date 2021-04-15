@@ -24576,8 +24576,8 @@ function extend() {
           return schema.example;
         }
       }
-      if (optionAPI('useDefaultValue') && 'default' in schema) {
-          return schema.default;
+      if (optionAPI('useDefaultValue') && '__default__' in schema) {
+          return schema.__default__;
       }
       if (schema.not && typeof schema.not === 'object') {
           schema = utils.notValue(schema.not, utils.omitProps(schema, ['not']));
