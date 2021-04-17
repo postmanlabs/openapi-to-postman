@@ -1494,7 +1494,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
       it('style:deepObject } to pm param', function (done) {
         let pmParam = SchemaUtils.convertToPmQueryParameters(_.assign(emptyObjParam, { style: 'deepObject' }));
-        expect(pmParam).to.eql([]);
+        expect(pmParam[0].value).to.equal('<object>');
         done();
       });
 
