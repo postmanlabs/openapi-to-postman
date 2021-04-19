@@ -83,10 +83,11 @@ function matchEndpoints (oasSpec, requestsSource, sourceFormat, callback) {
     result = {};
 
   try {
-    parsedSpec = parser.getOasObject(oasSpec);
-    if (!parsedSpec.result) {
+    let parsedOasObject = parser.getOasObject(oasSpec);
+    if (!parsedOasObject.result) {
       throw new Error('Problem with parsing OpenAPI specification');
     }
+    parsedSpec = parsedOasObject.oasObject;
     schemaPack = new Converter.SchemaPack({ type: 'json', data: parsedSpec }, {});
   }
   catch (error) {
@@ -106,7 +107,7 @@ function matchEndpoints (oasSpec, requestsSource, sourceFormat, callback) {
       let matchedPaths = schemaUtils.findMatchingRequestFromSchema(
           request.method,
           request.url,
-          oasSpec,
+          parsedSpec,
           { strictRequestMatching: true }
         ),
         requestKey = request.id || request.jsonPath,
