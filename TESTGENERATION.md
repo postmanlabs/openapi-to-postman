@@ -201,6 +201,7 @@ Properties explained:
     to use dynamic values like `{{$guid}}` or `{{$randomInt}}`.
   - **overwrite (Boolean true/false | Default: true)** : Overwrites the request query param value OR attach the value
     to the original request query param value.
+  - **remove (Boolean true/false | Default: false)** : Removes the request query param
 - **overwriteRequestPathVariables (Array)** : Array of key/value pairs to overwrite in the Postman Request Path
   Variables.
   - **key (string)** : The key that will be targeted in the request Path variables to overwrite/extend.
@@ -209,6 +210,7 @@ Properties explained:
     to use dynamic values like `{{$guid}}` or `{{$randomInt}}`.
   - **overwrite (Boolean true/false | Default: true)** : Overwrites the request path variable value OR attach the value to the
     original request Path variable value.
+  - **remove (Boolean true/false | Default: false)** : Removes the request path variable
 - **overwriteRequestHeaders (Array)** : Array of key/value pairs to overwrite in the Postman Request Headers.
   - **key (string)** : The key that will be targeted in the request Headers to overwrite/extend.
   - **value (string)** : The value that will be used to overwrite/extend the value in the request headers OR use
@@ -216,6 +218,7 @@ Properties explained:
     to use dynamic values like `{{$guid}}` or `{{$randomInt}}`.
   - **overwrite (Boolean true/false | Default: true)** : Overwrites the request header value OR attach the value to the
     original request header value.
+  - **remove (Boolean true/false | Default: false)** : Removes the request headers
 - **overwriteRequestBody (Array)** : Array of key/value pairs to overwrite in the Postman Request Body.
   - **key (string)** : The key that will be targeted in the request body to overwrite/extend.
   - **value (string)** : The value that will be used to overwrite/extend the key in the request body OR use
@@ -223,6 +226,7 @@ Properties explained:
     to use dynamic values like `{{$guid}}` or `{{$randomInt}}`.
   - **overwrite (Boolean true/false | Default: true)** : Overwrites the request body value OR attach the value to the
     original request body value.
+  - **remove (Boolean true/false | Default: false)** : Removes the request body property, including the value
 
 Postman request body before:
 
