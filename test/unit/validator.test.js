@@ -613,6 +613,33 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         done();
       });
     });
+
+    it('Should ignore mismatches for nested objects in parameters', function (done) {
+      let nestedObjectParamsSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+        '/nestedObjectParamsSpec.yaml'), 'utf-8'),
+        nestedObjectParamsCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/nestedObjectParamsCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        options = {
+          showMissingInSchemaErrors: true,
+          strictRequestMatching: true,
+          ignoreUnresolvedVariables: true,
+          suggestAvailableFixes: true
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: nestedObjectParamsSpec }, options);
+
+      getAllTransactions(JSON.parse(nestedObjectParamsCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+        expect(resultObj.mismatches).to.have.lengthOf(0);
+        done();
+      });
+    });
   });
 
   describe('getPostmanUrlSuffixSchemaScore function', function () {
