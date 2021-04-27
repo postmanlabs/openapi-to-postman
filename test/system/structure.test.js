@@ -148,7 +148,7 @@ const optionIds = [
       name: 'Require common properties',
       type: 'boolean',
       default: false,
-      description: 'Whether to set common schema properties among musltiple requests as required.'
+      description: 'Whether to set common schema properties among multiple requests as required.'
     },
     outputFormat: {
       name: 'Output format for converted Specification',
