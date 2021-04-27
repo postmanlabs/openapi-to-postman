@@ -152,7 +152,7 @@ const optionIds = [
       name: 'Separate requests',
       type: 'array',
       default: null,
-      description: 'Whether to have separate requests for multiple responses'
+      description: 'Whether to have separate requests for multiple response status codes'
     }
   };
 
