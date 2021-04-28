@@ -231,7 +231,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         },
         retVal = SchemaUtils.convertToPmCollectionVariables(serverVariables, null, null);
       expect(retVal).to.be.an('array');
-      expect(retVal[0].id).to.equal('v1');
+      expect(retVal[0].key).to.equal('v1');
       expect(retVal[0].value).to.equal('v2.0');
     });
 
@@ -249,9 +249,9 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
       expect(retVal).to.be.an('array');
 
-      expect(retVal[0].id).to.equal('v1');
+      expect(retVal[0].key).to.equal('v1');
       expect(retVal[0].value).to.equal('v2.0');
-      expect(retVal[1].id).to.equal('baseUrl');
+      expect(retVal[1].key).to.equal('baseUrl');
       expect(retVal[1].value).to.equal('hello.com');
     });
   });
@@ -1483,6 +1483,27 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         });
       });
     });
+
+    describe('Should convert queryParam with schema {type:object, properties: undefined, explode: true, ', function() {
+      let emptyObjParam = {
+        name: 'empty-obj',
+        in: 'query',
+        description: 'query param',
+        schema: { type: 'object' }
+      };
+
+      it('style:deepObject } to pm param', function (done) {
+        let pmParam = SchemaUtils.convertToPmQueryParameters(_.assign(emptyObjParam, { style: 'deepObject' }));
+        expect(pmParam).to.eql([]);
+        done();
+      });
+
+      it('style:form } to pm param', function (done) {
+        let pmParam = SchemaUtils.convertToPmQueryParameters(_.assign(emptyObjParam, { style: 'form' }));
+        expect(pmParam).to.eql([]);
+        done();
+      });
+    });
   });
 
   describe('convertToPmBody function', function() {
@@ -1995,6 +2016,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       expect(convertedUrl).to.equal('{{scheme}}://developer.uspto.gov/{{path0}}/segment/{{path1}}');
 
       expect(SchemaUtils.fixPathVariablesInUrl('{{a}}')).to.equal('{{a}}');
+
+      expect(SchemaUtils.fixPathVariablesInUrl('/agents/{agentId}}')).to.equal('/agents/{{agentId}}}');
 
       expect(SchemaUtils.fixPathVariablesInUrl('{{a}}://{b}.com/{pathvar}/{morevar}'))
         .to.equal('{{a}}://{{b}}.com/{{pathvar}}/{{morevar}}');

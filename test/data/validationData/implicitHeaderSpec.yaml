@@ -35,6 +35,12 @@ paths:
           description: Null response
         default:
           description: unexpected error
+          headers:
+            content-type:
+              description: content-type of response body
+              required: true
+              schema:
+                type: string
           content:
             application/json:
               schema:

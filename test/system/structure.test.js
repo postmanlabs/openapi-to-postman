@@ -23,7 +23,8 @@ const optionIds = [
     'requireCommonProps',
     'outputFormat',
     'includeExamples',
-    'extractionLevels'
+    'extractionLevels',
+    'disableOptionalParameters'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -168,6 +169,12 @@ const optionIds = [
       type: 'integer',
       default: 2,
       description: 'Choose how much deeper common component extraction happen in nested schemas'
+    },
+    disableOptionalParameters: {
+      name: 'Disable optional parameters',
+      type: 'boolean',
+      default: false,
+      description: 'Whether to set optional parameters as disabled'
     }
   };
 

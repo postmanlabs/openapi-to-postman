@@ -7,6 +7,26 @@
   "paths": {
     "/pet": {
       "post": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "example": 25
+            },
+            "examples": {
+              "zero": {
+                "value": 0,
+                "summary": "A sample limit value  # Optional description"
+              },
+              "max": {
+                "value": 50,
+                "summary": "A sample limit value"
+              }
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {

@@ -87,19 +87,15 @@
           "content": {
             "multipart/form-data": {
               "schema": {
+                "required": [ "formParam1"],
                 "properties": {
                   "formParam1": {
                     "description": "Description of formParam1",
-                    "required": true,
-                    "schema": {
-                      "type": "string"
-                    }
+                    "type": "string"
                   },
                   "formParam2": {
                     "description": "Description of formParam2",
-                    "schema": {
-                      "type": "string"
-                    }
+                    "type": "string"
                   }
                 }
               }
@@ -116,19 +112,15 @@
           "content": {
             "application/x-www-form-urlencoded": {
               "schema": {
+                "required": [ "urlencodedParam1"],
                 "properties": {
                   "urlencodedParam1": {
                     "description": "Description of urlencodedParam1",
-                    "required": true,
-                    "schema": {
-                      "type": "string"
-                    }
+                    "type": "string"
                   },
                   "urlencodedParam2": {
                     "description": "Description of urlencodedParam2",
-                    "schema": {
-                      "type": "string"
-                    }
+                    "type": "string"
                   }
                 }
               }
