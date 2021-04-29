@@ -24576,7 +24576,7 @@ function extend() {
           return schema.example;
         }
       }
-      // use deafult as faked value if found as keyword in schema
+      // use default as faked value if found as keyword in schema
       if (optionAPI('useDefaultValue') && 'default' in schema) {
         // to not use default as faked value in case it is actual property of schema
         if (!(_.has(schema.default, 'type') && _.includes(ALL_TYPES, schema.default.type))) {
