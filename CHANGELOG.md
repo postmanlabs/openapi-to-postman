@@ -1,5 +1,9 @@
 # OpenAPI-Postman Changelog
 
+#### v2.6.0 (May 05, 2021)
+* Fixed issue where nested objects present in parameters caused validation mismatches.
+* Fixed issue in schema faker where schema with property named deafult was faked incorrectly.
+
 #### v2.5.1 (March 19, 2021)
 * Fixed wrongly defined maxLength and minLength options for schemaFaker.
 
