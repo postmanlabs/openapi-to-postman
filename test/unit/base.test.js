@@ -967,6 +967,17 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         });
     });
+    it('[GitHub #350] - The converter should resolve multiple examples', function (done) {
+      var emptyAuthSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/example-spec.yaml'),
+        openapi = fs.readFileSync(emptyAuthSpec, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { requestNameSource: 'URL' },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          let response = conversionResult.output[0].data.item[0].response;
+          expect(response.length).to.equal(2);
+          done();
+        });
+    });
   });
 
   describe('requestNameSource option', function() {

@@ -653,7 +653,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             format: 'int32'
           }
         },
-        retValSchema = SchemaUtils.convertToPmBodyData(bodyWithSchema, 'ROOT', 'application/json');
+        retValSchema = SchemaUtils.convertToPmBodyData(bodyWithSchema, 'ROOT', 'application/json')[0];
 
       expect(retValSchema).to.be.equal('<integer>');
     });
@@ -664,7 +664,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             value: 'This is a sample value'
           }
         },
-        retValExample = SchemaUtils.convertToPmBodyData(bodyWithExample, 'application/json');
+        retValExample = SchemaUtils.convertToPmBodyData(bodyWithExample, 'application/json')[0];
 
       expect(retValExample).to.equal('This is a sample value');
     });
@@ -681,7 +681,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           }
         },
         retValExamples = SchemaUtils.convertToPmBodyData(bodyWithExamples, 'ROOT', 'application/json',
-          'request', ' ', null, { requestParametersResolution: 'example' });
+          'request', ' ', null, { requestParametersResolution: 'example' })[0];
       expect(retValExamples.foo).to.equal(1);
       expect(retValExamples.bar).to.equal(2);
     });
@@ -704,7 +704,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
               }
             }
           },
-          { requestParametersResolution: 'example' });
+          { requestParametersResolution: 'example' })[0];
       expect(retValExample).to.equal('Hello');
     });
 
@@ -725,7 +725,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
                 }
               }
             }
-          }, { requestParametersResolution: 'example' });
+          }, { requestParametersResolution: 'example' })[0];
       expect(retValExample.name).to.equal('Example');
     });
   });
@@ -1678,7 +1678,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       it('with undefined ContentObj', function() {
         var contentObj,
           pmResponseBody;
-        pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj).responseBody;
+        pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj)[0].responseBody;
         expect(pmResponseBody).to.equal('');
       });
       it('with Content-Type application/json', function() {
@@ -1703,7 +1703,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           pmResponseBody;
-        pmResponseBody = JSON.parse(SchemaUtils.convertToPmResponseBody(contentObj).responseBody);
+        pmResponseBody = JSON.parse(SchemaUtils.convertToPmResponseBody(contentObj)[0].responseBody);
         expect(pmResponseBody.id).to.equal('<long>');
         expect(pmResponseBody.name).to.equal('<string>');
       });
@@ -1729,7 +1729,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           pmResponseBody;
-        pmResponseBody = JSON.parse(SchemaUtils.convertToPmResponseBody(contentObj).responseBody);
+        pmResponseBody = JSON.parse(SchemaUtils.convertToPmResponseBody(contentObj)[0].responseBody);
         expect(pmResponseBody.id).to.equal('<long>');
         expect(pmResponseBody.name).to.equal('<string>');
       });
@@ -1755,7 +1755,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           pmResponseBody;
-        pmResponseBody = JSON.parse(SchemaUtils.convertToPmResponseBody(contentObj).responseBody);
+        pmResponseBody = JSON.parse(SchemaUtils.convertToPmResponseBody(contentObj)[0].responseBody);
         expect(pmResponseBody.id).to.equal('<long>');
         expect(pmResponseBody.name).to.equal('<string>');
       });
@@ -1775,7 +1775,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           pmResponseBody;
         pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj, {}, {
           indentCharacter: '\t'
-        }).responseBody;
+        })[0].responseBody;
         expect(pmResponseBody).to.equal('{\n\t"id": "<integer>"\n}');
       });
       it('with Content-Type text/plain', function() {
@@ -1787,7 +1787,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           pmResponseBody;
-        pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj).responseBody;
+        pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj)[0].responseBody;
         expect(typeof pmResponseBody).to.equal('string');
       });
       it('with Content-Type application/xml', function() {
@@ -1815,7 +1815,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           pmResponseBody;
         pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj, {}, {
           indentCharacter: ' '
-        }).responseBody;
+        })[0].responseBody;
         expect(pmResponseBody).to.equal(
           [
             '<Person id="(integer)">',
@@ -1835,7 +1835,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           pmResponseBody;
-        pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj).responseBody;
+        pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj)[0].responseBody;
         expect(typeof pmResponseBody).to.equal('string');
       });
       it('with Content-Type unsupported', function() {
@@ -1860,9 +1860,9 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             }
           },
           pmResponseBody;
-        pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj).responseBody;
+        pmResponseBody = SchemaUtils.convertToPmResponseBody(contentObj)[0].responseBody;
         expect(pmResponseBody).to.equal('');
-      });
+      })[0];
       // things remaining application/xml, application/javascript
     });
   });
@@ -1895,7 +1895,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         code = '20X',
         pmResponse, responseBody;
 
-      pmResponse = SchemaUtils.convertToPmResponse(response, code).toJSON();
+      pmResponse = SchemaUtils.convertToPmResponse(response, code)[0].toJSON();
       responseBody = JSON.parse(pmResponse.body);
       expect(pmResponse.name).to.equal(response.description);
       expect(pmResponse.code).to.equal(200);
@@ -1935,7 +1935,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         code = '20X',
         pmResponse;
 
-      pmResponse = SchemaUtils.convertToPmResponse(response, code).toJSON();
+      pmResponse = SchemaUtils.convertToPmResponse(response, code)[0].toJSON();
       expect(pmResponse.body).to.equal('<element>\n <id>(integer)</id>\n <name>(string)</name>\n</element>');
       expect(pmResponse.name).to.equal(response.description);
       expect(pmResponse.code).to.equal(200);
@@ -1953,7 +1953,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         code = '201',
         pmResponse;
 
-      pmResponse = SchemaUtils.convertToPmResponse(response, code).toJSON();
+      pmResponse = SchemaUtils.convertToPmResponse(response, code)[0].toJSON();
       expect(pmResponse.name).to.equal(response.description);
       expect(pmResponse.code).to.equal(201);
       expect(pmResponse.body).to.equal('');
@@ -2002,7 +2002,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
               }
             }
           }
-        });
+        })[0];
 
       expect(pmResponse.headers.members[0].key).to.equal('Retry-After');
       expect(pmResponse.headers.members[0].description).to.equal('Some description');
