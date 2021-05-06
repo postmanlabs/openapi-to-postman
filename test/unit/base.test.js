@@ -1048,7 +1048,8 @@ describe('INTERFACE FUNCTION TESTS ', function () {
       expect(result.reason).to.contain('input');
       Converter.convert({ type: 'fil', data: 'invalid_path' }, {}, function(err, conversionResult) {
         expect(conversionResult.result).to.equal(false);
-        expect(conversionResult.reason).to.equal('Invalid input type (fil). type must be one of file/json/string.');
+        expect(conversionResult.reason).to.equal('Invalid input type (fil). ' +
+          'type must be one of file/json/string/collection/requests.');
         done();
       });
     });

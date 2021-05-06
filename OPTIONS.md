@@ -17,3 +17,7 @@ validateMetadata|boolean|-|false|Whether to show mismatches for incorrect name a
 ignoreUnresolvedVariables|boolean|-|false|Whether to ignore mismatches resulting from unresolved variables in the Postman request|VALIDATION
 strictRequestMatching|boolean|-|false|Whether requests should be strictly matched with schema operations. Setting to true will not include any matches where the URL path segments don't match exactly.|VALIDATION
 disableOptionalParameters|boolean|-|false|Whether to set optional parameters as disabled|CONVERSION
+requireCommonProps|boolean|-|false|Whether to set common schema properties among multiple requests as required.|SPEC_CONVERSION
+outputFormat|enum|YAML, JSON|YAML|Select whether to generate the output specification in YAML or the JSON format.|SPEC_CONVERSION
+includeExamples|boolean|-|false|Whether to include data present in request as OpenAPI example(s) object.|SPEC_CONVERSION
+extractionLevels|integer|-|2|Choose how much deeper common component extraction happen in nested schemas|SPEC_CONVERSION
