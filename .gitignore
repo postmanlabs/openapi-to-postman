@@ -19,6 +19,7 @@ Thumbs.db
 
 # All temporary stuff from one folder
 .temp
+.nyc_output
 test/data/.temp
 
 # PROJECT
