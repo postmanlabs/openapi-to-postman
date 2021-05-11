@@ -1,4 +1,6 @@
-let expect = require('chai').expect,
+let fs = require('fs'),
+  _ = require('lodash'),
+  expect = require('chai').expect,
   getOptions = require('../../index').getOptions;
 
 const optionIds = [
@@ -8,6 +10,7 @@ const optionIds = [
     'folderStrategy',
     'indentCharacter',
     'requestNameSource',
+    'includeAuthInfoInExample',
     'shortValidationErrors',
     'validationPropertiesToIgnore',
     'showMissingInSchemaErrors',
@@ -16,7 +19,8 @@ const optionIds = [
     'validateMetadata',
     'ignoreUnresolvedVariables',
     'optimizeConversion',
-    'strictRequestMatching'
+    'strictRequestMatching',
+    'disableOptionalParameters'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -77,6 +81,12 @@ const optionIds = [
       ' If “Fallback” is selected, the request will be named after one of the following schema' +
       ' values: `description`, `operationid`, `url`.'
     },
+    includeAuthInfoInExample: {
+      name: 'Include auth info in example requests',
+      type: 'boolean',
+      default: true,
+      description: 'Select whether to include authentication parameters in the example request'
+    },
     shortValidationErrors: {
       name: 'Short error messages during request <> schema validation',
       type: 'boolean',
@@ -130,8 +140,40 @@ const optionIds = [
       default: false,
       description: 'Whether requests should be strictly matched with schema operations. Setting to true will not ' +
         'include any matches where the URL path segments don\'t match exactly.'
+    },
+    disableOptionalParameters: {
+      name: 'Disable optional parameters',
+      type: 'boolean',
+      default: false,
+      description: 'Whether to set optional parameters as disabled'
     }
   };
+
+/**
+ * Generates markdown table documentation of options from getOptions()
+ *
+ * @param {Object} options - options from getOptions()
+ * @returns {String} - markdown table consisting documetation for options
+ */
+function generateOptionsDoc (options) {
+  var doc = 'id|type|available options|default|description|usage\n|---|---|---|---|---|---|\n';
+
+  _.forEach(options, (option) => {
+    var convertArrayToDoc = (array) => {
+        return _.reduce(array, (acc, ele) => {
+          return (_.isEmpty(acc) ? acc : acc + ', ') + ele;
+        }, '') || '-';
+      },
+      defaultOption = option.default;
+
+    // override empty values with stringified equivalent to represent correctly in README
+    (_.isEmpty(defaultOption)) && (defaultOption = JSON.stringify(defaultOption));
+
+    doc += `${option.id}|${option.type}|${convertArrayToDoc(option.availableOptions, true)}|` +
+      `${defaultOption}|${option.description}|${convertArrayToDoc(option.usage)}\n`;
+  });
+  return doc;
+}
 
 describe('getOptions', function() {
   let options = getOptions();
@@ -180,3 +222,9 @@ describe('getOptions', function() {
   });
 });
 
+describe('OPTIONS.md', function() {
+  it('must contain all details of options', function () {
+    const optionsDoc = fs.readFileSync('OPTIONS.md', 'utf-8');
+    expect(optionsDoc).to.eql(generateOptionsDoc(getOptions()));
+  });
+});

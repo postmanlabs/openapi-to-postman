@@ -40,7 +40,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       tagsFolderSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed.yaml'),
       securityTestCases = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-cases.yaml'),
       emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml'),
-      rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json');
+      rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json'),
+      parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -64,7 +65,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
 
-    it('Should have noauth at the collection level if auth type is api-key and properties in header' +
+    it('Should add collection level auth with type as `apiKey`' +
     emptySecurityTestCase, function(done) {
       var openapi = fs.readFileSync(emptySecurityTestCase, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
@@ -76,7 +77,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
         expect(conversionResult.output[0].data.auth).to.have.property('type');
-        expect(conversionResult.output[0].data.auth.type).to.equal('noauth');
+        expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
         done();
       });
     });
@@ -143,14 +144,14 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data).to.have.property('item');
           expect(conversionResult.output[0].data).to.have.property('variable');
           expect(conversionResult.output[0].data.variable).to.be.an('array');
-          expect(conversionResult.output[0].data.variable[1].id).to.equal('format');
+          expect(conversionResult.output[0].data.variable[1].key).to.equal('format');
           expect(conversionResult.output[0].data.variable[1].value).to.equal('json');
-          expect(conversionResult.output[0].data.variable[2].id).to.equal('path');
+          expect(conversionResult.output[0].data.variable[2].key).to.equal('path');
           expect(conversionResult.output[0].data.variable[2].value).to.equal('send-email');
-          expect(conversionResult.output[0].data.variable[3].id).to.equal('new-path-variable-1');
+          expect(conversionResult.output[0].data.variable[3].key).to.equal('new-path-variable-1');
           // serialised value for object { R: 100, G: 200, B: 150 }
           expect(conversionResult.output[0].data.variable[3].value).to.equal('R,100,G,200,B,150');
-          expect(conversionResult.output[0].data.variable[4].id).to.equal('new-path-variable-2');
+          expect(conversionResult.output[0].data.variable[4].key).to.equal('new-path-variable-2');
           // serialised value for array ["exampleString", "exampleString"]
           expect(conversionResult.output[0].data.variable[4].value).to.equal('exampleString,exampleString');
           done();
@@ -405,6 +406,20 @@ describe('CONVERT FUNCTION TESTS ', function() {
               .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
             expect(exampleRequest.body.raw).to
               .equal('{\n    "a": "example-b",\n    "b": "example-c"\n}');
+            done();
+          });
+      });
+
+      it('[Github #338] Should contain non-truthy example from examples outside of schema instead of faked value' +
+      examplesOutsideSchema, function(done) {
+        Converter.convert({ type: 'file', data: examplesOutsideSchema },
+          { schemaFaker: true, requestParametersResolution: 'example', exampleParametersResolution: 'example' },
+          (err, conversionResult) => {
+            let rootRequest = conversionResult.output[0].data.item[0].request;
+
+            expect(err).to.be.null;
+            expect(rootRequest.url.query[0].key).to.eql('limit');
+            expect(rootRequest.url.query[0].value).to.eql('0');
             done();
           });
       });
@@ -725,7 +740,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
             {
               key: 'access_token',
               value: 'X-access-token',
-              description: 'Access token'
+              description: 'Access token',
+              disabled: false
             }
           ]);
         });
@@ -900,10 +916,56 @@ describe('CONVERT FUNCTION TESTS ', function() {
         requestUrl = conversionResult.output[0].data.item[0].request.url;
         collectionVars = conversionResult.output[0].data.variable;
         expect(requestUrl.host).to.eql(['{{baseUrl}}']);
-        expect(_.find(collectionVars, { id: 'baseUrl' }).value).to.eql('{{BASE_URI}}/api');
-        expect(_.find(collectionVars, { id: 'BASE_URI' }).value).to.eql('https://api.example.com');
+        expect(_.find(collectionVars, { key: 'baseUrl' }).value).to.eql('{{BASE_URI}}/api');
+        expect(_.find(collectionVars, { key: 'BASE_URI' }).value).to.eql('https://api.example.com');
         done();
       });
+    });
+
+    it('[Github #31] & [GitHub #337] - should set optional params as disabled', function(done) {
+      let options = { schemaFaker: true, disableOptionalParameters: true };
+      Converter.convert({ type: 'file', data: requiredInParams }, options, (err, conversionResult) => {
+        expect(err).to.be.null;
+        let requests = conversionResult.output[0].data.item[0].item,
+          request,
+          urlencodedBody;
+
+        // GET /pets
+        // query1 required, query2 optional
+        // header1 required, header2 optional
+        request = requests[0].request;
+        expect(request.url.query[0].disabled).to.be.false;
+        expect(request.url.query[1].disabled).to.be.true;
+        expect(request.header[0].disabled).to.be.false;
+        expect(request.header[1].disabled).to.be.true;
+
+        // POST /pets
+        // urlencoded body
+        urlencodedBody = requests[2].request.body.urlencoded;
+        expect(urlencodedBody[0].key).to.eql('urlencodedParam1');
+        expect(urlencodedBody[0].disabled).to.be.false;
+        expect(urlencodedBody[1].key).to.eql('urlencodedParam2');
+        expect(urlencodedBody[1].disabled).to.be.true;
+        done();
+      });
+    });
+
+    it('Should prefer and use example from parameter object over schema example while faking schema', function(done) {
+      Converter.convert({ type: 'file', data: parameterExamples },
+        { schemaFaker: true, requestParametersResolution: 'example' },
+        (err, conversionResult) => {
+          let rootRequest = conversionResult.output[0].data.item[0].request;
+
+          expect(rootRequest.url.query[0].key).to.equal('limit');
+          expect(rootRequest.url.query[0].value).to.equal('123');
+
+          expect(rootRequest.url.variable[0].key).to.equal('petId');
+          expect(rootRequest.url.variable[0].value).to.equal('9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d');
+
+          expect(rootRequest.header[0].key).to.equal('x-date');
+          expect(rootRequest.header[0].value).to.equal('2003-02-17');
+          done();
+        });
     });
   });
 

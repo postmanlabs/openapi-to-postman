@@ -4,6 +4,7 @@ var expect = require('chai').expect,
   path = require('path'),
   async = require('async'),
   _ = require('lodash'),
+  schemaUtils = require('../../lib/schemaUtils'),
   VALIDATION_DATA_FOLDER_PATH = '../data/validationData',
   VALID_OPENAPI_FOLDER_PATH = '../data/valid_openapi';
 
@@ -414,6 +415,10 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           the mismatch for header-1 should contain correct index as in request.
         */
         expect(_.endsWith(resultObj.mismatches[0].transactionJsonPath, '[2].value')).to.eql(true);
+        _.forEach(resultObj.responses, (response) => {
+          expect(response.matched).to.be.true;
+          expect(response.mismatches).to.have.lengthOf(0);
+        });
         done();
       });
     });
@@ -479,6 +484,254 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           done();
         });
       });
+    });
+
+    it('Should correctly handle internal $ref when present', function (done) {
+      let internalRefsSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/internalRefsSpec.yaml'), 'utf-8'),
+        internalRefsCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/internalRefsCollection.json'), 'utf-8'),
+        resultObj,
+        options = {
+          showMissingInSchemaErrors: true,
+          strictRequestMatching: true,
+          ignoreUnresolvedVariables: true,
+          validateMetadata: true,
+          suggestAvailableFixes: true,
+          detailedBlobValidation: false
+        },
+        historyRequest = [],
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: internalRefsSpec }, options);
+
+      getAllTransactions(JSON.parse(internalRefsCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+
+        // no mismatches should be found when resolved correctly
+        expect(resultObj.matched).to.be.true;
+        expect(resultObj.mismatches).to.have.lengthOf(0);
+        _.forEach(resultObj.responses, (response) => {
+          expect(response.matched).to.be.true;
+          expect(response.mismatches).to.have.lengthOf(0);
+        });
+        done();
+      });
+    });
+
+    it('Should correctly match and validate valid json content type with collection req/res body', function (done) {
+      let differentContentTypesSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/differentContentTypesSpec.yaml'), 'utf-8'),
+        differentContentTypesCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/differentContentTypesCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        options = {
+          suggestAvailableFixes: true
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: differentContentTypesSpec }, options);
+
+      getAllTransactions(JSON.parse(differentContentTypesCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+
+        /**
+         * Both req and res body should match with schema content object and each have one mismatch
+         */
+        expect(resultObj.mismatches).to.have.lengthOf(1);
+        expect(resultObj.mismatches[0].property).to.equal('BODY');
+        expect(resultObj.responses[_.keys(resultObj.responses)[0]].mismatches).to.have.lengthOf(1);
+        expect(resultObj.responses[_.keys(resultObj.responses)[0]].mismatches[0].property).to.equal('RESPONSE_BODY');
+        done();
+      });
+    });
+
+    it('Should be able to validate and suggest correct value for body with primitive data type', function (done) {
+      let primitiveDataTypeBodySpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/primitiveDataTypeBodySpec.yaml'), 'utf-8'),
+        primitiveDataTypeBodyCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/primitiveDataTypeBodyCollection.json'), 'utf-8'),
+        resultObj,
+        responseObj,
+        historyRequest = [],
+        options = {
+          showMissingInSchemaErrors: true,
+          strictRequestMatching: true,
+          ignoreUnresolvedVariables: true,
+          validateMetadata: true,
+          suggestAvailableFixes: true,
+          detailedBlobValidation: false
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: primitiveDataTypeBodySpec }, options);
+
+      getAllTransactions(JSON.parse(primitiveDataTypeBodyCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        // request body is boolean
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+        expect(resultObj.mismatches).to.have.lengthOf(0);
+
+        // request body is integer
+        responseObj = resultObj.responses[_.keys(resultObj.responses)[0]];
+        expect(responseObj.mismatches).to.have.lengthOf(1);
+        expect(responseObj.mismatches[0].suggestedFix.suggestedValue).to.be.within(5, 10);
+        done();
+      });
+    });
+
+    it('Should correctly validate schema having path with multiple path variables', function (done) {
+      let multiplePathVarSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/multiplePathVarSpec.json'), 'utf-8'),
+        multiplePathVarCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/multiplePathVarCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        options = {
+          showMissingInSchemaErrors: true,
+          strictRequestMatching: true,
+          ignoreUnresolvedVariables: true,
+          suggestAvailableFixes: true
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: multiplePathVarSpec }, options);
+
+      getAllTransactions(JSON.parse(multiplePathVarCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+        expect(resultObj.mismatches).to.have.lengthOf(0);
+        done();
+      });
+    });
+
+    it('Should ignore mismatches for nested objects in parameters', function (done) {
+      let nestedObjectParamsSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+        '/nestedObjectParamsSpec.yaml'), 'utf-8'),
+        nestedObjectParamsCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/nestedObjectParamsCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        options = {
+          showMissingInSchemaErrors: true,
+          strictRequestMatching: true,
+          ignoreUnresolvedVariables: true,
+          suggestAvailableFixes: true
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: nestedObjectParamsSpec }, options);
+
+      getAllTransactions(JSON.parse(nestedObjectParamsCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+        expect(resultObj.mismatches).to.have.lengthOf(0);
+        done();
+      });
+    });
+  });
+
+  describe('getPostmanUrlSuffixSchemaScore function', function () {
+    it('Should maintain correct order in which path vaiables occur in result', function (done) {
+      let pmSuffix = ['pets', '123', '456', '789'],
+        schemaPath = ['pets', '{petId1}', '{petId2}', '{petId3}'],
+        result;
+
+      result = schemaUtils.getPostmanUrlSuffixSchemaScore(pmSuffix, schemaPath, { strictRequestMatching: true });
+
+      expect(result.match).to.be.true;
+      expect(result.pathVars).to.have.lengthOf(3);
+      expect(result.pathVars[0]).to.deep.equal({ key: 'petId1', value: pmSuffix[1] });
+      expect(result.pathVars[1]).to.deep.equal({ key: 'petId2', value: pmSuffix[2] });
+      expect(result.pathVars[2]).to.deep.equal({ key: 'petId3', value: pmSuffix[3] });
+      done();
+    });
+  });
+
+  it('Should be able to validate schema with request body of content type "application/x-www-form-urlencoded" ' +
+    'against transaction with valid UrlEncoded body correctly', function (done) {
+    let urlencodedBodySpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+      '/urlencodedBodySpec.yaml'), 'utf-8'),
+      urlencodedBodyCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+        '/urlencodedBodyCollection.json'), 'utf-8'),
+      resultObj,
+      historyRequest = [],
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: urlencodedBodySpec },
+        { suggestAvailableFixes: true });
+
+    getAllTransactions(JSON.parse(urlencodedBodyCollection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+      resultObj = result.requests[historyRequest[0].id].endpoints[0];
+      expect(resultObj.mismatches).to.have.lengthOf(3);
+
+      // for explodable property of type object named "propObjectExplodable",
+      // second property named "prop2" is incorrect, while property "prop1" is correct
+      expect(resultObj.mismatches[0].transactionJsonPath).to.eql('$.request.body.urlencoded[1].value');
+      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.eql('false');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.eql('world');
+
+      // for non explodable property of type object, entire property with updated value should be suggested
+      expect(resultObj.mismatches[1].transactionJsonPath).to.eql('$.request.body.urlencoded[2].value');
+      expect(resultObj.mismatches[1].suggestedFix.actualValue).to.eql('prop3,hello,prop4,true');
+      expect(resultObj.mismatches[1].suggestedFix.suggestedValue).to.eql('prop3,hello,prop4,world');
+
+      // for type array property named "propArray" second element is incorrect
+      expect(resultObj.mismatches[2].transactionJsonPath).to.eql('$.request.body.urlencoded[4].value');
+      expect(resultObj.mismatches[2].suggestedFix.actualValue).to.eql('999');
+      expect(resultObj.mismatches[2].suggestedFix.suggestedValue).to.eql('exampleString');
+      done();
+    });
+  });
+
+  describe('findMatchingRequestFromSchema function', function () {
+    it('#GITHUB-9396 Should maintain correct order of matched endpoint', function (done) {
+      let schema = {
+          paths: {
+            '/lookups': {
+              'get': { 'summary': 'Lookup Job Values' }
+            },
+            '/{jobid}': {
+              'get': {
+                'summary': 'Get Job by ID',
+                'parameters': [
+                  {
+                    'in': 'path',
+                    'name': 'jobid',
+                    'schema': {
+                      'type': 'string'
+                    },
+                    'required': true,
+                    'description': 'Unique identifier for a job to retrieve.',
+                    'example': '{{jobid}}'
+                  }
+                ]
+              }
+            }
+          }
+        },
+        schemaPath = '{{baseUrl}}/{{jobid}}',
+        result;
+
+      result = schemaUtils.findMatchingRequestFromSchema('GET', schemaPath, schema, { strictRequestMatching: true });
+
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].name).to.eql('GET /{jobid}');
+      expect(result[1].name).to.eql('GET /lookups');
+      done();
     });
   });
 });
