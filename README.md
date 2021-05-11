@@ -32,6 +32,11 @@ To use the converter as a Node module, you need to have a copy of the NodeJS run
 $ npm install openapi-to-postmanv2
 ```
 
+If you want to use the converter in the CLI, install it globally with NPM:
+
+```terminal
+$ npm i -g openapi-to-postmanv2
+```
 
 ## Using the converter as a NodeJS module
 
@@ -89,9 +94,8 @@ function (err, result) {
 ```
 
 ### Options:
-* `'schemaFaker'(boolean)`:  whether to use json-schema-faker for schema conversion. Default: `true`
-* `'requestNameSource'(string)`: The strategy to use to generate request names. url: use the request's URL as the name, fallback: Use the summary/operationId/URL (in that order) Default: `fallback`
-* `'indentCharacter' (string)`: The character to use per level of indentation for JSON/XML data. Default: `' '(space)`
+
+Check out complete list of options and their usage at [OPTIONS.md](/OPTIONS.md)
 
 ### ConversionResult
 
@@ -154,7 +158,7 @@ The converter can be used as a CLI tool as well. The following [command line opt
 `openapi2postmanv2 [options]`
 
 ### Options
-- `-V`, `--version`  
+- `-v`, `--version`  
   Specifies the version of the converter
 
 - `-s <source>`, `--spec <source>`  
@@ -169,6 +173,12 @@ The converter can be used as a CLI tool as well. The following [command line opt
 - `-p`, `--pretty`  
   Used to pretty print the collection object while writing to a file
 
+- `-O`, `--options`
+  Used to supply options to the converter, for complete options details see [here](/OPTIONS.md)
+
+- `-c`, `--options-config`  
+  Used to supply options to the converter through config file, for complete options details see [here](/OPTIONS.md)
+
 - `-h`, `--help`  
   Specifies all the options along with a few usage examples on the terminal
 
@@ -178,9 +188,14 @@ The converter can be used as a CLI tool as well. The following [command line opt
 **Sample usage examples of the converter CLI**
 
 
-- Takes a specification (spec.yaml) as an input and writes to a file (collection.json) with pretty printing
+- Takes a specification (spec.yaml) as an input and writes to a file (collection.json) with pretty printing and using provided options
 ```terminal
-$ openapi2postmanv2 -s spec.yaml -o collection.json -p
+$ openapi2postmanv2 -s spec.yaml -o collection.json -p -O folderStrategy=Tags,includeAuthInfoInExample=false
+```
+
+- Takes a specification (spec.yaml) as an input and writes to a file (collection.json) with pretty printing and using provided options via config file
+```terminal
+$ openapi2postmanv2 -s spec.yaml -o collection.json -p  -c ./examples/cli-options-config.json
 ```
 
 - Testing the converter
