@@ -24576,8 +24576,12 @@ function extend() {
           return schema.example;
         }
       }
+      // use default as faked value if found as keyword in schema
       if (optionAPI('useDefaultValue') && 'default' in schema) {
-          return schema.default;
+        // to not use default as faked value in case it is actual property of schema
+        if (!(_.has(schema.default, 'type') && _.includes(ALL_TYPES, schema.default.type))) {
+          return schema.default; 
+        }
       }
       if (schema.not && typeof schema.not === 'object') {
           schema = utils.notValue(schema.not, utils.omitProps(schema, ['not']));
