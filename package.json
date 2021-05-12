@@ -120,7 +120,7 @@
     "async": "3.2.0",
     "commander": "2.20.3",
     "js-yaml": "3.14.1",
-    "json-schema-merge-allof": "0.7.0",
+    "json-schema-merge-allof": "0.8.1",
     "lodash": "4.17.21",
     "oas-resolver-browser": "2.5.1",
     "path-browserify": "1.0.1",
