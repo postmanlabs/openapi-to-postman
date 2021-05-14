@@ -1,5 +1,9 @@
 # OpenAPI-Postman Changelog
 
+#### v2.7.0 (May 14, 2021)
+* Added support for no-auth as auth in collection when empty object is specified in OAS.
+* Bumped up dependencies and dev-dependencies.
+
 #### v2.6.0 (May 05, 2021)
 * Fixed issue where nested objects present in parameters caused validation mismatches.
 * Fixed issue in schema faker where schema with property named deafult was faked incorrectly.
