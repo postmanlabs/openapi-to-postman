@@ -1,0 +1,47 @@
+openapi: "3.0.0"
+
+info:
+  title: ExampleApi
+  description: Example Api
+  version: 1.0.0
+  contact:
+    name: support
+    email: support@example.com
+
+servers:
+  - url: http://example.com
+    description: example server
+
+paths:
+  /users:
+    post:
+      description: Create User
+      summary: Create User
+      security:
+        - {}
+      responses:
+        '201':  
+          description: Return a User Object
+          content: 
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+              examples:
+                John-Ok-Example:
+                  summary: Success create of John User
+                  description: Success create of John User
+                  value:
+                    id: 1
+                    name: John Doe
+                Jane-Ok-Example:
+                  summary: Success create of Jane User
+                  description: Success create of Jane User
+                  value:
+                    id: 2
+                    name: Jane Doe
+              
