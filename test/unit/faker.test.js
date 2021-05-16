@@ -41,4 +41,21 @@ describe('JSON SCHEMA FAKER TESTS', function () {
       expect(fakedData).to.deep.equal(schema.example);
     });
   });
+
+  it('Should not use actual property named "default" as faked value', function () {
+    const schema = {
+      type: 'object',
+      properties: {
+        default: {
+          type: 'string',
+          example: 'This is actual property and not JSON schema defined "default" keyword'
+        }
+      }
+    };
+
+    var fakedData = schemaFaker(schema);
+    expect(fakedData).to.deep.equal({
+      default: 'This is actual property and not JSON schema defined "default" keyword'
+    });
+  });
 });

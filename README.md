@@ -33,6 +33,11 @@ To use the converter as a Node module, you need to have a copy of the NodeJS run
 $ npm install openapi-to-postmanv2
 ```
 
+If you want to use the converter in the CLI, install it globally with NPM:
+
+```terminal
+$ npm i -g openapi-to-postmanv2
+```
 
 ## Using the converter as a NodeJS module
 

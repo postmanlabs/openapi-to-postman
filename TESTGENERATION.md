@@ -66,7 +66,7 @@ Current postman-testsuite JSON properties
 
 ```
 
-The JSON test suite format consists out of 3 parts:
+The JSON test suite format consists out of 5 parts:
 
 - **version** : which refers the JSON test suite version
   (not relevant but might handy for future backward compatibility options).
@@ -109,6 +109,41 @@ in `tests` array, will be added to the postman test scripts.
 - **overwrite (Boolean true/false)** : Resets all generateTests and overwrites them with the defined tests from
   the `tests` array. Default: false
 
+### Postman test suite targeting for variables & overwrites
+
+It is possible to assign variables and overwrite query params, headers, request body data with values specifically for
+the tests.
+
+To be able to do this very specifically, there are options to define the targets:
+
+- **openApiOperationId (String)** : References to the OpenApi operationId, example: `listPets`
+- **openApiOperation (String)** :  References to a combination of the OpenApi method & path, example: `GET::/pets`
+
+An `openApiOperationId` is an optional property. To offer support for OpenApi documents that don't have operationIds, we
+have added the `openApiOperation` definition which is the unique combination of the OpenApi method & path, with a `::`
+separator symbol.
+
+This will allow targeting for very specific OpenApi items.
+
+To facilitate managing the filtering, we have included wildcard options for the `openApiOperation` option, supporting the
+methods & path definitions.
+
+REMARK: Be sure to put quotes around the target definition.
+
+Strict matching example: `"openApiOperation": "GET::/pets",`
+This will target only the "GET" method and the specific path "/pets"
+
+Method wildcard matching example: `"openApiOperation": "*::/pets",`
+This will target all methods ('get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace') and the specific
+path "/pets"
+
+Path wildcard matching example: `"openApiOperation": "GET::/pets/*"`
+This will target only the "GET" method and any path matching any folder behind the "/pets", like "/pets/123" and
+"/pets/123/buy".
+
+Method & Path wildcard matching example: `"openApiOperation": "*::/pets/*",`
+A combination of wildcards for the method and path parts are even possible.
+
 ## Postman test suite assignPmVariables
 
 To facilitate automation, we provide the option set "pm.environment" variables with values from the response.
@@ -122,8 +157,18 @@ postman response body.
 
 Properties explained:
 
+Target options:
+
 - **openApiOperationId (String)** : Reference to the OpenApi operationId for which the Postman pm.environment variable
-  will be set.
+  will be set. (example: `listPets`)
+- **openApiOperation (String)** : Reference to combination of the OpenApi method & path, for which the Postman pm.environment variable
+  will be set. (example: `GET::/pets`)
+
+These target options are both supported for defining a target. In case both are set for the same target, only
+the `openApiOperationId` will be used for overwrites.
+
+EnvironmentVariables options:
+
 - **environmentVariables (Array)** : Array of key/value pairs to overwrite in the Postman Request Query params.
   - **responseProp (string)** : The property for which the value will be taken in the response body and set as the
     pm.environment value.
@@ -192,8 +237,18 @@ the postman request body.
 
 Properties explained:
 
+Target options:
+
 - **openApiOperationId (String)** : Reference to the OpenApi operationId for which the Postman Request Body will be
-  extended
+  extended. (example: `listPets`)
+- **openApiOperation (String)** : Reference to combination of the OpenApi method & path, for which the Postman Request
+  Body will be extended (example: `GET::/pets`)
+
+These target options are both supported for defining a target. In case both are set for the same target, only
+the `openApiOperationId` will be used for overwrites.
+
+Overwrite options:
+
 - **overwriteRequestQueryParams (Array)** : Array of key/value pairs to overwrite in the Postman Request Query params.
   - **key (string)** : The key that will be targeted in the request Query Param to overwrite/extend.
   - **value (string)** : The value that will be used to overwrite/extend the value in the request Query Param OR use
