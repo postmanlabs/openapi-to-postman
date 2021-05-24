@@ -277,8 +277,8 @@ A combination of wildcards for the method and path parts are even possible.
 To facilitate automation, we provide the option set "pm.environment" variables with values from the response. The
 assigning of the pm.environment are mapped based on the OpenApi operationId.
 
-REMARK: By default the test suite will create pm.environment variable for the ID property in the response object, if ID
-is present in the reponse.
+REMARK: By default the test suite will create a pm.environment variable for the ID property in the response object, if ID
+is present in the response.
 
 Anything added in `assignPmVariables` array, will be used to generate specific pm.environment variables based on the
 postman response body.
@@ -297,11 +297,12 @@ the `openApiOperationId` will be used for overwrites.
 
 EnvironmentVariables options:
 
-- **environmentVariables (Array)** : Array of key/value pairs to overwrite in the Postman Request Query params.
-  - **responseProp (string)** : The property for which the value will be taken in the response body and set as the
-    pm.environment value.
-  - **name (string OPTIONAL | Default: openApiOperationId.responseProp)** : The name that will be used to overwrite the
-    default generated variable name
+- **environmentVariables (Array)** : Array of key/value pairs to set the Postman variables.
+  - **responseBodyProp (string)** : The property for which the value will be taken in the response body and set the value as the pm.environment value.
+  - **responseHeaderProp (string)** : The property for which the value will be taken in the response header and set the value as the pm.environment value.
+  - **requestBodyProp (string)** : The property for which the value will be taken in the request body and set the value as the pm.environment value.
+  - **value (string)** : The defined value that will be set as the pm.environment value.
+  - **name (string OPTIONAL | Default: openApiOperationId.responseProp)** : The name that will be used to overwrite the default generated variable name
 
 Example:
 
@@ -336,7 +337,7 @@ This will generate the following:
 - pm.environment for "get-accounts" - use {{server-address}} as variable for "reponse.value[0].servers[0]"
 
 This information on the assignment of the pm.environment will be published in the Postman Test script and during the
-conversion via the CLI
+conversion via the CLI.
 
 This results in the following functions on the Postman Test pane:
 
