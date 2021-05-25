@@ -117,19 +117,19 @@ Next to the generated tests, it is possible to define "content" checks where a p
 body should exist and match a specific value or variable.
 
 The contentChecks are mapped based on the OpenApi operationId or the OpenApi Operation reference (method + path).
-Anything added in `checkResponseBody` array, will be add as content check to the Postman tests.
+Anything added in `checkResponseBody` array, will be added as content check to the Postman tests.
 
 Properties explained:
 
 Target options:
 
-- **openApiOperationId (String)** : Reference to the OpenApi operationId for which the Postman Request Body will be
+- **openApiOperationId (String)** : Reference to the OpenApi operationId for which the Postman Response Body will be
   tested. (example: `listPets`)
-- **openApiOperation (String)** : Reference to combination of the OpenApi method & path, for which the Postman Request
-  Body will be test (example: `GET::/pets`)
+- **openApiOperation (String)** : Reference to the combination of the OpenApi method & path, for which the Postman Response
+  Body will be tested (example: `GET::/pets`)
 
 These target options are both supported for defining a target. In case both are set for the same target, only
-the `openApiOperationId` will be used for overwrites.
+the `openApiOperationId` will be used for content checks.
 
 Content check options:
 
