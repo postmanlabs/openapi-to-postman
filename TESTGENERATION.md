@@ -117,7 +117,7 @@ Next to the generated tests, it is possible to define "content" checks where a p
 body should exist and match a specific value or variable.
 
 The contentChecks are mapped based on the OpenApi operationId or the OpenApi Operation reference (method + path).
-Anything added in `checkRequestBody` array, will be add as content check to the Postman tests.
+Anything added in `checkResponseBody` array, will be add as content check to the Postman tests.
 
 Properties explained:
 
@@ -133,9 +133,9 @@ the `openApiOperationId` will be used for overwrites.
 
 Content check options:
 
-- **checkRequestBody (Array)** : Array of key/value pairs of properties & values in the Postman Request Body.
-  - **key (string)** : The key that will be targeted in the request body to check if it exists.
-  - **value (string)** : The value that will be used to check if the value in the request body matches.
+- **checkResponseBody (Array)** : Array of key/value pairs of properties & values in the Postman Response Body.
+  - **key (string)** : The key that will be targeted in the response body to check if it exists.
+  - **value (string)** : The value that will be used to check if the value in the response body matches.
 
 OpenAPI to Postman Testsuite Configuration:
 
@@ -170,7 +170,7 @@ OpenAPI to Postman Testsuite Configuration:
   "contentChecks": [
     {
       "openApiOperation": "GET::/contacts/{audienceId}",
-      "checkRequestBody": [
+      "checkResponseBody": [
         {
           "key": "value[0].name",
           "value": "John"
