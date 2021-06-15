@@ -15,7 +15,7 @@ describe('PARSE FUNCTION TESTS', function() {
         { fileName: folderPath + '/paths/foo.yaml' },
         { fileName: folderPath + '/paths/bar.yaml' }
       ],
-      result = parse.getRootFiles(array);
+      result = parse.getRootFiles({ data: array, type: 'string' });
     expect(result.length).to.equal(1);
     expect(result[0]).to.equal(folderPath + '/index.yaml');
   });
