@@ -646,6 +646,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
   });
 
   describe('convertToPmBodyData', function() {
+    it('should not fail when bodyObj is not defined', function() {
+      var bodyWithSchema,
+        retValSchema = SchemaUtils.convertToPmBodyData(bodyWithSchema, 'ROOT', 'application/json');
+
+      expect(retValSchema).to.be.equal('');
+    });
+
     it('should work for schemas', function() {
       var bodyWithSchema = {
           schema: {
