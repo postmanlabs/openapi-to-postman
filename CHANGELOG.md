@@ -1,5 +1,9 @@
 # OpenAPI-Postman Changelog
 
+#### v2.8.0 (June 29, 2021)
+* Add a new argument in input object 'origin' to handle browser specific changes.
+* Added handling for type errors encountered on sentry.
+
 #### v2.7.0 (May 14, 2021)
 * Added support for no-auth as auth in collection when empty object is specified in OAS.
 * Bumped up dependencies and dev-dependencies.
