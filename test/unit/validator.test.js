@@ -668,7 +668,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       resultObj,
       historyRequest = [],
       schemaPack = new Converter.SchemaPack({ type: 'string', data: urlencodedBodySpec },
-        { suggestAvailableFixes: true });
+        { suggestAvailableFixes: true, showMissingInSchemaErrors: true });
 
     getAllTransactions(JSON.parse(urlencodedBodyCollection), historyRequest);
 
@@ -676,7 +676,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       expect(err).to.be.null;
       expect(result).to.be.an('object');
       resultObj = result.requests[historyRequest[0].id].endpoints[0];
-      expect(resultObj.mismatches).to.have.lengthOf(3);
+      expect(resultObj.mismatches).to.have.lengthOf(4);
 
       // for explodable property of type object named "propObjectExplodable",
       // second property named "prop2" is incorrect, while property "prop1" is correct
@@ -693,6 +693,11 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       expect(resultObj.mismatches[2].transactionJsonPath).to.eql('$.request.body.urlencoded[4].value');
       expect(resultObj.mismatches[2].suggestedFix.actualValue).to.eql('999');
       expect(resultObj.mismatches[2].suggestedFix.suggestedValue).to.eql('exampleString');
+
+      // property named "propObjectMissing" is missing in request
+      expect(resultObj.mismatches[3].reasonCode).to.eql('MISSING_IN_REQUEST');
+      expect(resultObj.mismatches[3].suggestedFix.key).to.eql('propObjectMissing');
+      expect(resultObj.mismatches[3].suggestedFix.suggestedValue).to.eql('prop3,hold,prop4,world!');
       done();
     });
   });
