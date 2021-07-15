@@ -54,6 +54,33 @@ paths:
                 propSimple:
                   type: integer
                   example: 123
+                propDeepObject:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 123
+                    name:
+                      type: string
+                      example: John Johanson
+                    address:
+                      type: object
+                      properties:
+                        city:
+                          type: string
+                          example: Delhi
+                        country:
+                          type: string
+                          example: India
+                propArrayComplex:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      prop1ArrayComp:
+                        type: integer
+                      prop2ArrayComp:
+                        type: string
               required:
               - status
             encoding:
@@ -63,6 +90,12 @@ paths:
               propObjectNonExplodable:
                 style: form
                 explode: false
+              propDeepObject:
+                style: deepObject
+                explode: true
+              propArrayComplex:
+                style: deepObject
+                explode: true
       responses:
         '200':
           description: Pet updated.
