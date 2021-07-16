@@ -66,6 +66,46 @@
                 {
                   "key": "propSimple",
                   "value": "123"
+                },
+                {
+                  "disabled": false,
+                  "key": "propDeepObject[id]",
+                  "value": "123"
+                },
+                {
+                  "disabled": false,
+                  "key": "propDeepObject[name]",
+                  "value": "John Johanson"
+                },
+                {
+                  "disabled": false,
+                  "key": "propDeepObject[address][city]",
+                  "value": "123"
+                },
+                {
+                  "disabled": false,
+                  "key": "propDeepObject[address][country]",
+                  "value": "India"
+                },
+                {
+                  "disabled": false,
+                  "key": "propArrayComplex[0][prop1ArrayComp]",
+                  "value": "notAnInteger"
+                },
+                {
+                  "disabled": false,
+                  "key": "propArrayComplex[0][prop2ArrayComp]",
+                  "value": "irure labore Lorem consequat l"
+                },
+                {
+                  "disabled": false,
+                  "key": "propArrayComplex[1][prop1ArrayComp]",
+                  "value": "-14216671"
+                },
+                {
+                  "disabled": false,
+                  "key": "propArrayComplex[1][prop2ArrayComp]",
+                  "value": "officia"
                 }
               ]
             }

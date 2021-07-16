@@ -1,0 +1,56 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  license:
+    name: MIT
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /pets:
+    get:
+      tags:
+      - pet
+      summary: Updates a pet in the store with form data
+      operationId: updatePetWithForm
+      parameters:
+      - name: user
+        in: query
+        description: info about user
+        required: true
+        style: deepObject
+        schema:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 123
+            name:
+              type: string
+              example: John Johanson
+            address:
+              type: object
+              properties:
+                city:
+                  type: string
+                  example: Delhi
+                country:
+                  type: string
+                  example: India
+      - name: propArrayComplex
+        in: query
+        description: deepObject with complex array structure
+        required: true
+        style: deepObject
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              prop1ArrayComp:
+                type: integer
+              prop2ArrayComp:
+                type: string
+      responses:
+        '200':
+          description: Pet updated.

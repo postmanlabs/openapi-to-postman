@@ -1,5 +1,8 @@
 # OpenAPI-Postman Changelog
 
+#### v2.9.0 (July 16, 2021)
+* Fixed issue where params with style deepObject were converted to only one level of key-value pair.
+
 #### v2.8.0 (June 29, 2021)
 * Add a new argument in input object 'origin' to handle browser specific changes.
 * Added handling for type errors encountered on sentry.
