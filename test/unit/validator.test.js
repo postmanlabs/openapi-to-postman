@@ -640,6 +640,51 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         done();
       });
     });
+
+    it('Should be able to validate schema with deepObject style query params against corresponding ' +
+    'transactions', function (done) {
+      let queryParamDeepObjectSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+        '/queryParamDeepObjectSpec.yaml'), 'utf-8'),
+        queryParamDeepObjectCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/queryParamDeepObjectCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: queryParamDeepObjectSpec },
+          { suggestAvailableFixes: true, showMissingInSchemaErrors: true });
+
+      getAllTransactions(JSON.parse(queryParamDeepObjectCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+        expect(resultObj.mismatches).to.have.lengthOf(2);
+
+        /**
+         * no mismatches should be found for complex array type params as validation is skipped for them,
+         * even though corresponding value is of incorrect type
+         */
+        _.forEach(resultObj.mismatches, (mismatch) => {
+          expect(mismatch.suggestedFix.key).to.not.eql('propArrayComplex[0][prop1ArrayComp]');
+        });
+
+        // for deepObject param "user", child param "user[id]" is of incorrect type
+        expect(resultObj.mismatches[0].reasonCode).to.eql('INVALID_TYPE');
+        expect(resultObj.mismatches[0].transactionJsonPath).to.eql('$.request.url.query[0].value');
+        expect(resultObj.mismatches[0].suggestedFix.actualValue).to.eql('notAnInteger');
+        expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.eql(123);
+
+        // for deepObject param "user", child param "user[address][country]" is missing in transaction
+        expect(resultObj.mismatches[1].reasonCode).to.eql('MISSING_IN_REQUEST');
+        expect(resultObj.mismatches[1].suggestedFix.key).to.eql('user[address][country]');
+        expect(resultObj.mismatches[1].suggestedFix.actualValue).to.be.null;
+        expect(resultObj.mismatches[1].suggestedFix.suggestedValue).to.eql({
+          key: 'user[address][country]',
+          value: 'India'
+        });
+        done();
+      });
+    });
   });
 
   describe('getPostmanUrlSuffixSchemaScore function', function () {
@@ -668,7 +713,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       resultObj,
       historyRequest = [],
       schemaPack = new Converter.SchemaPack({ type: 'string', data: urlencodedBodySpec },
-        { suggestAvailableFixes: true });
+        { suggestAvailableFixes: true, showMissingInSchemaErrors: true });
 
     getAllTransactions(JSON.parse(urlencodedBodyCollection), historyRequest);
 
@@ -676,7 +721,15 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       expect(err).to.be.null;
       expect(result).to.be.an('object');
       resultObj = result.requests[historyRequest[0].id].endpoints[0];
-      expect(resultObj.mismatches).to.have.lengthOf(3);
+      expect(resultObj.mismatches).to.have.lengthOf(4);
+
+      /**
+       * no mismatches should be found for complex array type params as validation is skipped for them,
+       * even though corresponding value is of incorrect type
+       */
+      _.forEach(resultObj.mismatches, (mismatch) => {
+        expect(mismatch.suggestedFix.key).to.not.eql('propArrayComplex[0][prop1ArrayComp]');
+      });
 
       // for explodable property of type object named "propObjectExplodable",
       // second property named "prop2" is incorrect, while property "prop1" is correct
@@ -693,6 +746,11 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       expect(resultObj.mismatches[2].transactionJsonPath).to.eql('$.request.body.urlencoded[4].value');
       expect(resultObj.mismatches[2].suggestedFix.actualValue).to.eql('999');
       expect(resultObj.mismatches[2].suggestedFix.suggestedValue).to.eql('exampleString');
+
+      // for deepObject property named "propDeepObject" child param "propDeepObject[address][city]" is of incorrect type
+      expect(resultObj.mismatches[3].transactionJsonPath).to.eql('$.request.body.urlencoded[8].value');
+      expect(resultObj.mismatches[3].suggestedFix.actualValue).to.eql('123');
+      expect(resultObj.mismatches[3].suggestedFix.suggestedValue).to.eql('Delhi');
       done();
     });
   });
