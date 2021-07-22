@@ -81,8 +81,12 @@ paths:
                         type: integer
                       prop2ArrayComp:
                         type: string
+                propMissingInReq:
+                  type: integer
+                  description: This property is not available in matched collection.
+                  example: 321
               required:
-              - status
+              - propMissingInReq
             encoding:
               propObjectExplodable:
                 style: form
