@@ -160,9 +160,7 @@ describe('DEREF FUNCTION TESTS ', function() {
         parameterSource = 'REQUEST',
         schemaResolutionCache = {},
         resolvedSchema = deref.resolveRefs(schema, parameterSource, componentsAndPaths, schemaResolutionCache);
-      expect(schemaResolutionCache).to.deep.equal({
-        '#/components/schema/request': resolvedSchema
-      });
+      expect(_.get(schemaResolutionCache, ['#/components/schema/request', 'schema'])).to.deep.equal(resolvedSchema);
       expect(resolvedSchema).to.deep.equal({
         type: 'object',
         properties: {
@@ -231,6 +229,87 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(output.type).to.equal('string');
       expect(output.format).to.be.undefined;
       expect(output.pattern).to.eql(schema.pattern);
+      done();
+    });
+
+    it('should correctly resolve schema from schemaResoltionCache based on schema resolution level', function (done) {
+      let schema = {
+          $ref: '#/components/schemas/schemaUsed'
+        },
+        consumerSchema = {
+          type: 'object',
+          properties: { level2: {
+            type: 'object',
+            properties: { level3: {
+              type: 'object',
+              properties: { level4: {
+                type: 'object',
+                properties: { level5: {
+                  type: 'object',
+                  properties: { level6: {
+                    type: 'object',
+                    properties: { level7: {
+                      type: 'object',
+                      properties: { level8: {
+                        type: 'object',
+                        properties: { level9: { $ref: '#/components/schemas/schemaUsed' } }
+                      } }
+                    } }
+                  } }
+                } }
+              } }
+            } }
+          } }
+        },
+        componentsAndPaths = {
+          components: {
+            schemas: {
+              schemaUsed: {
+                'type': 'object',
+                'required': [
+                  'id',
+                  'name'
+                ],
+                'properties': {
+                  'id': {
+                    'type': 'integer',
+                    'format': 'int64'
+                  },
+                  'name': {
+                    'type': 'string'
+                  },
+                  'tag': {
+                    'type': 'string'
+                  }
+                }
+              }
+            }
+          }
+        },
+        parameterSource = 'REQUEST',
+        schemaResoltionCache = {},
+        resolvedConsumerSchema,
+        resolvedSchema;
+
+      resolvedConsumerSchema = deref.resolveRefs(consumerSchema, parameterSource, componentsAndPaths,
+        schemaResoltionCache);
+
+      // Consumer schema contains schema at nesting level 9, which results in impartial resolution of schema
+      expect(_.get(schemaResoltionCache, ['#/components/schemas/schemaUsed', 'resLevel'])).to.eql(9);
+      expect(_.get(resolvedConsumerSchema, _.join(_.map(_.range(1, 10), (ele) => {
+        return `properties.level${ele}`;
+      }), '.'))).to.not.deep.equal(componentsAndPaths.components.schemas.schemaUsed);
+      expect(_.get(schemaResoltionCache, ['#/components/schemas/schemaUsed', 'schema'])).to.not.deep
+        .equal(componentsAndPaths.components.schemas.schemaUsed);
+      resolvedSchema = deref.resolveRefs(schema, parameterSource, componentsAndPaths, schemaResoltionCache);
+
+      /**
+       * Even though schema cache contains schemaUsed as impartially cached,resolution were it's used again will
+       * depend on ongoing resolution level and schema is cached again if it's updated.
+       */
+      expect(resolvedSchema).to.deep.equal(componentsAndPaths.components.schemas.schemaUsed);
+      expect(_.get(schemaResoltionCache, ['#/components/schemas/schemaUsed', 'schema'])).to.deep
+        .equal(componentsAndPaths.components.schemas.schemaUsed);
       done();
     });
   });
