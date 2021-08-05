@@ -24565,10 +24565,12 @@ function extend() {
           _.unset(clonedSchema, 'minItems');
           _.unset(clonedSchema, 'maxItems');
 
-          result = validateSchema(clonedSchema, schema.example);
+          // avoid validation of values that are in pm variable format (i.e. '{{userId}}')
+          result = validateSchema(clonedSchema, schema.example, { ignoreUnresolvedVariables: true });
         }
         else {
-          result = validateSchema(schema, schema.example);
+          // avoid validation of values that are in pm variable format (i.e. '{{userId}}')
+          result = validateSchema(schema, schema.example, { ignoreUnresolvedVariables: true });
         }
 
         // Use example only if valid 
