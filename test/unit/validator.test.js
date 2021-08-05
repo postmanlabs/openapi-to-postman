@@ -300,7 +300,9 @@ describe('The Validation option', function () {
       // check for all suggested value to be according to schema
       expect(_.isInteger(propertyMismatchMap.PATHVARIABLE.suggestedFix.suggestedValue)).to.eql(true);
       expect(propertyMismatchMap.QUERYPARAM.suggestedFix.suggestedValue).to.be.a('number');
-      expect(propertyMismatchMap.HEADER.suggestedFix.suggestedValue).to.be.a('boolean');
+      expect(propertyMismatchMap.HEADER.suggestedFix.suggestedValue.value).to.be.a('boolean');
+      expect(propertyMismatchMap.HEADER.suggestedFix.suggestedValue.description)
+        .to.eql('(Required) Quantity of pets available');
       expect(propertyMismatchMap.BODY.suggestedFix.suggestedValue.name).to.be.a('string');
       expect(propertyMismatchMap.BODY.suggestedFix.suggestedValue.name.length >= 30).to.eql(true);
       expect(propertyMismatchMap.BODY.suggestedFix.suggestedValue.tag).to.be.a('string');
@@ -680,7 +682,8 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         expect(resultObj.mismatches[1].suggestedFix.actualValue).to.be.null;
         expect(resultObj.mismatches[1].suggestedFix.suggestedValue).to.eql({
           key: 'user[address][country]',
-          value: 'India'
+          value: 'India',
+          description: '(Required) info about user'
         });
         done();
       });
@@ -721,7 +724,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       expect(err).to.be.null;
       expect(result).to.be.an('object');
       resultObj = result.requests[historyRequest[0].id].endpoints[0];
-      expect(resultObj.mismatches).to.have.lengthOf(4);
+      expect(resultObj.mismatches).to.have.lengthOf(5);
 
       /**
        * no mismatches should be found for complex array type params as validation is skipped for them,
@@ -751,6 +754,13 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       expect(resultObj.mismatches[3].transactionJsonPath).to.eql('$.request.body.urlencoded[8].value');
       expect(resultObj.mismatches[3].suggestedFix.actualValue).to.eql('123');
       expect(resultObj.mismatches[3].suggestedFix.suggestedValue).to.eql('Delhi');
+
+      // property named "propMissingInReq" is missing in request
+      expect(resultObj.mismatches[4].reasonCode).to.eql('MISSING_IN_REQUEST');
+      expect(resultObj.mismatches[4].suggestedFix.actualValue).to.eql(null);
+      expect(resultObj.mismatches[4].suggestedFix.suggestedValue.key).to.eql('propMissingInReq');
+      expect(resultObj.mismatches[4].suggestedFix.suggestedValue.description)
+        .to.eql('(Required) This property is not available in matched collection.');
       done();
     });
   });

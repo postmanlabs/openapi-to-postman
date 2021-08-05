@@ -40,11 +40,6 @@
             },
             "header": [
               {
-                "description": "(Required) ",
-                "key": "pet-quantity",
-                "value": "Not a Boolean"
-              },
-              {
                 "key": "Content-Type",
                 "value": "application/json"
               }
