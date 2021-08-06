@@ -58,4 +58,22 @@ describe('JSON SCHEMA FAKER TESTS', function () {
       default: 'This is actual property and not JSON schema defined "default" keyword'
     });
   });
+
+  it('Should use example value with pm variable syntax even though it violates schema type.', function () {
+    const schema = {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'integer',
+          example: '{{orderId}}',
+          description: 'Above example value is not valid integer but is an pm variable'
+        }
+      }
+    };
+
+    var fakedData = schemaFaker(schema);
+    expect(fakedData).to.deep.equal({
+      id: '{{orderId}}'
+    });
+  });
 });
