@@ -1,5 +1,13 @@
 # OpenAPI-Postman Changelog
 
+#### v2.10.0 (August 06, 2021)
+* Fixed issue where invalid cached schemas were being used for resolution.
+* Fixed issue where example values with pm variable syntax were not picked up in conversion.
+* Fixed the value format for apiKey security scheme.
+* Fixed issue where description was missing from suggested fix from mismatches.
+* Updated vulnerable dependencies.
+* Added support for release script to automate the task.
+
 #### v2.9.0 (July 16, 2021)
 * Fixed issue where params with style deepObject were converted to only one level of key-value pair.
 
