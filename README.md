@@ -198,6 +198,11 @@ $ openapi2postmanv2 -s spec.yaml -o collection.json -p -O folderStrategy=Tags,in
 $ openapi2postmanv2 -s spec.yaml -o collection.json -p  -c ./examples/cli-options-config.json
 ```
 
+- Takes a specification (spec.yaml) as an input and writes to a file (collection.json) with pretty printing and using provided options (Also avoids any `"<Error: Too many levels of nesting to fake this schema>"` kind of errors present in converted collection)
+```terminal
+$ openapi2postmanv2 -s spec.yaml -o collection.json -p -O folderStrategy=Tags,requestParametersResolution=Example,optimizeConversion=false,stackLimit=50
+```
+
 - Testing the converter
 ```terminal
 $ openapi2postmanv2 --test
