@@ -10,6 +10,8 @@ const optionIds = [
     'folderStrategy',
     'indentCharacter',
     'requestNameSource',
+    'schemaFaker',
+    'stackLimit',
     'includeAuthInfoInExample',
     'shortValidationErrors',
     'validationPropertiesToIgnore',
@@ -80,6 +82,20 @@ const optionIds = [
       description: 'Determines how the requests inside the generated collection will be named.' +
       ' If “Fallback” is selected, the request will be named after one of the following schema' +
       ' values: `description`, `operationid`, `url`.'
+    },
+    schemaFaker: {
+      name: 'Enable Schema Faking',
+      type: 'boolean',
+      default: true,
+      description: 'Whether or not schemas should be faked.'
+    },
+    stackLimit: {
+      name: 'Schema resolution nesting limit',
+      type: 'integer',
+      default: 10,
+      description: 'Number of nesting limit till which schema resolution will happen. Increasing this limit may' +
+        ' result in more time to convert collection depending on complexity of specification. (To make sure this' +
+        ' option works correctly "optimizeConversion" option needs to be disabled)'
     },
     includeAuthInfoInExample: {
       name: 'Include auth info in example requests',
@@ -209,7 +225,7 @@ describe('getOptions', function() {
   });
 
   it('must return all valid options based on criteria', function () {
-    getOptions({ usage: ['CONVERSION'] }).forEach((option) => {
+    getOptions({ external: true, usage: ['CONVERSION'] }).forEach((option) => {
       expect(option.id).to.be.oneOf(optionIds);
       expect(option.usage).to.include('CONVERSION');
     });
