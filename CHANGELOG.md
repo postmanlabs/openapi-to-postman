@@ -1,5 +1,8 @@
 # OpenAPI-Postman Changelog
 
+#### v2.10.1 (August 18, 2021)
+* Added new internal option "stackLimit" to define nesting level till which schema gets resolved.
+
 #### v2.10.0 (August 06, 2021)
 * Fixed issue where invalid cached schemas were being used for resolution.
 * Fixed issue where example values with pm variable syntax were not picked up in conversion.
