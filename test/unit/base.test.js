@@ -61,7 +61,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
         expect(conversionResult.output[0].data.auth).to.have.property('type');
-        expect(conversionResult.output[0].data.auth.type).to.equal('bearer');
+        expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
         done();
       });
     });
