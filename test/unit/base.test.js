@@ -20,6 +20,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       infoHavingContactOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_contact_only.json'),
       infoHavingDescriptionOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_description_only.json'),
       customHeadersSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/custom_headers.json'),
+      implicitHeadersSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/implicit_headers.json'),
       readOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/readOnly.json'),
       multipleFoldersSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem.json'),
       multipleFoldersSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem1.json'),
@@ -289,6 +290,37 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(err).to.be.null;
         expect(conversionResult.output[0].data.item[0].response[0].header[0].value)
           .to.equal('application/vnd.retailer.v3+json');
+        done();
+      });
+    });
+    it('convertor should maintain implicit headers in the request' +
+    implicitHeadersSpec, function(done) {
+      var openapi = fs.readFileSync(implicitHeadersSpec, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, {
+        schemaFaker: true,
+        keepImplicitHeaders: true
+      }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.output[0].data.item[0].request.header[0].key)
+          .to.equal('Authorization');
+        expect(conversionResult.output[0].data.item[0].request.header[0].value)
+          .to.equal('Bearer {{oauth_access_token}}');
+        expect(conversionResult.output[0].data.item[0].request.header[1].key)
+          .to.equal('content-type');
+        expect(conversionResult.output[0].data.item[0].request.header[1].value)
+          .to.equal('application/json');
+        done();
+      });
+    });
+    it('convertor should remove implicit headers in the request' +
+    implicitHeadersSpec, function(done) {
+      var openapi = fs.readFileSync(implicitHeadersSpec, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, {
+        schemaFaker: true,
+        keepImplicitHeaders: false
+      }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.output[0].data.item[0].request.header).to.equal(undefined);
         done();
       });
     });

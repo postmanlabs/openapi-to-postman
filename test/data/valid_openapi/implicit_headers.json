@@ -1,0 +1,58 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "example",
+    "version": "1.0."
+  },
+  "paths": {
+    "/accounts": {
+      "parameters": [
+        {
+          "in": "header",
+          "name": "Authorization",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "Bearer {{oauth_access_token}}",
+            "default": "Bearer {{oauth_access_token}}"
+          },
+          "description": "Oauth2 token to authorize requests."
+        },
+        {
+          "in": "header",
+          "name": "content-type",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "application/json",
+            "default": "application/json"
+          },
+          "description": "Define the file type and format for the response object."
+        }
+      ],
+      "get": {
+        "operationId": "get-accounts",
+        "summary": "Get all accounts",
+        "description": "Returns a list of your accounts for a certain tenant.",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "The response of the list of accounts.",
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "description": "Result of the accounts for the portal."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
