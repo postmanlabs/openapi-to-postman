@@ -301,14 +301,23 @@ describe('CONVERT FUNCTION TESTS ', function() {
         keepImplicitHeaders: true
       }, (err, conversionResult) => {
         expect(err).to.be.null;
-        expect(conversionResult.output[0].data.item[0].request.header[0].key)
+        expect(conversionResult.output[0].data.item[0].item[0].request.header[0].key)
           .to.equal('Authorization');
-        expect(conversionResult.output[0].data.item[0].request.header[0].value)
+        expect(conversionResult.output[0].data.item[0].item[0].request.header[0].value)
           .to.equal('Bearer {{oauth_access_token}}');
-        expect(conversionResult.output[0].data.item[0].request.header[1].key)
-          .to.equal('content-type');
-        expect(conversionResult.output[0].data.item[0].request.header[1].value)
+        expect(conversionResult.output[0].data.item[0].item[0].request.header[1].key)
+          .to.equal('Content-Type');
+        expect(conversionResult.output[0].data.item[0].item[0].request.header[1].value)
           .to.equal('application/json');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[0].key)
+          .to.equal('Authorization');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[0].value)
+          .to.equal('Bearer {{oauth_access_token}}');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[1].key)
+          .to.equal('Content-Type');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[1].value)
+          .to.equal('application/json');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[2]).to.equal(undefined);
         done();
       });
     });
@@ -320,7 +329,11 @@ describe('CONVERT FUNCTION TESTS ', function() {
         keepImplicitHeaders: false
       }, (err, conversionResult) => {
         expect(err).to.be.null;
-        expect(conversionResult.output[0].data.item[0].request.header).to.equal(undefined);
+        expect(conversionResult.output[0].data.item[0].item[0].request.header).to.equal(undefined);
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[0].key)
+          .to.equal('Content-Type');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[0].value)
+          .to.equal('application/json');
         done();
       });
     });
