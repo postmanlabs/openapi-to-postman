@@ -152,7 +152,7 @@ const optionIds = [
       name: 'Keep implicit headers',
       type: 'boolean',
       default: false,
-      description: 'Whether to keep implicit headers from the OpenAPI specification,which are removed by default.',
+      description: 'Whether to keep implicit headers from the OpenAPI specification, which are removed by default.',
       external: true,
       usage: ['CONVERSION']
     }
