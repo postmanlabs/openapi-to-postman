@@ -7,6 +7,8 @@
 # OpenAPI 3.0 to Postman Collection v2.1.0 Converter
 
 [![Build Status](https://travis-ci.org/postmanlabs/openapi-to-postman.svg?branch=master)](https://travis-ci.org/postmanlabs/openapi-to-postman)
+<a href="https://www.npmjs.com/package/openapi-to-postmanv2" alt="Latest Stable Version">![npm](https://img.shields.io/npm/v/openapi-format.svg)</a> 
+<a href="https://www.npmjs.com/package/openapi-to-postmanv2" alt="Total Downloads">![npm](https://img.shields.io/npm/dw/openapi-format.svg)</a>
 
 #### Contents 
 
