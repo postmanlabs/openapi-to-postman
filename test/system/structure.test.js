@@ -22,7 +22,8 @@ const optionIds = [
     'ignoreUnresolvedVariables',
     'optimizeConversion',
     'strictRequestMatching',
-    'disableOptionalParameters'
+    'disableOptionalParameters',
+    'keepImplicitHeaders'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -162,6 +163,14 @@ const optionIds = [
       type: 'boolean',
       default: false,
       description: 'Whether to set optional parameters as disabled'
+    },
+    keepImplicitHeaders: {
+      name: 'Keep implicit headers',
+      type: 'boolean',
+      default: false,
+      description: 'Whether to keep implicit headers from the OpenAPI specification, which are removed by default.',
+      external: true,
+      usage: ['CONVERSION']
     }
   };
 
