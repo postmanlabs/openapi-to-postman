@@ -1,0 +1,101 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "example",
+    "version": "1.0."
+  },
+  "paths": {
+    "/accounts": {
+      "parameters": [
+        {
+          "in": "header",
+          "name": "Authorization",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "example": "Bearer {{oauth_access_token}}",
+            "default": "Bearer {{oauth_access_token}}"
+          },
+          "description": "Oauth2 token to authorize requests."
+        },
+        {
+          "in": "header",
+          "name": "Content-Type",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "application/json",
+            "default": "application/json"
+          },
+          "description": "Define the file type and format for the response object."
+        }
+      ],
+      "get": {
+        "operationId": "get-accounts",
+        "summary": "Get all accounts",
+        "description": "Returns a list of your accounts.",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "The response of the list of accounts.",
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "description": "Result of the accounts"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-accounts",
+        "summary": "Create account",
+        "description": "Create a new account.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Description of Pet ID"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Description of Pet name"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "The response of the list of accounts.",
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "description": "Result of the accounts for the portal."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
