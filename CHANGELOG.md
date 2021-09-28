@@ -1,5 +1,10 @@
 # OpenAPI-Postman Changelog
 
+#### v2.11.0 (September 28, 2021)
+* Fixed issue where genberated collection contained response code as null.
+* Added option to manage implicit headers.
+* Bumped up few dependency versions.
+
 #### v2.10.1 (August 18, 2021)
 * Added new internal option "stackLimit" to define nesting level till which schema gets resolved.
 
