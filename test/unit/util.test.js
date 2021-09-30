@@ -2214,21 +2214,6 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         pmResponse = SchemaUtils.convertToPmResponse(response, '200', originalRequest, components).toJSON(),
         pathVariables = _.get(pmResponse, 'originalRequest.url.variable');
 
-      expect(JSON.parse(pmResponse.body)).to.eql(
-        {
-          'id': '<uint32>',
-          'name': '<string>',
-          'businessName': '<string>',
-          'address': {
-            'line1': '<string>',
-            'line2': '<string>',
-            'city': '<string>',
-            'state': '<string>',
-            'postalCode': '<string>',
-            'countryCode': '<long>'
-          }
-        }
-      );
       expect(pathVariables.length).to.eql(3);
       expect(pathVariables).to.eql([
         {
