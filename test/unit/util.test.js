@@ -1678,12 +1678,12 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       });
       it(' application/javascript', function(done) { // not properly done
         var requestBody = {
-            description: 'body description',
-            content: {
-              'application/javascript': {
-              }
+          description: 'body description',
+          content: {
+            'application/javascript': {
             }
-          },
+          }
+        },
           result, resultBody;
         result = SchemaUtils.convertToPmBody(requestBody);
         resultBody = (result.body.raw);
@@ -1692,7 +1692,24 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           { key: 'Content-Type', value: 'application/javascript' });
         done();
       });
-      // things remaining : application/xml
+      it(' image/*', function (done) {
+        var requestBody = {
+          description: 'body description',
+          content: {
+            'image/*': {
+              schema: {
+                type: 'string',
+                format: 'binary'
+              }
+            }
+          }
+        },
+          result;
+
+        result = SchemaUtils.convertToPmBody(requestBody);
+        expect(result.body.mode).to.be('file');
+        expect(result.body.file.src).to.be('{}');
+      });
     });
   });
 
