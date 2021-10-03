@@ -1710,6 +1710,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(result.body.mode).to.equal('file');
         done();
       });
+      // things remaining : application/xml
     });
   });
 
