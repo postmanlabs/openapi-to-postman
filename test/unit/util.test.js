@@ -1592,14 +1592,18 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
                 schema: {
                   type: 'object',
                   properties: {
-                    file: {
+                    array: {
                       type: 'array',
                       items: {
                         type: 'string'
                       }
+                    },
+                    file: {
+                      type: 'string',
+                      format: 'binary'
                     }
                   },
-                  required: ['file']
+                  required: ['array']
                 }
               }
             }
@@ -1607,7 +1611,9 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           result, resultBody;
         result = SchemaUtils.convertToPmBody(requestBody);
         resultBody = (result.body.formdata.toJSON());
-        expect(resultBody[0].key).to.equal('file');
+        expect(resultBody[0].key).to.equal('array');
+        expect(resultBody[1].key).to.equal('file');
+        expect(resultBody[1].type).to.equal('file');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'multipart/form-data' });
         done();
