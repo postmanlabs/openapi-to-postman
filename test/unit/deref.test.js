@@ -116,7 +116,7 @@ describe('DEREF FUNCTION TESTS ', function() {
         type: 'object',
         description: 'Schema 2',
         properties: {
-          id: { default: '<long>', type: 'integer' },
+          id: { default: '<long>', type: 'integer', format: 'int64' },
           test_prop: { default: '<string>', type: 'string' }
         }
       });
@@ -302,6 +302,8 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(_.get(schemaResoltionCache, ['#/components/schemas/schemaUsed', 'schema'])).to.not.deep
         .equal(componentsAndPaths.components.schemas.schemaUsed);
       resolvedSchema = deref.resolveRefs(schema, parameterSource, componentsAndPaths, schemaResoltionCache);
+      // Restoring the original format as it is deleted if not supported by json-schema-faker and ajv
+      resolvedSchema.properties.id.format = 'int64';
 
       /**
        * Even though schema cache contains schemaUsed as impartially cached,resolution were it's used again will
