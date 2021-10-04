@@ -1565,6 +1565,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(resultBody.id).to.equal('<long>');
         expect(resultBody.name).to.equal('<string>');
         expect(result.contentHeader).to.deep.include({ key: 'Content-Type', value: 'application/json' });
+        expect(result.body.options.raw.language).to.equal('json');
         done();
       });
       it(' application/x-www-form-urlencoded', function(done) {
@@ -1634,6 +1635,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(resultBody).to.equal('"text/plain description"');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/xml' });
+        expect(result.body.options.raw.language).to.equal('xml');
         done();
       });
       it(' text/plain', function(done) {
@@ -1654,6 +1656,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(resultBody).to.equal('"text/plain description"');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/plain' });
+        expect(result.body.options.raw.language).to.equal('text');
         done();
       });
       it(' text/html', function(done) {
