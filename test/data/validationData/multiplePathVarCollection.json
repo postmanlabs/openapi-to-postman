@@ -91,6 +91,58 @@
         }
       ],
       "event": []
+    },
+    {
+      "id": "82704c56-aadb-4925-a6bf-db07b4a8f538",
+      "name": "/pets",
+      "request": {
+        "name": "/pets",
+        "description": {},
+        "url": {
+          "path": [
+            "pets"
+          ],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "method": "GET",
+        "auth": null
+      },
+      "response": [
+        {
+          "id": "9a9c0108-1ec7-4ba3-82f2-0c335e650c49",
+          "name": "Success",
+          "originalRequest": {
+            "url": {
+              "path": [
+                "pets"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET",
+            "body": {}
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "text/plain"
+            }
+          ],
+          "body": "",
+          "cookie": [],
+          "_postman_previewlanguage": "text"
+        }
+      ],
+      "event": []
     }
   ],
   "event": [],
