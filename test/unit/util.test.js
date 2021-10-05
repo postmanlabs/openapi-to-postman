@@ -1692,6 +1692,24 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           { key: 'Content-Type', value: 'application/javascript' });
         done();
       });
+      it(' image/*', function (done) {
+        var requestBody = {
+            description: 'body description',
+            content: {
+              'image/*': {
+                schema: {
+                  type: 'string',
+                  format: 'binary'
+                }
+              }
+            }
+          },
+          result;
+
+        result = SchemaUtils.convertToPmBody(requestBody);
+        expect(result.body.mode).to.equal('file');
+        done();
+      });
       // things remaining : application/xml
     });
   });
