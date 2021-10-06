@@ -589,12 +589,13 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       });
     });
 
-    it('Should correctly validate schema having path with multiple path variables', function (done) {
+    it('Should correctly validate schema having path with various path variables', function (done) {
       let multiplePathVarSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
           '/multiplePathVarSpec.json'), 'utf-8'),
         multiplePathVarCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
           '/multiplePathVarCollection.json'), 'utf-8'),
-        resultObj,
+        resultObj1,
+        resultObj2,
         historyRequest = [],
         options = {
           showMissingInSchemaErrors: true,
@@ -610,8 +611,12 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         expect(err).to.be.null;
         expect(result).to.be.an('object');
 
-        resultObj = result.requests[historyRequest[0].id].endpoints[0];
-        expect(resultObj.mismatches).to.have.lengthOf(0);
+        resultObj1 = result.requests[historyRequest[0].id].endpoints[0];
+        expect(resultObj1.mismatches).to.have.lengthOf(0);
+
+        resultObj2 = result.requests[historyRequest[1].id].endpoints[0];
+        expect(resultObj2.mismatches).to.have.lengthOf(1);
+        expect(resultObj2.mismatches[0].reasonCode).to.eql('MISSING_IN_REQUEST');
         done();
       });
     });
