@@ -1656,7 +1656,6 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(resultBody).to.equal('"text/plain description"');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/plain' });
-        expect(result.body.options.raw.language).to.equal('text');
         done();
       });
       it(' text/html', function(done) {
