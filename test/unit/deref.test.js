@@ -93,13 +93,15 @@ describe('DEREF FUNCTION TESTS ', function() {
           }
         },
         parameterSource = 'REQUEST',
-        output = deref.resolveRefs(schema, parameterSource, componentsAndPaths),
-        output_withdot = deref.resolveRefs(schemaWithDotInKey, parameterSource, componentsAndPaths),
-        output_customFormat = deref.resolveRefs(schemaWithCustomFormat, parameterSource, componentsAndPaths),
-        output_withAllOf = deref.resolveRefs(schemaWithAllOf, parameterSource, componentsAndPaths),
-        output_validationTypeArray = deref.resolveRefs(schemaWithTypeArray, parameterSource, componentsAndPaths,
-          {}, 'VALIDATION'),
-        output_emptyObject = deref.resolveRefs(schemaWithEmptyObject, parameterSource, componentsAndPaths);
+        // deref.resolveRefs modifies the input schema and components so cloning to keep tests independent of each other
+        output = deref.resolveRefs(schema, parameterSource, _.cloneDeep(componentsAndPaths)),
+        output_withdot = deref.resolveRefs(schemaWithDotInKey, parameterSource, _.cloneDeep(componentsAndPaths)),
+        output_customFormat = deref.resolveRefs(schemaWithCustomFormat, parameterSource,
+          _.cloneDeep(componentsAndPaths)),
+        output_withAllOf = deref.resolveRefs(schemaWithAllOf, parameterSource, _.cloneDeep(componentsAndPaths)),
+        output_validationTypeArray = deref.resolveRefs(schemaWithTypeArray, parameterSource,
+          _.cloneDeep(componentsAndPaths), {}, 'VALIDATION'),
+        output_emptyObject = deref.resolveRefs(schemaWithEmptyObject, parameterSource, _.cloneDeep(componentsAndPaths));
 
       expect(output).to.deep.include({ type: 'object',
         required: ['id'],
@@ -302,6 +304,8 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(_.get(schemaResoltionCache, ['#/components/schemas/schemaUsed', 'schema'])).to.not.deep
         .equal(componentsAndPaths.components.schemas.schemaUsed);
       resolvedSchema = deref.resolveRefs(schema, parameterSource, componentsAndPaths, schemaResoltionCache);
+      // Restoring the original format as it is deleted if not supported by json-schema-faker and ajv
+      resolvedSchema.properties.id.format = 'int64';
 
       /**
        * Even though schema cache contains schemaUsed as impartially cached,resolution were it's used again will
