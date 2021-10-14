@@ -134,7 +134,8 @@
 											"raw",
 											"urlencoded",
 											"formdata",
-											"graphql"
+											"graphql",
+											"file"
 										]
 									},
 									"raw": {

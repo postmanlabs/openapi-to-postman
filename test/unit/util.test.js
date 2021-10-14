@@ -1531,6 +1531,190 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
   describe('convertToPmBody function', function() {
     describe('should convert requestbody of media type', function() {
+      describe('requestType=EXAMPLE', function () {
+        it(' application/json', function(done) {
+          let requestBody = {
+              description: 'body description',
+              content: {
+                'application/json': {
+                  'schema': {
+                    type: 'object',
+                    required: [
+                      'id',
+                      'name'
+                    ],
+                    properties: {
+                      id: {
+                        type: 'integer',
+                        format: 'int64'
+                      },
+                      name: {
+                        type: 'string'
+                      },
+                      neglect: { // this will be neglected since schemaFaker does not process
+                        type: 'string',
+                        format: 'binary'
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            result, resultBody;
+          result = SchemaUtils.convertToPmBody(requestBody, 'EXAMPLE', {}, {
+            exampleParametersResolution: 'example'
+          });
+          resultBody = JSON.parse(result.body.raw);
+          expect(resultBody.id).to.be.a('number');
+          expect(resultBody.name).to.be.a('string');
+          expect(result.contentHeader).to.deep.include({ key: 'Content-Type', value: 'application/json' });
+          expect(result.body.options.raw.language).to.equal('json');
+          done();
+        });
+
+        it(' application/x-www-form-urlencoded', function(done) {
+          let requestBody = {
+              description: 'body description',
+              content: {
+                'application/x-www-form-urlencoded': {
+                  examples: ''
+                }
+              }
+            },
+            result, resultBody;
+          result = SchemaUtils.convertToPmBody(requestBody, 'EXAMPLE', {}, {
+            exampleParametersResolution: 'example'
+          });
+          resultBody = (result.body.urlencoded.toJSON());
+          expect(resultBody).to.eql([]);
+          expect(result.contentHeader).to.deep.include(
+            { key: 'Content-Type', value: 'application/x-www-form-urlencoded' });
+          done();
+        });
+
+        it(' multipart/form-data', function(done) {
+          let requestBody = {
+              description: 'body description',
+              content: {
+                'multipart/form-data': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      file: {
+                        type: 'array',
+                        items: {
+                          type: 'string'
+                        }
+                      }
+                    },
+                    required: ['file']
+                  }
+                }
+              }
+            },
+            result, resultBody;
+          result = SchemaUtils.convertToPmBody(requestBody, 'EXAMPLE', {}, {
+            exampleParametersResolution: 'example'
+          });
+          resultBody = (result.body.formdata.toJSON());
+          expect(resultBody[0].key).to.equal('file');
+          expect(result.contentHeader).to.deep.include(
+            { key: 'Content-Type', value: 'multipart/form-data' });
+          done();
+        });
+
+        it(' text/xml', function(done) { // not properly done
+          let requestBody = {
+              description: 'body description',
+              content: {
+                'text/xml': {
+                  examples: {
+                    xml: {
+                      summary: 'A list containing two items',
+                      value: 'text/plain description'
+                    }
+                  }
+                }
+              }
+            },
+            result, resultBody;
+          result = SchemaUtils.convertToPmBody(requestBody, 'EXAMPLE', {}, {
+            exampleParametersResolution: 'example'
+          });
+          resultBody = (result.body.raw);
+          expect(resultBody).to.equal('"text/plain description"');
+          expect(result.contentHeader).to.deep.include(
+            { key: 'Content-Type', value: 'text/xml' });
+          expect(result.body.options.raw.language).to.equal('xml');
+          done();
+        });
+
+        it(' text/plain', function(done) {
+          let requestBody = {
+              description: 'body description',
+              content: {
+                'text/plain': {
+                  example: {
+                    summary: 'A list containing two items',
+                    value: 'text/plain description'
+                  }
+                }
+              }
+            },
+            result, resultBody;
+          result = SchemaUtils.convertToPmBody(requestBody, 'EXAMPLE', {}, {
+            exampleParametersResolution: 'example'
+          });
+          resultBody = result.body.raw;
+          expect(resultBody).to.equal('"text/plain description"');
+          expect(result.contentHeader).to.deep.include(
+            { key: 'Content-Type', value: 'text/plain' });
+          done();
+        });
+
+        it(' text/html', function(done) {
+          var requestBody = {
+              description: 'body description',
+              content: {
+                'text/html': {
+                  example: {
+                    summary: 'A list containing two items',
+                    value: '<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>'
+                  }
+                }
+              }
+            },
+            result, resultBody;
+          result = SchemaUtils.convertToPmBody(requestBody, 'EXAMPLE', {}, {
+            exampleParametersResolution: 'example'
+          });
+          resultBody = (result.body.raw);
+          expect(resultBody).to.equal('"<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>"');
+          expect(result.contentHeader).to.deep.include(
+            { key: 'Content-Type', value: 'text/html' });
+          done();
+        });
+
+        it(' application/javascript', function(done) { // not properly done
+          var requestBody = {
+              description: 'body description',
+              content: {
+                'application/javascript': {
+                }
+              }
+            },
+            result, resultBody;
+          result = SchemaUtils.convertToPmBody(requestBody, 'EXAMPLE', {}, {
+            exampleParametersResolution: 'example'
+          });
+          resultBody = (result.body.raw);
+          expect(typeof resultBody).to.equal('string');
+          expect(result.contentHeader).to.deep.include(
+            { key: 'Content-Type', value: 'application/javascript' });
+          done();
+        });
+      });
+
       it(' application/json', function(done) {
         var requestBody = {
             description: 'body description',
@@ -1565,6 +1749,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(resultBody.id).to.equal('<long>');
         expect(resultBody.name).to.equal('<string>');
         expect(result.contentHeader).to.deep.include({ key: 'Content-Type', value: 'application/json' });
+        expect(result.body.options.raw.language).to.equal('json');
         done();
       });
       it(' application/x-www-form-urlencoded', function(done) {
@@ -1592,14 +1777,18 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
                 schema: {
                   type: 'object',
                   properties: {
-                    file: {
+                    array: {
                       type: 'array',
                       items: {
                         type: 'string'
                       }
+                    },
+                    file: {
+                      type: 'string',
+                      format: 'binary'
                     }
                   },
-                  required: ['file']
+                  required: ['array']
                 }
               }
             }
@@ -1607,7 +1796,9 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           result, resultBody;
         result = SchemaUtils.convertToPmBody(requestBody);
         resultBody = (result.body.formdata.toJSON());
-        expect(resultBody[0].key).to.equal('file');
+        expect(resultBody[0].key).to.equal('array');
+        expect(resultBody[1].key).to.equal('file');
+        expect(resultBody[1].type).to.equal('file');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'multipart/form-data' });
         done();
@@ -1634,6 +1825,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(resultBody).to.equal('"text/plain description"');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/xml' });
+        expect(result.body.options.raw.language).to.equal('xml');
         done();
       });
       it(' text/plain', function(done) {
@@ -1690,6 +1882,24 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(typeof resultBody).to.equal('string');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'application/javascript' });
+        done();
+      });
+      it(' image/*', function (done) {
+        var requestBody = {
+            description: 'body description',
+            content: {
+              'image/*': {
+                schema: {
+                  type: 'string',
+                  format: 'binary'
+                }
+              }
+            }
+          },
+          result;
+
+        result = SchemaUtils.convertToPmBody(requestBody);
+        expect(result.body.mode).to.equal('file');
         done();
       });
       // things remaining : application/xml
@@ -2030,6 +2240,223 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       expect(pmResponse.headers.members[0].key).to.equal('Retry-After');
       expect(pmResponse.headers.members[0].description).to.equal('Some description');
       done();
+    });
+    it('should return proper path variables in the SDK response original request', function (done) {
+      const response = {
+          'description': 'The required organization detail',
+          'content': {
+            'application/json': {
+              'schema': { '$ref': '#/components/schemas/Organization' }
+            }
+          }
+        },
+        originalRequest = {
+          'method': 'GET',
+          'url': {
+            'path': [
+              'organization',
+              ':organizationID'
+            ],
+            'host': [
+              '{{baseUrl}}'
+            ],
+            'query': [],
+            'variable': [
+              {
+                'description': ' (This can only be one of 15500)',
+                'type': 'any',
+                'value': '{{port}}',
+                'key': 'port'
+              },
+              {
+                'description': ' (This can only be one of v1)',
+                'type': 'any',
+                'value': '{{version}}',
+                'key': 'version'
+              },
+              {
+                'disabled': false,
+                'type': 'any',
+                'value': '8888',
+                'key': 'organizationID',
+                'description': '(Required) The id of the organization'
+              }
+            ]
+          },
+          'header': [
+            {
+              'disabled': false,
+              'key': 'Content-Type',
+              'value': 'application/json',
+              'description': ''
+            }
+          ],
+          'body': {}
+        },
+        components = {
+          'components': {
+            'schemas': {
+              'Organization': {
+                'type': 'object',
+                'required': [
+                  'id',
+                  'name',
+                  'businessName'
+                ],
+                'properties': {
+                  'id': {
+                    'type': 'integer',
+                    'format': 'uint32',
+                    'example': 1
+                  },
+                  'name': {
+                    'type': 'string',
+                    'example': 'My Company'
+                  },
+                  'businessName': {
+                    'type': 'string',
+                    'example': 'My Super Company'
+                  },
+                  'address': {
+                    'type': 'object',
+                    '$ref': '#/components/schemas/Address'
+                  }
+                }
+              },
+              'Address': {
+                'type': 'object',
+                'properties': {
+                  'line1': {
+                    'type': 'string',
+                    'example': 'Avenida da República'
+                  },
+                  'line2': {
+                    'type': 'string',
+                    'example': 'Nº 458, 2ºEsq'
+                  },
+                  'city': {
+                    'type': 'string',
+                    'example': 'Lisboa'
+                  },
+                  'state': {
+                    'type': 'string',
+                    'example': 'Lisboa'
+                  },
+                  'postalCode': {
+                    'type': 'string',
+                    'example': '1000-427'
+                  },
+                  'countryCode': {
+                    'type': 'integer',
+                    'format': 'int64',
+                    'example': 620
+                  }
+                }
+              }
+            },
+            'parameters': {
+              'contentType': {
+                'name': 'Content-Type',
+                'in': 'header',
+                'schema': {
+                  'type': 'string',
+                  'example': 'application/json'
+                }
+              },
+              'organizationID': {
+                'name': 'organizationID',
+                'in': 'path',
+                'description': 'The id of the organization',
+                'required': true,
+                'example': 8888,
+                'schema': {
+                  'type': 'integer',
+                  'example': 8888
+                }
+              }
+            }
+          },
+          'paths': {
+            '/organization/{organizationID}': {
+              'get': {
+                'summary': 'Get Organization by ID',
+                'operationId': 'getOrganizationByID',
+                'tags': [
+                  'Organization Endpoints'
+                ],
+                'parameters': [
+                  {
+                    'name': 'Content-Type',
+                    'in': 'header',
+                    'schema': {
+                      'type': 'string',
+                      'example': 'application/json'
+                    }
+                  },
+                  {
+                    'name': 'organizationID',
+                    'in': 'path',
+                    'description': 'The id of the organization',
+                    'required': true,
+                    'example': 8888,
+                    'schema': {
+                      'type': 'integer',
+                      'example': 8888
+                    }
+                  }
+                ],
+                'responses': {
+                  '200': {
+                    'description': 'The required organization detail',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          '$ref': '#/components/schemas/Organization'
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        pmResponse = SchemaUtils.convertToPmResponse(response, '200', originalRequest, components).toJSON(),
+        pathVariables = _.get(pmResponse, 'originalRequest.url.variable');
+
+      expect(pathVariables.length).to.eql(3);
+      expect(pathVariables).to.eql([
+        {
+          description: {
+            content: ' (This can only be one of 15500)',
+            type: 'text/plain'
+          },
+          key: 'port',
+          type: 'any',
+          value: '{{port}}'
+        },
+        {
+          description: {
+            content: ' (This can only be one of v1)',
+            type: 'text/plain'
+          },
+          key: 'version',
+          type: 'any',
+          value: '{{version}}'
+        },
+        {
+          description: {
+            content: '(Required) The id of the organization',
+            type: 'text/plain'
+          },
+          disabled: false,
+          key: 'organizationID',
+          type: 'any',
+          value: '8888'
+        }
+      ]);
+
+      return done();
     });
   });
 
