@@ -1,5 +1,13 @@
 # OpenAPI-Postman Changelog
 
+#### v2.12.0 (October 14, 2021)
+* Fixed issue where conversion failed with type error if header example was null.
+* Fixed issue where validation was giving INVALID_TYPE instead of MISSING_IN_REQUEST if path variable is not present in transaction.
+* Fix issue where json and xml lanugages were not detected from the example request body content type
+* Set param type in request to file if schema type is string and format is binary in binary body type.
+* Handle the case when request body is of type string and format binary in form-data body type.
+* Fixed path variable conversion in collection's examples.
+
 #### v2.11.0 (September 28, 2021)
 * Fixed issue where genberated collection contained response code as null.
 * Added option to manage implicit headers.
