@@ -95,6 +95,8 @@ describe('DEREF FUNCTION TESTS ', function() {
         parameterSource = 'REQUEST',
         // deref.resolveRefs modifies the input schema and components so cloning to keep tests independent of each other
         output = deref.resolveRefs(schema, parameterSource, _.cloneDeep(componentsAndPaths)),
+        output_validation = deref.resolveRefs(schema, parameterSource, _.cloneDeep(componentsAndPaths),
+          {}, 'VALIDATION'),
         output_withdot = deref.resolveRefs(schemaWithDotInKey, parameterSource, _.cloneDeep(componentsAndPaths)),
         output_customFormat = deref.resolveRefs(schemaWithCustomFormat, parameterSource,
           _.cloneDeep(componentsAndPaths)),
@@ -106,6 +108,17 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(output).to.deep.include({ type: 'object',
         required: ['id'],
         properties: { id: { default: '<long>', type: 'integer' } } });
+
+      expect(output_validation).to.deep.include({ anyOf: [
+        { type: 'object',
+          required: ['id'],
+          description: 'Schema 2',
+          properties: { id: { type: 'integer' } }
+        }, {
+          type: 'object',
+          properties: { emailField: { type: 'string', format: 'email' } }
+        }
+      ] });
 
       expect(output_withdot).to.deep.include({ type: 'object',
         required: ['id'],
