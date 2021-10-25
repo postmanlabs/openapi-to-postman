@@ -153,6 +153,91 @@
           }
         ],
         "event": []
+      },
+      {
+        "id": "9a089428-7a6c-4b30-ba0c-b036383af51e",
+        "name": "/inventory/:searchString",
+        "request": {
+          "name": "/inventory/:searchString",
+          "description": {},
+          "url": {
+            "path": [
+              "inventory",
+              ":searchString"
+            ],
+            "host": [
+              "{{baseUrl}}"
+            ],
+            "query": [],
+            "variable": [
+              {
+                "disabled": false,
+                "type": "any",
+                "value": "sed eu",
+                "key": "searchString",
+                "description": "pass an optional search string for looking up inventory"
+              }
+            ]
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "PUT",
+          "auth": null,
+          "body": {
+            "mode": "raw",
+            "raw": "{\n    \"name\": \"dolore ex consequat\",\n    \"alternateName\": \"id consequat Ut\",\n    \"providerId\": \"Ut reprehenderit aute ea consectetur\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          }
+        },
+        "response": [
+          {
+            "id": "2b4dd71c-4664-4685-8c7c-8ef5bf8f6704",
+            "name": "successful operation",
+            "originalRequest": {
+              "url": {
+                "path": [
+                  "inventory",
+                  ":searchString"
+                ],
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "query": [],
+                "variable": [
+                  {
+                    "disabled": false,
+                    "type": "any",
+                    "value": "sed eu",
+                    "key": "searchString",
+                    "description": "pass an optional search string for looking up inventory"
+                  }
+                ]
+              },
+              "method": "PUT",
+              "body": {}
+            },
+            "status": "OK",
+            "code": 200,
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": "\"sed eu\"",
+            "cookie": [],
+            "_postman_previewlanguage": "json"
+          }
+        ],
+        "event": []
       }
     ],
     "event": [],
