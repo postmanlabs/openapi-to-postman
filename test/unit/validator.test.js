@@ -510,14 +510,17 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       schemaPack.validateTransaction(historyRequest, (err, result) => {
         expect(err).to.be.null;
         expect(result).to.be.an('object');
-        resultObj = result.requests[historyRequest[0].id].endpoints[0];
 
-        // no mismatches should be found when resolved correctly
-        expect(resultObj.matched).to.be.true;
-        expect(resultObj.mismatches).to.have.lengthOf(0);
-        _.forEach(resultObj.responses, (response) => {
-          expect(response.matched).to.be.true;
-          expect(response.mismatches).to.have.lengthOf(0);
+        _.forEach(historyRequest, (hr) => {
+          resultObj = result.requests[hr.id].endpoints[0];
+
+          // no mismatches should be found when resolved correctly
+          expect(resultObj.matched).to.be.true;
+          expect(resultObj.mismatches).to.have.lengthOf(0);
+          _.forEach(resultObj.responses, (response) => {
+            expect(response.matched).to.be.true;
+            expect(response.mismatches).to.have.lengthOf(0);
+          });
         });
         done();
       });
