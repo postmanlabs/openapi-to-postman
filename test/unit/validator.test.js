@@ -696,6 +696,59 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         done();
       });
     });
+
+    it('Should be able to correctly validate composite schemas with anyOf, oneOf and allOf keywords correctly ' +
+    'against corresponding transactions', function (done) {
+      let compositeSchemaSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+        '/compositeSchemaSpec.yaml'), 'utf-8'),
+        compositeSchemaCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/compositeSchemaCollection.json'), 'utf-8'),
+        resultObjAnyOf,
+        resultObjOneOf,
+        resultObjAllOf,
+        historyRequest = [],
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: compositeSchemaSpec },
+          { suggestAvailableFixes: true, showMissingInSchemaErrors: true });
+
+      getAllTransactions(JSON.parse(compositeSchemaCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        resultObjAnyOf = result.requests[historyRequest[0].id].endpoints[0];
+        resultObjOneOf = result.requests[historyRequest[1].id].endpoints[0];
+        resultObjAllOf = result.requests[historyRequest[2].id].endpoints[0];
+
+        /**
+         * no mismatches should be found here even though value present in collection
+         * is only valid as per 2nd element of anyOf keyword here
+         */
+        expect(resultObjAnyOf.mismatches).to.have.lengthOf(0);
+
+        /**
+         * no mismatches should be found here even though key present in collection request body
+         * is only valid as per 2nd element of oneOf keyword here
+         */
+        expect(resultObjOneOf.mismatches).to.have.lengthOf(0);
+
+        //
+        expect(resultObjAllOf.mismatches).to.have.lengthOf(1);
+        expect(resultObjAllOf.mismatches[0].reasonCode).to.eql('INVALID_BODY');
+        expect(resultObjAllOf.mismatches[0].transactionJsonPath).to.eql('$.request.body');
+        expect(resultObjAllOf.mismatches[0].schemaJsonPath).to
+          .eql('$.paths[/pets/allOf].post.requestBody.content[application/json].schema');
+        expect(resultObjAllOf.mismatches[0].suggestedFix.actualValue).to.eql({
+          objectType: 'not an integer',
+          objectType2: 'prop named objectType2'
+        });
+        expect(resultObjAllOf.mismatches[0].suggestedFix.suggestedValue).to.eql({
+          objectType: 4321,
+          objectType2: 'prop named objectType2'
+        });
+
+        done();
+      });
+    });
   });
 
   describe('getPostmanUrlSuffixSchemaScore function', function () {
