@@ -9,7 +9,7 @@
 * Fixed path variable conversion in collection's examples.
 
 #### v2.11.0 (September 28, 2021)
-* Fixed issue where genberated collection contained response code as null.
+* Fixed issue where generated collection contained response code as null.
 * Added option to manage implicit headers.
 * Bumped up few dependency versions.
 
