@@ -145,7 +145,7 @@
     "test": "./scripts/test.sh",
     "test-unit": "nyc --reporter=text ./node_modules/mocha/bin/mocha \"test/unit/**/**.test.js\"",
     "test-lint": "./scripts/test-lint.sh",
-    "test-system": "./scripts/test-system.sh",
+    "test-system": "./node_modules/mocha/bin/mocha \"test/system/**.test.js\"",
     "release": "./scripts/release.sh",
     "coverage": "nyc report --reporter=html --reporter=text mocha"
   }
