@@ -1,6 +1,7 @@
 const expect = require('chai').expect,
   path = require('path'),
   fs = require('fs'),
+  inputValidation = require('../../lib/inputValidation'),
   parse = require('../../lib/parse.js');
 
 describe('PARSE FUNCTION TESTS', function() {
@@ -15,7 +16,7 @@ describe('PARSE FUNCTION TESTS', function() {
         { fileName: folderPath + '/paths/foo.yaml' },
         { fileName: folderPath + '/paths/bar.yaml' }
       ],
-      result = parse.getRootFiles({ data: array, type: 'folder' });
+      result = parse.getRootFiles({ data: array, type: 'folder' }, inputValidation);
     expect(result.length).to.equal(1);
     expect(result[0]).to.equal(folderPath + '/index.yaml');
   });
