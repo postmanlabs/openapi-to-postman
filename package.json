@@ -143,7 +143,7 @@
   },
   "scripts": {
     "test": "./scripts/test.sh",
-    "test-unit": "./scripts/test-unit.sh",
+    "test-unit": "nyc --reporter=text ./node_modules/mocha/bin/mocha \"test/unit/**/**.test.js\"",
     "test-lint": "./scripts/test-lint.sh",
     "test-system": "./scripts/test-system.sh",
     "release": "./scripts/release.sh",
