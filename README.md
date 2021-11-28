@@ -1,4 +1,4 @@
-このrepositoryは [openapi-to-postman](https://github.com/postmanlabs/openapi-to-postman)をもとにfreeeのPublic APIを叩きやすいように変更を加えたものです
+このrepositoryは [openapi-to-postman](https://github.com/postmanlabs/openapi-to-postman)をもとにfreeeのPublic APIを叩きやすいように変更を加えたものです。
 
 
 ## 概要
