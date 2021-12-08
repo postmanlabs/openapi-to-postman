@@ -1,7 +1,7 @@
 const { expect } = require('chai'),
   {
     validateSpec
-  } = require('../../../lib/31Xsupport/inputValidation31X'),
+  } = require('../../../lib/31XUtils/inputValidation31X'),
   correctMockedEntryWH = {
     openapi: '3.1.0',
     info: {

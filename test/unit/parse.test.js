@@ -1,7 +1,7 @@
 const expect = require('chai').expect,
   path = require('path'),
   fs = require('fs'),
-  inputValidation = require('../../lib/inputValidation'),
+  inputValidation = require('../../lib/30XUtils/inputValidation'),
   parse = require('../../lib/parse.js');
 
 describe('PARSE FUNCTION TESTS', function() {
