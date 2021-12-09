@@ -38,6 +38,16 @@ paths:
               $ref: '#/components/headers/x-date'
         '401':
           $ref: '#/components/responses/Unauthorized'
+    put:
+      requestBody:
+        $ref: '#/components/requestBodies/ProviderConfig'
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
 components:
   headers:
     x-date:
@@ -77,6 +87,11 @@ components:
           schema:
             $ref: '#/components/schemas/InventoryItem'
       description: Inventory item to add
+    ProviderConfig:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProviderConfig'
   responses:
     UnexpectedError:
       description: An unexpected error has occured
@@ -186,3 +201,12 @@ components:
         message:
           type: string
           example: "we have run out of storage; this is embarrassing, and someone have been paged"
+    ProviderConfig:
+      type: object
+      properties:
+        name:
+          type: string
+        alternateName:
+          type: string
+        providerId:
+          type: string

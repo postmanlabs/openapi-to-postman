@@ -1,5 +1,9 @@
 # OpenAPI-Postman Changelog
 
+#### v2.13.0 (December 08, 2021)
+* Fixed issue where validation agaist collection failed for collection with larger request name.
+* Added support for composite schema during validation flow.
+
 #### v2.12.0 (October 14, 2021)
 * Fixed issue where conversion failed with type error if header example was null.
 * Fixed issue where validation was giving INVALID_TYPE instead of MISSING_IN_REQUEST if path variable is not present in transaction.
@@ -9,7 +13,7 @@
 * Fixed path variable conversion in collection's examples.
 
 #### v2.11.0 (September 28, 2021)
-* Fixed issue where genberated collection contained response code as null.
+* Fixed issue where generated collection contained response code as null.
 * Added option to manage implicit headers.
 * Bumped up few dependency versions.
 
