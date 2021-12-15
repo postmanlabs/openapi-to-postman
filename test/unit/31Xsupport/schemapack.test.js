@@ -5,8 +5,7 @@ const expect = require('chai').expect,
   path = require('path'),
   OPENAPI_31_FOLDER = '../../data/valid_openapi31X',
   OPENAPI_30_FOLDER = '../../data/valid_openapi',
-  _ = require('lodash'),
-  petstoreTransactions = require('./../../data/31CollectionTransactions/petstoreGeneratedCollection.json');
+  _ = require('lodash');
 
 function getAllTransactions (collection, allRequests) {
   if (!_.has(collection, 'item') || !_.isArray(collection.item)) {
