@@ -28,8 +28,9 @@
 						"description": "How many items to return at one time (max 100)",
 						"required": false,
 						"schema": {
-							"type": "integer",
-							"format": "int32"
+							"type": ["integer"],
+							"format": "int32",
+							"examples": [2]
 						}
 					},
 					{
@@ -39,9 +40,10 @@
 						"style": "form",
 						"explode": false,
 						"schema": {
-							"type": "array",
+							"type": ["array"],
 							"items": {
-								"type": "string"
+								"type": ["string"],
+								"examples": ["Hola Mundo"]
 							}
 						}
 					},
@@ -51,9 +53,9 @@
 						"description": "another random variable",
 						"style": "spaceDelimited",
 						"schema": {
-							"type": "array",
+							"type": ["array"],
 							"items": {
-								"type": "integer",
+								"type": ["integer"],
 								"format": "int64"
 							}
 						}
@@ -66,7 +68,7 @@
 							"x-next": {
 								"description": "A link to the next page of responses",
 								"schema": {
-									"type": "string"
+									"type": ["string"]
 								}
 							}
 						},
@@ -119,7 +121,7 @@
 						"description": "How many items to return at one time (max 100)",
 						"required": false,
 						"schema": {
-							"type": "integer",
+							"type": ["integer"],
 							"format": "int32"
 						}
 					}
@@ -139,7 +141,7 @@
 						"required": true,
 						"description": "The id of the pet to retrieve",
 						"schema": {
-							"type": "string"
+							"type": ["string"]
 						}
 					}
 				],
@@ -183,7 +185,7 @@
             "description": "ID of pet to update",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": ["integer"],
               "format": "int64"
             }
           }
@@ -192,7 +194,19 @@
           "content": {
             "application/octet-stream": {}
           }
-        }
+        },
+				"responses": {
+					"200": {
+						"description": "successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ApiResponse"
+								}
+							}
+						}
+					}
+				}
       }
     }
 	},
@@ -205,20 +219,17 @@
 				],
 				"properties": {
 					"id": {
-						"type": "integer",
+						"type": ["integer"],
 						"format": "int64",
-            "examples": [
-              111111000111111
-            ]
+            "examples": [111111]
 					},
 					"name": {
-						"type": "string",
-            "examples": [
-              "this is my fisrt example name in pet"
-            ]
+						"type": [
+							"string"
+						]
 					},
 					"tag": {
-						"type": "string"
+						"type": ["string"]
 					}
 				}
 			},
@@ -235,13 +246,28 @@
 				],
 				"properties": {
 					"code": {
-						"type": "integer",
+						"type": ["integer"],
 						"format": "int32"
 					},
 					"message": {
-						"type": "string"
+						"type": ["string"]
 					}
 				}
+			},
+			"ApiResponse": {
+				"type": "object",
+				"properties": {
+					"code": {
+						"type": ["integer"],
+						"format": "int32"
+					},
+					"type": {
+						"type": ["string"]
+					},
+					"message": {
+						"type": ["string"]
+					}
+				}		
 			}
 		}
 	}
