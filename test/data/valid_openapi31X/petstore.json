@@ -16,6 +16,7 @@
 		"/pets": {
 			"get": {
 				"summary": "List all pets",
+				"decription": "This should not be in the request body",
 				"operationId": "listPets",
 				"tags": [
 					"pets"
@@ -173,7 +174,7 @@
           "cat"
         ],
         "summary": "uploads an image",
-        "description": "",
+        "description": "This should not be in the request body",
         "operationId": "uploadFile",
         "parameters": [
           {
