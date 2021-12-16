@@ -552,3 +552,56 @@ describe('isBinaryContentType method', function() {
     expect(isBinary).to.be.false;
   });
 });
+
+describe('getOuterPropsIfIsSupported method', function() {
+  it('Should add outer properties to a referenced schema', function() {
+    const referencedSchema = {
+        name: 'Test name',
+        age: '30'
+      },
+      outerProperties = {
+        job: 'This is an example'
+      },
+      resolvedSchema = concreteUtils.addOuterPropsToRefSchemaIfIsSupported(referencedSchema, outerProperties);
+    expect(resolvedSchema).to.be.an('object')
+      .nested.to.have.all.keys('name', 'age', 'job');
+    expect(resolvedSchema.job).to.be.equal(outerProperties.job);
+  });
+
+  it('Should replace referenced schema existing props with outer prop if exists', function() {
+    const referencedSchema = {
+        name: 'Test name',
+        age: '30',
+        job: 'The inner job'
+      },
+      outerProperties = {
+        job: 'The new job from out'
+      },
+      resolvedSchema = concreteUtils.addOuterPropsToRefSchemaIfIsSupported(referencedSchema, outerProperties);
+    expect(resolvedSchema).to.be.an('object')
+      .nested.to.have.all.keys('name', 'age', 'job');
+    expect(resolvedSchema.job).to.be.equal(outerProperties.job);
+  });
+
+  it('Should concat an outerProperty with innerProperty values when is an array', function() {
+    const referencedSchema = {
+        name: 'Test name',
+        age: '30',
+        required: [
+          'name'
+        ]
+      },
+      outerProperties = {
+        job: 'The new job from out',
+        required: [
+          'job'
+        ]
+      },
+      expectedRequiredValue = ['name', 'job'],
+      resolvedSchema = concreteUtils.addOuterPropsToRefSchemaIfIsSupported(referencedSchema, outerProperties);
+    expect(resolvedSchema).to.be.an('object')
+      .nested.to.have.all.keys('name', 'age', 'job', 'required');
+    expect(resolvedSchema.job).to.be.equal(outerProperties.job);
+    expect(JSON.stringify(resolvedSchema.required)).to.be.equal(JSON.stringify(expectedRequiredValue));
+  });
+});
