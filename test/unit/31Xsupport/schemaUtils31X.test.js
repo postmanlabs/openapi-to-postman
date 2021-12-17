@@ -1,7 +1,5 @@
 const { expect } = require('chai'),
-  {
-    parseSpec, getRequiredData, compareTypes, fixExamplesByVersion, isBinaryContentType
-  } = require('../../../lib/31XUtils/schemaUtils31X'),
+  concreteUtils = require('../../../lib/31XUtils/schemaUtils31X'),
   fs = require('fs'),
   valid31xFolder = './test/data/valid_openapi31X',
   invalid31xFolder = './test/data/invalid_openapi31X';
@@ -9,7 +7,7 @@ const { expect } = require('chai'),
 describe('parseSpec method', function () {
   it('should return true and a parsed specification', function () {
     let fileContent = fs.readFileSync(valid31xFolder + '/webhooks.json', 'utf8');
-    const parsedSpec = parseSpec(fileContent);
+    const parsedSpec = concreteUtils.parseSpec(fileContent);
     expect(parsedSpec.result).to.be.true;
     expect(parsedSpec.openapi.openapi).to.equal('3.1.0');
     expect(parsedSpec.openapi.webhooks).to.not.be.undefined;
@@ -17,14 +15,14 @@ describe('parseSpec method', function () {
 
   it('should return false and invalid format message when input content is sent', function () {
     let fileContent = fs.readFileSync(invalid31xFolder + '/empty-spec.yaml', 'utf8');
-    const parsedSpec = parseSpec(fileContent);
+    const parsedSpec = concreteUtils.parseSpec(fileContent);
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason).to.equal('Invalid format. Input must be in YAML or JSON format.');
   });
 
   it('should return false and Spec must contain info object', function () {
     let fileContent = fs.readFileSync(invalid31xFolder + '/invalid-no-info.json', 'utf8');
-    const parsedSpec = parseSpec(fileContent);
+    const parsedSpec = concreteUtils.parseSpec(fileContent);
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason).to.equal('Specification must contain an Info Object for the meta-data of the API');
   });
@@ -34,10 +32,45 @@ describe('parseSpec method', function () {
 describe('getRequiredData method', function() {
   it('Should return all required data from file', function() {
     const fileContent = fs.readFileSync(valid31xFolder + '/petstore.json', 'utf8'),
-      requiredData = getRequiredData(JSON.parse(fileContent));
+      requiredData = concreteUtils.getRequiredData(JSON.parse(fileContent));
     expect(requiredData).to.be.an('object')
       .and.to.have.all.keys('info', 'paths', 'webhooks', 'components');
-    expect(requiredData.webhooks).to.be.an('array').with.length(0);
+    expect(requiredData.webhooks).to.be.an('object');
+    expect(Object.keys(requiredData.webhooks)).to.have.length(0);
+    expect(requiredData.paths).to.be.an('object')
+      .and.to.have.all.keys('/pet/{petId}/uploadImage', '/pets', '/pets/{petId}');
+    expect(requiredData.components).to.be.an('object')
+      .and.to.have.all.keys('schemas');
+  });
+
+  it('Should return empty objects if data is not in spec', function() {
+    const input = {
+        'openapi': '3.1.0',
+        'info': {
+          'version': '1.0.0',
+          'title': 'Swagger Petstore',
+          'license': {
+            'name': 'MIT'
+          }
+        },
+        'webhooks': {
+          'inbound-sms': {
+            'post': {
+              'operationId': 'inbound-sms'
+            }
+          }
+        }
+      },
+      requiredData = concreteUtils.getRequiredData(input);
+    expect(requiredData).to.be.an('object')
+      .and.to.have.all.keys('info', 'paths', 'webhooks', 'components');
+    expect(requiredData.webhooks).to.be.an('object');
+    expect(Object.keys(requiredData.webhooks)).to.have.length(1);
+    expect(requiredData.paths).to.be.an('object');
+    expect(Object.keys(requiredData.paths)).to.have.length(0);
+    expect(requiredData.components).to.be.an('object');
+    expect(Object.keys(requiredData.components)).to.have.length(0);
+    expect(requiredData.info).to.be.an('object');
   });
 });
 
@@ -45,14 +78,14 @@ describe('compareTypes method', function() {
   it('Should match type in spec with type to compare when type in spec is a string when they are equal', function() {
     const typeInSpec = 'string',
       typeToCompare = 'string',
-      matchTypes = compareTypes(typeInSpec, typeToCompare);
+      matchTypes = concreteUtils.compareTypes(typeInSpec, typeToCompare);
     expect(matchTypes).to.be.true;
   });
 
   it('Should match type in spec with type to compare when type in spec is an array when they are equal', function() {
     const typeInSpec = ['string'],
       typeToCompare = 'string',
-      matchTypes = compareTypes(typeInSpec, typeToCompare);
+      matchTypes = concreteUtils.compareTypes(typeInSpec, typeToCompare);
     expect(matchTypes).to.be.true;
   });
 
@@ -60,7 +93,7 @@ describe('compareTypes method', function() {
     'type in spec is an array with multiple types when they are equal', function() {
     const typeInSpec = ['string', 'null'],
       typeToCompare = 'string',
-      matchTypes = compareTypes(typeInSpec, typeToCompare);
+      matchTypes = concreteUtils.compareTypes(typeInSpec, typeToCompare);
     expect(matchTypes).to.be.true;
   });
 
@@ -68,7 +101,7 @@ describe('compareTypes method', function() {
     'type in spec is a string when they are different', function() {
     const typeInSpec = 'integer',
       typeToCompare = 'string',
-      matchTypes = compareTypes(typeInSpec, typeToCompare);
+      matchTypes = concreteUtils.compareTypes(typeInSpec, typeToCompare);
     expect(matchTypes).to.be.false;
   });
 
@@ -76,13 +109,104 @@ describe('compareTypes method', function() {
     'type in spec is an array when they are different', function() {
     const typeInSpec = ['integer'],
       typeToCompare = 'string',
-      matchTypes = compareTypes(typeInSpec, typeToCompare);
+      matchTypes = concreteUtils.compareTypes(typeInSpec, typeToCompare);
     expect(matchTypes).to.be.false;
   });
 });
 
 describe('fixExamplesByVersion method', function() {
-  it('Should take the first element from examples and add it as example', function() {
+  it('Should fix when user provides a primary schema root with examples', function() {
+    const providedSchema = {
+        type: 'string',
+        examples: [
+          'This is an example'
+        ]
+      },
+      expectedSchemaAfterFix = {
+        type: 'string',
+        examples: [
+          'This is an example'
+        ],
+        example: 'This is an example'
+      },
+      fixedSchemaWithExample = concreteUtils.fixExamplesByVersion(providedSchema);
+
+    expect(JSON.stringify(fixedSchemaWithExample)).to.be.equal(JSON.stringify(expectedSchemaAfterFix));
+  });
+
+  it('Should fix when user provides a primary schema root with examples, ' +
+    'and type is provided as array', function() {
+    const providedSchema = {
+        type: [
+          'string'
+        ],
+        examples: [
+          'This is an example'
+        ]
+      },
+      expectedSchemaAfterFix = {
+        type: 'string',
+        examples: [
+          'This is an example'
+        ],
+        example: 'This is an example'
+      },
+      fixedSchemaWithExample = concreteUtils.fixExamplesByVersion(providedSchema);
+
+    expect(JSON.stringify(fixedSchemaWithExample)).to.be.equal(JSON.stringify(expectedSchemaAfterFix));
+  });
+
+  it('Should resolve when user provides an schema with items', function() {
+    const providedSchema = {
+        type: 'array',
+        items: {
+          type: 'string',
+          examples: [
+            'This is my example'
+          ]
+        }
+      },
+      expectedSchemaAfterFix = {
+        type: 'array',
+        items: {
+          type: 'string',
+          examples: [
+            'This is my example'
+          ],
+          example: 'This is my example'
+        }
+      },
+      fixedSchemaWithExample = concreteUtils.fixExamplesByVersion(providedSchema);
+
+    expect(JSON.stringify(fixedSchemaWithExample)).to.be.equal(JSON.stringify(expectedSchemaAfterFix));
+  });
+
+  it('Should resolve when user provides an schema with items, and items type is provided as array', function() {
+    const providedSchema = {
+        type: 'array',
+        items: {
+          type: ['string'],
+          examples: [
+            'This is my example'
+          ]
+        }
+      },
+      expectedSchemaAfterFix = {
+        type: 'array',
+        items: {
+          type: 'string',
+          examples: [
+            'This is my example'
+          ],
+          example: 'This is my example'
+        }
+      },
+      fixedSchemaWithExample = concreteUtils.fixExamplesByVersion(providedSchema);
+
+    expect(JSON.stringify(fixedSchemaWithExample)).to.be.equal(JSON.stringify(expectedSchemaAfterFix));
+  });
+
+  it('Should resolve when user provides an schema with properties with examples ', function() {
     const providedSchema = {
         required: [
           'id',
@@ -91,7 +215,10 @@ describe('fixExamplesByVersion method', function() {
         type: 'object',
         properties: {
           id: {
-            type: 'integer'
+            type: 'integer',
+            examples: [
+              11111
+            ]
           },
           name: {
             type: 'string',
@@ -112,7 +239,11 @@ describe('fixExamplesByVersion method', function() {
         type: 'object',
         properties: {
           id: {
-            type: 'integer'
+            type: 'integer',
+            examples: [
+              11111
+            ],
+            example: 11111
           },
           name: {
             type: 'string',
@@ -126,7 +257,271 @@ describe('fixExamplesByVersion method', function() {
           }
         }
       },
-      fixedSchemaWithExample = fixExamplesByVersion(providedSchema);
+      fixedSchemaWithExample = concreteUtils.fixExamplesByVersion(providedSchema);
+    expect(JSON.stringify(fixedSchemaWithExample)).to.be.equal(JSON.stringify(expectedSchemaAfterFix));
+  });
+
+  it('Should resolve when user provides an schema with properties with examples ' +
+    'and type is provided as an array', function() {
+    const providedSchema = {
+        required: [
+          'id',
+          'name'
+        ],
+        type: 'object',
+        properties: {
+          id: {
+            type: ['integer'],
+            examples: [
+              11111
+            ]
+          },
+          name: {
+            type: ['string'],
+            examples: [
+              'this is my fisrt example name in pet'
+            ]
+          },
+          tag: {
+            type: ['string']
+          }
+        }
+      },
+      expectedSchemaAfterFix = {
+        required: [
+          'id',
+          'name'
+        ],
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer',
+            examples: [
+              11111
+            ],
+            example: 11111
+          },
+          name: {
+            type: 'string',
+            examples: [
+              'this is my fisrt example name in pet'
+            ],
+            example: 'this is my fisrt example name in pet'
+          },
+          tag: {
+            type: 'string'
+          }
+        }
+      },
+      fixedSchemaWithExample = concreteUtils.fixExamplesByVersion(providedSchema);
+    expect(JSON.stringify(fixedSchemaWithExample)).to.be.equal(JSON.stringify(expectedSchemaAfterFix));
+  });
+
+  it('Should resolve when user provides an schema with properties ' +
+    'and properties has inner properties with examples', function() {
+    const providedSchema = {
+        required: [
+          'id',
+          'name'
+        ],
+        type: 'object',
+        properties: {
+          id: {
+            'required': [
+              'responseId',
+              'responseName'
+            ],
+            'properties': {
+              'responseId': {
+                'type': 'integer',
+                'format': 'int64',
+                'examples': [234]
+              },
+              'responseName': {
+                'type': 'string',
+                'examples': ['200 OK Response']
+              }
+            }
+          },
+          name: {
+            'required': [
+              'responseId',
+              'responseName'
+            ],
+            'properties': {
+              'responseId': {
+                'type': 'integer',
+                'format': 'int64',
+                'examples': [111222333]
+              },
+              'responseName': {
+                'type': 'string',
+                'examples': ['Name 200 OK Response']
+              }
+            }
+          }
+        }
+      },
+      expectedSchemaAfterFix = {
+        required: [
+          'id',
+          'name'
+        ],
+        type: 'object',
+        properties: {
+          id: {
+            'required': [
+              'responseId',
+              'responseName'
+            ],
+            'properties': {
+              'responseId': {
+                'type': 'integer',
+                'format': 'int64',
+                'examples': [234],
+                'example': 234
+              },
+              'responseName': {
+                'type': 'string',
+                'examples': ['200 OK Response'],
+                'example': '200 OK Response'
+              }
+            }
+          },
+          name: {
+            'required': [
+              'responseId',
+              'responseName'
+            ],
+            'properties': {
+              'responseId': {
+                'type': 'integer',
+                'format': 'int64',
+                'examples': [111222333],
+                'example': 111222333
+              },
+              'responseName': {
+                'type': 'string',
+                'examples': ['Name 200 OK Response'],
+                'example': 'Name 200 OK Response'
+              }
+            }
+          }
+        }
+      },
+      fixedSchemaWithExample = concreteUtils.fixExamplesByVersion(providedSchema);
+    expect(JSON.stringify(fixedSchemaWithExample)).to.be.equal(JSON.stringify(expectedSchemaAfterFix));
+  });
+
+  it('Should resolve when user provides an schema with properties ' +
+    'and properties has inner properties with examples and all types are arrays', function() {
+    const providedSchema = {
+        required: [
+          'id',
+          'name'
+        ],
+        type: ['object'],
+        properties: {
+          id: {
+            required: [
+              'responseId',
+              'responseName'
+            ],
+            properties: {
+              responseId: {
+                type: ['integer'],
+                format: 'int64',
+                examples: [
+                  234
+                ]
+              },
+              responseName: {
+                type: ['string'],
+                examples: [
+                  '200 OK Response'
+                ]
+              }
+            }
+          },
+          name: {
+            required: [
+              'responseId',
+              'responseName'
+            ],
+            properties: {
+              responseId: {
+                type: ['integer'],
+                format: 'int64',
+                examples: [
+                  5678
+                ]
+              },
+              responseName: {
+                type: ['string'],
+                examples: [
+                  'Another name 200 OK Response'
+                ]
+              }
+            }
+          }
+        }
+      },
+      expectedSchemaAfterFix = {
+        required: [
+          'id',
+          'name'
+        ],
+        type: 'object',
+        properties: {
+          id: {
+            required: [
+              'responseId',
+              'responseName'
+            ],
+            properties: {
+              responseId: {
+                type: 'integer',
+                format: 'int64',
+                examples: [
+                  234
+                ],
+                example: 234
+              },
+              responseName: {
+                type: 'string',
+                examples: [
+                  '200 OK Response'
+                ],
+                example: '200 OK Response'
+              }
+            }
+          },
+          name: {
+            required: [
+              'responseId',
+              'responseName'
+            ],
+            properties: {
+              responseId: {
+                type: 'integer',
+                format: 'int64',
+                examples: [
+                  5678
+                ],
+                example: 5678
+              },
+              responseName: {
+                type: 'string',
+                examples: [
+                  'Another name 200 OK Response'
+                ],
+                example: 'Another name 200 OK Response'
+              }
+            }
+          }
+        }
+      },
+      fixedSchemaWithExample = concreteUtils.fixExamplesByVersion(providedSchema);
     expect(JSON.stringify(fixedSchemaWithExample)).to.be.equal(JSON.stringify(expectedSchemaAfterFix));
   });
 });
@@ -137,7 +532,7 @@ describe('isBinaryContentType method', function() {
       contentObject = {
         'application/octet-stream': {}
       },
-      isBinary = isBinaryContentType(bodyType, contentObject);
+      isBinary = concreteUtils.isBinaryContentType(bodyType, contentObject);
     expect(isBinary).to.be.true;
   });
 
@@ -153,7 +548,60 @@ describe('isBinaryContentType method', function() {
           }
         }
       },
-      isBinary = isBinaryContentType(bodyType, contentObject);
+      isBinary = concreteUtils.isBinaryContentType(bodyType, contentObject);
     expect(isBinary).to.be.false;
+  });
+});
+
+describe('getOuterPropsIfIsSupported method', function() {
+  it('Should add outer properties to a referenced schema', function() {
+    const referencedSchema = {
+        name: 'Test name',
+        age: '30'
+      },
+      outerProperties = {
+        job: 'This is an example'
+      },
+      resolvedSchema = concreteUtils.addOuterPropsToRefSchemaIfIsSupported(referencedSchema, outerProperties);
+    expect(resolvedSchema).to.be.an('object')
+      .nested.to.have.all.keys('name', 'age', 'job');
+    expect(resolvedSchema.job).to.be.equal(outerProperties.job);
+  });
+
+  it('Should replace referenced schema existing props with outer prop if exists', function() {
+    const referencedSchema = {
+        name: 'Test name',
+        age: '30',
+        job: 'The inner job'
+      },
+      outerProperties = {
+        job: 'The new job from out'
+      },
+      resolvedSchema = concreteUtils.addOuterPropsToRefSchemaIfIsSupported(referencedSchema, outerProperties);
+    expect(resolvedSchema).to.be.an('object')
+      .nested.to.have.all.keys('name', 'age', 'job');
+    expect(resolvedSchema.job).to.be.equal(outerProperties.job);
+  });
+
+  it('Should concat an outerProperty with innerProperty values when is an array', function() {
+    const referencedSchema = {
+        name: 'Test name',
+        age: '30',
+        required: [
+          'name'
+        ]
+      },
+      outerProperties = {
+        job: 'The new job from out',
+        required: [
+          'job'
+        ]
+      },
+      expectedRequiredValue = ['name', 'job'],
+      resolvedSchema = concreteUtils.addOuterPropsToRefSchemaIfIsSupported(referencedSchema, outerProperties);
+    expect(resolvedSchema).to.be.an('object')
+      .nested.to.have.all.keys('name', 'age', 'job', 'required');
+    expect(resolvedSchema.job).to.be.equal(outerProperties.job);
+    expect(JSON.stringify(resolvedSchema.required)).to.be.equal(JSON.stringify(expectedRequiredValue));
   });
 });
