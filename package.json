@@ -116,7 +116,8 @@
     "openapi2postmanv2": "./bin/openapi2postmanv2.js"
   },
   "dependencies": {
-    "ajv": "6.12.6",
+    "ajv": "8.1.0",
+    "ajv-formats": "2.1.1",
     "async": "3.2.1",
     "commander": "2.20.3",
     "js-yaml": "3.14.1",

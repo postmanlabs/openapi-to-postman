@@ -1,0 +1,259 @@
+{
+  "item": [
+    {
+      "id": "c3a2f66d-f91e-45ec-9116-4ce926acb630",
+      "name": "pets",
+      "item": [
+        {
+          "id": "25758366-55ed-4370-90fd-1e1be8536b0b",
+          "name": "composite schema with anyOf keyword",
+          "request": {
+            "name": "composite schema with anyOf keyword",
+            "description": {},
+            "url": {
+              "path": [
+                "pets",
+                "anyOf"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"objectType\": 1234\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "f4f6ddf5-d259-45b7-89fe-086cc22a6549",
+              "name": "ok",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "pets",
+                    "anyOf"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"objectType\": 4321\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "body": "",
+              "cookie": [],
+              "_postman_previewlanguage": "text"
+            }
+          ],
+          "event": []
+        },
+        {
+          "id": "63bb2739-a06a-4a7c-9e93-7f759f207bc0",
+          "name": "composite schema with oneOf keyword",
+          "request": {
+            "name": "composite schema with oneOf keyword",
+            "description": {},
+            "url": {
+              "path": [
+                "pets",
+                "oneOf"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"objectType\": 1234\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "b6da428a-2db4-4c90-88ae-c4a661c657a0",
+              "name": "ok",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "pets",
+                    "oneOf"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"objectType\": 4321\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "body": "",
+              "cookie": [],
+              "_postman_previewlanguage": "text"
+            }
+          ],
+          "event": []
+        },
+        {
+          "id": "3802feac-67a1-4a73-a7b1-b47af0d4884a",
+          "name": "composite schema with allOf keyword",
+          "request": {
+            "name": "composite schema with allOf keyword",
+            "description": {},
+            "url": {
+              "path": [
+                "pets",
+                "allOf"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"objectType\": 1234,\n    \"objectType2\": \"This is a string value\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "d73dceb6-b17a-484e-aede-1797f2e1b3cd",
+              "name": "ok",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "pets",
+                    "allOf"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"objectType\": 4321,\n    \"objectType2\": \"prop named objectType2\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "body": "",
+              "cookie": [],
+              "_postman_previewlanguage": "text"
+            }
+          ],
+          "event": []
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "type": "string",
+      "value": "http://petstore.swagger.io/v1",
+      "key": "baseUrl"
+    }
+  ],
+  "info": {
+    "_postman_id": "b498d8c3-e6e5-4a72-92de-e5c455786a8e",
+    "name": "Swagger Petstore",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "",
+      "type": "text/plain"
+    }
+  }
+}
