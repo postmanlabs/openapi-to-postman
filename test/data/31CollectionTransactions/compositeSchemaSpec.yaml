@@ -1,0 +1,86 @@
+openapi: "3.1.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  license:
+    name: MIT
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /pets/anyOf:
+    post:
+      summary: composite schema with anyOf keyword
+      requestBody:
+        content:
+          application/json:    
+            schema:
+              $ref: "#/components/schemas/anyOfExample"
+      responses:
+        default:
+          description: ok
+  /pets/oneOf:
+    post:
+      summary: composite schema with oneOf keyword
+      requestBody:
+        content:
+          application/json:    
+            schema:
+              $ref: "#/components/schemas/oneOfExample"
+      responses:
+        default:
+          description: ok
+  /pets/allOf:
+    post:
+      summary: composite schema with allOf keyword
+      requestBody:
+        content:
+          application/json:    
+            schema:
+              $ref: "#/components/schemas/allOfExample"
+      responses:
+        default:
+          description: ok
+components:
+  schemas:
+    anyOfExample:
+      anyOf:
+        - $ref: "#/components/schemas/schema1"
+        - $ref: "#/components/schemas/schema2"
+    oneOfExample:
+      oneOf:
+        - $ref: "#/components/schemas/schema1"
+        - $ref: "#/components/schemas/schema3"
+    allOfExample:
+      allOf:
+        - $ref: "#/components/schemas/schema1"
+        - $ref: "#/components/schemas/schema3"
+    schema1:
+      type: 
+        - object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: 
+            - integer
+          example: 4321
+    schema2:
+      type: 
+        - object
+      required:
+        - objectType
+      properties:
+        objectType:
+          type: 
+            - string
+          example: prop named objectType
+    schema3:
+      type: 
+        - object
+      required:
+        - objectType2
+      properties:
+        objectType2:
+          type: 
+            - string
+          example: prop named objectType2

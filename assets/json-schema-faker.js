@@ -11,7 +11,11 @@
  */
 
 var _ = require('lodash'),
-  validateSchema = require('../lib/ajvValidation').validateSchema;
+  validateSchema = require('../lib/ajvValidation').validateSchema,
+  {
+    handleExclusiveMaximum,
+    handleExclusiveMinimum
+  } = require('./../lib/common/schemaUtilsCommon');
 
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
@@ -23773,12 +23777,8 @@ function extend() {
               if (schema.enum) {
                   var min = Math.max(params.minimum || 0, 0);
                   var max = Math.min(params.maximum || Infinity, Infinity);
-                  if (schema.exclusiveMinimum && min === schema.minimum) {
-                      min += schema.multipleOf || 1;
-                  }
-                  if (schema.exclusiveMaximum && max === schema.maximum) {
-                      max -= schema.multipleOf || 1;
-                  }
+                  min = handleExclusiveMinimum(schema, min);
+                  max = handleExclusiveMaximum(schema, min);
                   // discard out-of-bounds enumerations
                   schema.enum = schema.enum.filter(function (x) {
                       if (x >= min && x <= max) {
@@ -24176,12 +24176,8 @@ function extend() {
           max = Math.floor(max / multipleOf) * multipleOf;
           min = Math.ceil(min / multipleOf) * multipleOf;
       }
-      if (value.exclusiveMinimum && min === value.minimum) {
-          min += multipleOf || 1;
-      }
-      if (value.exclusiveMaximum && max === value.maximum) {
-          max -= multipleOf || 1;
-      }
+      min = handleExclusiveMinimum(value, min);
+      max = handleExclusiveMaximum(value, max);
       if (min > max) {
           return NaN;
       }
