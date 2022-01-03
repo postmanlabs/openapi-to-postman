@@ -58,7 +58,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
   });
 
   it('Should convert from openapi 3.1 spec to postman collection -- accountService', function() {
-    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/accountService.yaml'),
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/yaml/accountService.yaml'),
       fileData = fs.readFileSync(fileSource, 'utf8'),
       input = {
         type: 'string',
@@ -73,7 +73,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
   });
 
   it('Should convert from openapi 3.1 spec to postman collection -- binLookupService', function() {
-    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/binLookupService.yaml'),
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/yaml/binLookupService.yaml'),
       fileData = fs.readFileSync(fileSource, 'utf8'),
       input = {
         type: 'string',
