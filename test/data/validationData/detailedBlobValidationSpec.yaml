@@ -70,8 +70,7 @@ components:
           enum: ['Postman']
         companyNumber:
           type: number
-          minimum: 10000
-          exclusiveMinimum: true
+          exclusiveMinimum: 10000
         website:
           type: number
         turnover:
