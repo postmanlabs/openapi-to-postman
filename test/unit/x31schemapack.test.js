@@ -295,3 +295,162 @@ describe('Openapi 3.1 schema pack validateTransactions', function() {
     });
   });
 });
+
+describe('Openapi 3.1 schemapack mergeAndValidate', function() {
+  it('Should merge correctly the files in folder', function(done) {
+    let folderPath = path.join(__dirname, '../data/31Multifile/multiFile_with_one_root'),
+      files = [],
+      array = [
+        { fileName: folderPath + '/index.yaml' },
+        { fileName: folderPath + '/definitions/index.yaml' },
+        { fileName: folderPath + '/definitions/User.yaml' },
+        { fileName: folderPath + '/info/index.yaml' },
+        { fileName: folderPath + '/paths/bar.yaml' },
+        { fileName: folderPath + '/paths/foo.yaml' },
+        { fileName: folderPath + '/paths/index.yaml' }
+      ];
+
+    array.forEach((item) => {
+      files.push({
+        content: fs.readFileSync(item.fileName, 'utf8'),
+        fileName: item.fileName
+      });
+    });
+
+    var schema = new SchemaPack({ type: 'folder', data: files });
+    schema.mergeAndValidate((err, status) => {
+      if (err) {
+        expect.fail(null, null, err);
+      }
+      if (status.result) {
+        schema.convert((error, result) => {
+          if (error) {
+            expect.fail(null, null, err);
+          }
+          expect(result.result).to.equal(true);
+          expect(result.output.length).to.equal(1);
+          expect(result.output[0].type).to.have.equal('collection');
+          expect(result.output[0].data).to.have.property('info');
+          expect(result.output[0].data).to.have.property('item');
+          done();
+        });
+      }
+      else {
+        expect.fail(null, null, status.reason);
+        done();
+      }
+    });
+  });
+
+  it('Should merge correctly the files in folder, multiple root files', function(done) {
+    let folderPath = path.join(__dirname, '../data/31Multifile/multiFile_with_two_root'),
+      files = [],
+      array = [
+        { fileName: folderPath + '/index.yaml' },
+        { fileName: folderPath + '/index1.yaml' },
+        { fileName: folderPath + '/definitions/index.yaml' },
+        { fileName: folderPath + '/definitions/User.yaml' },
+        { fileName: folderPath + '/info/index.yaml' },
+        { fileName: folderPath + '/info/index1.yaml' },
+        { fileName: folderPath + '/paths/bar.yaml' },
+        { fileName: folderPath + '/paths/foo.yaml' },
+        { fileName: folderPath + '/paths/index.yaml' }
+      ];
+
+    array.forEach((item) => {
+      files.push({
+        content: fs.readFileSync(item.fileName, 'utf8'),
+        fileName: item.fileName
+      });
+    });
+
+    var schema = new SchemaPack({ type: 'folder', data: files });
+    schema.mergeAndValidate((err, status) => {
+      if (err) {
+        expect.fail(null, null, err);
+        done();
+      }
+      expect(status.result).to.be.eq(false);
+      expect(status.reason).to.be.equal('More than one root file not supported.');
+      return done();
+    });
+  });
+
+  it('Should merge correctly the files in folder - petstore separate yaml', function(done) {
+    let folderPath = path.join(__dirname, '../data/31Multifile/petstore separate yaml'),
+      files = [],
+      array = [
+        { fileName: folderPath + '/spec/swagger.yaml' },
+        { fileName: folderPath + '/spec/Pet.yaml' },
+        { fileName: folderPath + '/spec/parameters.yaml' },
+        { fileName: folderPath + '/spec/NewPet.yaml' },
+        { fileName: folderPath + '/common/Error.yaml' }
+      ];
+
+    array.forEach((item) => {
+      files.push({
+        content: fs.readFileSync(item.fileName, 'utf8'),
+        fileName: item.fileName
+      });
+    });
+
+    var schema = new SchemaPack({ type: 'folder', data: files });
+    schema.mergeAndValidate((err, status) => {
+      if (err) {
+        expect.fail(null, null, err);
+      }
+      if (status.result) {
+        schema.convert((error, result) => {
+          if (error) {
+            expect.fail(null, null, err);
+          }
+          expect(result.result).to.equal(true);
+          expect(result.output.length).to.equal(1);
+          expect(result.output[0].type).to.have.equal('collection');
+          expect(result.output[0].data).to.have.property('info');
+          expect(result.output[0].data).to.have.property('item');
+          done();
+        });
+      }
+      else {
+        expect.fail(null, null, status.reason);
+        done();
+      }
+    });
+  });
+
+  it('Should merge correctly the files in folder - by fileName - petstore separate yaml', function(done) {
+    let folderPath = path.join(__dirname, '../data/31Multifile/petstore separate yaml'),
+      array = [
+        { fileName: folderPath + '/spec/swagger.yaml' },
+        { fileName: folderPath + '/spec/Pet.yaml' },
+        { fileName: folderPath + '/spec/parameters.yaml' },
+        { fileName: folderPath + '/spec/NewPet.yaml' },
+        { fileName: folderPath + '/common/Error.yaml' }
+      ];
+
+    var schema = new SchemaPack({ type: 'folder', data: array });
+    schema.mergeAndValidate((err, status) => {
+      if (err) {
+        expect.fail(null, null, err);
+      }
+      if (status.result) {
+        schema.convert((error, result) => {
+          if (error) {
+            expect.fail(null, null, err);
+          }
+          expect(result.result).to.equal(true);
+          expect(result.output.length).to.equal(1);
+          expect(result.output[0].type).to.have.equal('collection');
+          expect(result.output[0].data).to.have.property('info');
+          expect(result.output[0].data).to.have.property('item');
+          done();
+        });
+      }
+      else {
+        expect.fail(null, null, status.reason);
+        done();
+      }
+    });
+  });
+});
