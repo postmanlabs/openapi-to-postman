@@ -1,0 +1,165 @@
+{
+  "item": [
+    {
+      "id": "98f1665c-b4ee-43d1-8454-51e4b1bc0c1f",
+      "name": "/api/path_with_multiple_pathvars/:pathvar1/:pathvar2/:pathvar3",
+      "request": {
+        "name": "/api/path_with_multiple_pathvars/:pathvar1/:pathvar2/:pathvar3",
+        "description": {},
+        "url": {
+          "path": [
+            "api",
+            "path_with_multiple_pathvars",
+            ":pathvar1",
+            ":pathvar2",
+            ":pathvar3"
+          ],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "query": [],
+          "variable": [
+            {
+              "description": "(Required) ",
+              "type": "any",
+              "value": "66.42473585353362",
+              "key": "pathvar1"
+            },
+            {
+              "description": "(Required) ",
+              "type": "any",
+              "value": "10.018941650763242",
+              "key": "pathvar2"
+            },
+            {
+              "description": "(Required) ",
+              "type": "any",
+              "value": "false",
+              "key": "pathvar3"
+            }
+          ]
+        },
+        "method": "GET",
+        "auth": null
+      },
+      "response": [
+        {
+          "id": "659f472d-f227-4122-a8da-64079749fea4",
+          "name": "Success",
+          "originalRequest": {
+            "url": {
+              "path": [
+                "api",
+                "path_with_multiple_pathvars",
+                ":pathvar1",
+                ":pathvar2",
+                ":pathvar3"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "type": "any",
+                  "key": "pathvar1"
+                },
+                {
+                  "type": "any",
+                  "key": "pathvar2"
+                },
+                {
+                  "type": "any",
+                  "key": "pathvar3"
+                }
+              ]
+            },
+            "method": "GET",
+            "body": {}
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "text/plain"
+            }
+          ],
+          "body": "",
+          "cookie": [],
+          "_postman_previewlanguage": "text"
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "82704c56-aadb-4925-a6bf-db07b4a8f538",
+      "name": "/pets",
+      "request": {
+        "name": "/pets",
+        "description": {},
+        "url": {
+          "path": [
+            "pets"
+          ],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "method": "GET",
+        "auth": null
+      },
+      "response": [
+        {
+          "id": "9a9c0108-1ec7-4ba3-82f2-0c335e650c49",
+          "name": "Success",
+          "originalRequest": {
+            "url": {
+              "path": [
+                "pets"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET",
+            "body": {}
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "text/plain"
+            }
+          ],
+          "body": "",
+          "cookie": [],
+          "_postman_previewlanguage": "text"
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "id": "baseUrl",
+      "type": "string",
+      "value": "/"
+    }
+  ],
+  "info": {
+    "_postman_id": "1df2ca7f-6b37-48ce-b340-8367b28a59ee",
+    "name": "Incorrect validation of Path var",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "",
+      "type": "text/plain"
+    }
+  }
+}

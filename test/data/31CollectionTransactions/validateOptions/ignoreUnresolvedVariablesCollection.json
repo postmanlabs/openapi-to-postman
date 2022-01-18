@@ -1,0 +1,134 @@
+{
+  "item": [
+    {
+      "id": "e3b75312-ce49-45b5-987f-03af612be2eb",
+      "name": "pets",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "8145304c-1a14-4332-97c6-02f5b536c79b",
+          "name": "Info for a specific pet",
+          "request": {
+            "name": "Info for a specific pet",
+            "description": {},
+            "url": {
+              "path": [
+                "pets",
+                ":samplePathVar"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "description": "(Required) The id of the pet to retrieve",
+                  "key": "sampleQueryParam",
+                  "value": "{{sampleQueryParamCollectionVar}}"
+                }
+              ],
+              "variable": [
+                {
+                  "description": "(Required) The id of the pet to retrieve",
+                  "type": "any",
+                  "value": "{{petIdCollectionVar}}",
+                  "key": "samplePathVar"
+                }
+              ]
+            },
+            "header": [
+              {
+                "description": "(Required) The id of the pet to retrieve",
+                "key": "sampleHeader",
+                "value": "{{sampleHeaderCollectionVar}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"petId\": \"{{petIdVar}}\",\n    \"name\": \"{{nameVar}}\",\n    \"tag\": \"{{tagVar}}\"\n}"
+            }
+          },
+          "response": [
+            {
+              "id": "483c6f74-c8aa-41d3-986f-407195d9ea5d",
+              "name": "unexpected error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "pets",
+                    ":samplePathVar"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "sampleQueryParam",
+                      "value": "{{sampleQueryParamCollectionVar}}"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "type": "any",
+                      "key": "samplePathVar"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": "(Required) The id of the pet to retrieve",
+                    "key": "sampleHeader",
+                    "value": "{{sampleHeaderCollectionVar}}"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"petId\": \"{{petIdVar}}\",\n    \"name\": \"{{nameVar}}\",\n    \"tag\": \"{{tagVar}}\"\n}"
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n \"code\": \"{{codeVar}}\",\n \"message\": \"{{messageVar}}\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": []
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "id": "baseUrl",
+      "type": "string",
+      "value": "http://petstore.swagger.io/v1"
+    }
+  ],
+  "info": {
+    "_postman_id": "2bba452f-eac2-43bf-b5b5-b813cfa76e43",
+    "name": "Ignore unresolved pm variables",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "",
+      "type": "text/plain"
+    }
+  }
+}

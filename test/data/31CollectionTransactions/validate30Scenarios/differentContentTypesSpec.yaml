@@ -1,0 +1,44 @@
+openapi: "3.1.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  license:
+    name: MIT
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /pets:
+    post:
+      summary: List all pets
+      operationId: listPets
+      tags:
+        - pets
+      requestBody:
+        content:
+          application/vnd.github+json:    
+            schema:
+              $ref: "#/components/schemas/Pet"
+      responses:
+        '200':
+          description: content with optional params media type
+          content:
+            'application/json; charset=utf-8':
+              schema:
+                $ref: "#/components/schemas/Pet"
+components:
+  schemas:
+    Pet:
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: 
+            - integer
+          format: int64
+        name:
+          type: 
+            - string
+        tag:
+          type: 
+            - string

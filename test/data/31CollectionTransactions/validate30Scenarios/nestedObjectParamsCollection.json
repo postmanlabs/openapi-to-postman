@@ -1,0 +1,136 @@
+{
+  "item": [
+    {
+      "id": "a2b99009-5e11-43ac-b411-fa7fd1425262",
+      "name": "pets",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "099ccc06-611e-4e31-8462-7e66ba7783e7",
+          "name": "List all pets",
+          "request": {
+            "name": "List all pets",
+            "description": {},
+            "url": {
+              "path": [
+                "pets"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "limit",
+                  "value": "prop2,32,prop1,[object Object]",
+                  "description": "(Required) How many items to return at one time (max 100)"
+                }
+              ],
+              "variable": []
+            },
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "24e8f452-28f2-44a2-839e-081e2d54c287",
+              "name": "An paged array of pets",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "pets"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "prop2,32,prop1,[object Object]"
+                    }
+                  ],
+                  "variable": []
+                },
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "A link to the next page of responses",
+                  "key": "x-next",
+                  "value": "nostrud do"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n {\n  \"id\": 17889649,\n  \"name\": \"enim tempor minim\",\n  \"tag\": \"incididunt esse nostrud culpa sit\"\n },\n {\n  \"id\": 54275385,\n  \"name\": \"et labore veniam\",\n  \"tag\": \"elit ut si\"\n }\n]",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "5b174b95-db8c-4a53-9a89-a817b47e9d1b",
+              "name": "unexpected error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "pets"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "prop2,32,prop1,[object Object]"
+                    }
+                  ],
+                  "variable": []
+                },
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n \"code\": -28330006,\n \"message\": \"qui occaecat magna\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": []
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "type": "string",
+      "value": "http://petstore.swagger.io/v1",
+      "key": "baseUrl"
+    }
+  ],
+  "info": {
+    "_postman_id": "0861b241-23ad-435c-a80e-af77f30b2acd",
+    "name": "Swagger Petstore",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "",
+      "type": "text/plain"
+    }
+  }
+}
