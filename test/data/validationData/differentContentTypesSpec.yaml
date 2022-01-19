@@ -25,6 +25,20 @@ paths:
             'application/json; charset=utf-8':
               schema:
                 $ref: "#/components/schemas/Pet"
+    put:
+      summary: Update all pets
+      requestBody:
+        content:
+          application/*:    
+            schema:
+              $ref: "#/components/schemas/Pet"
+      responses:
+        '200':
+          description: content with all allowed types
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Pet"
 components:
   schemas:
     Pet:
