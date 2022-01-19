@@ -1,4 +1,4 @@
-openapi: "3.0.0"
+openapi: "3.1.0"
 
 info:
   version: "1.0.0"
@@ -12,8 +12,10 @@ paths:
           name: access_token
           description: Access token
           schema:
-            type: string
-            example: X-access-token
+            type: 
+              - string
+            examples: 
+              - X-access-token
 
       responses:
         200:

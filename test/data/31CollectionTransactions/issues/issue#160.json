@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.1.0",
   "info": {
     "version": "1.0.0",
     "title": "#160",
@@ -44,7 +44,7 @@
             "description": "How many items to return at one time (max 100)",
             "required": false,
             "schema": {
-              "type": "integer",
+              "type": ["integer"],
               "format": "int32"
             }
           }
@@ -56,7 +56,7 @@
               "x-next": {
                 "description": "A link to the next page of responses",
                 "schema": {
-                  "type": "string"
+                  "type": ["string"]
                 }
               }
             },
@@ -107,43 +107,43 @@
   "components": {
     "schemas": {
       "Pet": {
-        "type": "object",
+        "type": ["object"],
         "required": [
           "id",
           "name"
         ],
         "properties": {
           "id": {
-            "type": "integer",
+            "type": ["integer"],
             "format": "int64"
           },
           "name": {
-            "type": "string"
+            "type": ["string"]
           },
           "tag": {
-            "type": "string"
+            "type": ["string"]
           }
         }
       },
       "Pets": {
-        "type": "array",
+        "type": ["array"],
         "items": {
           "$ref": "#/components/schemas/Pet"
         }
       },
       "Error": {
-        "type": "object",
+        "type": ["object"],
         "required": [
           "code",
           "message"
         ],
         "properties": {
           "code": {
-            "type": "integer",
+            "type": ["integer"],
             "format": "int32"
           },
           "message": {
-            "type": "string"
+            "type": ["string"]
           }
         }
       }
