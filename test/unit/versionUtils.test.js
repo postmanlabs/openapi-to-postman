@@ -200,8 +200,10 @@ describe('filterOptionsByVersion method', function() {
         }
       ],
       optionsFiltered = filterOptionsByVersion(optionsMock, '3.1');
-    expect(optionsFiltered).to.be.an('object');
-    expect(Object.keys(optionsFiltered)).to.include.members(['optionC', 'optionD']);
+    expect(optionsFiltered).to.be.an('array');
+    expect(optionsFiltered.map((option) => {
+      return option.id;
+    })).to.include.members(['optionC', 'optionD']);
   });
 
   it('Should return the options supported in version 3.0', function() {
@@ -232,7 +234,9 @@ describe('filterOptionsByVersion method', function() {
         }
       ],
       optionsFiltered = filterOptionsByVersion(optionsMock, '3.0');
-    expect(optionsFiltered).to.be.an('object');
-    expect(Object.keys(optionsFiltered)).to.include.members(['optionA', 'optionB', 'optionD']);
+    expect(optionsFiltered).to.be.an('array');
+    expect(optionsFiltered.map((option) => {
+      return option.id;
+    })).to.include.members(['optionA', 'optionB', 'optionD']);
   });
 });
