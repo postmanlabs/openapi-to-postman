@@ -1,4 +1,4 @@
-const { getSpecVersion } = require('../../lib/common/versionUtils'),
+const { getSpecVersion, filterOptionsByVersion } = require('../../lib/common/versionUtils'),
   expect = require('chai').expect;
 
 describe('getSpecVersion', function() {
@@ -168,5 +168,71 @@ describe('getSpecVersion', function() {
       },
       specVersion = getSpecVersion({ type: jsonType, data: inputData });
     expect(specVersion).to.be.equal('2.0');
+  });
+});
+
+describe('filterOptionsByVersion method', function() {
+  it('Should return the options supported in version 3.1', function() {
+    const optionsMock = [
+        {
+          id: 'optionA',
+          name: 'option A',
+          supportedIn: ['3.0'],
+          default: 'A default value for option A'
+        },
+        {
+          id: 'optionB',
+          name: 'option B',
+          supportedIn: ['3.0'],
+          default: 'A default value for option B'
+        },
+        {
+          id: 'optionC',
+          name: 'option C',
+          supportedIn: ['3.1'],
+          default: 'A default value for option C'
+        },
+        {
+          id: 'optionD',
+          name: 'option D',
+          supportedIn: ['3.0', '3.1'],
+          default: 'A default value for option D'
+        }
+      ],
+      optionsFiltered = filterOptionsByVersion(optionsMock, '3.1');
+    expect(optionsFiltered).to.be.an('object');
+    expect(Object.keys(optionsFiltered)).to.include.members(['optionC', 'optionD']);
+  });
+
+  it('Should return the options supported in version 3.0', function() {
+    const optionsMock = [
+        {
+          id: 'optionA',
+          name: 'option A',
+          supportedIn: ['3.0'],
+          default: 'A default value for option A'
+        },
+        {
+          id: 'optionB',
+          name: 'option B',
+          supportedIn: ['3.0'],
+          default: 'A default value for option B'
+        },
+        {
+          id: 'optionC',
+          name: 'option C',
+          supportedIn: ['3.1'],
+          default: 'A default value for option C'
+        },
+        {
+          id: 'optionD',
+          name: 'option D',
+          supportedIn: ['3.0', '3.1'],
+          default: 'A default value for option D'
+        }
+      ],
+      optionsFiltered = filterOptionsByVersion(optionsMock, '3.0');
+    expect(optionsFiltered).to.be.an('object');
+    expect(Object.keys(optionsFiltered)).to.include.members(['optionA', 'optionB', 'optionD']);
   });
 });
