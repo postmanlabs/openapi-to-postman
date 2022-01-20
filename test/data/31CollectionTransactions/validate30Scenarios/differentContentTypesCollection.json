@@ -1,0 +1,102 @@
+{
+  "item": [
+    {
+      "id": "01cf6ca9-c708-433b-9713-eb11be11f4d8",
+      "name": "pets",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "2359399f-6127-457f-afdf-ac74c1c35717",
+          "name": "List all pets",
+          "request": {
+            "name": "List all pets",
+            "description": {},
+            "url": {
+              "path": [
+                "pets"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.github+json"
+              }
+            ],
+            "method": "POST",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"id\": true,\n    \"name\": \"ea adip\",\n    \"tag\": \"proident Duis aliquip quis\"\n}"
+            }
+          },
+          "response": [
+            {
+              "id": "41dec372-09c2-44b9-958b-6d0897038947",
+              "name": "content with optional params media type",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "pets"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"id\": -74679749,\n    \"name\": \"ea adip\",\n    \"tag\": \"proident Duis aliquip quis\"\n}"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n \"id\": 1234,\n \"name\": 1234,\n \"tag\": \"proident Duis aliquip quis\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": []
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "id": "baseUrl",
+      "type": "string",
+      "value": "http://petstore.swagger.io/v1"
+    }
+  ],
+  "info": {
+    "_postman_id": "8e92c978-8d41-4a4e-8d63-98d3bc0572d2",
+    "name": "Swagger Petstore",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "",
+      "type": "text/plain"
+    }
+  }
+}

@@ -1,0 +1,160 @@
+{
+  "item": [
+    {
+      "id": "9861bc73-aafe-4c44-8c91-f42e4d820ae6",
+      "name": "pet",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "23d37c51-7a63-412e-b15a-10c336d49615",
+          "name": "Updates a pet in the store with form data",
+          "request": {
+            "name": "Updates a pet in the store with form data",
+            "description": {},
+            "url": {
+              "path": [
+                "pets"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "user[id]",
+                  "value": "notAnInteger",
+                  "description": "(Required) info about user"
+                },
+                {
+                  "disabled": false,
+                  "key": "user[name]",
+                  "value": "John Johanson",
+                  "description": "(Required) info about user"
+                },
+                {
+                  "disabled": false,
+                  "key": "user[address][city]",
+                  "value": "Delhi",
+                  "description": "(Required) info about user"
+                },
+                {
+                  "disabled": false,
+                  "key": "propArrayComplex[0][prop1ArrayComp]",
+                  "value": "notAnInteger",
+                  "description": "(Required) deepObject with complex array structure"
+                },
+                {
+                  "disabled": false,
+                  "key": "propArrayComplex[0][prop2ArrayComp]",
+                  "value": "qui anim",
+                  "description": "(Required) deepObject with complex array structure"
+                },
+                {
+                  "disabled": false,
+                  "key": "propArrayComplex[1][prop1ArrayComp]",
+                  "value": "87313126",
+                  "description": "(Required) deepObject with complex array structure"
+                },
+                {
+                  "disabled": false,
+                  "key": "propArrayComplex[1][prop2ArrayComp]",
+                  "value": "reprehenderit",
+                  "description": "(Required) deepObject with complex array structure"
+                }
+              ],
+              "variable": []
+            },
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "76137f7a-7d78-4f8b-837f-d678124c0b8e",
+              "name": "Pet updated.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "pets"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "user[id]",
+                      "value": "123"
+                    },
+                    {
+                      "key": "user[name]",
+                      "value": "John Johanson"
+                    },
+                    {
+                      "key": "user[address][city]",
+                      "value": "Delhi"
+                    },
+                    {
+                      "key": "user[address][country]",
+                      "value": "India"
+                    },
+                    {
+                      "key": "propArrayComplex[0][prop1ArrayComp]",
+                      "value": "70013937"
+                    },
+                    {
+                      "key": "propArrayComplex[0][prop2ArrayComp]",
+                      "value": "pariatur sit consectetur minim"
+                    },
+                    {
+                      "key": "propArrayComplex[1][prop1ArrayComp]",
+                      "value": "-77852940"
+                    },
+                    {
+                      "key": "propArrayComplex[1][prop2ArrayComp]",
+                      "value": "amet"
+                    }
+                  ],
+                  "variable": []
+                },
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "body": "",
+              "cookie": [],
+              "_postman_previewlanguage": "text"
+            }
+          ],
+          "event": []
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "type": "string",
+      "value": "http://petstore.swagger.io/v1",
+      "key": "baseUrl"
+    }
+  ],
+  "info": {
+    "_postman_id": "c3eff23a-fbd9-40b7-9029-7e9699d9bb1b",
+    "name": "Swagger Petstore",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "",
+      "type": "text/plain"
+    }
+  }
+}
