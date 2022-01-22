@@ -40,10 +40,38 @@ describe('CONVERT FUNCTION TESTS ', function() {
       tooManyRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/too-many-refs.json'),
       tagsFolderSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed.yaml'),
       securityTestCases = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-cases.yaml'),
+      securityTestInheritance = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-inheritance.yaml'),
       emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml'),
       rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json'),
       parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml');
 
+    it('Should explicitly set auth when specified on a request ' +
+    securityTestInheritance, function(done) {
+      var openapi = fs.readFileSync(securityTestInheritance, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+
+        expect(err).to.be.null;
+        expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
+        expect(conversionResult.output[0].data.item[0].request.auth.type).to.equal('bearer');
+        expect(conversionResult.output[0].data.item[1].request.auth.type).to.equal('apikey');
+        done();
+      });
+    });
+
+    it('Should not explicitly set auth when specified on a request when passed alwaysInheritAuthentication ' +
+    securityTestInheritance, function(done) {
+      var openapi = fs.readFileSync(securityTestInheritance, 'utf8');
+      Converter.convert(
+        { type: 'string', data: openapi },
+        { alwaysInheritAuthentication: true }, (err, conversionResult) => {
+
+          expect(err).to.be.null;
+          expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
+          expect(conversionResult.output[0].data.item[0].request.auth).to.be.undefined;
+          expect(conversionResult.output[0].data.item[1].request.auth).to.be.undefined;
+          done();
+        });
+    });
 
     it('Should add collection level auth with type as `bearer`' +
     securityTestCases, function(done) {

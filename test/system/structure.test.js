@@ -23,7 +23,8 @@ const optionIds = [
     'optimizeConversion',
     'strictRequestMatching',
     'disableOptionalParameters',
-    'keepImplicitHeaders'
+    'keepImplicitHeaders',
+    'alwaysInheritAuthentication'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -169,6 +170,15 @@ const optionIds = [
       type: 'boolean',
       default: false,
       description: 'Whether to keep implicit headers from the OpenAPI specification, which are removed by default.',
+      external: true,
+      usage: ['CONVERSION']
+    },
+    alwaysInheritAuthentication: {
+      name: 'Always inherit authentication',
+      type: 'boolean',
+      default: false,
+      description: 'Whether authentication details should be included on every request, or always inherited from ' +
+        'the collection.',
       external: true,
       usage: ['CONVERSION']
     }
