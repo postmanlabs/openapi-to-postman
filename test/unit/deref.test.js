@@ -32,6 +32,9 @@ describe('DEREF FUNCTION TESTS ', function() {
         schemaWithEmptyObject = {
           $ref: '#/components/schemas/schemaWithEmptyObject'
         },
+        schemaWithAdditionPropRef = {
+          $ref: '#/components/schemas/schemaAdditionalProps'
+        },
         componentsAndPaths = {
           components: {
             schemas: {
@@ -88,6 +91,15 @@ describe('DEREF FUNCTION TESTS ', function() {
               },
               schemaWithEmptyObject: {
                 type: 'object'
+              },
+              schemaAdditionalProps: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                  name: {
+                    type: 'string'
+                  }
+                }
               }
             }
           }
@@ -103,7 +115,9 @@ describe('DEREF FUNCTION TESTS ', function() {
         output_withAllOf = deref.resolveRefs(schemaWithAllOf, parameterSource, _.cloneDeep(componentsAndPaths)),
         output_validationTypeArray = deref.resolveRefs(schemaWithTypeArray, parameterSource,
           _.cloneDeep(componentsAndPaths), {}, 'VALIDATION'),
-        output_emptyObject = deref.resolveRefs(schemaWithEmptyObject, parameterSource, _.cloneDeep(componentsAndPaths));
+        output_emptyObject = deref.resolveRefs(schemaWithEmptyObject, parameterSource, _.cloneDeep(componentsAndPaths)),
+        output_additionalProps = deref.resolveRefs(schemaWithAdditionPropRef, parameterSource,
+          _.cloneDeep(componentsAndPaths), {}, 'VALIDATION');
 
       expect(output).to.deep.include({ type: 'object',
         required: ['id'],
@@ -150,6 +164,9 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(output_emptyObject).to.deep.include({
         type: 'object'
       });
+
+      // additionalProperties $ref should be resolved
+      expect(output_additionalProps).to.deep.include(componentsAndPaths.components.schemas.schemaAdditionalProps);
 
       done();
     });
