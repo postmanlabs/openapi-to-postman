@@ -107,6 +107,14 @@ describe('Testing openapi 3.1 schema pack convert', function() {
 
 
 describe('Openapi 3.1 schema pack validateTransactions', function() {
+
+  /**
+   * @description Takes in a collection and a buffered allRequests array
+   *
+   * @param {object} collection a postman collection object
+   * @param {Array} allRequests array as buffer
+   * @returns {undefined} nothing
+   */
   function getAllTransactions (collection, allRequests) {
     if (!_.has(collection, 'item') || !_.isArray(collection.item)) {
       return;
@@ -120,6 +128,7 @@ describe('Openapi 3.1 schema pack validateTransactions', function() {
       }
     });
   }
+
   it('Should not generate any mismatch with a correct file', function() {
     const collectionSource = path.join(__dirname, OPENAPI_31_COLLECTIONS + '/compositeSchemaCollection.json'),
       collectionData = fs.readFileSync(collectionSource, 'utf8'),
@@ -138,6 +147,31 @@ describe('Openapi 3.1 schema pack validateTransactions', function() {
       requestIds.forEach((requestId) => {
         expect(result.requests[requestId].endpoints[0].matched).to.be.true;
       });
+    });
+  });
+
+  it('Should not generate any mismatch with a correct file with webhooks', function() {
+    const collectionSource = path.join(__dirname, OPENAPI_31_COLLECTIONS + '/simpleCollectionsWithWebhooks.json'),
+      collectionData = fs.readFileSync(collectionSource, 'utf8'),
+      schemaSource = path.join(__dirname, OPENAPI_31_COLLECTIONS + '/simpleCollectionsWithWebhooksSpec.yaml'),
+      schemaData = fs.readFileSync(schemaSource, 'utf8'),
+      validator = new SchemaPack({
+        type: 'string',
+        data: schemaData
+      });
+    let transactions = [],
+      failRequests = [];
+    getAllTransactions(JSON.parse(collectionData), transactions);
+
+    validator.validateTransaction(transactions, (err, result) => {
+      let requestIds = Object.keys(result.requests);
+      // expect(err).to.be.null;
+      requestIds.forEach((requestId) => {
+        if (result.requests[requestId].endpoints[0].matched === false) {
+          failRequests.push(result.requests[requestId]);
+        }
+      });
+      expect(failRequests).to.be.empty;
     });
   });
 
