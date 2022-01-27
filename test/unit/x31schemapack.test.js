@@ -715,3 +715,167 @@ describe('Resolved issues', function() {
     });
   });
 });
+
+
+describe('Webhooks support', function() {
+  it('Should resolve correctly a file with only webhooks', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/webhooks/payments-webhooks.yaml'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(input, { includeWebhooks: true });
+
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item[0].name).to.equal('Webhooks');
+      expect(result.output[0].data.item[0].item).to.be.an('array')
+        .with.length(19);
+      expect(result.output[0].data.variable).to.be.an('array')
+        .with.length(20);
+    });
+  });
+
+  it('Should resolve correctly a file with only webhooks, folderStrategy as tag', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/webhooks/payments-webhooks.yaml'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(
+        input,
+        {
+          includeWebhooks: true,
+          folderStrategy: 'tags'
+        });
+
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item[0].name).to.equal('Webhooks');
+      expect(result.output[0].data.item[0].item).to.be.an('array')
+        .with.length(19);
+      expect(result.output[0].data.variable).to.be.an('array')
+        .with.length(20);
+    });
+  });
+
+  it('Should resolve correctly a file with two webhooks and paths', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/webhooks/payments-webhooks-with-paths.yaml'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(input, { includeWebhooks: true });
+
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item[0].name).to.equal('pets');
+      expect(result.output[0].data.item[0].item).to.be.an('array')
+        .with.length(3);
+      expect(result.output[0].data.item[1].name).to.equal('Webhooks');
+      expect(result.output[0].data.item[1].item).to.be.an('array')
+        .with.length(2);
+    });
+  });
+
+  it('Should resolve correctly a file with two webhooks and paths, folderStrategy as tags', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/webhooks/payments-webhooks-with-paths.yaml'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(input, { includeWebhooks: true, folderStrategy: 'tags' });
+
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item[0].name).to.equal('pet');
+      expect(result.output[0].data.item[0].item).to.be.an('array')
+        .with.length(4);
+      expect(result.output[0].data.item[1].name).to.equal('Webhooks');
+      expect(result.output[0].data.item[1].item).to.be.an('array')
+        .with.length(2);
+    });
+  });
+
+  it('Should resolve correctly a file when webhook\'s name looks like a path', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/webhooks/webhook-name-with-path-format.yaml'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(input, { includeWebhooks: true }),
+      expectedVariableName = 'ACCOUNT_CLOSED_port_xid',
+      expectedVariableValue = '/';
+
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item[0].name).to.equal('pets');
+      expect(result.output[0].data.item[0].item).to.be.an('array')
+        .with.length(3);
+      expect(result.output[0].data.item[1].name).to.equal('Webhooks');
+      expect(result.output[0].data.item[1].item).to.be.an('array')
+        .with.length(2);
+      expect(result.output[0].data.item[1].item[0].request.url.host[0])
+        .to.be.equal(`{{${expectedVariableName}}}`);
+      expect(result.output[0].data.variable[1].key).to.be.equal(expectedVariableName);
+      expect(result.output[0].data.variable[1].value).to.be.equal(expectedVariableValue);
+    });
+  });
+
+  it('Should resolve correctly a file when webhook has two requests', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/webhooks/two-requests-in-webhook.yaml'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(input, { includeWebhooks: true });
+
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item[0].name).to.equal('pets');
+      expect(result.output[0].data.item[0].item).to.be.an('array')
+        .with.length(3);
+      expect(result.output[0].data.item[1].name).to.equal('Webhooks');
+      expect(result.output[0].data.item[1].item).to.be.an('array')
+        .with.length(2);
+      expect(result.output[0].data.item[1].item[0].item).to.be.an('array')
+        .with.length(2);
+      expect(result.output[0].data.item[1].item[0].item.map((item) => {
+        return item.name;
+      })).to.have.members(['post-ACCOUNT CLOSED', 'get-ACCOUNT CLOSED']);
+    });
+  });
+
+  it('Should resolve correctly a file with two webhooks and paths, with includeWebhooks in false',
+    function() {
+      const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/webhooks/payments-webhooks-with-paths.yaml'),
+        fileData = fs.readFileSync(fileSource, 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        },
+        converter = new SchemaPack(input, { includeWebhooks: false });
+
+      converter.convert((err, result) => {
+        expect(err).to.be.null;
+        expect(result.result).to.be.true;
+        expect(result.output[0].data.item).to.be.an('array')
+          .with.length(1);
+        expect(result.output[0].data.item[0].name).to.equal('pets');
+        expect(result.output[0].data.item[0].item).to.be.an('array')
+          .with.length(3);
+      });
+    });
+});
