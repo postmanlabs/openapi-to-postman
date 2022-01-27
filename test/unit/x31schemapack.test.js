@@ -738,6 +738,22 @@ describe('Webhooks support', function() {
     });
   });
 
+  it('Should resolve a file with only webhooks but includeWebhooks is false', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/webhooks/payments-webhooks.yaml'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(input, { includeWebhooks: false });
+
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item.length).to.eql(0);
+    });
+  });
+
   it('Should resolve correctly a file with only webhooks, folderStrategy as tag', function() {
     const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/webhooks/payments-webhooks.yaml'),
       fileData = fs.readFileSync(fileSource, 'utf8'),
