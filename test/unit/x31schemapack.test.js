@@ -150,8 +150,9 @@ describe('Openapi 3.1 schema pack validateTransactions', function() {
     });
   });
 
-  it('Should not generate any mismatch with a correct file with webhooks', function() {
-    const collectionSource = path.join(__dirname, OPENAPI_31_COLLECTIONS + '/simpleCollectionsWithWebhooks.json'),
+  it('Should not generate any mismatch webhook return 4 missing endpoints from paths', function() {
+    const collectionSource = path.join(__dirname, OPENAPI_31_COLLECTIONS +
+        '/simpleCollectionsWithWebhooksNoPaths.json'),
       collectionData = fs.readFileSync(collectionSource, 'utf8'),
       schemaSource = path.join(__dirname, OPENAPI_31_COLLECTIONS + '/simpleCollectionsWithWebhooksSpec.yaml'),
       schemaData = fs.readFileSync(schemaSource, 'utf8'),
@@ -165,13 +166,95 @@ describe('Openapi 3.1 schema pack validateTransactions', function() {
 
     validator.validateTransaction(transactions, (err, result) => {
       let requestIds = Object.keys(result.requests);
-      // expect(err).to.be.null;
+      expect(err).to.be.null;
       requestIds.forEach((requestId) => {
         if (result.requests[requestId].endpoints[0].matched === false) {
           failRequests.push(result.requests[requestId]);
         }
       });
       expect(failRequests).to.be.empty;
+      expect(result.missingEndpoints.length).to.equal(4);
+    });
+  });
+
+  it('Should generate mismatch with errors in paths valid webhooks', function() {
+    const collectionSource = path.join(__dirname, OPENAPI_31_COLLECTIONS +
+        '/simpleCollectionsWithWebhooksErrorsInPaths.json'),
+      collectionData = fs.readFileSync(collectionSource, 'utf8'),
+      schemaSource = path.join(__dirname, OPENAPI_31_COLLECTIONS + '/simpleCollectionsWithWebhooksSpec.yaml'),
+      schemaData = fs.readFileSync(schemaSource, 'utf8'),
+      validator = new SchemaPack({
+        type: 'string',
+        data: schemaData
+      });
+    let transactions = [],
+      failRequests = [];
+    getAllTransactions(JSON.parse(collectionData), transactions);
+
+    validator.validateTransaction(transactions, (err, result) => {
+      let requestIds = Object.keys(result.requests);
+      expect(err).to.be.null;
+      requestIds.forEach((requestId) => {
+        if (result.requests[requestId].endpoints[0].matched === false) {
+          failRequests.push(result.requests[requestId]);
+        }
+      });
+      expect(failRequests.length).to.equal(4);
+      expect(result.missingEndpoints.length).to.equal(0);
+    });
+  });
+
+  it('Should not generate mismatch with valid webhooks and paths', function() {
+    const collectionSource = path.join(__dirname, OPENAPI_31_COLLECTIONS +
+        '/simpleCollectionsWithWebhooks.json'),
+      collectionData = fs.readFileSync(collectionSource, 'utf8'),
+      schemaSource = path.join(__dirname, OPENAPI_31_COLLECTIONS + '/simpleCollectionsWithWebhooksSpec.yaml'),
+      schemaData = fs.readFileSync(schemaSource, 'utf8'),
+      validator = new SchemaPack({
+        type: 'string',
+        data: schemaData
+      }, { suggestAvailableFixes: true });
+    let transactions = [],
+      failRequests = [];
+    getAllTransactions(JSON.parse(collectionData), transactions);
+
+    validator.validateTransaction(transactions, (err, result) => {
+      let requestIds = Object.keys(result.requests);
+      expect(err).to.be.null;
+      requestIds.forEach((requestId) => {
+        if (result.requests[requestId].endpoints[0].matched === false) {
+          failRequests.push(result.requests[requestId]);
+        }
+      });
+      expect(failRequests.length).to.equal(0);
+      expect(result.missingEndpoints.length).to.equal(0);
+    });
+  });
+
+  it('Should generate mismatch with invalid webhook', function() {
+    const collectionSource = path.join(__dirname, OPENAPI_31_COLLECTIONS +
+        '/simpleCollectionsWithWebhooksErrorWebhook.json'),
+      collectionData = fs.readFileSync(collectionSource, 'utf8'),
+      schemaSource = path.join(__dirname, OPENAPI_31_COLLECTIONS + '/simpleCollectionsWithWebhooksSpec.yaml'),
+      schemaData = fs.readFileSync(schemaSource, 'utf8'),
+      validator = new SchemaPack({
+        type: 'string',
+        data: schemaData
+      }, { suggestAvailableFixes: true });
+    let transactions = [],
+      failRequests = [];
+    getAllTransactions(JSON.parse(collectionData), transactions);
+
+    validator.validateTransaction(transactions, (err, result) => {
+      let requestIds = Object.keys(result.requests);
+      expect(err).to.be.null;
+      requestIds.forEach((requestId) => {
+        if (result.requests[requestId].endpoints[0].matched === false) {
+          failRequests.push(result.requests[requestId]);
+        }
+      });
+      expect(failRequests.length).to.equal(1);
+      expect(result.missingEndpoints.length).to.equal(0);
     });
   });
 

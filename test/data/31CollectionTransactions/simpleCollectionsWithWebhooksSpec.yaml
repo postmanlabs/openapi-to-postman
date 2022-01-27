@@ -64,6 +64,8 @@ components:
         id:
           type: integer
           format: int64
+        name:
+          type: string
     Pets:
       type: array
       items:
@@ -71,7 +73,7 @@ components:
     Error:
       required:
         - code
-        - mesage
+        - message
       properties:
         code:
           type: integer
