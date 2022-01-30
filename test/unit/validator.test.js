@@ -624,6 +624,32 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       });
     });
 
+    it('Should correctly validate path varaible in collection that are part of URL itself and are ' +
+      'not present in $request.url.variable', function (done) {
+      let multiplePathVarSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/multiplePathVarSpec.json'), 'utf-8'),
+        multiplePathVarCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/multiplePathVarCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        options = {
+          detailedBlobValidation: true,
+          allowUrlPathVarMatching: true
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: multiplePathVarSpec }, options);
+
+      getAllTransactions(JSON.parse(multiplePathVarCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        resultObj = result.requests[historyRequest[2].id].endpoints[0];
+        expect(resultObj.mismatches).to.have.lengthOf(0);
+        done();
+      });
+    });
+
     it('Should ignore mismatches for nested objects in parameters', function (done) {
       let nestedObjectParamsSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
         '/nestedObjectParamsSpec.yaml'), 'utf-8'),
