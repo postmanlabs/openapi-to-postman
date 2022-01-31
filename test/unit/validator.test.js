@@ -556,6 +556,38 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       });
     });
 
+    it('Should correctly match and validate content type headers having wildcard characters' +
+      ' with collection req/res body', function (done) {
+      let differentContentTypesSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/differentContentTypesSpec.yaml'), 'utf-8'),
+        differentContentTypesCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/differentContentTypesCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        options = {
+          showMissingInSchemaErrors: true,
+          suggestAvailableFixes: true
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: differentContentTypesSpec }, options);
+
+      getAllTransactions(JSON.parse(differentContentTypesCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        resultObj = result.requests[historyRequest[1].id].endpoints[0];
+
+        /**
+         * Both req and res body should have matched content types
+         */
+        expect(resultObj.matched).to.eql(true);
+        expect(resultObj.mismatches).to.have.lengthOf(0);
+        expect(resultObj.responses[_.keys(resultObj.responses)[0]].matched).to.eql(true);
+        expect(resultObj.responses[_.keys(resultObj.responses)[0]].mismatches).to.have.lengthOf(0);
+        done();
+      });
+    });
+
     it('Should be able to validate and suggest correct value for body with primitive data type', function (done) {
       let primitiveDataTypeBodySpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
           '/primitiveDataTypeBodySpec.yaml'), 'utf-8'),
@@ -620,6 +652,32 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         resultObj2 = result.requests[historyRequest[1].id].endpoints[0];
         expect(resultObj2.mismatches).to.have.lengthOf(1);
         expect(resultObj2.mismatches[0].reasonCode).to.eql('MISSING_IN_REQUEST');
+        done();
+      });
+    });
+
+    it('Should correctly validate path variable in collection that are part of URL itself and are ' +
+      'not present in $request.url.variable', function (done) {
+      let multiplePathVarSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/multiplePathVarSpec.json'), 'utf-8'),
+        multiplePathVarCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/multiplePathVarCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        options = {
+          detailedBlobValidation: true,
+          allowUrlPathVarMatching: true
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: multiplePathVarSpec }, options);
+
+      getAllTransactions(JSON.parse(multiplePathVarCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        resultObj = result.requests[historyRequest[2].id].endpoints[0];
+        expect(resultObj.mismatches).to.have.lengthOf(0);
         done();
       });
     });

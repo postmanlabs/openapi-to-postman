@@ -143,6 +143,56 @@
         }
       ],
       "event": []
+    },
+    {
+      "id": "8e44bef4-a2b6-4c09-a6b0-2ba605cc06b0",
+      "request": {
+        "url": {
+          "path": [
+            "hello",
+            "world-92"
+          ],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "method": "GET",
+        "auth": null
+      },
+      "response": [
+        {
+          "id": "810c7916-4f8b-4427-9720-7d00b6ddfdf6",
+          "originalRequest": {
+            "url": {
+              "path": [
+                "hello",
+                "world-92"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET",
+            "body": {}
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "text/plain"
+            }
+          ],
+          "body": "",
+          "cookie": [],
+          "_postman_previewlanguage": "text"
+        }
+      ],
+      "event": []
     }
   ],
   "event": [],
