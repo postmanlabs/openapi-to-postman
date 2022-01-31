@@ -20,3 +20,4 @@ ignoreUnresolvedVariables|boolean|-|false|Whether to ignore mismatches resulting
 strictRequestMatching|boolean|-|false|Whether requests should be strictly matched with schema operations. Setting to true will not include any matches where the URL path segments don't match exactly.|VALIDATION
 disableOptionalParameters|boolean|-|false|Whether to set optional parameters as disabled|CONVERSION
 keepImplicitHeaders|boolean|-|false|Whether to keep implicit headers from the OpenAPI specification, which are removed by default.|CONVERSION
+alwaysInheritAuthentication|boolean|-|false|Whether authentication details should be included on every request, or always inherited from the collection.|CONVERSION
