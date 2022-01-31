@@ -624,7 +624,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       });
     });
 
-    it('Should correctly validate path varaible in collection that are part of URL itself and are ' +
+    it('Should correctly validate path variable in collection that are part of URL itself and are ' +
       'not present in $request.url.variable', function (done) {
       let multiplePathVarSpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
           '/multiplePathVarSpec.json'), 'utf-8'),
