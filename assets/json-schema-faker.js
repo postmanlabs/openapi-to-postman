@@ -23564,6 +23564,7 @@ function extend() {
               data['failOnInvalidTypes'] = true;
               data['failOnInvalidFormat'] = true;
               data['alwaysFakeOptionals'] = false;
+              data['fixedProbabilities'] = true;
               data['optionalsProbability'] = 0.0;
               data['useDefaultValue'] = false;
               data['useExamplesValue'] = false;
@@ -24283,10 +24284,6 @@ function extend() {
     let min = Math.max(value.minProperties || 0, requiredProperties.length);
     let neededExtras = Math.max(0, allProperties.length - min);
   
-    if (allProperties.length === 1 && !requiredProperties.length) {
-      min = Math.max(random.number(fillProps ? 1 : 0, max), min);
-    }
-  
     if (optionalsProbability !== null) {
       if (fixedProbabilities === true) {
         neededExtras = Math.round((min - requiredProperties.length) + (optionalsProbability * (allProperties.length - min)));
@@ -24302,7 +24299,7 @@ function extend() {
   
     // properties are read from right-to-left
     const _limit = optionalsProbability !== null || requiredProperties.length === max ? max : random.number(0, max);
-    const _props = requiredProperties.concat(random.shuffle(extraProperties).slice(0, _limit)).slice(0, max);
+    const _props = requiredProperties.concat(extraProperties).slice(0, max);
     const _defns = [];
   
     if (value.dependencies) {
