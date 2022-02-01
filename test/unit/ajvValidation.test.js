@@ -1,4 +1,5 @@
 const { getLocalDraft, getAjvValidator, validateSchema } = require('../../lib/ajValidation/ajvValidation'),
+  { validateSchemaAJVDraft04 } = require('../../lib/ajValidation/ajvValidatorDraft04'),
   expect = require('chai').expect;
 
 describe('getLocalDraft', function() {
@@ -224,5 +225,78 @@ describe('validateSchema', function () {
       },
       result = validateSchema(schema, valueToUse);
     expect(result[0].instancePath).equal('/id');
+  });
+
+  it('should return no errors correct schema value $schema pointing to draft 06', function () {
+    const schema = {
+        '$schema': 'http://json-schema.org/draft-06/schema#',
+        required: [
+          'id',
+          'name'
+        ],
+        type: 'object',
+        properties: {
+          id: {
+            type: [
+              'integer'
+            ],
+            examples: [
+              111111
+            ]
+          },
+          name: {
+            type: [
+              'string'
+            ]
+          }
+        }
+      },
+      valueToUse = {
+        id: 7784772,
+        name: 'dolor consectetur Excepteur'
+      },
+      result = validateSchema(schema, valueToUse);
+    expect(result).to.be.empty;
+  });
+
+  it('should return no errors correct schema value $schema pointing to draft 2019', function () {
+    const schema = {
+        '$schema': 'https://json-schema.org/draft/2019-09/schema',
+        required: [
+          'id',
+          'name'
+        ],
+        type: 'object',
+        properties: {
+          id: {
+            type: [
+              'integer'
+            ],
+            examples: [
+              111111
+            ]
+          },
+          name: {
+            type: [
+              'string'
+            ]
+          }
+        }
+      },
+      valueToUse = {
+        id: 7784772,
+        name: 'dolor consectetur Excepteur'
+      },
+      result = validateSchema(schema, valueToUse);
+    expect(result).to.be.empty;
+  });
+
+  it('should return errors correct schema value $schema pointing to draft 04', function () {
+    const valueToUse = {
+        id: 7784772,
+        name: 'dolor consectetur Excepteur'
+      },
+      result = validateSchemaAJVDraft04(null, valueToUse);
+    expect(result.filteredValidationError).to.be.undefined;
   });
 });
