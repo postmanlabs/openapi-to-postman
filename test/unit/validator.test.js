@@ -92,7 +92,7 @@ describe('The validator must validate generated collection from schema against s
         schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options);
 
       // Increase timeout for larger schema
-      this.timeout(15000);
+      this.timeout(20000);
 
       schemaPack.convert((err, conversionResult) => {
         expect(err).to.be.null;
