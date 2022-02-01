@@ -1,4 +1,4 @@
-const { getLocalDraft, getAjvValidator } = require('../../lib/ajValidation/ajvValidation'),
+const { getLocalDraft, getAjvValidator, validateSchema } = require('../../lib/ajValidation/ajvValidation'),
   expect = require('chai').expect;
 
 describe('getLocalDraft', function() {
@@ -66,7 +66,6 @@ describe('getLocalDraft', function() {
   });
 });
 
-
 describe('getAjvValidator', function() {
   it('should return the ajv draft 04 validator when draft is the 04', function() {
     let validator = getAjvValidator('http://json-schema.org/draft-04/schema#');
@@ -78,9 +77,152 @@ describe('getAjvValidator', function() {
     expect(validator.name).to.equal('validateSchemaAJV');
   });
 
+  it('should return normal ajv validator when draft is the 07', function() {
+    let validator = getAjvValidator('http://json-schema.org/draft-07/schema#');
+    expect(validator.name).to.equal('validateSchemaAJV');
+  });
+
+  it('should return normal ajv validator when draft is the 2019-09', function() {
+    let validator = getAjvValidator('https://json-schema.org/draft/2019-09/schema');
+    expect(validator.name).to.equal('validateSchemaAJV');
+  });
+
+  it('should return normal ajv validator when draft is the 2020-12', function() {
+    let validator = getAjvValidator('https://json-schema.org/draft/2020-12/schema');
+    expect(validator.name).to.equal('validateSchemaAJV');
+  });
+
   it('should return normla ajv validator when draft is undefined', function() {
     let validator = getAjvValidator();
     expect(validator.name).to.equal('validateSchemaAJV');
   });
 
+});
+
+describe('validateSchema', function () {
+  it('should return no errors correct schema value no $schema definition', function () {
+    const schema = {
+        required: [
+          'id',
+          'name'
+        ],
+        type: 'object',
+        properties: {
+          id: {
+            type: [
+              'integer'
+            ],
+            examples: [
+              111111
+            ]
+          },
+          name: {
+            type: [
+              'string'
+            ]
+          }
+        }
+      },
+      valueToUse = {
+        id: 7784772,
+        name: 'dolor consectetur Excepteur'
+      },
+      result = validateSchema(schema, valueToUse);
+    expect(result).to.be.empty;
+  });
+
+  it('should return errors incorrect schema value no $schema definition', function () {
+    const schema = {
+        required: [
+          'id',
+          'name'
+        ],
+        type: 'object',
+        properties: {
+          id: {
+            type: [
+              'integer'
+            ],
+            examples: [
+              111111
+            ]
+          },
+          name: {
+            type: [
+              'string'
+            ]
+          }
+        }
+      },
+      valueToUse = {
+        id: '7784772',
+        name: 'dolor consectetur Excepteur'
+      },
+      result = validateSchema(schema, valueToUse);
+    expect(result[0].instancePath).equal('/id');
+  });
+
+  it('should return no errors correct schema value $schema pointing to draft 04', function () {
+    const schema = {
+        '$schema': 'http://json-schema.org/draft-04/schema#',
+        required: [
+          'id',
+          'name'
+        ],
+        type: 'object',
+        properties: {
+          id: {
+            type: [
+              'integer'
+            ],
+            examples: [
+              111111
+            ]
+          },
+          name: {
+            type: [
+              'string'
+            ]
+          }
+        }
+      },
+      valueToUse = {
+        id: 7784772,
+        name: 'dolor consectetur Excepteur'
+      },
+      result = validateSchema(schema, valueToUse);
+    expect(result).to.be.empty;
+  });
+
+  it('should return errors incorrect schema value $schema pointing to draft 04', function () {
+    const schema = {
+        '$schema': 'http://json-schema.org/draft-04/schema#',
+        required: [
+          'id',
+          'name'
+        ],
+        type: 'object',
+        properties: {
+          id: {
+            type: [
+              'integer'
+            ],
+            examples: [
+              111111
+            ]
+          },
+          name: {
+            type: [
+              'string'
+            ]
+          }
+        }
+      },
+      valueToUse = {
+        id: '7784772',
+        name: 'dolor consectetur Excepteur'
+      },
+      result = validateSchema(schema, valueToUse);
+    expect(result[0].instancePath).equal('/id');
+  });
 });
