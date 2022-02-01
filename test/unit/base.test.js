@@ -317,7 +317,11 @@ describe('CONVERT FUNCTION TESTS ', function() {
           .to.equal('Content-Type');
         expect(conversionResult.output[0].data.item[0].item[1].request.header[1].value)
           .to.equal('application/json');
-        expect(conversionResult.output[0].data.item[0].item[1].request.header).to.have.length(2);
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[2].key)
+          .to.equal('Accept');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[2].value)
+          .to.equal('application/json');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header).to.have.length(3);
         done();
       });
     });
@@ -329,10 +333,14 @@ describe('CONVERT FUNCTION TESTS ', function() {
         keepImplicitHeaders: false
       }, (err, conversionResult) => {
         expect(err).to.be.null;
-        expect(conversionResult.output[0].data.item[0].item[1].request.header).to.have.length(1);
+        expect(conversionResult.output[0].data.item[0].item[1].request.header).to.have.length(2);
         expect(conversionResult.output[0].data.item[0].item[1].request.header[0].key)
           .to.equal('Content-Type');
         expect(conversionResult.output[0].data.item[0].item[1].request.header[0].value)
+          .to.equal('application/json');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[1].key)
+          .to.equal('Accept');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[1].value)
           .to.equal('application/json');
         done();
       });
