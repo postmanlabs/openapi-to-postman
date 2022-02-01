@@ -18,5 +18,6 @@ suggestAvailableFixes|boolean|-|false|Whether to provide fixes for patching corr
 validateMetadata|boolean|-|false|Whether to show mismatches for incorrect name and description of request|VALIDATION
 ignoreUnresolvedVariables|boolean|-|false|Whether to ignore mismatches resulting from unresolved variables in the Postman request|VALIDATION
 strictRequestMatching|boolean|-|false|Whether requests should be strictly matched with schema operations. Setting to true will not include any matches where the URL path segments don't match exactly.|VALIDATION
+allowUrlPathVarMatching|boolean|-|false|Whether to allow matching path variables that are available as part of URL itself in the collection request|VALIDATION
 disableOptionalParameters|boolean|-|false|Whether to set optional parameters as disabled|CONVERSION
 keepImplicitHeaders|boolean|-|false|Whether to keep implicit headers from the OpenAPI specification, which are removed by default.|CONVERSION
