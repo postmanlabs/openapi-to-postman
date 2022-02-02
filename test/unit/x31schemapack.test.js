@@ -103,6 +103,22 @@ describe('Testing openapi 3.1 schema pack convert', function() {
         .to.be.equal('{\n    \"objectType\": 1234\n}');
     });
   });
+
+  it('Should convert a provided input with examples in schema and takes the first example in examples 2', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/simpleSchemaWithExamplesNotMachingType.yaml'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(input, { requestParametersResolution: 'Example' });
+
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.output[0].data.item[0].response[0].originalRequest.body.raw)
+        .to.be.equal('{\n    \"id\": 1234\n}');
+    });
+  });
 });
 
 
