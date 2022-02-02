@@ -11,7 +11,7 @@
  */
 
 var _ = require('lodash'),
-  validateSchema = require('../lib/ajvValidation').validateSchema,
+  validateSchema = require('../lib/ajValidation/ajvValidation').validateSchema,
   {
     handleExclusiveMaximum,
     handleExclusiveMinimum
@@ -24449,12 +24449,12 @@ function extend() {
       ipv6: '[a-f\\d]{4}(:[a-f\\d]{4}){7}',
       uri: URI_PATTERN,
       slug: '[a-zA-Z\\d_-]+',
-    
+
       // types from draft-0[67] (?)
       'uri-reference': `${URI_PATTERN}${PARAM_PATTERN}`,
       'uri-template': URI_PATTERN.replace('(?:', '(?:/\\{[a-z][:a-zA-Z0-9-]*\\}|'),
       'json-pointer': `(/(?:${FRAGMENT.replace(']*', '/]*')}|~[01]))+`,
-    
+
       // some types from https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#data-types (?)
       uuid: '^(?:urn:uuid:)?[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$',
   };
@@ -24569,7 +24569,7 @@ function extend() {
           result = validateSchema(schema, schema.example, { ignoreUnresolvedVariables: true });
         }
 
-        // Use example only if valid 
+        // Use example only if valid
         if (result && result.length === 0) {
           return schema.example;
         }
@@ -24578,7 +24578,7 @@ function extend() {
       if (optionAPI('useDefaultValue') && 'default' in schema) {
         // to not use default as faked value in case it is actual property of schema
         if (!(_.has(schema.default, 'type') && _.includes(ALL_TYPES, schema.default.type))) {
-          return schema.default; 
+          return schema.default;
         }
       }
       if (schema.not && typeof schema.not === 'object') {
