@@ -564,6 +564,27 @@ describe('fixExamplesByVersion method', function() {
       fixedSchemaWithExample = concreteUtils.fixExamplesByVersion(providedSchema);
     expect(JSON.stringify(fixedSchemaWithExample)).to.be.equal(JSON.stringify(expectedSchemaAfterFix));
   });
+
+  it('Should return example "test" and type string when first example did not match any type', function() {
+    const providedSchema = {
+        required: [
+          'id'
+        ],
+        type: ['string', 'integer'],
+        examples: [true, 'test']
+      },
+      expectedSchemaAfterFix = {
+        required: [
+          'id'
+        ],
+        type: 'string',
+        examples: [true, 'test'],
+        example: 'test'
+      },
+      fixedSchemaWithExample = concreteUtils.fixExamplesByVersion(providedSchema);
+    expect(JSON.stringify(fixedSchemaWithExample)).to.be.equal(JSON.stringify(expectedSchemaAfterFix));
+  });
+
 });
 
 describe('isBinaryContentType method', function() {
@@ -648,28 +669,41 @@ describe('getOuterPropsIfIsSupported method', function() {
 
 describe('findTypeByExample method', function () {
   it('should return integer when the example is 123 and the types are string and integer', function () {
-    const result = concreteUtils.findTypeByExample(123, ['string', 'integer']);
-    expect(result).to.equal('integer');
+    const result = concreteUtils.findTypeByExample([123], ['string', 'integer']);
+    expect(result.foundType).to.equal('integer');
+    expect(result.foundExample).to.equal(123);
   });
 
   it('should return number when the example is 123.5 and the types are string and integer', function () {
-    const result = concreteUtils.findTypeByExample(123.5, ['string', 'number']);
-    expect(result).to.equal('number');
+    const result = concreteUtils.findTypeByExample([123.5], ['string', 'number']);
+    expect(result.foundType).to.equal('number');
+    expect(result.foundExample).to.equal(123.5);
+
   });
 
   it('should return string when the example is "123" and the types are integer and string', function () {
-    const result = concreteUtils.findTypeByExample('123', ['integer', 'string']);
-    expect(result).to.equal('string');
+    const result = concreteUtils.findTypeByExample(['123'], ['integer', 'string']);
+    expect(result.foundType).to.equal('string');
+    expect(result.foundExample).to.equal('123');
+
   });
 
   it('should return boolean when the example is true and the types are integer, string and boolean', function () {
-    const result = concreteUtils.findTypeByExample(true, ['integer', 'string', 'boolean']);
-    expect(result).to.equal('boolean');
+    const result = concreteUtils.findTypeByExample([true], ['integer', 'string', 'boolean']);
+    expect(result.foundType).to.equal('boolean');
+    expect(result.foundExample).to.equal(true);
   });
 
   it('should return string when the example is "true" and the types are integer, string and boolean', function () {
-    const result = concreteUtils.findTypeByExample('true', ['integer', 'string', 'boolean']);
-    expect(result).to.equal('string');
+    const result = concreteUtils.findTypeByExample(['true'], ['integer', 'string', 'boolean']);
+    expect(result.foundType).to.equal('string');
+    expect(result.foundExample).to.equal('true');
+  });
+
+  it('should return boolean when the examples are "true" and false and the types are integer and boolean', function () {
+    const result = concreteUtils.findTypeByExample(['true', false], ['integer', 'boolean']);
+    expect(result.foundType).to.equal('boolean');
+    expect(result.foundExample).to.equal(false);
   });
 
 });
