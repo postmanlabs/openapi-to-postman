@@ -16,6 +16,21 @@ describe('formatData method', function() {
       formattedDataPath = formatDataPath(instancePath);
     expect(formattedDataPath).to.be.equal(expectedDataPath);
   });
+
+  it('Should return the same string when input is a data path ".id" ', function() {
+    const inputAlreadyDataPath = '.id',
+      expectedDataPath = '.id',
+      formattedDataPath = formatDataPath(inputAlreadyDataPath);
+    expect(formattedDataPath).to.be.equal(expectedDataPath);
+  });
+
+  it('Should return the same string when input is a data path ".test[3]" ', function() {
+    const inputAlreadyDataPath = '.test[3]',
+      expectedDataPath = '.test[3]',
+      formattedDataPath = formatDataPath(inputAlreadyDataPath);
+    expect(formattedDataPath).to.be.equal(expectedDataPath);
+  });
+
 });
 
 describe('handleExclusiveMaximum method', function() {
