@@ -1,4 +1,7 @@
-const { getLocalDraft, getAjvValidator, validateSchema } = require('../../lib/ajValidation/ajvValidation'),
+const { getLocalDraft,
+    getAjvValidator,
+    validateSchema,
+    getDraftToUse } = require('../../lib/ajValidation/ajvValidation'),
   { validateSchemaAJVDraft04 } = require('../../lib/ajValidation/ajvValidatorDraft04'),
   expect = require('chai').expect;
 
@@ -298,5 +301,28 @@ describe('validateSchema', function () {
       },
       result = validateSchemaAJVDraft04(null, valueToUse);
     expect(result.filteredValidationError).to.be.undefined;
+  });
+});
+
+describe('getDraftToUse', function() {
+  it('should return the ajv draft 04 when $schema undefined and jsonSchemaDialect is the 04', function() {
+    let draftToUse = getDraftToUse(undefined, 'http://json-schema.org/draft-04/schema#');
+    expect(draftToUse).to.equal('http://json-schema.org/draft-04/schema#');
+  });
+
+  it('should return the ajv draft 06 when $schema is 06 and jsonSchemaDialect is the 04', function() {
+    let draftToUse = getDraftToUse('http://json-schema.org/draft-06/schema#',
+      'http://json-schema.org/draft-04/schema#');
+    expect(draftToUse).to.equal('http://json-schema.org/draft-06/schema#');
+  });
+
+  it('should return the ajv draft 06 when $schema is 06 and jsonSchemaDialect is undefined', function() {
+    let draftToUse = getDraftToUse('http://json-schema.org/draft-06/schema#', undefined);
+    expect(draftToUse).to.equal('http://json-schema.org/draft-06/schema#');
+  });
+
+  it('should return undefined when $schema  and jsonSchemaDialect are undefined', function() {
+    let draftToUse = getDraftToUse(undefined, undefined);
+    expect(draftToUse).to.equal(undefined);
   });
 });
