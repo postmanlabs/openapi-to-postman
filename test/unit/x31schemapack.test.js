@@ -100,7 +100,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
     converter.convert((err, result) => {
       expect(err).to.be.null;
       expect(result.output[0].data.item[0].response[0].originalRequest.body.raw)
-        .to.be.equal('{\n    \"objectType\": 1234\n}');
+        .to.be.equal('{\n  \"objectType\": 1234\n}');
     });
   });
 
@@ -116,7 +116,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
     converter.convert((err, result) => {
       expect(err).to.be.null;
       expect(result.output[0].data.item[0].response[0].originalRequest.body.raw)
-        .to.be.equal('{\n    \"id\": 1234\n}');
+        .to.be.equal('{\n  \"id\": 1234\n}');
     });
   });
 });
