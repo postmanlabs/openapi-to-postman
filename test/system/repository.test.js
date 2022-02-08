@@ -80,8 +80,9 @@ describe('project repository', function () {
       // Unskip before merging
       it('must point to a valid and precise (no * or ^) semver', function () {
         json.dependencies && Object.keys(json.dependencies).forEach(function (item) {
-          expect(json.dependencies[item]).to.match(new RegExp('^((\\d+)\\.(\\d+)\\.(\\d+))(?:-' +
-                        '([\\dA-Za-z\\-]+(?:\\.[\\dA-Za-z\\-]+)*))?(?:\\+([\\dA-Za-z\\-]+(?:\\.[\\dA-Za-z\\-]+)*))?$'));
+          expect(json.dependencies[item]).to.match(new RegExp('(^((\\d+)\\.(\\d+)\\.(\\d+)|' +
+          '(^npm:[\\dA-Za-z\\-]+@(\\d+)\\.(\\d+)\\.(\\d+)))(?:-([\\dA-Za-z\\-]+(?:\\.[\\dA-Za-z\\-]+)*))?' +
+                      '(?:\\+([\\dA-Za-z\\-]+(?:\\.[\\dA-Za-z\\-]+)*))?)$'));
         });
       });
     });
@@ -93,8 +94,9 @@ describe('project repository', function () {
 
       it('must point to a valid and precise (no * or ^) semver', function () {
         json.devDependencies && Object.keys(json.devDependencies).forEach(function (item) {
-          expect(json.devDependencies[item]).to.match(new RegExp('^((\\d+)\\.(\\d+)\\.(\\d+))(?:-' +
-                        '([\\dA-Za-z\\-]+(?:\\.[\\dA-Za-z\\-]+)*))?(?:\\+([\\dA-Za-z\\-]+(?:\\.[\\dA-Za-z\\-]+)*))?$'));
+          expect(json.devDependencies[item]).to.match(new RegExp('(^((\\d+)\\.(\\d+)\\.(\\d+)|' +
+            '(^npm:[\\dA-Za-z\\-]+@(\\d+)\\.(\\d+)\\.(\\d+)))(?:-([\\dA-Za-z\\-]+(?:\\.[\\dA-Za-z\\-]+)*))?' +
+                        '(?:\\+([\\dA-Za-z\\-]+(?:\\.[\\dA-Za-z\\-]+)*))?)$'));
         });
       });
 

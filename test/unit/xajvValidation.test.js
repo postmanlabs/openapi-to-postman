@@ -227,7 +227,7 @@ describe('validateSchema', function () {
         name: 'dolor consectetur Excepteur'
       },
       result = validateSchema(schema, valueToUse);
-    expect(result[0].instancePath).equal('/id');
+    expect(result[0].instancePath).equal('.id');
   });
 
   it('should return no errors correct schema value $schema pointing to draft 06', function () {
