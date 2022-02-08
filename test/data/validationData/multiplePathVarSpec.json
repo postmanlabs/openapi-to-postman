@@ -66,6 +66,26 @@
           }
         }
       }
+    },
+    "/hello/{worldId}": {
+      "get": {
+        "parameters": [
+          {
+            "name": "worldId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "world-92"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
     }
   }
 }

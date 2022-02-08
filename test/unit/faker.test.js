@@ -1,4 +1,5 @@
-const expect = require('chai').expect,
+const _ = require('lodash'),
+  expect = require('chai').expect,
   schemaFaker = require('../../assets/json-schema-faker.js');
 
 // define options used similar while faking in schemaUtils.safeSchemFaker()
@@ -74,6 +75,28 @@ describe('JSON SCHEMA FAKER TESTS', function () {
     var fakedData = schemaFaker(schema);
     expect(fakedData).to.deep.equal({
       id: '{{orderId}}'
+    });
+  });
+
+  it('Should add properties from additionalProperties schema when no other properties are available', function () {
+    const schema = {
+      type: 'object',
+      additionalProperties: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: {
+            type: 'string'
+          }
+        }
+      }
+    };
+
+    var fakedData = schemaFaker(schema);
+    expect(fakedData).to.be.an('object');
+    expect(fakedData).to.be.not.empty;
+    _.forEach(fakedData, (value) => {
+      expect(value.name).to.be.a('string');
     });
   });
 });

@@ -24,7 +24,8 @@ const optionIds = [
     'strictRequestMatching',
     'disableOptionalParameters',
     'keepImplicitHeaders',
-    'includeWebhooks'
+    'includeWebhooks',
+    'allowUrlPathVarMatching'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -172,6 +173,13 @@ const optionIds = [
       description: 'Whether to keep implicit headers from the OpenAPI specification, which are removed by default.',
       external: true,
       usage: ['CONVERSION']
+    },
+    allowUrlPathVarMatching: {
+      name: 'Allow matching of Path variables present in URL',
+      type: 'boolean',
+      default: false,
+      description: 'Whether to allow matching path variables that are available as part of URL itself ' +
+        'in the collection request'
     }
   };
 

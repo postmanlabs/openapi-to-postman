@@ -1,5 +1,15 @@
 # OpenAPI-Postman Changelog
 
+#### v2.14.0 (January 31, 2022)
+* Fixed issue where for certain collection requests validateTransactions() provided missing path varaible in request even though it was present.
+* Fixed issue where we threw TypeError for undefined parameters.
+* Fixed issue where $ref in additionalProperties created issue with validation.
+* Fixed issue where content-type with wild characters resulted in mismatches for valid collection headers.
+
+#### v2.13.0 (December 08, 2021)
+* Fixed issue where validation agaist collection failed for collection with larger request name.
+* Added support for composite schema during validation flow.
+
 #### v2.12.0 (October 14, 2021)
 * Fixed issue where conversion failed with type error if header example was null.
 * Fixed issue where validation was giving INVALID_TYPE instead of MISSING_IN_REQUEST if path variable is not present in transaction.
