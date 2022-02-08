@@ -117,7 +117,6 @@
   },
   "dependencies": {
     "ajv": "8.1.0",
-    "ajv-06": "npm:ajv@6.12.5",
     "ajv-formats": "2.1.1",
     "async": "3.2.1",
     "commander": "2.20.3",
@@ -139,15 +138,15 @@
     "eslint-plugin-mocha": "5.3.0",
     "eslint-plugin-security": "1.4.0",
     "expect.js": "0.3.1",
-    "nyc": "15.1.0",
     "mocha": "7.2.0",
+    "nyc": "15.1.0",
     "parse-gitignore": "0.5.1"
   },
   "scripts": {
     "test": "./scripts/test.sh",
-    "test-unit": "nyc --reporter=text ./node_modules/mocha/bin/mocha \"test/unit/**/**.test.js\"",
+    "test-unit": "nyc --reporter=text -x **/assets/** ./node_modules/mocha/bin/mocha \"test/unit/**/**.test.js\"",
     "test-lint": "./scripts/test-lint.sh",
-    "test-system": "./node_modules/mocha/bin/mocha \"test/system/**.test.js\"",
+    "test-system": "./node_modules/mocha/bin/mocha -x **/assets/** \"test/system/**.test.js\"",
     "test-regression": "./node_modules/mocha/bin/mocha test/integration/integration.test.js test/unit/sanity.test.js",
     "release": "./scripts/release.sh",
     "coverage": "nyc report --reporter=html --reporter=text mocha"
