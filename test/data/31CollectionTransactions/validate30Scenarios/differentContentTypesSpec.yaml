@@ -15,7 +15,7 @@ paths:
         - pets
       requestBody:
         content:
-          application/vnd.github+json:    
+          application/vnd.github+json:
             schema:
               $ref: "#/components/schemas/Pet"
       responses:
@@ -23,6 +23,20 @@ paths:
           description: content with optional params media type
           content:
             'application/json; charset=utf-8':
+              schema:
+                $ref: "#/components/schemas/Pet"
+    put:
+      summary: Update all pets
+      requestBody:
+        content:
+          application/*:
+            schema:
+              $ref: "#/components/schemas/Pet"
+      responses:
+        '200':
+          description: content with all allowed types
+          content:
+            '*/*':
               schema:
                 $ref: "#/components/schemas/Pet"
 components:
@@ -33,12 +47,12 @@ components:
         - name
       properties:
         id:
-          type: 
+          type:
             - integer
           format: int64
         name:
-          type: 
+          type:
             - string
         tag:
-          type: 
+          type:
             - string
