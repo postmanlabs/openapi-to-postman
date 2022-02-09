@@ -318,7 +318,11 @@ describe('CONVERT FUNCTION TESTS ', function() {
           .to.equal('Content-Type');
         expect(conversionResult.output[0].data.item[0].item[1].request.header[1].value)
           .to.equal('application/json');
-        expect(conversionResult.output[0].data.item[0].item[1].request.header).to.have.length(2);
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[2].key)
+          .to.equal('Accept');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[2].value)
+          .to.equal('application/json');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header).to.have.length(3);
         done();
       });
     });
@@ -330,10 +334,14 @@ describe('CONVERT FUNCTION TESTS ', function() {
         keepImplicitHeaders: false
       }, (err, conversionResult) => {
         expect(err).to.be.null;
-        expect(conversionResult.output[0].data.item[0].item[1].request.header).to.have.length(1);
+        expect(conversionResult.output[0].data.item[0].item[1].request.header).to.have.length(2);
         expect(conversionResult.output[0].data.item[0].item[1].request.header[0].key)
           .to.equal('Content-Type');
         expect(conversionResult.output[0].data.item[0].item[1].request.header[0].value)
+          .to.equal('application/json');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[1].key)
+          .to.equal('Accept');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[1].value)
           .to.equal('application/json');
         done();
       });
@@ -346,9 +354,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
         let requestBody = conversionResult.output[0].data.item[0].item[1].request.body.raw,
           responseBody = conversionResult.output[0].data.item[0].item[0].response[0].body;
         expect(err).to.be.null;
-        expect(requestBody).to.equal('{\n    "name": "<string>",\n    "tag": "<string>"\n}');
-        expect(responseBody).to.equal('[\n {\n  "id": "<long>",\n  "name": "<string>"\n }' +
-        ',\n {\n  "id": "<long>",\n  "name": "<string>"\n }\n]');
+        expect(requestBody).to.equal('{\n  "name": "<string>",\n  "tag": "<string>"\n}');
+        expect(responseBody).to.equal('[\n  {\n    "id": "<long>",\n    "name": "<string>"\n  }' +
+        ',\n  {\n    "id": "<long>",\n    "name": "<string>"\n  }\n]');
 
         done();
       });
@@ -395,9 +403,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
               exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
             // Request body
             expect(rootRequest.body.raw).to
-              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+              .equal('{\n  "a": "<string>",\n  "b": "<string>"\n}');
             expect(exampleRequest.body.raw).to
-              .equal('{\n    "a": "example-a",\n    "b": "example-b"\n}');
+              .equal('{\n  "a": "example-a",\n  "b": "example-b"\n}');
             // Request header
             expect(rootRequest.header[0].value).to.equal('<integer>');
             expect(exampleRequest.header[0].value).to.equal('123');
@@ -435,9 +443,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
             let rootRequest = conversionResult.output[0].data.item[0].request,
               exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
             expect(rootRequest.body.raw).to
-              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+              .equal('{\n  "a": "<string>",\n  "b": "<string>"\n}');
             expect(exampleRequest.body.raw).to
-              .equal('{\n    "a": "example-b",\n    "b": "example-c"\n}');
+              .equal('{\n  "a": "example-b",\n  "b": "example-c"\n}');
             done();
           });
       });
@@ -449,9 +457,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
             let rootRequest = conversionResult.output[0].data.item[0].request,
               exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
             expect(rootRequest.body.raw).to
-              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+              .equal('{\n  "a": "<string>",\n  "b": "<string>"\n}');
             expect(exampleRequest.body.raw).to
-              .equal('{\n    "a": "example-b",\n    "b": "example-c"\n}');
+              .equal('{\n  "a": "example-b",\n  "b": "example-c"\n}');
             done();
           });
       });

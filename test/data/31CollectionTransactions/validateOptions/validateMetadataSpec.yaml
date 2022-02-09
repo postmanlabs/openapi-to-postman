@@ -20,14 +20,16 @@ paths:
           description: How many items to return at one time (max 100)
           required: false
           schema:
-            type: 
+            type:
               - integer
             format: int32
       responses:
         default:
           description: unexpected error
     post:
-      summary: Create a pet
+      summary: Create a pet large request name Create a pet large request name Create a pet large request name Create a pet large
+        request name Create a pet large request name Create a pet large request name Create a pet large request name Create a pet
+        large request name Create a pet large request name Create a pet large request name Create a pet large request name
       description: Description for POST /pets - Create a pet
       operationId: createPets
       tags:

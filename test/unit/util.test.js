@@ -2193,7 +2193,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         pmResponse;
 
       pmResponse = SchemaUtils.convertToPmResponse(response, code).toJSON();
-      expect(pmResponse.body).to.equal('<element>\n <id>(integer)</id>\n <name>(string)</name>\n</element>');
+      expect(pmResponse.body).to.equal('<element>\n  <id>(integer)</id>\n  <name>(string)</name>\n</element>');
       expect(pmResponse.name).to.equal(response.description);
       expect(pmResponse.code).to.equal(200);
       expect(pmResponse._postman_previewlanguage).to.equal('xml');

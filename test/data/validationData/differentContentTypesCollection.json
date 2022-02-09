@@ -77,6 +77,71 @@
             }
           ],
           "event": []
+        },
+        {
+          "id": "6067a189-11f4-4098-b87c-d1365d9ceb9b",
+          "name": "Update all pets",
+          "request": {
+            "name": "Update all pets",
+            "description": {},
+            "url": {
+              "path": [
+                "pets"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"id\": 33231879,\n    \"name\": \"d\",\n    \"tag\": \"proident ullamco\"\n}"
+            }
+          },
+          "response": [
+            {
+              "id": "6bf06974-2393-43de-8a80-1d682b3cf4f7",
+              "name": "content with all allowed types",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "pets"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"id\": 33231879,\n    \"name\": \"d\",\n    \"tag\": \"proident ullamco\"\n}"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/xml"
+                }
+              ],
+              "body": "",
+              "cookie": [],
+              "_postman_previewlanguage": "text"
+            }
+          ],
+          "event": []
         }
       ],
       "event": []

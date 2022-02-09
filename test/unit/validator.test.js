@@ -672,6 +672,37 @@ describe('VALIDATE FUNCTION TESTS ', function () {
     });
 
     differentContentTypesSpecs.forEach((specData) => {
+      it('Should correctly match and validate content type headers having wildcard characters' +
+        ' with collection req/res body', function (done) {
+        let differentContentTypesSpec = fs.readFileSync(specData.path, 'utf-8'),
+          differentContentTypesCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+            '/differentContentTypesCollection.json'), 'utf-8'),
+          resultObj,
+          historyRequest = [],
+          options = {
+            showMissingInSchemaErrors: true,
+            suggestAvailableFixes: true
+          },
+          schemaPack = new Converter.SchemaPack({ type: 'string', data: differentContentTypesSpec }, options);
+
+        getAllTransactions(JSON.parse(differentContentTypesCollection), historyRequest);
+
+        schemaPack.validateTransaction(historyRequest, (err, result) => {
+          expect(err).to.be.null;
+          expect(result).to.be.an('object');
+          resultObj = result.requests[historyRequest[1].id].endpoints[0];
+
+          /**
+           * Both req and res body should have matched content types
+           */
+          expect(resultObj.matched).to.eql(true);
+          expect(resultObj.mismatches).to.have.lengthOf(0);
+          expect(resultObj.responses[_.keys(resultObj.responses)[0]].matched).to.eql(true);
+          expect(resultObj.responses[_.keys(resultObj.responses)[0]].mismatches).to.have.lengthOf(0);
+          done();
+        });
+      });
+
       it('Should correctly match and validate valid json content type with collection req/res body - version:' +
        specData.version, function (done) {
         let differentContentTypesSpec = fs.readFileSync(specData.path, 'utf-8'),
@@ -742,6 +773,31 @@ describe('VALIDATE FUNCTION TESTS ', function () {
     });
 
     multiplePathVarSpecs.forEach((specData) => {
+      it('Should correctly validate path variable in collection that are part of URL itself and are ' +
+        'not present in $request.url.variable', function (done) {
+        let multiplePathVarSpec = fs.readFileSync(specData.path, 'utf-8'),
+          multiplePathVarCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+            '/multiplePathVarCollection.json'), 'utf-8'),
+          resultObj,
+          historyRequest = [],
+          options = {
+            detailedBlobValidation: true,
+            allowUrlPathVarMatching: true
+          },
+          schemaPack = new Converter.SchemaPack({ type: 'string', data: multiplePathVarSpec }, options);
+
+        getAllTransactions(JSON.parse(multiplePathVarCollection), historyRequest);
+
+        schemaPack.validateTransaction(historyRequest, (err, result) => {
+          expect(err).to.be.null;
+          expect(result).to.be.an('object');
+
+          resultObj = result.requests[historyRequest[2].id].endpoints[0];
+          expect(resultObj.mismatches).to.have.lengthOf(0);
+          done();
+        });
+      });
+
       it('Should correctly validate schema having path with various path variables - version: ' +
         specData.version, function (done) {
         let multiplePathVarSpec = fs.readFileSync(specData.path, 'utf-8'),
@@ -1016,147 +1072,6 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       expect(result).to.have.lengthOf(2);
       expect(result[0].name).to.eql('GET /{jobid}');
       expect(result[1].name).to.eql('GET /lookups');
-      done();
-    });
-
-    it('Should find matching request when comes from a webhook', function (done) {
-      let schema = {
-          paths: {
-            '/lookups': {
-              'get': { 'summary': 'Lookup Job Values' }
-            },
-            '/{jobid}': {
-              'get': {
-                'summary': 'Get Job by ID',
-                'parameters': [
-                  {
-                    'in': 'path',
-                    'name': 'jobid',
-                    'schema': {
-                      'type': 'string'
-                    },
-                    'required': true,
-                    'description': 'Unique identifier for a job to retrieve.',
-                    'example': '{{jobid}}'
-                  }
-                ]
-              }
-            }
-          },
-          webhooks: {
-            '/ACCOUNT_CLOSED': {
-              post: {
-                description: 'This notification is sent when an account has been closed.',
-                operationId: 'post-ACCOUNT_CLOSED',
-                requestBody: {
-                  content: {
-                    'application/json': {
-                      examples: {
-                        accountClosed: {
-                          $ref: '#/components/examples/post-ACCOUNT_CLOSED-accountClosed'
-                        }
-                      },
-                      schema: {
-                        $ref: '#/components/schemas/AccountCloseNotification'
-                      }
-                    }
-                  }
-                },
-                responses: {
-                  '200': {
-                    content: {
-                      'application/json': {
-                        examples: {
-                          accountClosed: {
-                            $ref: '#/components/examples/WebhookAck'
-                          }
-                        },
-                        schema: {
-                          $ref: '#/components/schemas/NotificationResponse'
-                        }
-                      }
-                    },
-                    description: 'OK - the request has succeeded.'
-                  }
-                },
-                security: [
-                  {
-                    BasicAuth: [
-                    ]
-                  },
-                  {
-                    ApiKeyAuth: [
-                    ]
-                  }
-                ],
-                summary: 'Triggered upon the closure of an account.',
-                tags: [
-                  'Accounts'
-                ],
-                'x-groupName': 'Accounts',
-                'x-sortIndex': 3,
-                parameters: [
-                ],
-                schemaPathName: '/ACCOUNT_CLOSED'
-              },
-              parameters: [
-              ]
-            },
-            '/ACCOUNT_CREATED': {
-              post: {
-                description: 'This notification is sent when an account has been created.',
-                operationId: 'post-ACCOUNT_CREATED',
-                requestBody: {
-                  content: {
-                    'application/json': {
-                      schema: {
-                        $ref: '#/components/schemas/AccountCreateNotification'
-                      }
-                    }
-                  }
-                },
-                responses: {
-                  '200': {
-                    content: {
-                      'application/json': {
-                        schema: {
-                          $ref: '#/components/schemas/NotificationResponse'
-                        }
-                      }
-                    },
-                    description: 'OK - the request has succeeded.'
-                  }
-                },
-                security: [
-                  {
-                    BasicAuth: [
-                    ]
-                  },
-                  {
-                    ApiKeyAuth: [
-                    ]
-                  }
-                ],
-                summary: 'Triggered upon the creation of an account.',
-                tags: [
-                  'Accounts'
-                ],
-                'x-groupName': 'Accounts',
-                'x-sortIndex': 1
-              },
-              parameters: [
-              ]
-            }
-          }
-        },
-        schemaPath = '{{baseUrl}}/ACCOUNT_CLOSED',
-        result;
-
-      result = schemaUtils.findMatchingRequestFromSchema('POST', schemaPath, schema, { strictRequestMatching: true });
-
-      expect(result).to.have.lengthOf(1);
-      expect(result[0].name).to.eql('POST /ACCOUNT_CLOSED');
-      expect(result[0].jsonPath).to.eql('$.webhooks[/ACCOUNT_CLOSED].post');
       done();
     });
   });
