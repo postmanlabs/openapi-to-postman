@@ -144,9 +144,9 @@
   },
   "scripts": {
     "test": "./scripts/test.sh",
-    "test-unit": "nyc --reporter=text -x **/assets/** ./node_modules/mocha/bin/mocha \"test/unit/**/**.test.js\"",
+    "test-unit": "nyc --reporter=text -x **/assets/** -x **/test/** ./node_modules/mocha/bin/mocha \"test/unit/**/**.test.js\"",
     "test-lint": "./scripts/test-lint.sh",
-    "test-system": "./node_modules/mocha/bin/mocha -x **/assets/** \"test/system/**.test.js\"",
+    "test-system": "./node_modules/mocha/bin/mocha -x **/assets/** -x **/test/** \"test/system/**.test.js\"",
     "test-regression": "./node_modules/mocha/bin/mocha test/integration/integration.test.js test/unit/sanity.test.js",
     "release": "./scripts/release.sh",
     "coverage": "nyc report --reporter=html --reporter=text mocha"
