@@ -651,7 +651,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     });
 
     it('Should return meta data from a valid 3.1 file', function(done) {
-      var openapi = fs.readFileSync(test31SpecDir + 'non-oauth.json', 'utf8');
+      var openapi = fs.readFileSync(test31SpecDir + '/json/non-oauth.json', 'utf8');
       Converter.getMetaData({ type: 'json', data: openapi }, (err, status) => {
         if (err) {
           expect.fail(null, null, err);
