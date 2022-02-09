@@ -6,7 +6,7 @@ const { expect } = require('chai'),
 
 describe('parseSpec method', function () {
   it('should return true and a parsed specification', function () {
-    let fileContent = fs.readFileSync(valid31xFolder + '/webhooks.json', 'utf8');
+    let fileContent = fs.readFileSync(valid31xFolder + '/json/webhooks.json', 'utf8');
     const parsedSpec = concreteUtils.parseSpec(fileContent, { includeWebhooks: true });
     expect(parsedSpec.result).to.be.true;
     expect(parsedSpec.openapi.openapi).to.equal('3.1.0');
@@ -31,7 +31,7 @@ describe('parseSpec method', function () {
 
 describe('getRequiredData method', function() {
   it('Should return all required data from file', function() {
-    const fileContent = fs.readFileSync(valid31xFolder + '/petstore.json', 'utf8'),
+    const fileContent = fs.readFileSync(valid31xFolder + '/json/petstore.json', 'utf8'),
       requiredData = concreteUtils.getRequiredData(JSON.parse(fileContent));
     expect(requiredData).to.be.an('object')
       .and.to.have.all.keys('info', 'paths', 'webhooks', 'components');

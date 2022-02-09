@@ -8,7 +8,7 @@ const SchemaPack = require('../..').SchemaPack,
   _ = require('lodash');
 describe('Testing openapi 3.1 schema pack convert', function() {
   it('Should convert from openapi 3.1 spec to postman collection -- multiple refs', function() {
-    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/multiple_refs.json'),
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/json/multiple_refs.json'),
       fileData = fs.readFileSync(fileSource, 'utf8'),
       input = {
         type: 'string',
@@ -23,7 +23,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
   });
 
   it('Should interpret binary types correctly and set mode as file in body -- petstore', function() {
-    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/petstore.json'),
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/json/petstore.json'),
       fileData = fs.readFileSync(fileSource, 'utf8'),
       input = {
         type: 'string',
@@ -44,7 +44,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
   });
 
   it('Should convert from openapi 3.1 spec to postman collection -- multiple refs outer required', function() {
-    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/multiple_refs_outer_required.json'),
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/json/multiple_refs_outer_required.json'),
       fileData = fs.readFileSync(fileSource, 'utf8'),
       input = {
         type: 'string',
@@ -89,7 +89,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
   });
 
   it('Should convert a provided input with examples in schema and takes the first example in examples', function() {
-    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/simpleSchemaWithExamples.yaml'),
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/yaml/simpleSchemaWithExamples.yaml'),
       fileData = fs.readFileSync(fileSource, 'utf8'),
       input = {
         type: 'string',
@@ -105,7 +105,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
   });
 
   it('Should convert a provided input with examples in schema and takes the first example in examples 2', function() {
-    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/simpleSchemaWithExamplesNotMachingType.yaml'),
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/yaml/simpleSchemaWithExamplesNotMachingType.yaml'),
       fileData = fs.readFileSync(fileSource, 'utf8'),
       input = {
         type: 'string',
