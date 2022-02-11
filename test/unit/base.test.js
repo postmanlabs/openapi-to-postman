@@ -13,6 +13,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
 
     var testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
       testSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/test1.json'),
+      test31SpecDir = path.join(__dirname, '../data/valid_openapi31X/'),
       issue133 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#133.json'),
       issue160 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#160.json'),
       unique_items_schema = path.join(__dirname, VALID_OPENAPI_PATH + '/unique_items_schema.json'),
@@ -648,6 +649,27 @@ describe('CONVERT FUNCTION TESTS ', function() {
         }
       });
     });
+
+    it('Should return meta data from a valid 3.1 file', function(done) {
+      var openapi = fs.readFileSync(test31SpecDir + '/json/non-oauth.json', 'utf8');
+      Converter.getMetaData({ type: 'json', data: openapi }, (err, status) => {
+        if (err) {
+          expect.fail(null, null, err);
+        }
+        if (status.result) {
+          expect(status.result).to.be.eq(true);
+          expect(status.name).to.be.equal('Non-oAuth Scopes example');
+          expect(status.output[0].name).to.be.equal('Non-oAuth Scopes example');
+          expect(status.output[0].type).to.be.equal('collection');
+          done();
+        }
+        else {
+          expect.fail(null, null, status.reason);
+          done();
+        }
+      });
+    });
+
     it('Should return validation result for an invalid file', function(done) {
       var invalidNoInfo = path.join(__dirname, INVALID_OPENAPI_PATH + '/invalid-no-info.yaml'),
         openapi = fs.readFileSync(invalidNoInfo, 'utf8');

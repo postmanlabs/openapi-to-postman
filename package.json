@@ -1,6 +1,6 @@
 {
   "name": "openapi-to-postmanv2",
-  "version": "2.14.0",
+  "version": "3.0.0-beta.7",
   "description": "Convert a given OpenAPI specification to Postman Collection v2.0",
   "homepage": "https://github.com/postmanlabs/openapi-to-postman",
   "bugs": "https://github.com/postmanlabs/openapi-to-postman/issues",
@@ -116,8 +116,9 @@
     "openapi2postmanv2": "./bin/openapi2postmanv2.js"
   },
   "dependencies": {
-    "ajv": "6.12.6",
-    "async": "3.2.3",
+    "ajv": "8.1.0",
+    "ajv-formats": "2.1.1",
+    "async": "3.2.1",
     "commander": "2.20.3",
     "js-yaml": "3.14.1",
     "json-schema-merge-allof": "0.8.1",
@@ -137,15 +138,16 @@
     "eslint-plugin-mocha": "5.3.0",
     "eslint-plugin-security": "1.4.0",
     "expect.js": "0.3.1",
-    "nyc": "15.1.0",
     "mocha": "7.2.0",
+    "nyc": "15.1.0",
     "parse-gitignore": "0.5.1"
   },
   "scripts": {
     "test": "./scripts/test.sh",
-    "test-unit": "./scripts/test-unit.sh",
+    "test-unit": "nyc --reporter=text -x **/assets/** -x **/test/** ./node_modules/mocha/bin/mocha \"test/unit/**/**.test.js\"",
     "test-lint": "./scripts/test-lint.sh",
-    "test-system": "./scripts/test-system.sh",
+    "test-system": "./node_modules/mocha/bin/mocha -x **/assets/** -x **/test/** \"test/system/**.test.js\"",
+    "test-regression": "./node_modules/mocha/bin/mocha test/integration/integration.test.js test/unit/sanity.test.js",
     "release": "./scripts/release.sh",
     "coverage": "nyc report --reporter=html --reporter=text mocha"
   }

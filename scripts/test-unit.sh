@@ -40,4 +40,4 @@ fi
 node --max-old-space-size=2048 ./node_modules/.bin/nyc ${COVERAGE_REPORT} --report-dir ./.coverage \
   -x **/assets/** --print both ./node_modules/.bin/_mocha \
   --reporter ${MOCHA_REPORTER} --reporter-options output=${XUNIT_FILE} \
-  test/unit/*.test.js --recursive --prof --grep "$1";
+  "test/unit/**/**.test.js" --recursive --prof --grep "$1";

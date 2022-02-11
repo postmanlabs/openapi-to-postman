@@ -11,7 +11,11 @@
  */
 
 var _ = require('lodash'),
-  validateSchema = require('../lib/ajvValidation').validateSchema;
+  validateSchema = require('../lib/ajValidation/ajvValidation').validateSchema,
+  {
+    handleExclusiveMaximum,
+    handleExclusiveMinimum
+  } = require('./../lib/common/schemaUtilsCommon');
 
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
@@ -23774,12 +23778,8 @@ function extend() {
               if (schema.enum) {
                   var min = Math.max(params.minimum || 0, 0);
                   var max = Math.min(params.maximum || Infinity, Infinity);
-                  if (schema.exclusiveMinimum && min === schema.minimum) {
-                      min += schema.multipleOf || 1;
-                  }
-                  if (schema.exclusiveMaximum && max === schema.maximum) {
-                      max -= schema.multipleOf || 1;
-                  }
+                  min = handleExclusiveMinimum(schema, min);
+                  max = handleExclusiveMaximum(schema, min);
                   // discard out-of-bounds enumerations
                   schema.enum = schema.enum.filter(function (x) {
                       if (x >= min && x <= max) {
@@ -24177,12 +24177,8 @@ function extend() {
           max = Math.floor(max / multipleOf) * multipleOf;
           min = Math.ceil(min / multipleOf) * multipleOf;
       }
-      if (value.exclusiveMinimum && min === value.minimum) {
-          min += multipleOf || 1;
-      }
-      if (value.exclusiveMaximum && max === value.maximum) {
-          max -= multipleOf || 1;
-      }
+      min = handleExclusiveMinimum(value, min);
+      max = handleExclusiveMaximum(value, max);
       if (min > max) {
           return NaN;
       }
@@ -24568,12 +24564,12 @@ function extend() {
       ipv6: '[a-f\\d]{4}(:[a-f\\d]{4}){7}',
       uri: URI_PATTERN,
       slug: '[a-zA-Z\\d_-]+',
-    
+
       // types from draft-0[67] (?)
       'uri-reference': `${URI_PATTERN}${PARAM_PATTERN}`,
       'uri-template': URI_PATTERN.replace('(?:', '(?:/\\{[a-z][:a-zA-Z0-9-]*\\}|'),
       'json-pointer': `(/(?:${FRAGMENT.replace(']*', '/]*')}|~[01]))+`,
-    
+
       // some types from https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#data-types (?)
       uuid: '^(?:urn:uuid:)?[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$',
   };
@@ -24688,7 +24684,7 @@ function extend() {
           result = validateSchema(schema, schema.example, { ignoreUnresolvedVariables: true });
         }
 
-        // Use example only if valid 
+        // Use example only if valid
         if (result && result.length === 0) {
           return schema.example;
         }
@@ -24697,7 +24693,7 @@ function extend() {
       if (optionAPI('useDefaultValue') && 'default' in schema) {
         // to not use default as faked value in case it is actual property of schema
         if (!(_.has(schema.default, 'type') && _.includes(ALL_TYPES, schema.default.type))) {
-          return schema.default; 
+          return schema.default;
         }
       }
       if (schema.not && typeof schema.not === 'object') {

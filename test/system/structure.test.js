@@ -24,6 +24,7 @@ const optionIds = [
     'strictRequestMatching',
     'disableOptionalParameters',
     'keepImplicitHeaders',
+    'includeWebhooks',
     'allowUrlPathVarMatching'
   ],
   expectedOptions = {
@@ -258,6 +259,7 @@ describe('getOptions', function() {
 describe('OPTIONS.md', function() {
   it('must contain all details of options', function () {
     const optionsDoc = fs.readFileSync('OPTIONS.md', 'utf-8');
+    generateOptionsDoc(getOptions());
     expect(optionsDoc).to.eql(generateOptionsDoc(getOptions()));
   });
 });

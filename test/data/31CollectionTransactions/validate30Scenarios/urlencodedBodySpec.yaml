@@ -1,0 +1,137 @@
+openapi: "3.1.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  license:
+    name: MIT
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /pets/{petId}:
+    post:
+      tags:
+      - pet
+      summary: Updates a pet in the store with form data
+      operationId: updatePetWithForm
+      parameters:
+      - name: petId
+        in: path
+        description: ID of pet that needs to be updated
+        required: true
+        schema:
+          type: 
+            - string
+      requestBody:
+        content:
+          'application/x-www-form-urlencoded':
+            schema:
+              properties:
+                propObjectExplodable:
+                  type: 
+                    - object
+                  properties:
+                    prop1:
+                      type: 
+                        - string
+                      examples: 
+                        - hello
+                    prop2:
+                      type: 
+                        - string
+                      examples: 
+                        - world
+                propObjectNonExplodable:
+                  type: 
+                    - object
+                  properties:
+                    prop3:
+                      type: 
+                        - string
+                      examples: 
+                        - hello
+                    prop4:
+                      type: 
+                        - string
+                      examples: 
+                        - world
+                propArray:
+                  type: 
+                    - array
+                  items:
+                    type: 
+                      - string
+                    examples: 
+                      - exampleString
+                  examples:
+                    - - str1
+                      - str2
+                propSimple:
+                  type: 
+                    - integer
+                  examples: 
+                    - 123
+                propDeepObject:
+                  type: 
+                    - object
+                  properties:
+                    id:
+                      type: 
+                        - integer
+                      examples: 
+                        - 123
+                    name:
+                      type: 
+                        - string
+                      examples: 
+                        - John Johanson
+                    address:
+                      type: 
+                        - object
+                      properties:
+                        city:
+                          type: 
+                            - string
+                          examples: 
+                            - Delhi
+                        country:
+                          type: 
+                            - string
+                          examples: 
+                            - India
+                propArrayComplex:
+                  type: 
+                    - array
+                  items:
+                    type: 
+                      - object
+                    properties:
+                      prop1ArrayComp:
+                        type: 
+                          - integer
+                      prop2ArrayComp:
+                        type: 
+                          - string
+                propMissingInReq:
+                  type: 
+                    - integer
+                  description: This property is not available in matched collection.
+                  examples: 
+                    - 321
+              required:
+              - propMissingInReq
+            encoding:
+              propObjectExplodable:
+                style: form
+                explode: true
+              propObjectNonExplodable:
+                style: form
+                explode: false
+              propDeepObject:
+                style: deepObject
+                explode: true
+              propArrayComplex:
+                style: deepObject
+                explode: true
+      responses:
+        '200':
+          description: Pet updated.

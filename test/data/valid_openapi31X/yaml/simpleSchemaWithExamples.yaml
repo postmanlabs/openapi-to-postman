@@ -1,0 +1,33 @@
+openapi: "3.1.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  license:
+    name: MIT
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /test:
+    post:
+      summary: schema with examples
+      requestBody:
+        content:
+          application/json:    
+            schema:
+              $ref: "#/components/schemas/schema1"
+      responses:
+        default:
+          description: ok
+components:
+  schemas:
+    schema1:
+      type: 
+        - object
+      properties:
+        objectType:
+          type: 
+            - integer
+            - string
+          examples:
+            - 1234
+            - 'This is an string as example'
