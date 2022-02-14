@@ -1,0 +1,133 @@
+{
+  "item": [
+    {
+      "id": "24c0a942-d439-45ca-84f7-7728b449169c",
+      "name": "pets",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "e96f3f5b-f8d3-4548-b514-8fa1e937bbd3",
+          "name": "Info for a specific pet",
+          "request": {
+            "name": "Info for a specific pet",
+            "description": {},
+            "url": {
+              "path": [
+                "pets",
+                ":petId"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "description": "(Required) ",
+                  "key": "limit",
+                  "value": "Not a Number"
+                }
+              ],
+              "variable": [
+                {
+                  "description": "(Required) The id of the pet to retrieve",
+                  "type": "any",
+                  "value": "Not an Integer",
+                  "key": "petId"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"petId\": 8,\n    \"name\": \"My name is less than 30 chars\",\n    \"tag\": true,\n    \"breeds\": [\"Bulldog\", \"Timberwolf\", \"GrizzlyBear\"]\n}"
+            }
+          },
+          "response": [
+            {
+              "id": "eeeb3cf9-e830-4514-a1a0-4af90feda7b1",
+              "name": "unexpected error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "pets",
+                    ":petId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "Not a Number"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "type": "any",
+                      "key": "petId"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": "(Required) ",
+                    "key": "pet-quantity",
+                    "value": "Not a Boolean"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"petId\": 8,\n    \"name\": \"My name is less than 30 chars\",\n    \"tag\": true,\n    \"breeds\": [\"Bulldog\", \"Timberwolf\", \"GrizzlyBear\"]\n}"
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "description": "The number of allowed requests in the current period",
+                  "key": "X-Rate-Limit-Limit",
+                  "value": "<string>"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n \"code\": \"{{codeVar}}\",\n \"message\": 123.456\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": []
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "id": "baseUrl",
+      "type": "string",
+      "value": "http://petstore.swagger.io/v1"
+    }
+  ],
+  "info": {
+    "_postman_id": "648dcfad-2423-4619-a3ad-48ec88de11a9",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "",
+      "type": "text/plain"
+    }
+  }
+}

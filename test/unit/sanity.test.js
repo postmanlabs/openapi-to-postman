@@ -1,9 +1,10 @@
-var expect = require('chai').expect,
+const expect = require('chai').expect,
   Converter = require('../../index.js'),
   fs = require('fs'),
   path = require('path'),
   async = require('async'),
   Ajv = require('ajv'),
+  addFormats = require('ajv-formats'),
   COLLECTION_SCHEMAS = require('../data/collection/v2.1.js').schemas,
   META_SCHEMA = require('ajv/lib/refs/json-schema-draft-07.json'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
@@ -16,7 +17,7 @@ describe('Runing validation tests for all files in `valid_openapi`', function ()
       let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_PATH + '/' + file), 'utf8');
 
       // Increase timeout for larger schema
-      this.timeout(15000);
+      this.timeout(30000);
 
       Converter.convert({ data: fileData, type: 'string' }, {}, (err, conversionResult) => {
         expect(err).to.be.null;
@@ -24,10 +25,11 @@ describe('Runing validation tests for all files in `valid_openapi`', function ()
         var validator,
           validate;
         validator = new Ajv({
-          schemaId: '$id',
           meta: false,
-          allErrors: true
+          allErrors: true,
+          strict: false
         });
+        addFormats(validator);
 
         validator.addMetaSchema(META_SCHEMA);
 

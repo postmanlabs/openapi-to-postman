@@ -1,0 +1,171 @@
+{
+	"info": {
+		"_postman_id": "e3b5bab8-9524-40b8-a65f-cd5baaaff2c3",
+		"name": "Swagger Petstore",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "pets",
+			"item": [
+				{
+          "id":"88829aa6-d7e3-4c8e-ab22-dae4d9048c29",
+					"name": "List all pets",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"description": "How many items to return at one time (max 100)",
+								"key": "limit",
+								"value": "-70985202"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/pets?variable=deserunt&variable2=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pets"
+							],
+							"query": [
+								{
+									"key": "variable",
+									"value": "deserunt",
+									"description": "random variable"
+								},
+								{
+									"key": "variable2",
+									"value": "",
+									"description": "another random variable"
+								}
+							]
+						},
+						"description": "This should not be in the request body"
+					},
+					"response": [
+						{
+              "id":"09829aa6-d7e3-4c8e-ab22-dae4d9048c29",
+							"name": "An paged array of pets",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"description": "How many items to return at one time (max 100)",
+										"key": "limit",
+										"value": "-70985202"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/pets?variable=deserunt&variable2=",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"pets"
+									],
+									"query": [
+										{
+											"key": "variable",
+											"value": "deserunt"
+										},
+										{
+											"key": "variable2",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "x-next",
+									"value": "ea ullamco culpa voluptate",
+									"description": "A link to the next page of responses"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n\t{\n\t\t\"id\": -10352628,\n\t\t\"name\": \"elit\",\n\t\t\"tag\": \"ullamco consectetur commodo ex\"\n\t},\n\t{\n\t\t\"id\": -40033106,\n\t\t\"name\": \"minim\",\n\t\t\"tag\": \"Lorem anim\"\n\t}\n]"
+						}
+					]
+				},
+				{
+          "id":"76529aa6-d7e3-4c8e-ab22-dae4d9048c29",
+					"name": "Info for a specific pet",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pets/:petId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pets",
+								":petId"
+							],
+							"variable": [
+								{
+									"key": "petId",
+									"value": "ea ullamco culpa voluptate",
+									"description": "(Required) The id of the pet to retrieve"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+              "id":"54329aa6-d7e3-4c8e-ab22-dae4d9048c29",
+							"name": "Expected response to a valid request",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/pets/:petId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"pets",
+										":petId"
+									],
+									"variable": [
+										{
+											"key": "petId",
+											"value": "ea ullamco culpa voluptate",
+											"description": "(Required) The id of the pet to retrieve"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n\t\"id\": 7784772,\n\t\"name\": \"dolor consectetur Excepteur\",\n\t\"tag\": \"fugiat\"\n}"
+						}
+					]
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://petstore.swagger.io/v1",
+			"type": "string"
+		}
+	]
+}

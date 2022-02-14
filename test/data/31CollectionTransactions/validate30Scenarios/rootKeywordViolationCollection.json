@@ -1,0 +1,145 @@
+{
+  "item": [
+    {
+      "id": "6a23e0c5-f874-4d64-917f-436e8b6630b7",
+      "name": "pets",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "58a1eaab-6150-4bd8-9606-aae2a519d1dc",
+          "name": "Create a pet",
+          "request": {
+            "name": "Create a pet",
+            "description": {},
+            "url": {
+              "path": [
+                "pets"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "description": "",
+                  "key": "limit",
+                  "value": "-74270672"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"id\": -97299140,\n    \"name\": \"dolore\",\n    \"tag\": \"nostrud et in\"\n}"
+            }
+          },
+          "response": [
+            {
+              "id": "497bb8cc-bf09-4712-b3c2-38a7f7772e00",
+              "name": "Null response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "pets"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"id\": -97299140,\n    \"name\": \"dolore\",\n    \"tag\": \"nostrud et in\"\n}"
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "body": "",
+              "cookie": [],
+              "_postman_previewlanguage": "text"
+            },
+            {
+              "id": "51d2030f-e874-4b29-b8b7-a92de6566ec0",
+              "name": "unexpected error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "pets"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"id\": -97299140,\n    \"name\": \"dolore\",\n    \"tag\": \"nostrud et in\"\n}"
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n \"code\": 94595733,\n \"message\": \"Duis sit qui\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": []
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "id": "baseUrl",
+      "type": "string",
+      "value": "http://petstore.swagger.io/v1"
+    }
+  ],
+  "info": {
+    "_postman_id": "9836d256-0ada-42d6-a825-a103d0bb3695",
+    "name": "Swagger Petstore",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "",
+      "type": "text/plain"
+    }
+  }
+}

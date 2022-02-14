@@ -23,7 +23,9 @@ const optionIds = [
     'optimizeConversion',
     'strictRequestMatching',
     'disableOptionalParameters',
-    'keepImplicitHeaders'
+    'keepImplicitHeaders',
+    'includeWebhooks',
+    'allowUrlPathVarMatching'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -171,6 +173,13 @@ const optionIds = [
       description: 'Whether to keep implicit headers from the OpenAPI specification, which are removed by default.',
       external: true,
       usage: ['CONVERSION']
+    },
+    allowUrlPathVarMatching: {
+      name: 'Allow matching of Path variables present in URL',
+      type: 'boolean',
+      default: false,
+      description: 'Whether to allow matching path variables that are available as part of URL itself ' +
+        'in the collection request'
     }
   };
 
@@ -250,6 +259,7 @@ describe('getOptions', function() {
 describe('OPTIONS.md', function() {
   it('must contain all details of options', function () {
     const optionsDoc = fs.readFileSync('OPTIONS.md', 'utf-8');
+    generateOptionsDoc(getOptions());
     expect(optionsDoc).to.eql(generateOptionsDoc(getOptions()));
   });
 });

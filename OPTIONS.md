@@ -21,3 +21,4 @@ strictRequestMatching|boolean|-|false|Whether requests should be strictly matche
 allowUrlPathVarMatching|boolean|-|false|Whether to allow matching path variables that are available as part of URL itself in the collection request|VALIDATION
 disableOptionalParameters|boolean|-|false|Whether to set optional parameters as disabled|CONVERSION
 keepImplicitHeaders|boolean|-|false|Whether to keep implicit headers from the OpenAPI specification, which are removed by default.|CONVERSION
+includeWebhooks|boolean|-|false|Select whether to include Webhooks in the generated collection|CONVERSION

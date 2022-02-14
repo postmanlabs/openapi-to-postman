@@ -1,6 +1,7 @@
 var expect = require('chai').expect,
   _ = require('lodash'),
-  deref = require('../../lib/deref.js');
+  deref = require('../../lib/deref.js'),
+  schemaUtils30X = require('./../../lib/30XUtils/schemaUtils30X');
 
 describe('DEREF FUNCTION TESTS ', function() {
   describe('resolveRefs Function', function () {
@@ -102,7 +103,8 @@ describe('DEREF FUNCTION TESTS ', function() {
                 }
               }
             }
-          }
+          },
+          concreteUtils: schemaUtils30X
         },
         parameterSource = 'REQUEST',
         // deref.resolveRefs modifies the input schema and components so cloning to keep tests independent of each other
@@ -187,7 +189,8 @@ describe('DEREF FUNCTION TESTS ', function() {
                 }
               }
             }
-          }
+          },
+          concreteUtils: schemaUtils30X
         },
         parameterSource = 'REQUEST',
         schemaResolutionCache = {},
@@ -230,7 +233,11 @@ describe('DEREF FUNCTION TESTS ', function() {
       // check for supported formats
       _.forEach(allSupportedFormats, (supportedFormat) => {
         output = deref.resolveRefs(schema, parameterSource,
-          { components: { schemas: { schemaWithFormat: { type: 'string', format: supportedFormat } } } });
+          {
+            components:
+              { schemas: { schemaWithFormat: { type: 'string', format: supportedFormat } } },
+            concreteUtils: schemaUtils30X
+          });
 
         expect(output.type).to.equal('string');
         expect(output.format).to.equal(supportedFormat);
@@ -239,7 +246,10 @@ describe('DEREF FUNCTION TESTS ', function() {
       // check for not supported formats
       _.forEach(nonSupportedFormats, (nonSupportedFormat) => {
         output = deref.resolveRefs(schema, parameterSource,
-          { components: { schemas: { schemaWithFormat: nonSupportedFormat } } });
+          {
+            components: { schemas: { schemaWithFormat: nonSupportedFormat } },
+            concreteUtils: schemaUtils30X
+          });
 
         expect(output.type).to.equal(nonSupportedFormat.type);
         expect(output.format).to.be.undefined;
@@ -257,7 +267,7 @@ describe('DEREF FUNCTION TESTS ', function() {
         parameterSource = 'REQUEST',
         output;
 
-      output = deref.resolveRefs(schema, parameterSource, {});
+      output = deref.resolveRefs(schema, parameterSource, { concreteUtils: schemaUtils30X });
       expect(output.type).to.equal('string');
       expect(output.format).to.be.undefined;
       expect(output.pattern).to.eql(schema.pattern);
@@ -316,7 +326,8 @@ describe('DEREF FUNCTION TESTS ', function() {
                 }
               }
             }
-          }
+          },
+          concreteUtils: schemaUtils30X
         },
         parameterSource = 'REQUEST',
         schemaResoltionCache = {},
@@ -376,7 +387,14 @@ describe('DEREF FUNCTION TESTS ', function() {
         }
       ];
 
-      expect(deref.resolveAllOf(allOfschema, 'REQUEST', {}, {}, null, 'example')).to.deep.include({
+      expect(deref.resolveAllOf(
+        allOfschema,
+        'REQUEST',
+        { concreteUtils: schemaUtils30X },
+        {},
+        null,
+        'example'
+      )).to.deep.include({
         type: 'object',
         properties: {
           source: {

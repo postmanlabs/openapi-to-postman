@@ -1,0 +1,219 @@
+{
+	"openapi": "3.1.0",
+	"info": {
+		"version": "1.0.0",
+		"title": "Path Variable issues",
+		"license": {
+			"name": "MIT"
+		}
+	},
+	"servers": [
+		{
+			"url": "http://petstore.swagger.io/v1"
+		}
+	],
+	"paths": {
+		"/send-sms.{format}": {
+			"get": {
+				"summary": "List all pets",
+				"operationId": "listPets",
+				"tags": [
+					"pets"
+				],
+				"parameters": [
+					{
+						"name": "format",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": ["string"],
+              "pattern": "json|xml",
+              "examples": ["json"]
+						}
+					}
+				]
+			}
+    },
+    "/some/{path}": {
+			"get": {
+				"summary": "List all pets",
+				"operationId": "listPets",
+				"tags": [
+					"pets"
+				],
+				"parameters": [
+					{
+						"name": "path",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": ["string"],
+              "pattern": "json|xml",
+              "examples": ["json"]
+						}
+					}
+				]
+			}
+    },
+    "/new/{path}.{new-path-variable-1}": {
+			"get": {
+				"summary": "List all pets",
+				"operationId": "listPets",
+				"tags": [
+					"pets"
+				],
+				"parameters": [
+					{
+						"name": "path",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": ["string"],
+              "examples": ["send-email"]
+						}
+          },
+          {
+						"name": "new-path-variable-1",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": ["object"],
+              "properties": {
+								"R": { "type": ["integer"], "examples": [100] },
+								"G": { "type": ["integer"], "examples": [200] },
+								"B": { "type": ["integer"], "examples": [150] }
+							}
+						}
+					}
+				]
+			}
+		},
+		"/next/{path}/{new-path-variable}": {
+			"get": {
+				"summary": "List all pets",
+				"operationId": "listPets",
+				"tags": [
+					"pets"
+				],
+				"parameters": [
+					{
+						"name": "path",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": ["string"],
+              "pattern": "json|xml",
+              "examples": ["json"]
+						}
+          },
+          {
+						"name": "new-path-variable",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": ["string"],
+              "pattern": "json|xml",
+              "examples": ["json"]
+						}
+					}
+				]
+			}
+		},
+		"/anotherpath/{path}/{new-path-variable-2}.{onemore}": {
+			"get": {
+				"summary": "List all pets",
+				"operationId": "listPets",
+				"tags": [
+					"pets"
+				],
+				"parameters": [
+					{
+						"name": "path",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": ["string"],
+              "pattern": "json|xml",
+              "examples": ["json"]
+						}
+          },
+          {
+						"name": "new-path-variable-2",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": ["array"],
+              "items": {
+								"type": ["string"],
+								"examples": ["exampleString"]
+							}
+						}
+					},
+					{
+						"name": "onemore",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": ["string"],
+              "pattern": "json|xml",
+              "examples": ["json"]
+						}
+					}
+				]
+			}
+		},
+		"/{path}({new-path-variable}={onemore})": {
+			"get": {
+				"summary": "List all pets",
+				"operationId": "listPets",
+				"tags": [
+					"pets"
+				],
+				"parameters": [
+					{
+						"name": "path",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": ["string"],
+              "pattern": "json|xml",
+              "examples": ["json"]
+						}
+          },
+          {
+						"name": "new-path-variable",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": ["string"],
+              "pattern": "json|xml",
+              "examples": ["json"]
+						}
+					},
+					{
+						"name": "onemore",
+						"in": "path",
+						"description": "description",
+						"required": true,
+						"schema": {
+							"type": ["string"],
+              "pattern": "json|xml",
+              "examples": ["json"]
+						}
+					}
+				]
+			}
+		}
+	}
+}

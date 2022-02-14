@@ -13,6 +13,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
 
     var testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
       testSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/test1.json'),
+      test31SpecDir = path.join(__dirname, '../data/valid_openapi31X/'),
       issue133 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#133.json'),
       issue160 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#160.json'),
       unique_items_schema = path.join(__dirname, VALID_OPENAPI_PATH + '/unique_items_schema.json'),
@@ -317,7 +318,11 @@ describe('CONVERT FUNCTION TESTS ', function() {
           .to.equal('Content-Type');
         expect(conversionResult.output[0].data.item[0].item[1].request.header[1].value)
           .to.equal('application/json');
-        expect(conversionResult.output[0].data.item[0].item[1].request.header).to.have.length(2);
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[2].key)
+          .to.equal('Accept');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[2].value)
+          .to.equal('application/json');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header).to.have.length(3);
         done();
       });
     });
@@ -329,10 +334,14 @@ describe('CONVERT FUNCTION TESTS ', function() {
         keepImplicitHeaders: false
       }, (err, conversionResult) => {
         expect(err).to.be.null;
-        expect(conversionResult.output[0].data.item[0].item[1].request.header).to.have.length(1);
+        expect(conversionResult.output[0].data.item[0].item[1].request.header).to.have.length(2);
         expect(conversionResult.output[0].data.item[0].item[1].request.header[0].key)
           .to.equal('Content-Type');
         expect(conversionResult.output[0].data.item[0].item[1].request.header[0].value)
+          .to.equal('application/json');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[1].key)
+          .to.equal('Accept');
+        expect(conversionResult.output[0].data.item[0].item[1].request.header[1].value)
           .to.equal('application/json');
         done();
       });
@@ -345,9 +354,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
         let requestBody = conversionResult.output[0].data.item[0].item[1].request.body.raw,
           responseBody = conversionResult.output[0].data.item[0].item[0].response[0].body;
         expect(err).to.be.null;
-        expect(requestBody).to.equal('{\n    "name": "<string>",\n    "tag": "<string>"\n}');
-        expect(responseBody).to.equal('[\n {\n  "id": "<long>",\n  "name": "<string>"\n }' +
-        ',\n {\n  "id": "<long>",\n  "name": "<string>"\n }\n]');
+        expect(requestBody).to.equal('{\n  "name": "<string>",\n  "tag": "<string>"\n}');
+        expect(responseBody).to.equal('[\n  {\n    "id": "<long>",\n    "name": "<string>"\n  }' +
+        ',\n  {\n    "id": "<long>",\n    "name": "<string>"\n  }\n]');
 
         done();
       });
@@ -394,9 +403,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
               exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
             // Request body
             expect(rootRequest.body.raw).to
-              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+              .equal('{\n  "a": "<string>",\n  "b": "<string>"\n}');
             expect(exampleRequest.body.raw).to
-              .equal('{\n    "a": "example-a",\n    "b": "example-b"\n}');
+              .equal('{\n  "a": "example-a",\n  "b": "example-b"\n}');
             // Request header
             expect(rootRequest.header[0].value).to.equal('<integer>');
             expect(exampleRequest.header[0].value).to.equal('123');
@@ -434,9 +443,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
             let rootRequest = conversionResult.output[0].data.item[0].request,
               exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
             expect(rootRequest.body.raw).to
-              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+              .equal('{\n  "a": "<string>",\n  "b": "<string>"\n}');
             expect(exampleRequest.body.raw).to
-              .equal('{\n    "a": "example-b",\n    "b": "example-c"\n}');
+              .equal('{\n  "a": "example-b",\n  "b": "example-c"\n}');
             done();
           });
       });
@@ -448,9 +457,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
             let rootRequest = conversionResult.output[0].data.item[0].request,
               exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
             expect(rootRequest.body.raw).to
-              .equal('{\n    "a": "<string>",\n    "b": "<string>"\n}');
+              .equal('{\n  "a": "<string>",\n  "b": "<string>"\n}');
             expect(exampleRequest.body.raw).to
-              .equal('{\n    "a": "example-b",\n    "b": "example-c"\n}');
+              .equal('{\n  "a": "example-b",\n  "b": "example-c"\n}');
             done();
           });
       });
@@ -640,6 +649,27 @@ describe('CONVERT FUNCTION TESTS ', function() {
         }
       });
     });
+
+    it('Should return meta data from a valid 3.1 file', function(done) {
+      var openapi = fs.readFileSync(test31SpecDir + '/json/non-oauth.json', 'utf8');
+      Converter.getMetaData({ type: 'json', data: openapi }, (err, status) => {
+        if (err) {
+          expect.fail(null, null, err);
+        }
+        if (status.result) {
+          expect(status.result).to.be.eq(true);
+          expect(status.name).to.be.equal('Non-oAuth Scopes example');
+          expect(status.output[0].name).to.be.equal('Non-oAuth Scopes example');
+          expect(status.output[0].type).to.be.equal('collection');
+          done();
+        }
+        else {
+          expect.fail(null, null, status.reason);
+          done();
+        }
+      });
+    });
+
     it('Should return validation result for an invalid file', function(done) {
       var invalidNoInfo = path.join(__dirname, INVALID_OPENAPI_PATH + '/invalid-no-info.yaml'),
         openapi = fs.readFileSync(invalidNoInfo, 'utf8');

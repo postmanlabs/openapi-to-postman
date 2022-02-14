@@ -1,0 +1,121 @@
+openapi: 3.1.0
+info:
+  version: 1
+  title: IMPORT-202
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  /user:
+    post:
+      summary: 'Sample endpoint: Returns details about a particular user'
+      operationId: listUser
+      tags:
+        - user
+      parameters:
+        - name: id
+          in: query
+          description: ID of the user
+          required: true
+          schema:
+            type: 
+              - integer
+            format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: 
+                - object
+              properties:
+                data:
+                  type: 
+                    - array
+                  items:
+                    $ref: '#/components/schemas/Entity'
+                meta:
+                  type: 
+                    - object
+                  maxProperties: 1
+                  additionalProperties: false
+                  properties:
+                    numberOfResults:
+                      type: 
+                        - number
+                      format: int32
+                    totalPages:
+                      type: 
+                        - number
+                      format: int32
+      responses:
+        200:
+          description: OK
+components:
+  schemas:
+    Entity:
+      type: 
+        - object
+      title: Entity
+      description: A single and unique entity linked to a user
+      minProperties: 50
+      required: [entityId, needThis]
+      dependencies:
+        id: [needThis, accountNumber]
+      properties:
+        entityId:
+          type: 
+            - string
+          maxLength: 5
+        accountNumber:
+          type: 
+            - string
+          minLength: 50
+        entityName:
+          type: 
+            - string
+          format: ipv4
+        entityPhone:
+          type: 
+            - string
+        incType:
+          type: 
+            - string
+          enum: ['Postman']
+        companyNumber:
+          type: 
+            - number
+          exclusiveMinimum: 10000
+        website:
+          type: 
+            - number
+        turnover:
+          type: 
+            - integer
+          format: int32
+          multipleOf: 7
+        description:
+          type: 
+            - string
+          pattern: '[abc]+'
+        status:
+          type: 
+            - string
+          enum:
+            - pending
+            - accepted
+            - rejected
+            - tradingPending
+            - tradingAccepted
+            - tradingRejected
+        wants:
+          type: 
+            - array
+          uniqueItems: true
+          items:
+            type: 
+              - string
+        isFavorite:
+          type: 
+            - boolean
+        needThis:
+          type: 
+            - string

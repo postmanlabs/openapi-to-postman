@@ -1,0 +1,435 @@
+openapi: 3.1.0
+info:
+  contact:
+    email: developer-experience@adyen.com
+    name: Adyen Developer Experience team
+    url: https://www.adyen.help/hc/en-us/community/topics
+    x-twitter: Adyen
+  description: |-
+    The Notification API sends notifications to the endpoints specified in a given subscription. Subscriptions are managed through the Notification Configuration API. The API specifications listed here detail the format of each notification.
+
+    For more information, refer to our [documentation](https://docs.adyen.com/platforms/notifications).
+  termsOfService: https://www.adyen.com/legal/terms-and-conditions
+  title: "Webhooks test - A webhook with name as path"
+  version: "3"
+  x-apisguru-categories:
+    - payment
+  x-logo:
+    url: https://twitter.com/Adyen/profile_image?size=original
+  x-origin:
+    - converter:
+        url: https://github.com/mermade/oas-kit
+        version: 7.0.4
+      format: openapi
+      url: https://raw.githubusercontent.com/Adyen/adyen-openapi/master/json/MarketPayNotificationService-v3.json
+      version: "3.1"
+  x-preferred: false
+  x-providerName: adyen.com
+  x-publicVersion: true
+  x-serviceName: MarketPayNotificationService
+components:
+  examples:
+    WebhookAck:
+      summary: Acknowledge Webhook
+      value:
+        notificationResponse: "[accepted]"
+    post-ACCOUNT_CLOSED-accountClosed:
+      summary: ACCOUNT CLOSED example
+      value:
+        content:
+          invalidFields:
+            - errorCode: 1
+              errorDescription: Field is missing
+              fieldType:
+                field: AccountHolderDetails.BusinessDetails.Shareholders.unknown
+                fieldName: unknown
+                shareholderCode: SH00001
+          pspReference: TSTPSPR0001
+          resultCode: Success
+          status: Closed
+        error:
+          errorCode: "000"
+          message: test error message
+        eventDate: 2019-01-01T01:00:00+01:00
+        eventType: ACCOUNT_CLOSED
+        executingUserKey: executing-user-key
+        live: false
+        pspReference: TSTPSPR0001
+  schemas:
+    Pet:
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+    Pets:
+      type: array
+      items:
+        $ref: '#/components/schemas/Pet'
+    Error:
+      required:
+        - code
+        - mesage
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    AccountCloseNotification:
+      properties:
+        content:
+          $ref: "#/components/schemas/CloseAccountResponse"
+          description: The details of the Account update.
+        eventType:
+          description: The event type of the notification.
+          type: string
+        executingUserKey:
+          description: The user or process that has triggered the notification.
+          type: string
+        live:
+          description: Indicates whether the notification originated from the live environment or the test environment. If true, the notification originated from the live environment. If false, the notification originated from the test environment.
+          type: boolean
+        pspReference:
+          description: The PSP reference of the request from which the notification originates.
+          type: string
+      required:
+        - executingUserKey
+        - pspReference
+        - eventType
+        - live
+        - content
+    AccountCreateNotification:
+      properties:
+        content:
+          $ref: "#/components/schemas/CreateAccountResponse"
+          description: The details of the account creation.
+        eventType:
+          description: The event type of the notification.
+          type: string
+        executingUserKey:
+          description: The user or process that has triggered the notification.
+          type: string
+        live:
+          description: Indicates whether the notification originated from the live environment or the test environment. If true, the notification originated from the live environment. If false, the notification originated from the test environment.
+          type: boolean
+        pspReference:
+          description: The PSP reference of the request from which the notification originates.
+          type: string
+      required:
+        - executingUserKey
+        - pspReference
+        - eventType
+        - live
+        - content
+    
+    NotificationResponse:
+      properties:
+        notificationResponse:
+          description: Set this parameter to **[accepted]** to acknowledge that you received a notification from Adyen.
+          type: string
+    CloseAccountResponse:
+      properties:
+        pspReference:
+          description: The reference of a request. Can be used to uniquely identify the request.
+          type: string
+        resultCode:
+          description: The result code.
+          type: string
+        status:
+          description: |-
+            The new status of the account.
+            >Permitted values: `Active`, `Inactive`, `Suspended`, `Closed`.
+          enum:
+            - Active
+            - Closed
+            - Inactive
+            - Suspended
+          type: string
+          x-addedInVersion: "2"
+        submittedAsync:
+          description: |-
+            Indicates whether the request is processed asynchronously. Depending on the request's platform settings, the following scenarios may be applied:
+            * **true**: The request is queued and will be executed when the providing service is available in the order in which the requests are received.
+            * **false**: The processing of the request is immediately attempted; it may result in an error if the providing service is unavailable.
+          type: boolean
+      required:
+        - status
+    CreateAccountResponse:
+      properties:
+        accountCode:
+          description: The code of the new account.
+          type: string
+        accountHolderCode:
+          description: The code of the account holder.
+          type: string
+        payoutSchedule:
+          $ref: "#/components/schemas/PayoutScheduleResponse"
+          description: The payout schedule of the account.
+        pspReference:
+          description: The reference of a request. Can be used to uniquely identify the request.
+          type: string
+        resultCode:
+          description: The result code.
+          type: string
+        status:
+          description: |-
+            The status of the account.
+            >Permitted values: `Active`.
+          enum:
+            - Active
+            - Closed
+            - Inactive
+            - Suspended
+          type: string
+          x-addedInVersion: "2"
+        submittedAsync:
+          description: |-
+            Indicates whether the request is processed asynchronously. Depending on the request's platform settings, the following scenarios may be applied:
+            * **true**: The request is queued and will be executed when the providing service is available in the order in which the requests are received.
+            * **false**: The processing of the request is immediately attempted; it may result in an error if the providing service is unavailable.
+          type: boolean
+      required:
+        - accountHolderCode
+        - accountCode
+        - status
+    PayoutScheduleResponse:
+      properties:
+        nextScheduledPayout:
+          description: The date of the next scheduled payout.
+          format: date-time
+          type: string
+        schedule:
+          description: |-
+            The payout schedule of the account.
+            >Permitted values: `DEFAULT`, `HOLD`, `DAILY`, `WEEKLY`, `MONTHLY`.
+          enum:
+            - BIWEEKLY_ON_1ST_AND_15TH_AT_MIDNIGHT
+            - BIWEEKLY_ON_1ST_AND_15TH_AT_NOON
+            - BI_DAILY_AU
+            - BI_DAILY_EU
+            - BI_DAILY_US
+            - DAILY
+            - DAILY_6PM
+            - DAILY_AU
+            - DAILY_EU
+            - DAILY_SG
+            - DAILY_US
+            - DEFAULT
+            - EVERY_6_HOURS_FROM_MIDNIGHT
+            - HOLD
+            - MONTHLY
+            - MONTHLY_ON_15TH_AT_MIDNIGHT
+            - WEEKLY
+            - WEEKLY_MON_TO_FRI_AU
+            - WEEKLY_MON_TO_FRI_EU
+            - WEEKLY_MON_TO_FRI_US
+            - WEEKLY_ON_TUE_FRI_MIDNIGHT
+            - YEARLY
+          type: string
+      required:
+        - schedule
+  securitySchemes:
+    ApiKeyAuth:
+      in: header
+      name: X-API-Key
+      type: apiKey
+    BasicAuth:
+      scheme: basic
+      type: http
+webhooks:
+  /ACCOUNT_CLOSED:{port}/{xid}:
+    post:
+      description: This notification is sent when an account has been closed.
+      operationId: post-ACCOUNT_CLOSED
+      requestBody:
+        content:
+          application/json:
+            examples:
+              accountClosed:
+                $ref: "#/components/examples/post-ACCOUNT_CLOSED-accountClosed"
+            schema:
+              $ref: "#/components/schemas/AccountCloseNotification"
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                accountClosed:
+                  $ref: "#/components/examples/WebhookAck"
+              schema:
+                $ref: "#/components/schemas/NotificationResponse"
+          description: OK - the request has succeeded.
+      security:
+        - BasicAuth: []
+        - ApiKeyAuth: []
+      summary: Triggered upon the closure of an account.
+      tags:
+        - Accounts
+      x-groupName: Accounts
+      x-sortIndex: 3
+  /ACCOUNT_CREATED:
+    post:
+      description: This notification is sent when an account has been created.
+      operationId: post-ACCOUNT_CREATED
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountCreateNotification"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationResponse"
+          description: OK - the request has succeeded.
+      security:
+        - BasicAuth: []
+        - ApiKeyAuth: []
+      summary: Triggered upon the creation of an account.
+      tags:
+        - Accounts
+      x-groupName: Accounts
+      x-sortIndex: 1
+x-groups:
+  - Account holders
+  - Accounts
+  - Fund management
+  - Other
+x-staticResponse: response.json
+paths:
+  /pets:
+    get:
+      summary: List all pets
+      description: ''
+      operationId: listPets
+      tags:
+        - pet
+      parameters:
+        - name: limit
+          in: header
+          description: How many items to return at one time (max 100)
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: variable
+          in: query
+          description: random variable
+          style: form
+          schema:
+            type: array
+            items:
+              type: string
+        - name: variable2
+          in: query
+          description: another random variable
+          style: spaceDelimited
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+      responses:
+        '200':
+          description: An paged array of pets
+          headers:
+            x-next:
+              description: A link to the next page of responses
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pets'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a pet
+      operationId: createPets
+      tags:
+        - pet
+      responses:
+        '201':
+          description: Null response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pets'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    parameters:
+      - name: petId
+        in: path
+        description: The id of the pet to retrieve
+        required: true
+        schema:
+          type: string
+  /pets/{petId}:
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pet
+      parameters:
+        - name: petId
+          in: path
+          description: The id of the pet to retrieve
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /pets/{petId}/uploadImage:
+    post:
+      summary: Uploads an image
+      description: ''
+      operationId: uploadFile
+      tags:
+        - pet
+      parameters:
+        - name: petId
+          in: path
+          description: ID of pet to update
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/octet-stream: {}
+      responses:
+        '201':
+          description: Null response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pets'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

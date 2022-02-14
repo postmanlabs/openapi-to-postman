@@ -1,0 +1,91 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Incorrect validation of Path var",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/path_with_multiple_pathvars/{pathvar1}/{pathvar2}/{pathvar3}": {
+      "get": {
+        "parameters": [
+          {
+            "name": "pathvar1",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "maximum": 70,
+              "minimum": 10,
+              "type": ["number"],
+              "format": "double"
+            }
+          },
+          {
+            "name": "pathvar2",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "maximum": 20,
+              "minimum": 0,
+              "type": ["number"],
+              "format": "double"
+            }
+          },
+          {
+            "name": "pathvar3",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": ["boolean"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/{petId}": {
+      "get": {
+        "parameters": [
+          {
+            "name": "petId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": ["number"],
+              "format": "double"
+            },
+            "example": 99.99
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/hello/{worldId}": {
+      "get": {
+        "parameters": [
+          {
+            "name": "worldId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "world-92"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    }
+  }
+}
