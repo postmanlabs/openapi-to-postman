@@ -135,7 +135,7 @@ describe('validateSchema', function () {
     expect(result).to.be.empty;
   });
 
-  it('should return errors incorrect schema value no $schema definition', function () {
+  it('should return errors with incorrect schema that does not have $schema property', function () {
     const schema = {
         required: [
           'id',
