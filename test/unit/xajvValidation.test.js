@@ -1,6 +1,7 @@
 const { getLocalDraft,
     getAjvValidator,
     validateSchema,
+    isTypeValue,
     getDraftToUse } = require('../../lib/ajValidation/ajvValidation'),
   { validateSchemaAJVDraft04 } = require('../../lib/ajValidation/ajvValidatorDraft04'),
   expect = require('chai').expect;
@@ -302,6 +303,61 @@ describe('validateSchema', function () {
       result = validateSchemaAJVDraft04(null, valueToUse);
     expect(result.filteredValidationError).to.be.undefined;
   });
+
+  it('Fix for GITHUB#479: should validate as correct input <integer> for type integer', function () {
+    const schema = {
+        type: 'object',
+        properties: {
+          id: {
+            type: [
+              'integer',
+              'boolean'
+            ],
+            examples: [
+              111111
+            ]
+          },
+          hasPet: {
+            type: [
+              'boolean'
+            ]
+          }
+        }
+      },
+      valueToUse = {
+        'id': '<integer>',
+        'hasPet': '<boolean>'
+      },
+      result = validateSchema(schema, valueToUse);
+    expect(result).to.be.empty;
+  });
+
+  it('Fix for GITHUB#479: should validate as incorrect input <boolean> for type integer', function () {
+    const schema = {
+        type: 'object',
+        properties: {
+          id: {
+            type: [
+              'integer'
+            ],
+            examples: [
+              111111
+            ]
+          },
+          hasPet: {
+            type: [
+              'boolean'
+            ]
+          }
+        }
+      },
+      valueToUse = {
+        'id': '<boolean>',
+        'hasPet': '<boolean>'
+      },
+      result = validateSchema(schema, valueToUse);
+    expect(result[0].instancePath).equal('/id');
+  });
 });
 
 describe('getDraftToUse', function() {
@@ -325,4 +381,32 @@ describe('getDraftToUse', function() {
     let draftToUse = getDraftToUse(undefined, undefined);
     expect(draftToUse).to.equal(undefined);
   });
+});
+
+describe('isTypeValue method', function () {
+  it('should return true when value is <integer> and type is integer', function () {
+    const result = isTypeValue('<integer>', ['integer']);
+    expect(result).to.be.true;
+  });
+
+  it('should return false when value is <integer> and type is boolean', function () {
+    const result = isTypeValue('<integer>', ['boolean']);
+    expect(result).to.be.false;
+  });
+
+  it('should return true when value is <integer> and type is string', function () {
+    const result = isTypeValue('<string>', ['string']);
+    expect(result).to.be.true;
+  });
+
+  it('should return true when value is <integer> and type is ["boolean", "integer"]', function () {
+    const result = isTypeValue('<integer>', ['boolean', 'integer']);
+    expect(result).to.be.true;
+  });
+
+  it('should return true when value is <integer> and type is integer not array', function () {
+    const result = isTypeValue('<integer>', 'integer');
+    expect(result).to.be.true;
+  });
+
 });
