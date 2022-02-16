@@ -100,6 +100,14 @@ describe('DEREF FUNCTION TESTS ', function() {
                   name: {
                     type: 'string'
                   }
+                },
+                additionalProperties: {
+                  type: 'object',
+                  properties: {
+                    hello: {
+                      type: 'string'
+                    }
+                  }
                 }
               }
             }
@@ -119,7 +127,8 @@ describe('DEREF FUNCTION TESTS ', function() {
           _.cloneDeep(componentsAndPaths), {}, 'VALIDATION'),
         output_emptyObject = deref.resolveRefs(schemaWithEmptyObject, parameterSource, _.cloneDeep(componentsAndPaths)),
         output_additionalProps = deref.resolveRefs(schemaWithAdditionPropRef, parameterSource,
-          _.cloneDeep(componentsAndPaths), {}, 'VALIDATION');
+          _.cloneDeep(componentsAndPaths), {}, 'VALIDATION'),
+        output_additionalPropsOverride;
 
       expect(output).to.deep.include({ type: 'object',
         required: ['id'],
@@ -170,6 +179,15 @@ describe('DEREF FUNCTION TESTS ', function() {
       // additionalProperties $ref should be resolved
       expect(output_additionalProps).to.deep.include(componentsAndPaths.components.schemas.schemaAdditionalProps);
 
+      // add default to above resolved schema
+      output_additionalProps.additionalProperties.properties.hello.default = '<string>';
+
+      output_additionalPropsOverride = deref.resolveRefs(schemaWithAdditionPropRef, parameterSource,
+        _.cloneDeep(componentsAndPaths), {}, 'VALIDATION');
+
+      // override should not affect newly resolved schema
+      expect(output_additionalPropsOverride).to.deep.include(
+        componentsAndPaths.components.schemas.schemaAdditionalProps);
       done();
     });
 
