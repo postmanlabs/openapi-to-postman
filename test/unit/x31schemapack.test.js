@@ -501,6 +501,78 @@ describe('Openapi 3.1 schemapack mergeAndValidate', function() {
       }
     });
   });
+
+  it('Should merge correctly the files in folder when the spec contains outer ' +
+    'props as sibling of an external reference - by fileName - petstore-outer-props', function(done) {
+    let folderPath = path.join(__dirname, '../data/31Multifile/petstore-outer-props'),
+      array = [
+        { fileName: folderPath + '/spec/swagger.yaml' },
+        { fileName: folderPath + '/spec/Pet.yaml' },
+        { fileName: folderPath + '/spec/parameters.yaml' },
+        { fileName: folderPath + '/spec/NewPet.yaml' },
+        { fileName: folderPath + '/common/Error.yaml' }
+      ];
+
+    var schema = new SchemaPack({ type: 'folder', data: array });
+    schema.mergeAndValidate((err, status) => {
+      if (err) {
+        expect.fail(null, null, err);
+      }
+      if (status.result) {
+        schema.convert((error, result) => {
+          if (error) {
+            expect.fail(null, null, err);
+          }
+          expect(result.result).to.equal(true);
+          expect(result.output.length).to.equal(1);
+          expect(result.output[0].type).to.have.equal('collection');
+          expect(result.output[0].data).to.have.property('info');
+          expect(result.output[0].data).to.have.property('item');
+          done();
+        });
+      }
+      else {
+        expect.fail(null, null, status.reason);
+        done();
+      }
+    });
+  });
+
+  it('Should merge correctly the files in folder when the spec contains outer ' +
+    'props as sibling of an external reference - by fileName - petstore-outer-props-int-ref', function(done) {
+    let folderPath = path.join(__dirname, '../data/31Multifile/petstore-outer-props-int-ref'),
+      array = [
+        { fileName: folderPath + '/spec/swagger.yaml' },
+        { fileName: folderPath + '/spec/Pet.yaml' },
+        { fileName: folderPath + '/spec/parameters.yaml' },
+        { fileName: folderPath + '/spec/NewPet.yaml' },
+        { fileName: folderPath + '/common/Error.yaml' }
+      ];
+
+    var schema = new SchemaPack({ type: 'folder', data: array });
+    schema.mergeAndValidate((err, status) => {
+      if (err) {
+        expect.fail(null, null, err);
+      }
+      if (status.result) {
+        schema.convert((error, result) => {
+          if (error) {
+            expect.fail(null, null, err);
+          }
+          expect(result.result).to.equal(true);
+          expect(result.output.length).to.equal(1);
+          expect(result.output[0].type).to.have.equal('collection');
+          expect(result.output[0].data).to.have.property('info');
+          expect(result.output[0].data).to.have.property('item');
+          done();
+        });
+      }
+      else {
+        expect.fail(null, null, status.reason);
+        done();
+      }
+    });
+  });
 });
 
 describe('Resolved issues', function() {
