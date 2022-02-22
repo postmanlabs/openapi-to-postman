@@ -1,5 +1,5 @@
-const schemaUtilsCommon = require('../../lib/common/schemaUtilsCommon');
-const { formatDataPath, formatSchemaPathToConverToDataPath } = require('../../lib/common/schemaUtilsCommon'),
+const schemaUtilsCommon = require('../../lib/common/schemaUtilsCommon'),
+  { formatDataPath, formatSchemaPathFromAJVErrorToConvertToDataPath } = require('../../lib/common/schemaUtilsCommon'),
   expect = require('chai').expect;
 
 describe('formatData method', function() {
@@ -157,10 +157,11 @@ describe('handleExclusiveMinimum method', function() {
   });
 });
 
-describe('formatSchemaPathToConverToDataPath method', function () {
+describe('formatSchemaPathFromAJVErrorToConvertToDataPath method', function () {
   it('should return properties/automatic/items/properties/configs/items ' +
   'when entry is #/properties/automatic/items/properties/configs/items/type', function () {
-    const result = formatSchemaPathToConverToDataPath('#/properties/automatic/items/properties/configs/items/type');
+    const result =
+      formatSchemaPathFromAJVErrorToConvertToDataPath('#/properties/automatic/items/properties/configs/items/type');
     expect(result).to.equal('properties/automatic/items/properties/configs/items');
   });
 });
