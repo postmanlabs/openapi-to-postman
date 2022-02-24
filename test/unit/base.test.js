@@ -43,7 +43,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       securityTestCases = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-cases.yaml'),
       emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml'),
       rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json'),
-      parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml');
+      parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml'),
+      issue10229 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#10229.json');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -392,6 +393,23 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data.info).to.not.have.property('version');
         done();
       });
+    });
+    it('#GITHUB-10229 should generate correct example is out of the schema and is falsy' +
+    issue10229, function(done) {
+      var openapi = fs.readFileSync(issue10229, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { requestParametersResolution: 'Example' },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item[0].item[0].request.url.query[0].value).to.equal('0');
+          expect(conversionResult.output[0].data.item[0].item[0].request.url.query[1].value).to.equal('');
+          expect(conversionResult.output[0].data.item[0].item[0].request.url.query[2].value).to.equal('false');
+          done();
+        });
     });
     describe('[Github #108]- Parameters resolution option', function() {
       it('Should respect schema faking for root request and example for example request' +
