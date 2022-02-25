@@ -1313,8 +1313,8 @@ describe('validateTransaction method. Path variables matching validation (issue 
   it('Should validate correctly while a path param in spec does not matches with collection' +
   ' (issue#478)', function(done) {
     let issueFolder = path.join(__dirname, VALIDATION_DATA_FOLDER_PATH + '/issues/issue#478'),
-      issueSpec = fs.readFileSync(issueFolder + '/issueSpec.yaml', 'utf-8'),
-      issueCollection = fs.readFileSync(issueFolder + '/issueCollection.json', 'utf-8'),
+      issueSpec = fs.readFileSync(issueFolder + '/path-variable-does-not-match-spec.yaml', 'utf-8'),
+      issueCollection = fs.readFileSync(issueFolder + '/path-variable-does-not-match-collection.json', 'utf-8'),
       resultObj,
       historyRequest = [],
       schemaPack = new Converter.SchemaPack({ type: 'string', data: issueSpec }, { allowUrlPathVarMatching: false });
@@ -1339,8 +1339,8 @@ describe('validateTransaction method. Path variables matching validation (issue 
   it('Should validate correctly while a path param in spec does not matches with collection' +
   ' (issue#478), allowUrlPathVarMatching: true', function(done) {
     let issueFolder = path.join(__dirname, VALIDATION_DATA_FOLDER_PATH + '/issues/issue#478'),
-      issueSpec = fs.readFileSync(issueFolder + '/issueSpec.yaml', 'utf-8'),
-      issueCollection = fs.readFileSync(issueFolder + '/issueCollection.json', 'utf-8'),
+      issueSpec = fs.readFileSync(issueFolder + '/path-variable-does-not-match-spec.yaml', 'utf-8'),
+      issueCollection = fs.readFileSync(issueFolder + '/path-variable-does-not-match-collection.json', 'utf-8'),
       resultObj,
       historyRequest = [],
       schemaPack = new Converter.SchemaPack({ type: 'string', data: issueSpec }, { allowUrlPathVarMatching: true });
