@@ -145,27 +145,6 @@ describe('Openapi 3.1 schema pack validateTransactions', function() {
     });
   }
 
-  it('Fix for GITHUB#479: Should accept values like <integer> in validation', function() {
-    const collectionSource = path.join(__dirname, OPENAPI_31_COLLECTIONS + '/479col.json'),
-      collectionData = fs.readFileSync(collectionSource, 'utf8'),
-      schemaSource = path.join(__dirname, OPENAPI_31_COLLECTIONS + '/479.yaml'),
-      schemaData = fs.readFileSync(schemaSource, 'utf8'),
-      validator = new SchemaPack({
-        type: 'string',
-        data: schemaData
-      });
-    let transactions = [];
-    getAllTransactions(JSON.parse(collectionData), transactions);
-
-    validator.validateTransaction(transactions, (err, result) => {
-      let requestIds = Object.keys(result.requests);
-      expect(err).to.be.null;
-      requestIds.forEach((requestId) => {
-        expect(result.requests[requestId].endpoints[0].matched).to.be.true;
-      });
-    });
-  });
-
   it('Should not generate any mismatch with a correct file', function() {
     const collectionSource = path.join(__dirname, OPENAPI_31_COLLECTIONS + '/compositeSchemaCollection.json'),
       collectionData = fs.readFileSync(collectionSource, 'utf8'),
