@@ -1,7 +1,6 @@
 const { getLocalDraft,
     getAjvValidator,
     validateSchema,
-    isTypeValue,
     getDraftToUse } = require('../../lib/ajValidation/ajvValidation'),
   { validateSchemaAJVDraft04 } = require('../../lib/ajValidation/ajvValidatorDraft04'),
   expect = require('chai').expect;
@@ -432,84 +431,4 @@ describe('getDraftToUse', function() {
     let draftToUse = getDraftToUse(undefined, undefined);
     expect(draftToUse).to.equal(undefined);
   });
-});
-
-describe('isTypeValue method', function () {
-  it('should return true when value is <integer> and type is integer', function () {
-    const result = isTypeValue('<integer>', {
-      type: [
-        'integer'
-      ]
-    });
-    expect(result).to.be.true;
-  });
-
-  it('should return true when input is <long> type integer and format int64', function () {
-    const result = isTypeValue('<long>', {
-      format: 'int64',
-      type: ['integer']
-    });
-    expect(result).to.be.true;
-  });
-
-  it('should return true when value is <uuid> type is string format is uuid', function () {
-    const result = isTypeValue('<uuid>', {
-      format: 'uuid',
-      type: ['string']
-    });
-    expect(result).to.be.true;
-  });
-
-
-  it('should return true when value is <otherType> type is otherType and there is not format', function () {
-    const result = isTypeValue('<otherType>', {
-      type: ['otherType']
-    });
-    expect(result).to.be.true;
-  });
-
-  it('should return true value is <otherType-otherFormat> type is otherType and format is otherFormat', function () {
-    const result = isTypeValue('<otherType-otherFormat>', {
-      format: 'otherFormat',
-      type: ['otherType']
-    });
-    expect(result).to.be.true;
-  });
-
-  it('should return false when value is <integer> and type is boolean', function () {
-    const result = isTypeValue('<integer>', {
-      type: ['boolean']
-    });
-    expect(result).to.be.false;
-  });
-
-  it('should return true when value is <string> and type is string', function () {
-    const result = isTypeValue('<string>', {
-      type: ['string']
-    });
-    expect(result).to.be.true;
-  });
-
-  it('should return true when value is <integer> and type is ["boolean", "integer"]', function () {
-    const result = isTypeValue('<integer>', {
-      type: ['boolean', 'integer']
-    });
-    expect(result).to.be.true;
-  });
-
-  it('should return true when value is <integer> and type is integer not array', function () {
-    const result = isTypeValue('<integer>', {
-      type: 'integer'
-    });
-    expect(result).to.be.true;
-  });
-
-  it('should return true when value is <integer> and type is integer not array format int64', function () {
-    const result = isTypeValue('<long>', {
-      format: 'int64',
-      type: 'integer'
-    });
-    expect(result).to.be.true;
-  });
-
 });
