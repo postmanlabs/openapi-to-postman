@@ -358,57 +358,6 @@ describe('validateSchema', function () {
       result = validateSchema(schema, valueToUse);
     expect(result[0].instancePath).equal('/id');
   });
-
-  it('Fix for GITHUB#479: should validate as correct input <long> for type integer format int64', function () {
-    const schema = {
-        type: 'object',
-        properties: {
-          id: {
-            type: [
-              'integer'
-            ],
-            format: 'int64'
-          },
-          hasPet: {
-            type: [
-              'boolean'
-            ]
-          }
-        }
-      },
-      valueToUse = {
-        'id': '<long>',
-        'hasPet': '<boolean>'
-      },
-      result = validateSchema(schema, valueToUse);
-    expect(result).to.be.empty;
-  });
-
-  it('Fix for GITHUB#479: should validate as correct input <long> for type integer boolean format int64', function () {
-    const schema = {
-        type: 'object',
-        properties: {
-          id: {
-            type: [
-              'integer',
-              'boolean'
-            ],
-            format: 'int64'
-          },
-          hasPet: {
-            type: [
-              'boolean'
-            ]
-          }
-        }
-      },
-      valueToUse = {
-        'id': '<long>',
-        'hasPet': '<boolean>'
-      },
-      result = validateSchema(schema, valueToUse);
-    expect(result).to.be.empty;
-  });
 });
 
 describe('getDraftToUse', function() {
@@ -436,79 +385,27 @@ describe('getDraftToUse', function() {
 
 describe('isTypeValue method', function () {
   it('should return true when value is <integer> and type is integer', function () {
-    const result = isTypeValue('<integer>', {
-      type: [
-        'integer'
-      ]
-    });
-    expect(result).to.be.true;
-  });
-
-  it('should return true when input is <long> type integer and format int64', function () {
-    const result = isTypeValue('<long>', {
-      format: 'int64',
-      type: ['integer']
-    });
-    expect(result).to.be.true;
-  });
-
-  it('should return true when value is <uuid> type is string format is uuid', function () {
-    const result = isTypeValue('<uuid>', {
-      format: 'uuid',
-      type: ['string']
-    });
-    expect(result).to.be.true;
-  });
-
-
-  it('should return true when value is <otherType> type is otherType and there is not format', function () {
-    const result = isTypeValue('<otherType>', {
-      type: ['otherType']
-    });
-    expect(result).to.be.true;
-  });
-
-  it('should return true value is <otherType-otherFormat> type is otherType and format is otherFormat', function () {
-    const result = isTypeValue('<otherType-otherFormat>', {
-      format: 'otherFormat',
-      type: ['otherType']
-    });
+    const result = isTypeValue('<integer>', ['integer']);
     expect(result).to.be.true;
   });
 
   it('should return false when value is <integer> and type is boolean', function () {
-    const result = isTypeValue('<integer>', {
-      type: ['boolean']
-    });
+    const result = isTypeValue('<integer>', ['boolean']);
     expect(result).to.be.false;
   });
 
-  it('should return true when value is <string> and type is string', function () {
-    const result = isTypeValue('<string>', {
-      type: ['string']
-    });
+  it('should return true when value is <integer> and type is string', function () {
+    const result = isTypeValue('<string>', ['string']);
     expect(result).to.be.true;
   });
 
   it('should return true when value is <integer> and type is ["boolean", "integer"]', function () {
-    const result = isTypeValue('<integer>', {
-      type: ['boolean', 'integer']
-    });
+    const result = isTypeValue('<integer>', ['boolean', 'integer']);
     expect(result).to.be.true;
   });
 
   it('should return true when value is <integer> and type is integer not array', function () {
-    const result = isTypeValue('<integer>', {
-      type: 'integer'
-    });
-    expect(result).to.be.true;
-  });
-
-  it('should return true when value is <integer> and type is integer not array format int64', function () {
-    const result = isTypeValue('<long>', {
-      format: 'int64',
-      type: 'integer'
-    });
+    const result = isTypeValue('<integer>', 'integer');
     expect(result).to.be.true;
   });
 
