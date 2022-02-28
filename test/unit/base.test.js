@@ -408,6 +408,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data.item[0].item[0].request.url.query[0].value).to.equal('0');
           expect(conversionResult.output[0].data.item[0].item[0].request.url.query[1].value).to.equal('');
           expect(conversionResult.output[0].data.item[0].item[0].request.url.query[2].value).to.equal('false');
+          expect(conversionResult.output[0].data.item[0].item[1].request.body.raw).to.equal('{\n  "a": null\n}');
+          expect(conversionResult.output[0].data.item[0].item[1].response[1].body).to.equal('{\n  "a": null\n}');
           done();
         });
     });
