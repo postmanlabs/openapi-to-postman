@@ -843,4 +843,53 @@ describe('Webhooks support', function() {
           .with.length(3);
       });
     });
+
+  it('Should resolve correctly a file with only paths, with includeWebhooks in true',
+    function() {
+      const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/webhooks/only-paths.yaml'),
+        fileData = fs.readFileSync(fileSource, 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        },
+        converter = new SchemaPack(input, { includeWebhooks: true });
+
+      converter.convert((err, result) => {
+        expect(err).to.be.null;
+        expect(result.result).to.be.true;
+        expect(result.output[0].data.item).to.be.an('array')
+          .with.length(1);
+        expect(result.output[0].data.item).to.be.an('array').with.length(1);
+        expect(result.output[0].data.item[0].name).to.equal('pets');
+        expect(result.output[0].data.item[0].item).to.be.an('array')
+          .with.length(3);
+      });
+    });
+
+  it('Should resolve correctly a file and ignore servers object in webhook, with includeWebhooks in true',
+    function() {
+      const fileSource = path.join(__dirname, OPENAPI_31_FOLDER +
+        '/webhooks/payments-webhook-with-servers-in-webhook.yaml'),
+        fileData = fs.readFileSync(fileSource, 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        },
+        converter = new SchemaPack(input, { includeWebhooks: true });
+
+      converter.convert((err, result) => {
+        expect(err).to.be.null;
+        expect(result.result).to.be.true;
+        expect(result.output[0].data.item).to.be.an('array')
+          .with.length(1);
+        expect(result.output[0].data.item).to.be.an('array').with.length(1);
+        expect(result.output[0].data.item[0].name).to.equal('Webhooks');
+        expect(result.output[0].data.item[0].item[0].request.url.host).to.be.an('array')
+          .with.length(1);
+        expect(result.output[0].data.item[0].item[0].request.url.host[0])
+          .to.be.equal('{{ACCOUNT_CLOSED}}');
+        expect(result.output[0].data.item[0].item).to.be.an('array')
+          .with.length(19);
+      });
+    });
 });

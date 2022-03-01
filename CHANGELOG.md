@@ -1,5 +1,11 @@
 # OpenAPI-Postman Changelog
 
+#### v3.0.0 (Feb 11, 2022)
+* Add support for OpenAPI 3.1.x https://www.openapis.org/blog/2021/02/18/openapi-specification-3-1-released.
+* Separated schemUtils into common, 3.1, and 3.0 specific files.
+* Added a new internal option for supporting Webhooks: `includeWebhooks`
+* Added support for $schema through ajv for various JSON Schema drafts.
+
 #### v2.14.0 (January 31, 2022)
 * Fixed issue where for certain collection requests validateTransactions() provided missing path varaible in request even though it was present.
 * Fixed issue where we threw TypeError for undefined parameters.
