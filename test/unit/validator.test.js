@@ -1433,6 +1433,9 @@ describe('validateTransaction method. Path variables matching validation (issue 
         ' expected in in schema at this position (peterId)'
       );
       expect(resultObj.mismatches[0].reasonCode).to.equal('INVALID_VALUE');
+      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.be.equal('petId');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.be.equal('peterId');
+      expect(resultObj.mismatches[0].suggestedFix.key).to.be.equal('peterId');
       done();
     });
   });
@@ -1470,6 +1473,14 @@ describe('validateTransaction method. Path variables matching validation (issue 
         'variable expected in in schema at this position (correctName)'
       );
       expect(resultObj.mismatches[1].reasonCode).to.equal('INVALID_VALUE');
+
+      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.be.equal('petId');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.be.equal('peterId');
+      expect(resultObj.mismatches[0].suggestedFix.key).to.be.equal('peterId');
+
+      expect(resultObj.mismatches[1].suggestedFix.actualValue).to.be.equal('wrongNamedId');
+      expect(resultObj.mismatches[1].suggestedFix.suggestedValue).to.be.equal('correctName');
+      expect(resultObj.mismatches[1].suggestedFix.key).to.be.equal('correctName');
       done();
     });
   });
@@ -1506,6 +1517,15 @@ describe('validateTransaction method. Path variables matching validation (issue 
         'The required path variable "correctName" was not found in the transaction'
       );
       expect(resultObj.mismatches[1].reasonCode).to.equal('MISSING_IN_REQUEST');
+
+      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.be.equal('petId');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.be.equal('peterId');
+      expect(resultObj.mismatches[0].suggestedFix.key).to.be.equal('peterId');
+
+      expect(resultObj.mismatches[1].suggestedFix.actualValue).to.be.equal(null);
+      expect(resultObj.mismatches[1].suggestedFix.suggestedValue).to.be.an('object')
+        .to.include.keys(['description', 'key', 'value']);
+      expect(resultObj.mismatches[1].suggestedFix.key).to.be.equal('correctName');
       done();
     });
   });
