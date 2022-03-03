@@ -34,7 +34,20 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/Pet"
+								"properties": {
+									"id": {
+										"type": "integer",
+										"format": "int64",
+										"readOnly": true
+									},
+									"name": {
+										"type": "string"
+									},
+									"tag": {
+										"type": "string",
+										"writeOnly": true
+									}
+								}
 							}
 						}
 					}
