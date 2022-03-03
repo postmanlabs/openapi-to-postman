@@ -255,6 +255,66 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(output.pattern).to.eql(schema.pattern);
       done();
     });
+
+    it('should not contain readOnly properties in resolved schema if they are not contained' +
+      ' in resolved schema', function(done) {
+      var schema = {
+          type: 'object',
+          required: ['id', 'name'],
+          properties: {
+            id: {
+              type: 'integer',
+              format: 'int64',
+              readOnly: true
+            },
+            name: {
+              type: 'string'
+            },
+            tag: {
+              type: 'string',
+              writeOnly: true
+            }
+          }
+        },
+        parameterSource = 'REQUEST',
+        output;
+
+      output = deref.resolveRefs(schema, parameterSource, { concreteUtils: schemaUtils30X });
+      expect(output.type).to.equal('object');
+      expect(output.properties).to.not.haveOwnProperty('id');
+      expect(output.required).to.not.include('id');
+      done();
+    });
+
+    it('should not contain writeOnly properties in resolved schema if they are not contained' +
+      ' in resolved schema', function(done) {
+      var schema = {
+          type: 'object',
+          required: ['id', 'tag'],
+          properties: {
+            id: {
+              type: 'integer',
+              format: 'int64',
+              readOnly: true
+            },
+            name: {
+              type: 'string'
+            },
+            tag: {
+              type: 'string',
+              writeOnly: true
+            }
+          }
+        },
+        parameterSource = 'RESPONSE',
+        output;
+
+      output = deref.resolveRefs(schema, parameterSource, { concreteUtils: schemaUtils30X });
+      expect(output.type).to.equal('object');
+      expect(output.properties).to.not.haveOwnProperty('tag');
+      expect(output.required).to.not.include('tag');
+      done();
+    });
   });
 
   describe('resolveAllOf Function', function () {
