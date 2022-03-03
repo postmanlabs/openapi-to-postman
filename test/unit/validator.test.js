@@ -403,6 +403,7 @@ describe('The Validation option', function () {
             'data.items.properties.turnover.multipleOf': '$.request.body.data[0].turnover',
             'data.items.properties.description.pattern': '$.request.body.data[0].description',
             'data.items.properties.wants.uniqueItems': '$.request.body.data[0].wants',
+            'data.items.properties.user.properties.entityId.maxLength': '$.request.body.data[0].user.entityId',
             'meta.maxProperties': '$.request.body.meta',
             'meta.additionalProperties': '$.request.body.meta'
           };
