@@ -16,6 +16,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       test31SpecDir = path.join(__dirname, '../data/valid_openapi31X/'),
       issue133 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#133.json'),
       issue160 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#160.json'),
+      issue10672 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#10672.json'),
       unique_items_schema = path.join(__dirname, VALID_OPENAPI_PATH + '/unique_items_schema.json'),
       serverOverRidingSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/server_overriding.json'),
       infoHavingContactOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_contact_only.json'),
@@ -869,6 +870,26 @@ describe('CONVERT FUNCTION TESTS ', function() {
         // default # of items when minItems and maxItems not defined
         expect(responseBody.nominmax).to.have.length(2);
         done();
+      });
+    });
+
+    it('[GITHUB #10672] Should convert a collection with a key "pattern" in a schema', function() {
+      const fileSource = issue10672,
+        fileData = fs.readFileSync(fileSource, 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+
+      Converter.convert(input, {}, (err, result) => {
+        expect(err).to.be.null;
+        let body = JSON.parse(result.output[0].data.item[0].item[0].response[0].body);
+        expect(result.result).to.be.true;
+        expect(body)
+          .to.be.an('array').with.length(2);
+        expect(body.filter((item) => {
+          return item.pattern && typeof item.pattern === 'string';
+        })).to.be.an('array').with.length(2);
       });
     });
 

@@ -23469,6 +23469,9 @@ function extend() {
               var fn = keys[length].replace(/^x-/, '');
               var gen = this.support[fn];
               if (typeof gen === 'function') {
+                if (typeof schema[fn] === 'object' && schema[fn].hasOwnProperty('type')) {
+                  continue;
+                }
                   Object.defineProperty(schema, 'generate', {
                       configurable: false,
                       enumerable: false,
