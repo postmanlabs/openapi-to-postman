@@ -1329,8 +1329,8 @@ describe('validateTransaction method. Path variables matching validation (issue 
       expect(resultObj.mismatches).to.have.length(1);
       expect(resultObj.mismatches[0].reasonCode).to.be.equal('INVALID_VALUE');
       expect(resultObj.mismatches[0].reason).to.be.equal(
-        'The petId path variable does not match with path variable' +
-        ' expected in in schema at this position (peterId)'
+        'The petId path variable does not match with path variable expected (peterId)' +
+        ' in the schema at this position'
       );
       done();
     });
@@ -1375,8 +1375,8 @@ describe('validateTransaction method. Path variables matching validation (issue 
       resultObj = result.requests[historyRequest[0].id].endpoints[0];
       expect(resultObj.mismatches).to.have.length(1);
       expect(resultObj.mismatches[0].reason).to.equal(
-        'The petId path variable does not match with path variable' +
-        ' expected in in schema at this position (peterId)'
+        'The petId path variable does not match with path variable expected (peterId)' +
+        ' in the schema at this position'
       );
       expect(resultObj.mismatches[0].reasonCode).to.equal('INVALID_VALUE');
       done();
@@ -1401,8 +1401,8 @@ describe('validateTransaction method. Path variables matching validation (issue 
       resultObj = result.requests[historyRequest[0].id].endpoints[0];
       expect(resultObj.mismatches).to.have.length(1);
       expect(resultObj.mismatches[0].reason).to.equal(
-        'The petId path variable does not match with path variable' +
-        ' expected in in schema at this position (peterId)'
+        'The petId path variable does not match with path variable expected (peterId)' +
+        ' in the schema at this position'
       );
       expect(resultObj.mismatches[0].reasonCode).to.equal('INVALID_VALUE');
       done();
@@ -1429,8 +1429,8 @@ describe('validateTransaction method. Path variables matching validation (issue 
       resultObj = result.requests[historyRequest[0].id].endpoints[0];
       expect(resultObj.mismatches).to.have.length(1);
       expect(resultObj.mismatches[0].reason).to.equal(
-        'The petId path variable does not match with path variable' +
-        ' expected in in schema at this position (peterId)'
+        'The petId path variable does not match with path variable expected (peterId)' +
+        ' in the schema at this position'
       );
       expect(resultObj.mismatches[0].reasonCode).to.equal('INVALID_VALUE');
       expect(resultObj.mismatches[0].suggestedFix.actualValue).to.be.equal('petId');
@@ -1464,13 +1464,13 @@ describe('validateTransaction method. Path variables matching validation (issue 
       resultObj = result.requests[historyRequest[0].id].endpoints[0];
       expect(resultObj.mismatches).to.have.length(2);
       expect(resultObj.mismatches[0].reason).to.equal(
-        'The petId path variable does not match with path variable' +
-        ' expected in in schema at this position (peterId)'
+        'The petId path variable does not match with path variable expected (peterId)' +
+        ' in the schema at this position'
       );
       expect(resultObj.mismatches[0].reasonCode).to.equal('INVALID_VALUE');
       expect(resultObj.mismatches[1].reason).to.equal(
-        'The wrongNamedId path variable does not match with path ' +
-        'variable expected in in schema at this position (correctName)'
+        'The wrongNamedId path variable does not match with path variable expected (correctName)' +
+        ' in the schema at this position'
       );
       expect(resultObj.mismatches[1].reasonCode).to.equal('INVALID_VALUE');
 
@@ -1509,8 +1509,8 @@ describe('validateTransaction method. Path variables matching validation (issue 
       resultObj = result.requests[historyRequest[0].id].endpoints[0];
       expect(resultObj.mismatches).to.have.length(2);
       expect(resultObj.mismatches[0].reason).to.equal(
-        'The petId path variable does not match with path variable' +
-        ' expected in in schema at this position (peterId)'
+        'The petId path variable does not match with path variable expected (peterId)' +
+        ' in the schema at this position'
       );
       expect(resultObj.mismatches[0].reasonCode).to.equal('INVALID_VALUE');
       expect(resultObj.mismatches[1].reason).to.equal(
