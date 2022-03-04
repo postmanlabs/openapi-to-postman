@@ -67,8 +67,8 @@ function getFoldersByVersion(folder30Path, folder31Path) {
 describe('Validation with different resolution parameters options', function () {
 
   it('Should validate correctly with request and example parameters as Schema', function () {
-    let fileData = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH,
-        '/longScenarios.yaml'), 'utf8'),
+    let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
+        '/issue#479_2.yaml'), 'utf8'),
       expectedBody =
          '[{"id":"<long>","name":"<string>","tag":"<string>"},{"id":"<long>","name":"<string>","tag":"<string>"}]',
       options = {
@@ -112,8 +112,8 @@ describe('Validation with different resolution parameters options', function () 
   });
 
   it('Should validate correctly with request and example parameters as Example', function () {
-    let fileData = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH,
-        '/longScenarios.yaml'), 'utf8'),
+    let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
+        '/issue#479_2.yaml'), 'utf8'),
       options = {
         requestParametersResolution: 'Example',
         exampleParametersResolution: 'Example',
@@ -150,8 +150,8 @@ describe('Validation with different resolution parameters options', function () 
   });
 
   it('Should validate correctly with request params as Schema and example parameters as Example', function () {
-    let fileData = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH,
-        '/longScenarios.yaml'), 'utf8'),
+    let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
+        '/issue#479_2.yaml'), 'utf8'),
       options = {
         requestParametersResolution: 'Schema',
         exampleParametersResolution: 'Example',
@@ -188,8 +188,8 @@ describe('Validation with different resolution parameters options', function () 
   });
 
   it('Should validate correctly with request params as Example and example params as Schema', function () {
-    let fileData = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH,
-        '/longScenarios.yaml'), 'utf8'),
+    let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
+        '/issue#479_2.yaml'), 'utf8'),
       expectedBody =
         '[{"id":"<long>","name":"<string>","tag":"<string>"},{"id":"<long>","name":"<string>","tag":"<string>"}]',
       options = {
@@ -231,6 +231,51 @@ describe('Validation with different resolution parameters options', function () 
       });
     });
   });
+
+  it('Should validate correctly example 2 with request and example parameters as Schema', function () {
+    let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
+        '/issue#479_3.yaml'), 'utf8'),
+      expectedBody =
+         '{"data":[{"entityId":"<string>","user":{"id":"<long>"},"isFavorite":"<integer>","needThis":"<string>"},' +
+         '{"entityId":"<string>","user":{"id":"<long>"},"isFavorite":"<integer>","needThis":"<string>"}]}',
+      options = {
+        requestParametersResolution: 'Schema',
+        exampleParametersResolution: 'Schema',
+        showMissingInSchemaErrors: true,
+        strictRequestMatching: true,
+        ignoreUnresolvedVariables: true,
+        validateMetadata: true,
+        suggestAvailableFixes: true,
+        detailedBlobValidation: true
+      },
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options);
+    schemaPack.convert((err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      let historyRequest = [];
+
+      getAllTransactions(conversionResult.output[0].data, historyRequest);
+
+      const fixedBody = historyRequest[0].request.body.raw.replace(/\s/g, '');
+      expect(fixedBody).to.equal(expectedBody);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        let requestIds = Object.keys(result.requests);
+        expect(err).to.be.null;
+        requestIds.forEach((requestId) => {
+          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
+          const responsesIds = Object.keys(result.requests[requestId].endpoints[0].responses);
+          responsesIds.forEach((responseId) => {
+            expect(result.requests[requestId].endpoints[0].responses[responseId].matched).to.be.true;
+          });
+        });
+      });
+    });
+  });
+
 });
 describe('The validator must validate generated collection from schema against schema itself', function () {
   var validOpenapiFolder = fs.readdirSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH)),

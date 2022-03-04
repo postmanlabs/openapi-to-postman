@@ -1,0 +1,60 @@
+openapi: 3.1.0
+info:
+  version: 1
+  title: test for types
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  /user:
+    post:
+      summary: 'Sample endpoint: Returns details about a particular user'
+      operationId: listUser
+      tags:
+        - user
+      parameters:
+        - name: id
+          in: query
+          description: ID of the user
+          required: true
+          schema:
+            type:
+              - integer
+            format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type:
+                - object
+              properties:
+                data:
+                  type:
+                    - array
+                  items:
+                    $ref: '#/components/schemas/Entity'
+      responses:
+        200:
+          description: OK
+components:
+  schemas:
+    Entity:
+      type:
+        - object
+      title: Entity
+      description: A single and unique entity linked to a user
+      properties:
+        entityId:
+          type:
+            - string
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+        isFavorite:
+          type:  integer
+          format: int32
+        needThis:
+          type:
+            - string
