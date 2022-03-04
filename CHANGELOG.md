@@ -1,5 +1,12 @@
 # OpenAPI-Postman Changelog
 
+#### v3.1.0 (March 04, 2022)
+* Removed usage of schema resolution cache to avoid incorrect resolution.
+* Fixed issue where newly converted collection had mismatches from validateTransaction() API.
+* Fixed issue where falsy example were not getting converted correctly in generated collection.
+* Fixed issue where readOnly and writeOnly properties were not removed from required in resolved schema.
+* Fixed issue where if schema had pattern as property, conversion failed with error.
+
 #### v3.0.0 (Feb 11, 2022)
 * Add support for OpenAPI 3.1.x https://www.openapis.org/blog/2021/02/18/openapi-specification-3-1-released.
 * Separated schemUtils into common, 3.1, and 3.0 specific files.
