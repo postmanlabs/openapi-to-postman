@@ -424,9 +424,10 @@ paths:
             application/json:
               schema:
                 type: object
-                additionalProperties:
-                  type: integer
-                  format: int32
+                properties:
+                  prop123:
+                    type: integer
+                    format: int32
       security:
         - api_key: []
   /store/order:

@@ -16,6 +16,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       test31SpecDir = path.join(__dirname, '../data/valid_openapi31X/'),
       issue133 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#133.json'),
       issue160 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#160.json'),
+      issue10672 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#10672.json'),
       unique_items_schema = path.join(__dirname, VALID_OPENAPI_PATH + '/unique_items_schema.json'),
       serverOverRidingSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/server_overriding.json'),
       infoHavingContactOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_contact_only.json'),
@@ -43,7 +44,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       securityTestCases = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-cases.yaml'),
       emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml'),
       rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json'),
-      parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml');
+      parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml'),
+      issue10229 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#10229.json');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -392,6 +394,25 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data.info).to.not.have.property('version');
         done();
       });
+    });
+    it('#GITHUB-10229 should generate correct example is out of the schema and is falsy' +
+    issue10229, function(done) {
+      var openapi = fs.readFileSync(issue10229, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { requestParametersResolution: 'Example' },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item[0].item[0].request.url.query[0].value).to.equal('0');
+          expect(conversionResult.output[0].data.item[0].item[0].request.url.query[1].value).to.equal('');
+          expect(conversionResult.output[0].data.item[0].item[0].request.url.query[2].value).to.equal('false');
+          expect(conversionResult.output[0].data.item[0].item[1].request.body.raw).to.equal('{\n  "a": null\n}');
+          expect(conversionResult.output[0].data.item[0].item[1].response[1].body).to.equal('{\n  "a": null\n}');
+          done();
+        });
     });
     describe('[Github #108]- Parameters resolution option', function() {
       it('Should respect schema faking for root request and example for example request' +
@@ -849,6 +870,26 @@ describe('CONVERT FUNCTION TESTS ', function() {
         // default # of items when minItems and maxItems not defined
         expect(responseBody.nominmax).to.have.length(2);
         done();
+      });
+    });
+
+    it('[GITHUB #10672] Should convert a collection with a key "pattern" in a schema', function() {
+      const fileSource = issue10672,
+        fileData = fs.readFileSync(fileSource, 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+
+      Converter.convert(input, {}, (err, result) => {
+        expect(err).to.be.null;
+        let body = JSON.parse(result.output[0].data.item[0].item[0].response[0].body);
+        expect(result.result).to.be.true;
+        expect(body)
+          .to.be.an('array').with.length(2);
+        expect(body.filter((item) => {
+          return item.pattern && typeof item.pattern === 'string';
+        })).to.be.an('array').with.length(2);
       });
     });
 
