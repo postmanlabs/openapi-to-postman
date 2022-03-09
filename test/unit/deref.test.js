@@ -201,8 +201,6 @@ describe('DEREF FUNCTION TESTS ', function() {
         ],
         nonSupportedFormats = [
           { type: 'integer', format: 'int32' },
-          { type: 'number', format: 'float' },
-          { type: 'number', format: 'double' },
           { type: 'string', format: 'byte' },
           { type: 'string', format: 'binary' },
           { type: 'string', format: 'password' },

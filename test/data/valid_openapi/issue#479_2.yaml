@@ -59,6 +59,9 @@ components:
             age:
               type:  integer
               format: int32
+            created_at:
+              type: string
+              format: date-time
         isFavorite:
           type:  integer
           format: int32
@@ -78,6 +81,27 @@ components:
           type: string
         tag:
           type: string
+        created_at:
+          type: string
+          format: date-time
+        birthday:
+          type: string
+          format: date
+        floatField:
+          type: number
+          format: float
+        doubleField:
+          type: number
+          format: double
+        content:
+          format: byte
+          type: string
+        file:
+          type: string
+          format: binary
+        root_pass:
+          type: string
+          format: password
     Pets:
       type: array
       items:

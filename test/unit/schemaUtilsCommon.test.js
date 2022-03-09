@@ -263,4 +263,35 @@ describe('isTypeValue method', function () {
     expect(result).to.be.false;
   });
 
+
+  it('should return true when value is <dateTime> and type is string,' +
+    ' and format is date-time', function () {
+    const result = isTypeValue('<dateTime>', { type: 'string', format: 'date-time' });
+    expect(result).to.be.true;
+  });
+
+  it('should return true when value is <date> and type is string,' +
+    ' and format is date', function () {
+    const result = isTypeValue('<date>', { type: 'string', format: 'date' });
+    expect(result).to.be.true;
+  });
+
+  it('should return true when value is <float> and type is number,' +
+  ' and format is float', function () {
+    const result = isTypeValue('<float>', { type: 'number', format: 'float' });
+    expect(result).to.be.true;
+  });
+
+  it('should return true when value is <double> and type is number,' +
+  ' and format is double', function () {
+    const result = isTypeValue('<double>', { type: 'number', format: 'double' });
+    expect(result).to.be.true;
+  });
+
+  it('should return true when value is <double> and type is number,' +
+  ' and format is double', function () {
+    const result = isTypeValue('<double>', { type: 'number', format: 'double' });
+    expect(result).to.be.true;
+  });
+
 });

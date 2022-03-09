@@ -69,12 +69,17 @@ describe('Validation with different resolution parameters options', function () 
     let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
         '/issue#479_2.yaml'), 'utf8'),
       expectedRequestBody =
-         '{"data":[{"entityId":"<string>","user":{"id":"<long>","age":"<integer>"},' +
+         '{"data":[{"entityId":"<string>","user":{"id":"<long>","age":"<integer>","created_at":"<dateTime>"},' +
          '"isFavorite":"<integer>","needThis":"<string>"},' +
-         '{"entityId":"<string>","user":{"id":"<long>","age":"<integer>"},' +
+         '{"entityId":"<string>","user":{"id":"<long>","age":"<integer>","created_at":"<dateTime>"},' +
          '"isFavorite":"<integer>","needThis":"<string>"}]}',
       expectedResponseBody =
-         '[{"id":"<long>","name":"<string>","tag":"<string>"},{"id":"<long>","name":"<string>","tag":"<string>"}]',
+         '[{"id":"<long>","name":"<string>","tag":"<string>","created_at":"<dateTime>","birthday":"<date>"' +
+         ',"floatField":"<float>","doubleField":"<double>","content":"<byte>","file":"<binary>",' +
+         '"root_pass":"<password>"},' +
+         '{"id":"<long>","name":"<string>","tag":"<string>","created_at":"<dateTime>","birthday":"<date>"' +
+         ',"floatField":"<float>","doubleField":"<double>","content":"<byte>","file":"<binary>",' +
+         '"root_pass":"<password>"}]',
       options = {
         requestParametersResolution: 'Schema',
         exampleParametersResolution: 'Schema',
@@ -119,9 +124,9 @@ describe('Validation with different resolution parameters options', function () 
     let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
         '/issue#479_2.yaml'), 'utf8'),
       expectedBody =
-         '{"data":[{"entityId":"<string>","user":{"id":"<long>","age":"<integer>"},' +
+         '{"data":[{"entityId":"<string>","user":{"id":"<long>","age":"<integer>","created_at":"<dateTime>"},' +
          '"isFavorite":"<integer>","needThis":"<string>"},' +
-         '{"entityId":"<string>","user":{"id":"<long>","age":"<integer>"},' +
+         '{"entityId":"<string>","user":{"id":"<long>","age":"<integer>","created_at":"<dateTime>"},' +
          '"isFavorite":"<integer>","needThis":"<string>"}]}',
       options = {
         requestParametersResolution: 'Schema',
@@ -165,7 +170,12 @@ describe('Validation with different resolution parameters options', function () 
     let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
         '/issue#479_2.yaml'), 'utf8'),
       expectedResponseBody =
-        '[{"id":"<long>","name":"<string>","tag":"<string>"},{"id":"<long>","name":"<string>","tag":"<string>"}]',
+        '[{"id":"<long>","name":"<string>","tag":"<string>","created_at":"<dateTime>","birthday":"<date>"' +
+        ',"floatField":"<float>","doubleField":"<double>","content":"<byte>","file":"<binary>",' +
+        '"root_pass":"<password>"},' +
+        '{"id":"<long>","name":"<string>","tag":"<string>","created_at":"<dateTime>","birthday":"<date>"' +
+        ',"floatField":"<float>","doubleField":"<double>","content":"<byte>","file":"<binary>",' +
+        '"root_pass":"<password>"}]',
       options = {
         requestParametersResolution: 'Example',
         exampleParametersResolution: 'Schema',
