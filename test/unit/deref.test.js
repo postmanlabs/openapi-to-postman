@@ -132,13 +132,13 @@ describe('DEREF FUNCTION TESTS ', function() {
 
       expect(output).to.deep.include({ type: 'object',
         required: ['id'],
-        properties: { id: { default: '<long>', type: 'integer' } } });
+        properties: { id: { default: '<long>', format: 'int64', type: 'integer' } } });
 
       expect(output_validation).to.deep.include({ anyOf: [
         { type: 'object',
           required: ['id'],
           description: 'Schema 2',
-          properties: { id: { type: 'integer' } }
+          properties: { id: { format: 'int64', type: 'integer' } }
         }, {
           type: 'object',
           properties: { emailField: { type: 'string', format: 'email' } }
@@ -147,7 +147,7 @@ describe('DEREF FUNCTION TESTS ', function() {
 
       expect(output_withdot).to.deep.include({ type: 'object',
         required: ['id'],
-        properties: { id: { default: '<long>', type: 'integer' } } });
+        properties: { id: { default: '<long>', format: 'int64', type: 'integer' } } });
 
       expect(output_customFormat).to.deep.include({ type: 'object',
         properties: { emailField: { default: '<email>', format: 'email', type: 'string' } } });
@@ -156,7 +156,7 @@ describe('DEREF FUNCTION TESTS ', function() {
         type: 'object',
         description: 'Schema 2',
         properties: {
-          id: { default: '<long>', type: 'integer' },
+          id: { default: '<long>', format: 'int64', type: 'integer' },
           test_prop: { default: '<string>', type: 'string' }
         }
       });
@@ -201,9 +201,6 @@ describe('DEREF FUNCTION TESTS ', function() {
         ],
         nonSupportedFormats = [
           { type: 'integer', format: 'int32' },
-          { type: 'integer', format: 'int64' },
-          { type: 'number', format: 'float' },
-          { type: 'number', format: 'double' },
           { type: 'string', format: 'byte' },
           { type: 'string', format: 'binary' },
           { type: 'string', format: 'password' },
