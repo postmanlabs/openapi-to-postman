@@ -1327,7 +1327,7 @@ describe('validateTransaction method. Path variables matching validation (issue 
       expect(result).to.be.an('object');
       resultObj = result.requests[historyRequest[0].id].endpoints[0];
       expect(resultObj.mismatches).to.have.length(1);
-      expect(resultObj.mismatches[0].reasonCode).to.be.equal('INVALID_VALUE');
+      expect(resultObj.mismatches[0].reasonCode).to.be.equal('MISSING_IN_REQUEST');
       expect(resultObj.mismatches[0].reason).to.be.equal(
         'The petId path variable does not match with path variable expected (peterId)' +
         ' in the schema at this position'
@@ -1378,7 +1378,7 @@ describe('validateTransaction method. Path variables matching validation (issue 
         'The petId path variable does not match with path variable expected (peterId)' +
         ' in the schema at this position'
       );
-      expect(resultObj.mismatches[0].reasonCode).to.equal('INVALID_VALUE');
+      expect(resultObj.mismatches[0].reasonCode).to.equal('MISSING_IN_REQUEST');
       done();
     });
   });
@@ -1404,7 +1404,7 @@ describe('validateTransaction method. Path variables matching validation (issue 
         'The petId path variable does not match with path variable expected (peterId)' +
         ' in the schema at this position'
       );
-      expect(resultObj.mismatches[0].reasonCode).to.equal('INVALID_VALUE');
+      expect(resultObj.mismatches[0].reasonCode).to.equal('MISSING_IN_REQUEST');
       done();
     });
   });
@@ -1432,9 +1432,13 @@ describe('validateTransaction method. Path variables matching validation (issue 
         'The petId path variable does not match with path variable expected (peterId)' +
         ' in the schema at this position'
       );
-      expect(resultObj.mismatches[0].reasonCode).to.equal('INVALID_VALUE');
-      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.be.equal('petId');
-      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.be.equal('peterId');
+      expect(resultObj.mismatches[0].reasonCode).to.equal('MISSING_IN_REQUEST');
+      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
+      expect(resultObj.mismatches[0].suggestedFix.actualValue.key).to.be.equal('petId');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue.key).to.be.equal('peterId');
       expect(resultObj.mismatches[0].suggestedFix.key).to.be.equal('peterId');
       done();
     });
@@ -1467,19 +1471,27 @@ describe('validateTransaction method. Path variables matching validation (issue 
         'The petId path variable does not match with path variable expected (peterId)' +
         ' in the schema at this position'
       );
-      expect(resultObj.mismatches[0].reasonCode).to.equal('INVALID_VALUE');
+      expect(resultObj.mismatches[0].reasonCode).to.equal('MISSING_IN_REQUEST');
       expect(resultObj.mismatches[1].reason).to.equal(
         'The wrongNamedId path variable does not match with path variable expected (correctName)' +
         ' in the schema at this position'
       );
-      expect(resultObj.mismatches[1].reasonCode).to.equal('INVALID_VALUE');
+      expect(resultObj.mismatches[1].reasonCode).to.equal('MISSING_IN_REQUEST');
 
-      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.be.equal('petId');
-      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.be.equal('peterId');
+      expect(resultObj.mismatches[0].suggestedFix.actualValue.key).to.be.equal('petId');
+      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue.key).to.be.equal('peterId');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
       expect(resultObj.mismatches[0].suggestedFix.key).to.be.equal('peterId');
 
-      expect(resultObj.mismatches[1].suggestedFix.actualValue).to.be.equal('wrongNamedId');
-      expect(resultObj.mismatches[1].suggestedFix.suggestedValue).to.be.equal('correctName');
+      expect(resultObj.mismatches[1].suggestedFix.actualValue.key).to.be.equal('wrongNamedId');
+      expect(resultObj.mismatches[1].suggestedFix.actualValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
+      expect(resultObj.mismatches[1].suggestedFix.suggestedValue.key).to.be.equal('correctName');
+      expect(resultObj.mismatches[1].suggestedFix.suggestedValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
       expect(resultObj.mismatches[1].suggestedFix.key).to.be.equal('correctName');
       done();
     });
@@ -1512,14 +1524,18 @@ describe('validateTransaction method. Path variables matching validation (issue 
         'The petId path variable does not match with path variable expected (peterId)' +
         ' in the schema at this position'
       );
-      expect(resultObj.mismatches[0].reasonCode).to.equal('INVALID_VALUE');
+      expect(resultObj.mismatches[0].reasonCode).to.equal('MISSING_IN_REQUEST');
       expect(resultObj.mismatches[1].reason).to.equal(
         'The required path variable "correctName" was not found in the transaction'
       );
       expect(resultObj.mismatches[1].reasonCode).to.equal('MISSING_IN_REQUEST');
 
-      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.be.equal('petId');
-      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.be.equal('peterId');
+      expect(resultObj.mismatches[0].suggestedFix.actualValue.key).to.be.equal('petId');
+      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue.key).to.be.equal('peterId');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
       expect(resultObj.mismatches[0].suggestedFix.key).to.be.equal('peterId');
 
       expect(resultObj.mismatches[1].suggestedFix.actualValue).to.be.equal(null);
