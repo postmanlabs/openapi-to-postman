@@ -1,0 +1,336 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Platform API",
+    "description": "Provides functionality to provide access.",
+    "termsOfService": "https://TOSServer/s/rmwxu64h1ipr41u49w3bbuvbsa29wku9",
+    "contact": {
+      "name": "name",
+      "url": "https://app.dev",
+      "email": "dev@app.com"
+    },
+    "license": {
+      "name": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "version": "2.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://server/2.0",
+      "description": "Platform API server"
+    }
+  ],
+  "paths": {
+    "/authorize": {
+      "get": {
+        "operationId": "get_authorize",
+        "summary": "Authorize user",
+        "description": "Authorize a user ...",
+        "tags": [
+          "Authorization"
+        ],
+        "x-box-tag": "authorization",
+        "security": [],
+        "servers": [
+          {
+            "url": "https://server/api/oauth2",
+            "description": "Server for client-side authentication"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "response_type",
+            "description": "The type of response we'd like to receive.",
+            "in": "query",
+            "example": "code",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "token",
+              "enum": [
+                "code"
+              ]
+            }
+          },
+          {
+            "name": "client_id",
+            "description": "The Client ID.",
+            "in": "query",
+            "example": "ly1nj6n11vionaie65emwzk575hnnmrk",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "description": "The URI to redirecton.",
+            "in": "query",
+            "example": "http://example.com/auth/callback",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "url"
+            }
+          },
+          {
+            "name": "state",
+            "description": "A custom string of your choice.",
+            "in": "query",
+            "example": "my_state",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "description": "A comma-separated list.",
+            "in": "query",
+            "example": "admin_readwrite",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Does not return any data, but rather should be used in the browser.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "format": "html"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Does not return any data, but rather should be used in the browser.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "format": "html"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathServers": {
+      "get": {
+        "operationId": "get_authorize",
+        "summary": "Authorize user",
+        "description": "...",
+        "tags": [
+          "Authorization"
+        ],
+        "x-box-tag": "authorization",
+        "security": [],
+        "servers": [
+          {
+            "url": "https://server/api/oauth2",
+            "description": "Server for client-side authentication"
+          },
+          {
+            "url": "https://server/api/oauth3",
+            "description": "Server for client-side authentication"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "response_type",
+            "description": "The type of response we'd like to receive.",
+            "in": "query",
+            "example": "code",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "token",
+              "enum": [
+                "code"
+              ]
+            }
+          },
+          {
+            "name": "client_id",
+            "description": "The Client ID.",
+            "in": "query",
+            "example": "ly1nj6n11vionaie65emwzk575hnnmrk",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "description": "The URI to redirect",
+            "in": "query",
+            "example": "http://example.com/auth/callback",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "url"
+            }
+          },
+          {
+            "name": "state",
+            "description": "A custom string of your choice.",
+            "in": "query",
+            "example": "my_state",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "description": "A comma-separated list.",
+            "in": "query",
+            "example": "admin_readwrite",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Does not return any data, but rather should be used in the browser.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "format": "html"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Does not return any data, but rather should be used in the browser.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "format": "html"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth": {
+      "get": {
+        "operationId": "get_authorize",
+        "summary": "Authorize user",
+        "description": "Authorize a user.",
+        "tags": [
+          "Authorization"
+        ],
+        "x-box-tag": "authorization",
+        "security": [],
+        "parameters": [
+          {
+            "name": "response_type",
+            "description": "The type of response we'd like to receive.",
+            "in": "query",
+            "example": "code",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "token",
+              "enum": [
+                "code"
+              ]
+            }
+          },
+          {
+            "name": "client_id",
+            "description": "The Client ID.",
+            "in": "query",
+            "example": "ly1nj6n11vionaie65emwzk575hnnmrk",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "description": "The URI.",
+            "in": "query",
+            "example": "http://example.com/auth/callback",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "url"
+            }
+          },
+          {
+            "name": "state",
+            "description": "A custom string of your choice.",
+            "in": "query",
+            "example": "my_state",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "description": "A comma-separated",
+            "in": "query",
+            "example": "admin_readwrite",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Does not return any data, but rather should be used in the browser.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "format": "html"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Does not return any data, but rather should be used in the browser.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "format": "html"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+    }
+  },
+  "security": [
+    {
+      "OAuth2Security": []
+    }
+  ],
+  "tags": [
+  ],
+  "externalDocs": {
+    "description": "Developer Documentation",
+    "url": "https://developer.com"
+  }
+}
