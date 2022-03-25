@@ -30,7 +30,6 @@
         "tags": [
           "Authorization"
         ],
-        "x-box-tag": "authorization",
         "security": [],
         "servers": [
           {
@@ -129,7 +128,6 @@
         "tags": [
           "Authorization"
         ],
-        "x-box-tag": "authorization",
         "security": [],
         "servers": [
           {
@@ -232,7 +230,6 @@
         "tags": [
           "Authorization"
         ],
-        "x-box-tag": "authorization",
         "security": [],
         "parameters": [
           {

@@ -66,42 +66,6 @@ function getFoldersByVersion(folder30Path, folder31Path) {
 
 describe('Validation with different resolution parameters options', function () {
 
-  it('Should validate correctly schema with explicit servers', function () {
-    let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
-        '/explicit_server_in_path.json'), 'utf8'),
-      options = {
-        requestParametersResolution: 'Schema',
-        exampleParametersResolution: 'Schema',
-        showMissingInSchemaErrors: true,
-        strictRequestMatching: true,
-        ignoreUnresolvedVariables: true,
-        validateMetadata: true,
-        suggestAvailableFixes: true,
-        detailedBlobValidation: true
-      },
-      schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options);
-    schemaPack.convert((err, conversionResult) => {
-      expect(err).to.be.null;
-      expect(conversionResult.result).to.equal(true);
-
-      let historyRequest = [];
-      getAllTransactions(conversionResult.output[0].data, historyRequest);
-      schemaPack.validateTransaction(historyRequest, (err, result) => {
-        expect(err).to.be.null;
-        expect(result).to.be.an('object');
-        let requestIds = Object.keys(result.requests);
-        expect(err).to.be.null;
-        requestIds.forEach((requestId) => {
-          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
-          const responsesIds = Object.keys(result.requests[requestId].endpoints[0].responses);
-          responsesIds.forEach((responseId) => {
-            expect(result.requests[requestId].endpoints[0].responses[responseId].matched).to.be.true;
-          });
-        });
-      });
-    });
-  });
-
   it('Should validate correctly with request and example parameters as Schema', function () {
     let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
         '/issue#479_2.yaml'), 'utf8'),
