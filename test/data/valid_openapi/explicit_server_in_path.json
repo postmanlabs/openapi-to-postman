@@ -22,7 +22,7 @@
     }
   ],
   "paths": {
-    "/authorize": {
+    "/authorize/p": {
       "get": {
         "operationId": "get_authorize",
         "summary": "Authorize user",
@@ -135,7 +135,7 @@
             "description": "Server for client-side authentication"
           },
           {
-            "url": "https://server/api/oauth3",
+            "url": "https://server/api/oauth3/op",
             "description": "Server for client-side authentication"
           }
         ],
