@@ -7,7 +7,6 @@ paths:
     get:
       operationId: someRequest
       parameters:
-        - $ref: '#/components/parameters/DeepObjectNestedList'
         - $ref: '#/components/parameters/DeepObjectLengthParameter'
       responses:
         '200':
