@@ -45,7 +45,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml'),
       rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json'),
       parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml'),
-      issue10229 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#10229.json');
+      issue10229 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#10229.json'),
+      deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1091,6 +1092,20 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(err).to.be.null;
           let request = conversionResult.output[0].data.item[0].request;
           expect(request.auth.type).to.equal('noauth');
+          done();
+        });
+    });
+
+    it('[Github #10752]: Should convert deepObject length property' +
+    deepObjectLengthProperty, function(done) {
+      var openapi = fs.readFileSync(deepObjectLengthProperty, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        { schemaFaker: true, requestParametersResolution: 'Example' }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output[0].data.item[0].request.url.query[0].key)
+            .to.equal('deepObjectLengthParameter[length]');
+          expect(conversionResult.output[0].data.item[0].request.url.query[0].value).to.equal('20');
           done();
         });
     });
