@@ -1,4 +1,7 @@
 
+# THIS BRANCH IS DEPRECATED, IN FAVOR OF A STANDALONE PACKAGE [Portman](https://github.com/apideck-libraries/portman) 
+ ---
+
 ![postman icon](https://raw.githubusercontent.com/postmanlabs/postmanlabs.github.io/develop/global-artefacts/postman-logo%2Btext-320x132.png)
 
 *Supercharge your API workflow.*
