@@ -3,7 +3,6 @@ const SchemaPack = require('../..').SchemaPack,
   fs = require('fs'),
   path = require('path'),
   SWAGGER_20_FOLDER = '../data/valid_swagger';
-  // OPENAPI_31_COLLECTIONS = '../data/31CollectionTransactions'
 
 describe('SchemaPack instance creation', function() {
   it('Should create an instance of SchemaPack when input is a string', function() {
