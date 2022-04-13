@@ -42,3 +42,18 @@ describe('getMetaData method', function() {
     });
   });
 });
+
+describe('Convert method', function() {
+  it('Should convert a basic example', function() {
+    const fileSource = path.join(__dirname, SWAGGER_20_FOLDER + '/sampleswagger.json'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      schemapack = new SchemaPack(input);
+    schemapack.convert((error, result) => {
+      expect(error).to.be.null;
+    });
+  });
+});
