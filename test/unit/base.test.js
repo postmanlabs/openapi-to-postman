@@ -46,7 +46,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json'),
       parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml'),
       issue10229 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#10229.json'),
-      deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml');
+      deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml'),
+      valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1106,6 +1107,21 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data.item[0].request.url.query[0].key)
             .to.equal('deepObjectLengthParameter[length]');
           expect(conversionResult.output[0].data.item[0].request.url.query[0].value).to.equal('20');
+          done();
+        });
+    });
+
+    it('[Github #10752]: Should convert value property in example' +
+    valuePropInExample, function(done) {
+      var openapi = fs.readFileSync(valuePropInExample, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        { schemaFaker: true, requestParametersResolution: 'Example' }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output[0].data.item[0].response[0]
+            .body).to.include('"value": "QA"');
+          expect(conversionResult.output[0].data.item[1].response[0]
+            .body).to.include('"value": "QA"');
           done();
         });
     });
