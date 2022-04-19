@@ -21,6 +21,22 @@ describe('PARSE FUNCTION TESTS', function() {
     expect(result[0]).to.equal(folderPath + '/index.yaml');
   });
 
+  it('getRootFiles should exclude files when the version is not the one in files', function() {
+    let folderPath = path.join(__dirname, '../data/multiFile_with_one_root'),
+      array = [
+        { fileName: folderPath + '/index.yaml' },
+        { fileName: folderPath + '/definitions/index.yaml' },
+        { fileName: folderPath + '/definitions/User.yaml' },
+        { fileName: folderPath + '/info/index.yaml' },
+        { fileName: folderPath + '/paths/index.yaml' },
+        { fileName: folderPath + '/paths/foo.yaml' },
+        { fileName: folderPath + '/paths/bar.yaml' }
+      ],
+      result = parse.getRootFiles({ data: array, type: 'folder' }, inputValidation, {}, {},
+        '2.0');
+    expect(result.length).to.equal(0);
+  });
+
   it('getOasObject function should return a valid oas object from a yaml file', function() {
     let filePath = path.join(__dirname, '../data/multiFile_with_one_root/index.yaml'),
       file = fs.readFileSync(filePath, 'utf8'),
