@@ -1,4 +1,7 @@
-const { getSpecVersion, filterOptionsByVersion } = require('../../lib/common/versionUtils'),
+const { getSpecVersion,
+    filterOptionsByVersion,
+    compareVersion,
+    getVersionRegexBySpecificationVersion } = require('../../lib/common/versionUtils'),
   expect = require('chai').expect;
 
 describe('getSpecVersion', function() {
@@ -240,3 +243,54 @@ describe('filterOptionsByVersion method', function() {
     })).to.include.members(['optionA', 'optionB', 'optionD']);
   });
 });
+
+describe('compareVersion method', function () {
+  it('should return true when input and version are equal', function () {
+    const result = compareVersion('3.0.0', '3.0.0');
+    expect(result).to.be.true;
+  });
+  it('should return false when input and version are different', function () {
+    const result = compareVersion('3.1.0', '3.0.0');
+    expect(result).to.be.false;
+  });
+  it('should return true when input and version are semantically equal', function () {
+    const result = compareVersion('3.0', '3.0.0');
+    expect(result).to.be.true;
+  });
+  it('should return false when input is not a valid version string', function () {
+    const result = compareVersion('invalid', '3.0.0');
+    expect(result).to.be.false;
+  });
+  it('should return false when version is not a valid version string', function () {
+    const result = compareVersion('3.0.0', 'invalid');
+    expect(result).to.be.false;
+  });
+  it('should return false when version and input are not valid', function () {
+    const result = compareVersion('invalid', 'invalid');
+    expect(result).to.be.false;
+  });
+});
+
+describe('getVersionRegexBySpecificationVersion method', function () {
+  it('should return regex for 3.0', function () {
+    const result = getVersionRegexBySpecificationVersion('3.0');
+    expect(result.toString()).to.equal('/openapi[\'|\"]?:\\s?[\\]?[\'|\"]?3.0/');
+  });
+  it('should return regex for 3.0.0', function () {
+    const result = getVersionRegexBySpecificationVersion('3.0.0');
+    expect(result.toString()).to.equal('/openapi[\'|\"]?:\\s?[\\]?[\'|\"]?3.0/');
+  });
+  it('should return regex for 3.1', function () {
+    const result = getVersionRegexBySpecificationVersion('3.1');
+    expect(result.toString()).to.equal('/openapi[\'|\"]?:\\s?[\\]?[\'|\"]?3.1/');
+  });
+  it('should return regex for 2.0', function () {
+    const result = getVersionRegexBySpecificationVersion('2.0');
+    expect(result.toString()).to.equal('/swagger[\'|\"]?:\\s?[\\]?[\'|\"]?2.0/');
+  });
+  it('should return regex for 3.0 as default', function () {
+    const result = getVersionRegexBySpecificationVersion('invalid');
+    expect(result.toString()).to.equal('/openapi[\'|\"]?:\\s?[\\]?[\'|\"]?3.0/');
+  });
+});
+
