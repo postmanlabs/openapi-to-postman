@@ -16,27 +16,27 @@ describe('parseSpec method', function () {
     let fileContent = fs.readFileSync(invalidSwaggerFolder + '/invalid_no_info_title.json', 'utf8');
     const parsedSpec = concreteUtils.parseSpec(fileContent, {});
     expect(parsedSpec.result).to.be.false;
-    expect(parsedSpec.reason).to.equal('The info property must have title and version defined');
+    expect(parsedSpec.reason).to.equal('Title, and version fields are required for the Info Object');
   });
 
   it('should return false and swagger must have info object message', function () {
     let fileContent = fs.readFileSync(invalidSwaggerFolder + '/invalid_no_info.json', 'utf8');
     const parsedSpec = concreteUtils.parseSpec(fileContent, {});
     expect(parsedSpec.result).to.be.false;
-    expect(parsedSpec.reason).to.equal('The Swagger object must have an \"info\" property');
+    expect(parsedSpec.reason).to.equal('The Swagger specification must have an \"info\" field');
   });
 
   it('should return false and invalid version message', function () {
     let fileContent = fs.readFileSync(invalidSwaggerFolder + '/invalid_wrong_swagger_version.json', 'utf8');
     const parsedSpec = concreteUtils.parseSpec(fileContent, {});
     expect(parsedSpec.result).to.be.false;
-    expect(parsedSpec.reason).to.equal('The Swagger object must have the \"swagger\" property set to 2.0');
+    expect(parsedSpec.reason).to.equal('The value of swagger field must be 2.0');
   });
 
   it('should return false and no paths message', function () {
     let fileContent = fs.readFileSync(invalidSwaggerFolder + '/invalid_no_paths.json', 'utf8');
     const parsedSpec = concreteUtils.parseSpec(fileContent, {});
     expect(parsedSpec.result).to.be.false;
-    expect(parsedSpec.reason).to.equal('The Swagger object must have a "paths" property');
+    expect(parsedSpec.reason).to.equal('The Swagger specification must have a "paths" field');
   });
 });
