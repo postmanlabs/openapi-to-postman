@@ -32,6 +32,11 @@ module.exports = {
     return SchemaPack.getOptions(mode, criteria);
   },
 
+  detectRootFiles: async function(input) {
+    var schema = new SchemaPack(input);
+    return schema.detectRootFiles();
+  },
+
   // new API
   SchemaPack
 };
