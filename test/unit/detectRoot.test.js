@@ -32,6 +32,7 @@ describe('detectRoot method', function() {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data[0].path).to.equal('/petstore.yaml');
+    expect(res.output.specification.version).to.equal('3.0.0');
   });
 
   it('should return one root 3.0 correctly', async function() {
