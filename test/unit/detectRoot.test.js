@@ -245,4 +245,24 @@ describe('detectRoot method', function() {
     expect(res.output.data[0].path).to.equal('/swagger.json');
   });
 
+  it('should read content when is not present 3.0 and no specific version', async function () {
+    let input = {
+      type: 'folder',
+      specificationVersion: '3.1.0',
+      data: [
+        {
+          path: validPetstore
+        },
+        {
+          path: validHopService31x
+        }
+      ]
+    };
+    const res = await Converter.detectRootFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].path).to.equal(validHopService31x);
+
+  });
+
 });
