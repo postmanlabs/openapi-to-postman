@@ -1,0 +1,16 @@
+properties:
+  first_name:
+    type: string
+    description: First name of the Uber user.
+  last_name:
+    type: string
+    description: Last name of the Uber user.
+  email:
+    type: string
+    description: Email address of the Uber user
+  picture:
+    type: string
+    description: Image URL of the Uber user.
+  promo_code:
+    type: string
+    description: Promo code of the Uber user.

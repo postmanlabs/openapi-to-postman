@@ -192,7 +192,7 @@ describe('filterOptionsByVersion method', function() {
         {
           id: 'optionC',
           name: 'option C',
-          supportedIn: ['3.1'],
+          supportedIn: ['3.1', '2.0'],
           default: 'A default value for option C'
         },
         {
@@ -241,6 +241,40 @@ describe('filterOptionsByVersion method', function() {
     expect(optionsFiltered.map((option) => {
       return option.id;
     })).to.include.members(['optionA', 'optionB', 'optionD']);
+  });
+
+  it('Should return the options supported in version 2.0', function() {
+    const optionsMock = [
+        {
+          id: 'optionA',
+          name: 'option A',
+          supportedIn: ['2.0'],
+          default: 'A default value for option A'
+        },
+        {
+          id: 'optionB',
+          name: 'option B',
+          supportedIn: ['3.0'],
+          default: 'A default value for option B'
+        },
+        {
+          id: 'optionC',
+          name: 'option C',
+          supportedIn: ['3.1', '2.0'],
+          default: 'A default value for option C'
+        },
+        {
+          id: 'optionD',
+          name: 'option D',
+          supportedIn: ['3.0', '3.1'],
+          default: 'A default value for option D'
+        }
+      ],
+      optionsFiltered = filterOptionsByVersion(optionsMock, '2.0');
+    expect(optionsFiltered).to.be.an('array');
+    expect(optionsFiltered.map((option) => {
+      return option.id;
+    })).to.include.members(['optionC', 'optionA']);
   });
 });
 

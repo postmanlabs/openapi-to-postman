@@ -1,0 +1,54 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "My API",
+    "version": "1.0.0",
+    "title": "My API",
+    "termsOfService": "http://www.domain.com",
+    "contact": {
+      "name": "support@domain.com"
+    }
+  },
+  "basePath": "/",
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "Authorization/LoginAPI": {
+      "post": {
+        "summary": "Authenticates you to the system and produces a session token that will be used for future calls",
+        "description": "",
+        "operationId": "LoginAPI",
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [{
+          "in": "formData",
+          "name": "UserName",
+          "description": "Login Username",
+          "required": true,
+          "type": "string"
+
+        }, {
+          "in": "formData",
+          "name": "Password",
+          "description": "Password",
+          "required": true,
+          "type": "string"
+
+        }],
+        "responses": {
+          "200": {
+            "description": "API Response with session ID if login is allowed",
+            "schema": {
+              "$ref": "#/definitions/Authorization"
+            }
+          }
+        }
+      }
+    }
+  }
+}

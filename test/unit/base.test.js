@@ -5,7 +5,9 @@ var expect = require('chai').expect,
   _ = require('lodash'),
   async = require('async'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
-  INVALID_OPENAPI_PATH = '../data/invalid_openapi';
+  INVALID_OPENAPI_PATH = '../data/invalid_openapi',
+  SWAGGER_20_FOLDER_YAML = '../data/valid_swagger/yaml/',
+  SWAGGER_20_FOLDER_JSON = '../data/valid_swagger/json/';
 
 describe('CONVERT FUNCTION TESTS ', function() {
   // these two covers remaining part of util.js
@@ -1124,6 +1126,121 @@ describe('CONVERT FUNCTION TESTS ', function() {
             .body).to.include('"value": "QA"');
           done();
         });
+    });
+  });
+  describe('Converting swagger 2.0 files', function() {
+    it('should convert path paramters to postman-compatible paramters', function (done) {
+      const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger2-with-params.json'),
+        input = {
+          type: 'file',
+          data: fileData
+        };
+
+      Converter.convert(input, {}, function(err, convertResult) {
+        expect(err).to.be.null;
+        // Make sure that path params are updated and their respective default values
+        convertResult.output.forEach(function(element) {
+          expect(element.type).to.equal('collection');
+          expect(element.data.item[0].request.url.path.indexOf(':ownerId') > -1).to.equal(true);
+          expect(element.data.item[0].request.url.path.indexOf(':petId') > -1).to.equal(true);
+
+          let thisVar = element.data.item[0].request.url.variable[0];
+
+          expect(thisVar.type).to.equal('any');
+
+          expect(thisVar.value).to.equal('42');
+          expect(thisVar.key).to.equal('ownerId');
+        });
+        done();
+      });
+    });
+
+    it('Should convert a swagger document with YAML anchors', function(done) {
+      const fileData = fs.readFileSync(path.join(__dirname, SWAGGER_20_FOLDER_YAML, 'yaml_anchor.yaml'), 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+      Converter.convert(input, {}, (error, result) => {
+        expect(error).to.be.null;
+        expect(result.result).to.equal(true);
+        expect(result.output.length).to.equal(1);
+        expect(result.output[0].type).to.have.equal('collection');
+        expect(result.output[0].data).to.have.property('info');
+        expect(result.output[0].data).to.have.property('item');
+      });
+      done();
+    });
+
+    it('must read values consumes', function (done) {
+      const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger_aws_2.json'),
+        input = {
+          type: 'file',
+          data: fileData
+        };
+
+      Converter.convert(input, { requestName: 'url' }, (err, convertResult) => {
+        expect(err).to.be.null;
+        // Make sure that consumes and produces are processed
+        convertResult.output.forEach(function(element) {
+          expect(element.type).to.equal('collection');
+          expect(JSON.stringify(element.data.item[0].request.header[0])).to
+            .equal('{"key":"Content-Type","value":"application/json"}');
+        });
+        done();
+      });
+    });
+
+    it('should convert a swagger object which only have a root path.', function(done) {
+      const fileData = JSON.parse(
+          fs.readFileSync(path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger3.json'), 'utf8')
+        ),
+        input = {
+          type: 'json',
+          data: fileData
+        };
+
+      Converter.convert(input, {}, (err, result) => {
+        expect(result.result).to.equal(true);
+        expect(result.output.length).to.equal(1);
+        expect(result.output[0].type).to.have.equal('collection');
+        expect(result.output[0].data).to.have.property('info');
+        expect(result.output[0].data).to.have.property('item');
+
+        done();
+      });
+    });
+
+    it('should name the requests based on requestNameSource parameter, value=`URL`', function (done) {
+      const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger3.json'),
+        input = {
+          type: 'file',
+          data: fileData
+        };
+
+      Converter.convert(input, { requestNameSource: 'URL' }, (err, convertResult) => {
+        let request = convertResult.output[0].data.item[0].request;
+
+        expect(err).to.be.null;
+        expect(request.name).to.equal('{{baseUrl}}/');
+        done();
+      });
+    });
+
+    it('should name the requests based on requestNameSource parameter, value=`Fallback`', function (done) {
+      const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger3.json'),
+        input = {
+          type: 'file',
+          data: fileData
+        };
+
+      Converter.convert(input, { requestNameSource: 'Fallback' }, (err, convertResult) => {
+        let request = convertResult.output[0].data.item[0].request;
+
+        expect(err).to.be.null;
+        expect(request.name).to.equal('List API versions');
+        done();
+      });
     });
   });
 

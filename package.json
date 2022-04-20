@@ -126,6 +126,7 @@
     "oas-resolver-browser": "2.5.2",
     "path-browserify": "1.0.1",
     "postman-collection": "4.0.0",
+    "swagger2openapi": "7.0.8",
     "yaml": "1.10.2"
   },
   "author": "Postman Labs <help@getpostman.com>",
