@@ -22,7 +22,7 @@ describe('getAdjacentAndMissing function', function () {
         fileName: 'Pet.yaml',
         content: contentFilePet
       }],
-      { graphAdj, missingNodes } = getAdjacentAndMissing(inputNode, inputData);
+      { graphAdj, missingNodes } = getAdjacentAndMissing(inputNode, inputData, inputNode);
     expect(graphAdj.length).to.equal(1);
     expect(graphAdj[0].fileName).to.equal('Pet.yaml');
     expect(missingNodes.length).to.equal(0);
@@ -32,14 +32,14 @@ describe('getAdjacentAndMissing function', function () {
     const contentFileMissedRef = fs.readFileSync(missedRef, 'utf8'),
       contentFilePet = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
       inputNode = {
-        fileName: '/missedRef.yaml',
+        path: '/missedRef.yaml',
         content: contentFileMissedRef
       },
       inputData = [{
         fileName: 'Pet.yaml',
         content: contentFilePet
       }],
-      { graphAdj, missingNodes } = getAdjacentAndMissing(inputNode, inputData);
+      { graphAdj, missingNodes } = getAdjacentAndMissing(inputNode, inputData, inputNode);
     expect(graphAdj.length).to.equal(1);
     expect(graphAdj[0].fileName).to.equal('Pet.yaml');
     expect(missingNodes.length).to.equal(1);
@@ -95,7 +95,7 @@ describe('getRelatedFiles function ', function () {
       }],
       { relatedFiles, missingRelatedFiles } = getRelatedFiles(rootNode, inputData);
     expect(relatedFiles.length).to.equal(1);
-    expect(relatedFiles[0].fileName).to.equal('Pet.yaml');
+    expect(relatedFiles[0].path).to.equal('Pet.yaml');
     expect(missingRelatedFiles.length).to.equal(1);
     expect(missingRelatedFiles[0].relativeToRootPath).to.equal('../common/Error.yaml');
 
