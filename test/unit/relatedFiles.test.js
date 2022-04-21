@@ -1,39 +1,59 @@
-// let expect = require('chai').expect,
-const { getRelatedFiles, getReferences, getReferencesNodes } = require('./../../lib/relatedFiles');
-
-var expect = require('chai').expect,
+const { getRelatedFiles, getReferences, getAdjacentAndMissing } = require('./../../lib/relatedFiles'),
+  expect = require('chai').expect,
   fs = require('fs'),
   path = require('path'),
   PET_STORE_SEPARATED = '../data/petstore separate yaml/spec',
+  RELATED_FILES = '../data/relatedFiles',
   newPet = path.join(__dirname, PET_STORE_SEPARATED + '/NewPet.yaml'),
   swaggerRoot = path.join(__dirname, PET_STORE_SEPARATED + '/swagger.yaml'),
-  petstoreSeparatedPet = path.join(__dirname, PET_STORE_SEPARATED + '/Pet.yaml');
+  petstoreSeparatedPet = path.join(__dirname, PET_STORE_SEPARATED + '/Pet.yaml'),
+  missedRef = path.join(__dirname, RELATED_FILES + '/missedRef.yaml');
 
 
-describe('getReferencesNodes method', function () {
-  it('should return adjacent and missing nodes', function () {
+describe('getAdjacentAndMissing function', function () {
+  it('should return adjacent and no missing nodes', function () {
     const contentFileNewPet = fs.readFileSync(newPet, 'utf8'),
       contentFilePet = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
       inputNode = {
-        path: '/NewPet.yaml',
+        fileName: '/NewPet.yaml',
         content: contentFileNewPet
       },
       inputData = [{
-        path: 'Pet.yaml',
+        fileName: 'Pet.yaml',
         content: contentFilePet
       }],
-      { graphAdj, missingNodes } = getReferencesNodes(inputNode, inputData);
+      { graphAdj, missingNodes } = getAdjacentAndMissing(inputNode, inputData);
     expect(graphAdj.length).to.equal(1);
+    expect(graphAdj[0].fileName).to.equal('Pet.yaml');
     expect(missingNodes.length).to.equal(0);
+  });
+
+  it('should return adjacent and missing nodes', function () {
+    const contentFileMissedRef = fs.readFileSync(missedRef, 'utf8'),
+      contentFilePet = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
+      inputNode = {
+        fileName: '/missedRef.yaml',
+        content: contentFileMissedRef
+      },
+      inputData = [{
+        fileName: 'Pet.yaml',
+        content: contentFilePet
+      }],
+      { graphAdj, missingNodes } = getAdjacentAndMissing(inputNode, inputData);
+    expect(graphAdj.length).to.equal(1);
+    expect(graphAdj[0].fileName).to.equal('Pet.yaml');
+    expect(missingNodes.length).to.equal(1);
+    expect(missingNodes[0].relativeToRootPath).to.equal('../common/Error.yaml');
+
   });
 });
 
-describe('getReferences method', function () {
+describe('getReferences function', function () {
   it('should return 1 reference from input', function () {
     const contentFile = fs.readFileSync(newPet, 'utf8'),
 
       inputNode = {
-        path: '/NewPet.yaml',
+        fileName: '/NewPet.yaml',
         content: contentFile
       },
       result = getReferences(inputNode);
@@ -60,9 +80,24 @@ describe('getReferences method', function () {
   });
 });
 
-describe('Get header family function ', function () {
-  it('should check for custom type JSON header', function () {
-    getRelatedFiles();
+describe('getRelatedFiles function ', function () {
+
+  it('should return adjacent and missing nodes', function () {
+    const contentFileMissedRef = fs.readFileSync(missedRef, 'utf8'),
+      contentFilePet = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
+      rootNode = {
+        fileName: '/missedRef.yaml',
+        content: contentFileMissedRef
+      },
+      inputData = [{
+        fileName: 'Pet.yaml',
+        content: contentFilePet
+      }],
+      { relatedFiles, missingRelatedFiles } = getRelatedFiles(rootNode, inputData);
+    expect(relatedFiles.length).to.equal(1);
+    expect(relatedFiles[0].fileName).to.equal('Pet.yaml');
+    expect(missingRelatedFiles.length).to.equal(1);
+    expect(missingRelatedFiles[0].relativeToRootPath).to.equal('../common/Error.yaml');
 
   });
 
