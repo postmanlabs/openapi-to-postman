@@ -13,7 +13,8 @@ var expect = require('chai').expect,
   petstoreSeparatedPet = path.join(__dirname, PET_STORE_SEPARATED + '/Pet.yaml'),
   missedRef = path.join(__dirname, RELATED_FILES + '/missedRef.yaml'),
   circularRefNewPet = path.join(__dirname, RELATED_FILES + '/NewPet.yaml'),
-  refToRoot = path.join(__dirname, RELATED_FILES + '/refToRoot.yaml');
+  refToRoot = path.join(__dirname, RELATED_FILES + '/refToRoot.yaml'),
+  internalRefOnly = path.join(__dirname, VALID_OPENAPI_PATH + '/deepObjectLengthProperty.yaml');
   // petstoreSeparatedJson = path.join(__dirname, PET_STORE_SEPARATED_JSON + '/swagger.json'),
   // petstoreSeparatedPetJson = path.join(__dirname, PET_STORE_SEPARATED_JSON + '/Pet.json'),
   // validHopService31x = path.join(__dirname, VALID_OPENAPI_31_PATH + '/yaml/hopService.yaml');
@@ -115,6 +116,29 @@ describe('detectRoot method', function() {
     expect(res.output.data[0].relatedFiles[0].relativeToRootPath).to.equal('NewPet.yaml');
     expect(res.output.data[0].missingRelatedFiles.length).to.equal(1);
     expect(res.output.data[0].missingRelatedFiles[0].relativeToRootPath).to.equal('Pet.yaml');
+
+  });
+
+  it('should not return local ref as missing node', async function () {
+    const contentFileMissedRef = fs.readFileSync(internalRefOnly, 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/deepObjectLengthProperty.yaml',
+            content: contentFileMissedRef
+          }
+        ],
+        data: [
+        ]
+      },
+      res = await Converter.detectRelatedFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].rootFile.path).to.equal('/deepObjectLengthProperty.yaml');
+    expect(res.output.data[0].relatedFiles.length).to.equal(0);
+    expect(res.output.data[0].missingRelatedFiles.length).to.equal(0);
 
   });
 });
