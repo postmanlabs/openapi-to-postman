@@ -14,7 +14,10 @@ var expect = require('chai').expect,
   missedRef = path.join(__dirname, RELATED_FILES + '/missedRef.yaml'),
   circularRefNewPet = path.join(__dirname, RELATED_FILES + '/NewPet.yaml'),
   refToRoot = path.join(__dirname, RELATED_FILES + '/refToRoot.yaml'),
-  internalRefOnly = path.join(__dirname, VALID_OPENAPI_PATH + '/deepObjectLengthProperty.yaml');
+  internalRefOnly = path.join(__dirname, VALID_OPENAPI_PATH + '/deepObjectLengthProperty.yaml'),
+  circularRef = path.join(__dirname, RELATED_FILES + '/circularRef.yaml'),
+  oldPet = path.join(__dirname, RELATED_FILES + '/oldPet.yaml'),
+  pet = path.join(__dirname, RELATED_FILES + '/Pet.yaml');
   // petstoreSeparatedJson = path.join(__dirname, PET_STORE_SEPARATED_JSON + '/swagger.json'),
   // petstoreSeparatedPetJson = path.join(__dirname, PET_STORE_SEPARATED_JSON + '/Pet.json'),
   // validHopService31x = path.join(__dirname, VALID_OPENAPI_31_PATH + '/yaml/hopService.yaml');
@@ -138,6 +141,42 @@ describe('detectRoot method', function() {
     expect(res.result).to.be.true;
     expect(res.output.data[0].rootFile.path).to.equal('/deepObjectLengthProperty.yaml');
     expect(res.output.data[0].relatedFiles.length).to.equal(0);
+    expect(res.output.data[0].missingRelatedFiles.length).to.equal(0);
+
+  });
+
+  it('should return adjacent and missing nodes with circular refs', async function () {
+    const contentCircularRef = fs.readFileSync(circularRef, 'utf8'),
+      contentFileOldPet = fs.readFileSync(oldPet, 'utf8'),
+      contentFilePet = fs.readFileSync(pet, 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: 'circularRef.yaml',
+            content: contentCircularRef
+          }
+        ],
+        data: [
+          {
+            path: 'oldPet.yaml',
+            content: contentFileOldPet
+          },
+          {
+            path: 'Pet.yaml',
+            content: contentFilePet
+          }
+        ]
+      },
+      res = await Converter.detectRelatedFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].relatedFiles.length).to.equal(2);
+    expect(res.output.data[0].relatedFiles[0].path).to.equal('oldPet.yaml');
+    expect(res.output.data[0].relatedFiles[0].relativeToRootPath).to.equal('oldPet.yaml');
+    expect(res.output.data[0].relatedFiles[1].path).to.equal('Pet.yaml');
+    expect(res.output.data[0].relatedFiles[1].relativeToRootPath).to.equal('Pet.yaml');
     expect(res.output.data[0].missingRelatedFiles.length).to.equal(0);
 
   });
