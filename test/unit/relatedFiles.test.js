@@ -4,10 +4,12 @@ const { getRelatedFiles, getReferences, getAdjacentAndMissing } = require('./../
   path = require('path'),
   PET_STORE_SEPARATED = '../data/petstore separate yaml/spec',
   RELATED_FILES = '../data/relatedFiles',
+  VALID_OPENAPI_PATH = '../data/valid_openapi',
   newPet = path.join(__dirname, PET_STORE_SEPARATED + '/NewPet.yaml'),
   swaggerRoot = path.join(__dirname, PET_STORE_SEPARATED + '/swagger.yaml'),
   petstoreSeparatedPet = path.join(__dirname, PET_STORE_SEPARATED + '/Pet.yaml'),
-  missedRef = path.join(__dirname, RELATED_FILES + '/missedRef.yaml');
+  missedRef = path.join(__dirname, RELATED_FILES + '/missedRef.yaml'),
+  internalRefOnly = path.join(__dirname, VALID_OPENAPI_PATH + '/deepObjectLengthProperty.yaml');
 
 
 describe('getAdjacentAndMissing function', function () {
@@ -99,6 +101,18 @@ describe('getRelatedFiles function ', function () {
     expect(missingRelatedFiles.length).to.equal(1);
     expect(missingRelatedFiles[0].relativeToRootPath).to.equal('../common/Error.yaml');
 
+  });
+
+  it('should not return internal refs as missing ref', function () {
+    const contentFile = fs.readFileSync(internalRefOnly, 'utf8'),
+      rootNode = {
+        fileName: '/deepObjectLengthProperty.yaml',
+        content: contentFile
+      },
+      inputData = [],
+      { relatedFiles, missingRelatedFiles } = getRelatedFiles(rootNode, inputData);
+    expect(relatedFiles.length).to.equal(0);
+    expect(missingRelatedFiles.length).to.equal(0);
   });
 
 });
