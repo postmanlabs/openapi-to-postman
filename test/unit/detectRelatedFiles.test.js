@@ -62,6 +62,8 @@ describe('detectRoot method', function() {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data[0].rootFile.path).to.equal('/petstore.yaml');
+    expect(res.output.data[0].relatedFiles.length).to.equal(0);
+    expect(res.output.data[0].missingRelatedFiles.length).to.equal(0);
   });
 
   it('should return adjacent and missing nodes', async function () {
