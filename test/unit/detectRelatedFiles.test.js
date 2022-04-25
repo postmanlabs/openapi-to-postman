@@ -80,7 +80,7 @@ describe('detectRoot method', function() {
         ],
         data: [
           {
-            path: 'Pet.yaml',
+            path: '/Pet.yaml',
             content: contentFilePet
           }
         ]
@@ -89,9 +89,8 @@ describe('detectRoot method', function() {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data[0].rootFile.path).to.equal('/missedRef.yaml');
-    expect(res.output.data[0].relatedFiles[0].path).to.equal('Pet.yaml');
-    expect(res.output.data[0].relatedFiles[0].relativeToRootPath).to.equal('Pet.yaml');
-    expect(res.output.data[0].missingRelatedFiles[0].relativeToRootPath).to.equal('../common/Error.yaml');
+    expect(res.output.data[0].relatedFiles[0].path).to.equal('/Pet.yaml');
+    expect(res.output.data[0].missingRelatedFiles[0].path).to.equal('../common/Error.yaml');
 
   });
 
@@ -118,9 +117,8 @@ describe('detectRoot method', function() {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data[0].relatedFiles[0].path).to.equal('NewPet.yaml');
-    expect(res.output.data[0].relatedFiles[0].relativeToRootPath).to.equal('NewPet.yaml');
     expect(res.output.data[0].missingRelatedFiles.length).to.equal(1);
-    expect(res.output.data[0].missingRelatedFiles[0].relativeToRootPath).to.equal('Pet.yaml');
+    expect(res.output.data[0].missingRelatedFiles[0].path).to.equal('Pet.yaml');
 
   });
 
@@ -176,9 +174,7 @@ describe('detectRoot method', function() {
     expect(res.result).to.be.true;
     expect(res.output.data[0].relatedFiles.length).to.equal(2);
     expect(res.output.data[0].relatedFiles[0].path).to.equal('oldPet.yaml');
-    expect(res.output.data[0].relatedFiles[0].relativeToRootPath).to.equal('oldPet.yaml');
     expect(res.output.data[0].relatedFiles[1].path).to.equal('Pet.yaml');
-    expect(res.output.data[0].relatedFiles[1].relativeToRootPath).to.equal('Pet.yaml');
     expect(res.output.data[0].missingRelatedFiles.length).to.equal(0);
 
   });
