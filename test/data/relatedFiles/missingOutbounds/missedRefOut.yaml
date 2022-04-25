@@ -35,4 +35,4 @@ paths:
         default:
           description: unexpected error
           schema:
-            $ref: '/common/Error.yaml'
+            $ref: '../../common/Error.yaml'
