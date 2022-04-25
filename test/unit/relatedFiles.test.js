@@ -1,4 +1,5 @@
-const { getRelatedFiles, getReferences, getAdjacentAndMissing } = require('./../../lib/relatedFiles'),
+const { getRelatedFiles, getReferences, getAdjacentAndMissing,
+    calculatePath } = require('./../../lib/relatedFiles'),
   expect = require('chai').expect,
   fs = require('fs'),
   path = require('path'),
@@ -21,12 +22,12 @@ describe('getAdjacentAndMissing function', function () {
         content: contentFileNewPet
       },
       inputData = [{
-        fileName: 'Pet.yaml',
+        fileName: '/Pet.yaml',
         content: contentFilePet
       }],
       { graphAdj, missingNodes } = getAdjacentAndMissing(inputNode, inputData, inputNode);
     expect(graphAdj.length).to.equal(1);
-    expect(graphAdj[0].fileName).to.equal('Pet.yaml');
+    expect(graphAdj[0].fileName).to.equal('/Pet.yaml');
     expect(missingNodes.length).to.equal(0);
   });
 
@@ -34,18 +35,18 @@ describe('getAdjacentAndMissing function', function () {
     const contentFileMissedRef = fs.readFileSync(missedRef, 'utf8'),
       contentFilePet = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
       inputNode = {
-        path: '/missedRef.yaml',
+        fileName: '/missedRef.yaml',
         content: contentFileMissedRef
       },
       inputData = [{
-        fileName: 'Pet.yaml',
+        fileName: '/Pet.yaml',
         content: contentFilePet
       }],
       { graphAdj, missingNodes } = getAdjacentAndMissing(inputNode, inputData, inputNode);
     expect(graphAdj.length).to.equal(1);
-    expect(graphAdj[0].fileName).to.equal('Pet.yaml');
+    expect(graphAdj[0].fileName).to.equal('/Pet.yaml');
     expect(missingNodes.length).to.equal(1);
-    expect(missingNodes[0].relativeToRootPath).to.equal('../common/Error.yaml');
+    expect(missingNodes[0].path).to.equal('../common/Error.yaml');
 
   });
 });
@@ -92,14 +93,14 @@ describe('getRelatedFiles function ', function () {
         content: contentFileMissedRef
       },
       inputData = [{
-        fileName: 'Pet.yaml',
+        fileName: '/Pet.yaml',
         content: contentFilePet
       }],
       { relatedFiles, missingRelatedFiles } = getRelatedFiles(rootNode, inputData);
     expect(relatedFiles.length).to.equal(1);
-    expect(relatedFiles[0].path).to.equal('Pet.yaml');
+    expect(relatedFiles[0].path).to.equal('/Pet.yaml');
     expect(missingRelatedFiles.length).to.equal(1);
-    expect(missingRelatedFiles[0].relativeToRootPath).to.equal('../common/Error.yaml');
+    expect(missingRelatedFiles[0].path).to.equal('../common/Error.yaml');
 
   });
 
@@ -115,4 +116,15 @@ describe('getRelatedFiles function ', function () {
     expect(missingRelatedFiles.length).to.equal(0);
   });
 
+});
+
+describe('calculatePath function', function () {
+  it('should return the path from the parent', function () {
+    const result = calculatePath('sf/newpet.yaml', '../error.yaml');
+    expect(result).to.equal('error.yaml');
+  });
+  it('should return localhost:3000 for entry "http://localhost:3000/projects"', function () {
+    const result = calculatePath('sf/spec/newpet.yaml', '../common/error.yaml');
+    expect(result).to.equal('sf/common/error.yaml');
+  });
 });
