@@ -1,4 +1,4 @@
-var expect = require('chai').expect,
+let expect = require('chai').expect,
   Converter = require('../../index.js'),
   fs = require('fs'),
   path = require('path'),
@@ -6,11 +6,12 @@ var expect = require('chai').expect,
   // VALID_OPENAPI_31_PATH = '../data/valid_openapi31X',
   PET_STORE_SEPARATED = '../data/petstore separate yaml/spec',
   RELATED_FILES = '../data/relatedFiles',
-  // PET_STORE_SEPARATED_JSON = '../data/petstore-separate/spec',
+  PET_STORE_SEPARATED_COMMON = '../data/petstore separate yaml/common',
   validPetstore = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore.yaml'),
-  // noauth = path.join(__dirname, VALID_OPENAPI_PATH + '/noauth.yaml'),
-  // petstoreSeparated = path.join(__dirname, PET_STORE_SEPARATED + '/swagger.yaml'),
   petstoreSeparatedPet = path.join(__dirname, PET_STORE_SEPARATED + '/Pet.yaml'),
+  petstoreSeparatedError = path.join(__dirname, PET_STORE_SEPARATED_COMMON + '/Error.yaml'),
+  swaggerRoot = path.join(__dirname, PET_STORE_SEPARATED + '/swagger.yaml'),
+  newPet = path.join(__dirname, PET_STORE_SEPARATED + '/NewPet.yaml'),
   missedRef = path.join(__dirname, RELATED_FILES + '/missedRef.yaml'),
   circularRefNewPet = path.join(__dirname, RELATED_FILES + '/NewPet.yaml'),
   refToRoot = path.join(__dirname, RELATED_FILES + '/refToRoot.yaml'),
@@ -177,5 +178,46 @@ describe('detectRelatedFiles method', function() {
     expect(res.output.data[0].relatedFiles[1].path).to.equal('Pet.yaml');
     expect(res.output.data[0].missingRelatedFiles.length).to.equal(0);
 
+  });
+
+  it('should return related in a folder structure with local pointers in $ref', async function () {
+    const swaggerRootContent = fs.readFileSync(swaggerRoot, 'utf8'),
+      petContent = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
+      parametersContent = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
+      newPetContent = fs.readFileSync(newPet, 'utf8'),
+      errorContent = fs.readFileSync(petstoreSeparatedError, 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: 'separatedFiles/spec/swagger.yaml',
+            content: swaggerRootContent
+          }
+        ],
+        data: [
+          {
+            path: 'separatedFiles/spec/Pet.yaml',
+            content: petContent
+          },
+          {
+            path: 'separatedFiles/spec/parameters.yaml',
+            content: parametersContent
+          },
+          {
+            path: 'separatedFiles/spec/NewPet.yaml',
+            content: newPetContent
+          },
+          {
+            path: 'separatedFiles/common/Error.yaml',
+            content: errorContent
+          }
+        ]
+      },
+      res = await Converter.detectRelatedFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].relatedFiles.length).to.equal(4);
+    expect(res.output.data[0].missingRelatedFiles.length).to.equal(0);
   });
 });

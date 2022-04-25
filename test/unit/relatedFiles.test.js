@@ -4,11 +4,13 @@ const { getRelatedFiles, getReferences, getAdjacentAndMissing,
   fs = require('fs'),
   path = require('path'),
   PET_STORE_SEPARATED = '../data/petstore separate yaml/spec',
+  PET_STORE_SEPARATED_COMMON = '../data/petstore separate yaml/common',
   RELATED_FILES = '../data/relatedFiles',
   VALID_OPENAPI_PATH = '../data/valid_openapi',
   newPet = path.join(__dirname, PET_STORE_SEPARATED + '/NewPet.yaml'),
   swaggerRoot = path.join(__dirname, PET_STORE_SEPARATED + '/swagger.yaml'),
   petstoreSeparatedPet = path.join(__dirname, PET_STORE_SEPARATED + '/Pet.yaml'),
+  petstoreSeparatedError = path.join(__dirname, PET_STORE_SEPARATED_COMMON + '/Error.yaml'),
   missedRef = path.join(__dirname, RELATED_FILES + '/missedRef.yaml'),
   missedRefOut = path.join(__dirname, RELATED_FILES + '/missingOutbounds/missedRefOut.yaml'),
   internalRefOnly = path.join(__dirname, VALID_OPENAPI_PATH + '/deepObjectLengthProperty.yaml');
@@ -75,8 +77,8 @@ describe('getReferences function', function () {
       },
       result = getReferences(inputNode);
     expect(result.length).to.equal(5);
-    expect(result[0].path).to.equal('parameters.yaml#/tagsParam');
-    expect(result[1].path).to.equal('parameters.yaml#/limitsParam');
+    expect(result[0].path).to.equal('parameters.yaml');
+    expect(result[1].path).to.equal('parameters.yaml');
     expect(result[2].path).to.equal('Pet.yaml');
     expect(result[3].path).to.equal('../common/Error.yaml');
     expect(result[4].path).to.equal('NewPet.yaml');
@@ -85,6 +87,43 @@ describe('getReferences function', function () {
 });
 
 describe('getRelatedFiles function ', function () {
+
+  it('should return related in a folder structure with local pointers in $ref', function () {
+    const swaggerRootContent = fs.readFileSync(swaggerRoot, 'utf8'),
+      petContent = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
+      parametersContent = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
+      newPetContent = fs.readFileSync(newPet, 'utf8'),
+      errorContent = fs.readFileSync(petstoreSeparatedError, 'utf8'),
+      rootNode = {
+        fileName: 'spec/swagger.yaml',
+        content: swaggerRootContent
+      },
+      inputData = [
+        {
+          fileName: 'spec/Pet.yaml',
+          content: petContent
+        },
+        {
+          fileName: 'spec/parameters.yaml',
+          content: parametersContent
+        },
+        {
+          fileName: 'spec/NewPet.yaml',
+          content: newPetContent
+        },
+        {
+          fileName: 'common/Error.yaml',
+          content: errorContent
+        }
+      ],
+      { relatedFiles, missingRelatedFiles } = getRelatedFiles(rootNode, inputData);
+    expect(relatedFiles.length).to.equal(4);
+    expect(relatedFiles[0].path).to.equal('spec/NewPet.yaml');
+    expect(relatedFiles[1].path).to.equal('spec/Pet.yaml');
+    expect(relatedFiles[2].path).to.equal('common/Error.yaml');
+    expect(relatedFiles[3].path).to.equal('spec/parameters.yaml');
+    expect(missingRelatedFiles.length).to.equal(0);
+  });
 
   it('should return adjacent and missing nodes', function () {
     const contentFileMissedRef = fs.readFileSync(missedRef, 'utf8'),
