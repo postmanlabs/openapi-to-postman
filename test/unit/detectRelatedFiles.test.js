@@ -22,7 +22,7 @@ var expect = require('chai').expect,
   // petstoreSeparatedPetJson = path.join(__dirname, PET_STORE_SEPARATED_JSON + '/Pet.json'),
   // validHopService31x = path.join(__dirname, VALID_OPENAPI_31_PATH + '/yaml/hopService.yaml');
 
-describe('detectRoot method', function() {
+describe('detectRelatedFiles method', function() {
 
   it('should return empty data when there is no root in the entry', async function() {
     let contentFile = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
@@ -90,7 +90,7 @@ describe('detectRoot method', function() {
     expect(res.result).to.be.true;
     expect(res.output.data[0].rootFile.path).to.equal('/missedRef.yaml');
     expect(res.output.data[0].relatedFiles[0].path).to.equal('/Pet.yaml');
-    expect(res.output.data[0].missingRelatedFiles[0].path).to.equal('../common/Error.yaml');
+    expect(res.output.data[0].missingRelatedFiles[0].path).to.equal('/common/Error.yaml');
 
   });
 
