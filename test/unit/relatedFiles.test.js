@@ -167,7 +167,7 @@ describe('getRelatedFiles function ', function () {
     expect(missingRelatedFiles.length).to.equal(2);
     expect(missingRelatedFiles[0].path).to.equal('/Pet.yaml');
     expect(missingRelatedFiles[0].$ref).to.be.undefined;
-    expect(missingRelatedFiles[1].path).to.be.undefined;
+    expect(missingRelatedFiles[1].path).to.equal(null);
     expect(missingRelatedFiles[1].$ref).to.equal('../../common/Error.yaml');
   });
 
