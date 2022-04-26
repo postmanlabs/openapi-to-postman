@@ -7,6 +7,7 @@ let expect = require('chai').expect,
   PET_STORE_SEPARATED = '../data/petstore separate yaml/spec',
   RELATED_FILES = '../data/relatedFiles',
   PET_STORE_SEPARATED_COMMON = '../data/petstore separate yaml/common',
+  VALID_OPENAPI_31_PATH = '../data/valid_openapi31X',
   validPetstore = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore.yaml'),
   petstoreSeparatedPet = path.join(__dirname, PET_STORE_SEPARATED + '/Pet.yaml'),
   petstoreSeparatedError = path.join(__dirname, PET_STORE_SEPARATED_COMMON + '/Error.yaml'),
@@ -18,10 +19,8 @@ let expect = require('chai').expect,
   internalRefOnly = path.join(__dirname, VALID_OPENAPI_PATH + '/deepObjectLengthProperty.yaml'),
   circularRef = path.join(__dirname, RELATED_FILES + '/circularRef.yaml'),
   oldPet = path.join(__dirname, RELATED_FILES + '/oldPet.yaml'),
-  pet = path.join(__dirname, RELATED_FILES + '/Pet.yaml');
-  // petstoreSeparatedJson = path.join(__dirname, PET_STORE_SEPARATED_JSON + '/swagger.json'),
-  // petstoreSeparatedPetJson = path.join(__dirname, PET_STORE_SEPARATED_JSON + '/Pet.json'),
-  // validHopService31x = path.join(__dirname, VALID_OPENAPI_31_PATH + '/yaml/hopService.yaml');
+  pet = path.join(__dirname, RELATED_FILES + '/Pet.yaml'),
+  validHopService31x = path.join(__dirname, VALID_OPENAPI_31_PATH + '/yaml/hopService.yaml');
 
 describe('detectRelatedFiles method', function() {
 
@@ -219,5 +218,53 @@ describe('detectRelatedFiles method', function() {
     expect(res.result).to.be.true;
     expect(res.output.data[0].relatedFiles.length).to.equal(4);
     expect(res.output.data[0].missingRelatedFiles.length).to.equal(0);
+  });
+
+  it('should filter root according to the version 3.1', async function() {
+    let contentFilePet = fs.readFileSync(validPetstore, 'utf8'),
+      contentFileHop = fs.readFileSync(validHopService31x, 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.1',
+        rootFiles: [
+          {
+            path: '/petstore.yaml',
+            content: contentFilePet
+          },
+          {
+            path: '/hopService.yaml',
+            content: contentFileHop
+          }
+        ],
+        data: [
+        ]
+      };
+    const res = await Converter.detectRelatedFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].rootFile.path).to.equal('/hopService.yaml');
+  });
+  it('should filter root according to the version default', async function() {
+    let contentFilePet = fs.readFileSync(validPetstore, 'utf8'),
+      contentFileHop = fs.readFileSync(validHopService31x, 'utf8'),
+      input = {
+        type: 'folder',
+        rootFiles: [
+          {
+            path: '/petstore.yaml',
+            content: contentFilePet
+          },
+          {
+            path: '/hopService.yaml',
+            content: contentFileHop
+          }
+        ],
+        data: [
+        ]
+      };
+    const res = await Converter.detectRelatedFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].rootFile.path).to.equal('/petstore.yaml');
   });
 });
