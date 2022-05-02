@@ -1,5 +1,11 @@
 # OpenAPI-Postman Changelog
 
+#### v3.2.0 (May 02, 2022)
+* Fixed some of critical and high level severity vulnerabilities.
+* Fixed issue [#10752](https://github.com/postmanlabs/postman-app-support/issues/10752) where deepObject style parameters were not generated correctly.
+* Fixed issue [#485](https://github.com/postmanlabs/openapi-to-postman/issues/485) where validateTransaction() returns result where mismatch path for transaction are incorrect.
+* Fixed issue [#485](https://github.com/postmanlabs/openapi-to-postman/issues/485) where validateTransaction() returns result where mismatch path for transaction are incorrect.
+
 #### v3.1.0 (March 04, 2022)
 * Removed usage of schema resolution cache to avoid incorrect resolution.
 * Fixed issue where newly converted collection had mismatches from validateTransaction() API.
