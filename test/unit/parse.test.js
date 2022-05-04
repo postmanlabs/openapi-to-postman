@@ -58,4 +58,20 @@ describe('PARSE FUNCTION TESTS', function() {
       '"string"}}}}}');
     });
   });
+
+  it('toJson should return a json string', function() {
+    const result = parse.toJSON({ data: 'array', type: 'folder' });
+    expect(result).to.equal('{"data":"array","type":"folder"}');
+  });
+
+  it('toJson should return a prety json string', function() {
+    const result = parse.toJSON({ data: 'array', type: 'folder' }, 2);
+    expect(result).to.equal('{\n  "data": "array",\n  "type": "folder"\n}');
+  });
+
+  it('toYAML should return a json string', function() {
+    const result = parse.toYAML({ data: 'array', type: 'folder' });
+    expect(result).to.equal('data: array\ntype: folder\n');
+  });
+
 });

@@ -92,53 +92,8 @@ describe('getReferences function', function () {
 });
 
 describe('findNodeFromPath method', function () {
-  it('should return localhost:3000 for entry "http://localhost:3000/projects"', function () {
-    const spec = {
-        'components': {
-          'schemas': {
-            'Pet': {
-              'required': [
-                'id',
-                'name'
-              ],
-              'properties': {
-                'id': {
-                  'type': 'integer',
-                  'format': 'int64'
-                },
-                'name': {
-                  'type': 'string'
-                },
-                'tag': {
-                  'type': 'string'
-                }
-              }
-            },
-            'Pets': {
-              'type': 'array',
-              'items': {
-                '$ref': '#/components/schemas/Pet'
-              }
-            },
-            'Error': {
-              'required': [
-                'code',
-                'message'
-              ],
-              'properties': {
-                'code': {
-                  'type': 'integer',
-                  'format': 'int32'
-                },
-                'message': {
-                  'type': 'string'
-                }
-              }
-            }
-          }
-        }
-      },
-      res = findNodeFromPath('#/components/schemas/Pet', spec);
+  it('should return the node by the json pointer', function () {
+    const res = findNodeFromPath('#/components/schemas/Pet', mockedInputPetstore);
     expect(res).to.not.be.undefined;
   });
 });
@@ -181,6 +136,26 @@ describe('getRelatedEntities function', function () {
       },
       { relatedEntities, missingRelatedEntities } = getRelatedEntities(inputNode, mockedInputPetstore);
     expect(relatedEntities.length).to.equal(2);
+    expect(relatedEntities[1].$info.$ref).to.equal('#/components/schemas/Pet');
+    expect(relatedEntities[1].$info.name).to.equal('Pet');
+    expect(missingRelatedEntities.length).to.equal(0);
+
+  });
+
+  it('should return 1 adjacent and the root even with 2 refs', function () {
+    const inputNode = {
+        type: 'object',
+        properties: {
+          pet: { $ref: '#/components/schemas/Pet' },
+          newPet: { $ref: '#/components/schemas/Pets' }
+        }
+      },
+      { relatedEntities, missingRelatedEntities } = getRelatedEntities(inputNode, mockedInputPetstore);
+    expect(relatedEntities.length).to.equal(3);
+    expect(relatedEntities[1].$info.$ref).to.equal('#/components/schemas/Pets');
+    expect(relatedEntities[1].$info.name).to.equal('Pets');
+    expect(relatedEntities[2].$info.$ref).to.equal('#/components/schemas/Pet');
+    expect(relatedEntities[2].$info.name).to.equal('Pet');
     expect(missingRelatedEntities.length).to.equal(0);
 
   });
