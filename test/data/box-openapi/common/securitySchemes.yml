@@ -1,0 +1,17 @@
+---
+OAuth2Security:
+  type: oauth2
+  flows:
+    authorizationCode:
+      authorizationUrl: https://account.box.com/api/oauth2/authorize
+      tokenUrl: https://api.box.com/oauth2/token
+      scopes:
+        root_readonly: Read all files and folders stored in Box
+        root_readwrite: Read and write all files and folders stored in Box
+        manage_app_users: Provision and manage app users
+        manage_managed_users: Provision and manage managed users
+        manage_groups: Manage an enterprise's groups
+        manage_webhook: Create webhooks programmatically through the API
+        manage_enterprise_properties: Manage enterprise properties
+        manage_data_retention: Manage data retention polices
+        manage_legal_hold: Manage Legal Holds

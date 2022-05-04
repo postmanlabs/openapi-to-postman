@@ -1,0 +1,492 @@
+---
+#### REQUESTS & VARIANTS ####
+
+PostOAuth2Token:
+  "$ref": "./requests/post_oauth2_token.yml"
+
+PostOAuth2Token--RefreshAccessToken:
+  "$ref": "./requests/post_oauth2_token--refresh_access_token.yml"
+
+PostOAuth2Revoke:
+  "$ref": "./requests/post_oauth2_revoke.yml"
+
+ZipDownloadRequest:
+  "$ref": "./requests/zip_download_request.yml"
+
+MetadataQuery:
+  "$ref": "./requests/metadata_query.yml"
+
+FileRequestUpdateRequest:
+  "$ref": "./requests/file_request_update_request.yml"
+
+FileRequestCopyRequest:
+  "$ref": "./requests/file_request_copy_request.yml"
+
+SignRequestCreateRequest:
+  "$ref": "./requests/sign_request_create_request.yml"
+
+#### ERRORS #################
+
+ClientError:
+  "$ref": "./errors/client_error.yml"
+
+ConflictError:
+  "$ref": "./errors/conflict_error.yml"
+
+OAuth2Error:
+  "$ref": "./errors/oauth2_error.yml"
+
+#### CALLBACK INVOCATIONS ##############
+
+SkillInvocation:
+  "$ref": "./callbacks/skill_invocation.yml"
+
+WebhookInvocation:
+  "$ref": "./callbacks/webhook_invocation.yml"
+
+#### RESPONSES ##############
+
+AccessToken:
+  "$ref": "./responses/access_token.yml"
+
+Classification:
+  "$ref": "./responses/classification.yml"
+
+ClassificationTemplate:
+  "$ref": "./responses/classification_template.yml"
+
+Collaboration:
+  "$ref": "./responses/collaboration.yml"
+
+Collaborations:
+  "$ref": "./responses/collaborations.yml"
+
+CollaborationAllowlistEntry:
+  "$ref": "./responses/collaboration_allowlist_entry.yml"
+
+CollaborationAllowlistEntries:
+  "$ref": "./responses/collaboration_allowlist_entries.yml"
+
+CollaborationAllowlistExemptTarget:
+  "$ref": "./responses/collaboration_allowlist_exempt_target.yml"
+
+CollaborationAllowlistExemptTargets:
+  "$ref": "./responses/collaboration_allowlist_exempt_targets.yml"
+
+Collection:
+  "$ref": "./responses/collection.yml"
+
+Collections:
+  "$ref": "./responses/collections.yml"
+
+Comment:
+  "$ref": "./responses/comment.yml"
+
+Comments:
+  "$ref": "./responses/comments.yml"
+
+Comment--Base:
+  "$ref": "./responses/comment--base.yml"
+
+Comment--Full:
+  "$ref": "./responses/comment--full.yml"
+
+DevicePinner:
+  "$ref": "./responses/device_pinner.yml"
+
+DevicePinners:
+  "$ref": "./responses/device_pinners.yml"
+
+EmailAlias:
+  "$ref": "./responses/email_alias.yml"
+
+EmailAliases:
+  "$ref": "./responses/email_aliases.yml"
+
+Event:
+  "$ref": "./responses/event.yml"
+
+Events:
+  "$ref": "./responses/events.yml"
+
+File:
+  "$ref": "./responses/file.yml"
+
+FileConflict:
+  "$ref": "./responses/file_conflict.yml"
+
+Files:
+  "$ref": "./responses/files.yml"
+
+File--Full:
+  "$ref": "./responses/file--full.yml"
+
+File--Mini:
+  "$ref": "./responses/file--mini.yml"
+
+File--Base:
+  "$ref": "./responses/file--base.yml"
+
+FileRequest:
+  "$ref": "./responses/file_request.yml"
+
+FilesUnderRetention:
+  "$ref": "./responses/files_under_retention.yml"
+
+FileVersion:
+  "$ref": "./responses/file_version.yml"
+
+FileVersion--Mini:
+  "$ref": "./responses/file_version--mini.yml"
+
+FileVersion--Base:
+  "$ref": "./responses/file_version--base.yml"
+
+FileVersions:
+  "$ref": "./responses/file_versions.yml"
+
+FileVersionLegalHold:
+  "$ref": "./responses/file_version_legal_hold.yml"
+
+FileVersionLegalHolds:
+  "$ref": "./responses/file_version_legal_holds.yml"
+
+FileVersionRetention:
+  "$ref": "./responses/file_version_retention.yml"
+
+FileVersionRetentions:
+  "$ref": "./responses/file_version_retentions.yml"
+
+Folder:
+  "$ref": "./responses/folder.yml"
+
+Folder--Full:
+  "$ref": "./responses/folder--full.yml"
+
+Folder--Mini:
+  "$ref": "./responses/folder--mini.yml"
+
+Folder--Base:
+  "$ref": "./responses/folder--base.yml"
+
+FolderLock:
+  "$ref": "./responses/folder_lock.yml"
+
+FolderLocks:
+  "$ref": "./responses/folder_locks.yml"
+
+Group:
+  "$ref": "./responses/group.yml"
+
+Groups:
+  "$ref": "./responses/groups.yml"
+
+Group--Base:
+  "$ref": "./responses/group--base.yml"
+
+Group--Full:
+  "$ref": "./responses/group--full.yml"
+
+Group--Mini:
+  "$ref": "./responses/group--mini.yml"
+
+GroupMembership:
+  "$ref": "./responses/group_membership.yml"
+
+GroupMemberships:
+  "$ref": "./responses/group_memberships.yml"
+
+Invite:
+  "$ref": "./responses/invite.yml"
+
+Items:
+  "$ref": "./responses/items.yml"
+
+LegalHoldPolicy:
+  "$ref": "./responses/legal_hold_policy.yml"
+
+LegalHoldPolicies:
+  "$ref": "./responses/legal_hold_policies.yml"
+
+LegalHoldPolicy--Mini:
+  "$ref": "./responses/legal_hold_policy--mini.yml"
+
+LegalHoldPolicyAssignment:
+  "$ref": "./responses/legal_hold_policy_assignment.yml"
+
+LegalHoldPolicyAssignment--Base:
+  "$ref": "./responses/legal_hold_policy_assignment--base.yml"
+
+LegalHoldPolicyAssignments:
+  "$ref": "./responses/legal_hold_policy_assignments.yml"
+
+Metadata:
+  "$ref": "./responses/metadata.yml"
+
+Metadata--Full:
+  "$ref": "./responses/metadata--full.yml"
+
+Metadata--Base:
+  "$ref": "./responses/metadata--base.yml"
+
+Metadatas:
+  "$ref": "./responses/metadatas.yml"
+
+MetadataCascadePolicy:
+  "$ref": "./responses/metadata_cascade_policy.yml"
+
+MetadataCascadePolicies:
+  "$ref": "./responses/metadata_cascade_policies.yml"
+
+MetadataQueryIndex:
+  "$ref": "./responses/metadata_query_index.yml"
+
+MetadataQueryIndices:
+  "$ref": "./responses/metadata_query_indices.yml"
+
+MetadataQueryResults:
+  "$ref": "./responses/metadata_query_results.yml"
+
+MetadataTemplate:
+  "$ref": "./responses/metadata_template.yml"
+
+MetadataTemplates:
+  "$ref": "./responses/metadata_templates.yml"
+
+RealtimeServer:
+  "$ref": "./responses/realtime_server.yml"
+
+RealtimeServers:
+  "$ref": "./responses/realtime_servers.yml"
+
+RecentItem:
+  "$ref": "./responses/recent_item.yml"
+
+RecentItems:
+  "$ref": "./responses/recent_items.yml"
+
+RetentionPolicies:
+  "$ref": "./responses/retention_policies.yml"
+
+RetentionPolicy:
+  "$ref": "./responses/retention_policy.yml"
+
+RetentionPolicy--Mini:
+  "$ref": "./responses/retention_policy--mini.yml"
+
+RetentionPolicy--Base:
+  "$ref": "./responses/retention_policy--base.yml"
+
+RetentionPolicyAssignment:
+  "$ref": "./responses/retention_policy_assignment.yml"
+
+RetentionPolicyAssignments:
+  "$ref": "./responses/retention_policy_assignments.yml"
+
+SearchResults:
+  "$ref": "./responses/search_results.yml"
+
+SearchResultsWithSharedLinks:
+  "$ref": "./responses/search_results_with_shared_links.yml"
+
+SearchResultWithSharedLink:
+  "$ref": "./responses/search_result_with_shared_link.yml"
+
+SkillCardsMetadata:
+  "$ref": "./responses/skill_cards_metadata.yml"
+
+StoragePolicy:
+  "$ref": "./responses/storage_policy.yml"
+
+StoragePolicies:
+  "$ref": "./responses/storage_policies.yml"
+
+StoragePolicy--Mini:
+  "$ref": "./responses/storage_policy--mini.yml"
+
+StoragePolicyAssignment:
+  "$ref": "./responses/storage_policy_assignment.yml"
+
+StoragePolicyAssignments:
+  "$ref": "./responses/storage_policy_assignments.yml"
+
+Task:
+  "$ref": "./responses/task.yml"
+
+Tasks:
+  "$ref": "./responses/tasks.yml"
+
+TaskAssignment:
+  "$ref": "./responses/task_assignment.yml"
+
+TaskAssignments:
+  "$ref": "./responses/task_assignments.yml"
+
+TermsOfService:
+  "$ref": "./responses/terms_of_service.yml"
+
+TermsOfServices:
+  "$ref": "./responses/terms_of_services.yml"
+
+TermsOfService--Mini:
+  "$ref": "./responses/terms_of_service--mini.yml"
+
+TermsOfServiceUserStatus:
+  "$ref": "./responses/terms_of_service_user_status.yml"
+
+TermsOfServiceUserStatuses:
+  "$ref": "./responses/terms_of_service_user_statuses.yml"
+
+TrashFile:
+  "$ref": "./responses/trash_file.yml"
+
+TrashFolder:
+  "$ref": "./responses/trash_folder.yml"
+
+TrashWebLink:
+  "$ref": "./responses/trash_web_link.yml"
+
+TrashFileRestored:
+  "$ref": "./responses/trash_file_restored.yml"
+
+TrashFolderRestored:
+  "$ref": "./responses/trash_folder_restored.yml"
+
+TrashWebLinkRestored:
+  "$ref": "./responses/trash_web_link_restored.yml"
+
+UploadPart:
+  "$ref": "./responses/upload_part.yml"
+
+UploadPart--Mini:
+  "$ref": "./responses/upload_part--mini.yml"
+
+UploadedPart:
+  "$ref": "./responses/uploaded_part.yml"
+
+UploadParts:
+  "$ref": "./responses/upload_parts.yml"
+
+UploadSession:
+  "$ref": "./responses/upload_session.yml"
+
+UploadUrl:
+  "$ref": "./responses/upload_url.yml"
+
+User:
+  "$ref": "./responses/user.yml"
+
+Users:
+  "$ref": "./responses/users.yml"
+
+User--Full:
+  "$ref": "./responses/user--full.yml"
+
+User--Mini:
+  "$ref": "./responses/user--mini.yml"
+
+User--Base:
+  "$ref": "./responses/user--base.yml"
+
+Watermark:
+  "$ref": "./responses/watermark.yml"
+
+Webhook:
+  "$ref": "./responses/webhook.yml"
+
+Webhook--Mini:
+  "$ref": "./responses/webhook--mini.yml"
+
+Webhooks:
+  "$ref": "./responses/webhooks.yml"
+
+WebLink:
+  "$ref": "./responses/web_link.yml"
+
+WebLink--Base:
+  "$ref": "./responses/web_link--base.yml"
+
+WebLink--Mini:
+  "$ref": "./responses/web_link--mini.yml"
+
+Workflow:
+  "$ref": "./responses/workflow.yml"
+
+Workflow--Full:
+  "$ref": "./responses/workflow--full.yml"
+
+Workflow--Mini:
+  "$ref": "./responses/workflow--mini.yml"
+
+Workflows:
+  "$ref": "./responses/workflows.yml"
+
+ZipDownload:
+  "$ref": "./responses/zip_download.yml"
+
+ZipDownloadStatus:
+  "$ref": "./responses/zip_download_status.yml"
+
+SignRequest:
+  "$ref": "./responses/sign_request.yml"
+
+SignRequests:
+  "$ref": "./responses/sign_requests.yml"
+
+#### REUSABLE SCHEMAS #######
+
+FileScope:
+  "$ref": "./schemas/file_scope.yml"
+
+EventSource:
+  "$ref": "./schemas/event_source.yml"
+
+SkillCard:
+  "$ref": "./schemas/skill_card.yml"
+
+KeywordSkillCard:
+  "$ref": "./schemas/keyword_skill_card.yml"
+
+TimelineSkillCard:
+  "$ref": "./schemas/timeline_skill_card.yml"
+
+TranscriptSkillCard:
+  "$ref": "./schemas/transcript_skill_card.yml"
+
+StatusSkillCard:
+  "$ref": "./schemas/status_skill_card.yml"
+
+SignRequestCreateSigner:
+  "$ref": "./schemas/sign_request_create_signer.yml"
+
+SignRequestPrefillTag:
+  "$ref": "./schemas/sign_request_prefill_tag.yml"
+
+SignRequestSignerInput:
+  "$ref": "./schemas/sign_request_signer_input.yml"
+
+SignRequestSigner:
+  "$ref": "./schemas/sign_request_signer.yml"
+
+TrackingCode:
+  "$ref": "./schemas/tracking_code.yml"
+
+#### SEARCH EXTRAS ######
+
+MetadataFilter:
+  "$ref": "./responses/metadata_filter.yml"
+
+MetadataFieldFilterString:
+  "$ref": "./responses/metadata_field_filter_string.yml"
+
+MetadataFieldFilterFloat:
+  "$ref": "./responses/metadata_field_filter_float.yml"
+
+MetadataFieldFilterMultiSelect:
+  "$ref": "./responses/metadata_field_filter_multi_select.yml"
+
+MetadataFieldFilterFloatRange:
+  "$ref": "./responses/metadata_field_filter_float_range.yml"
+
+MetadataFieldFilterDateRange:
+  "$ref": "./responses/metadata_field_filter_date_range.yml"

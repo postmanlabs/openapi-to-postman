@@ -1,0 +1,745 @@
+---
+# yamllint disable rule:line-length
+
+"/authorize":
+  get:
+    "$ref": "./paths/authorization__get_authorize.yml"
+
+"/oauth2/token":
+  post:
+    "$ref": "./paths/authorization__post_oauth2_token.yml"
+
+"/oauth2/token#refresh":
+  post:
+    "$ref": "./paths/authorization__post_oauth2_token--refresh.yml"
+
+"/oauth2/revoke":
+  post:
+    "$ref": "./paths/authorization__post_oauth2_revoke.yml"
+
+"/files/{file_id}":
+  get:
+    "$ref": "./paths/files__get_files_id.yml"
+  post:
+    "$ref": "./paths/trashed_files__post_files_id.yml"
+  put:
+    "$ref": "./paths/files__put_files_id.yml"
+  delete:
+    "$ref": "./paths/files__delete_files_id.yml"
+
+"/files/{file_id}/content":
+  get:
+    "$ref": "./paths/downloads__get_files_id_content.yml"
+  post:
+    "$ref": "./paths/uploads__post_files_id_content.yml"
+
+"/files/content":
+  options:
+    "$ref": "./paths/uploads__options_files_content.yml"
+  post:
+    "$ref": "./paths/uploads__post_files_content.yml"
+
+"/files/upload_sessions":
+  post:
+    "$ref": "./paths/chunked_uploads__post_files_upload_sessions.yml"
+
+"/files/{file_id}/upload_sessions":
+  post:
+    "$ref": "./paths/chunked_uploads__post_files_id_upload_sessions.yml"
+
+"/files/upload_sessions/{upload_session_id}":
+  get:
+    "$ref": "./paths/chunked_uploads__get_files_upload_sessions_id.yml"
+  put:
+    "$ref": "./paths/chunked_uploads__put_files_upload_sessions_id.yml"
+  delete:
+    "$ref": "./paths/chunked_uploads__delete_files_upload_sessions_id.yml"
+
+"/files/upload_sessions/{upload_session_id}/parts":
+  get:
+    "$ref": "./paths/chunked_uploads__get_files_upload_sessions_id_parts.yml"
+
+"/files/upload_sessions/{upload_session_id}/commit":
+  post:
+    "$ref": "./paths/chunked_uploads__post_files_upload_sessions_id_commit.yml"
+
+"/files/{file_id}/copy":
+  post:
+    "$ref": "./paths/files__post_files_id_copy.yml"
+
+"/files/{file_id}/thumbnail.{extension}":
+  get:
+    "$ref": "./paths/files__get_files_id_thumbnail_id.yml"
+
+"/files/{file_id}/collaborations":
+  get:
+    "$ref": "./paths/list_collaborations__get_files_id_collaborations.yml"
+
+"/files/{file_id}/comments":
+  get:
+    "$ref": "./paths/comments__get_files_id_comments.yml"
+
+"/files/{file_id}/tasks":
+  get:
+    "$ref": "./paths/tasks__get_files_id_tasks.yml"
+
+"/files/{file_id}/trash":
+  get:
+    "$ref": "./paths/trashed_files__get_files_id_trash.yml"
+  delete:
+    "$ref": "./paths/trashed_files__delete_files_id_trash.yml"
+
+"/files/{file_id}/versions":
+  get:
+    "$ref": "./paths/file_versions__get_files_id_versions.yml"
+
+"/files/{file_id}/versions/{file_version_id}":
+  get:
+    "$ref": "./paths/file_versions__get_files_id_versions_id.yml"
+  delete:
+    "$ref": "./paths/file_versions__delete_files_id_versions_id.yml"
+
+"/files/{file_id}/versions/current":
+  post:
+    "$ref": "./paths/file_versions__post_files_id_versions_current.yml"
+
+"/files/{file_id}/metadata":
+  get:
+    "$ref": "./paths/file_metadata__get_files_id_metadata.yml"
+
+"/files/{file_id}/metadata/enterprise/securityClassification-6VMVochwUWo":
+  get:
+    "$ref": "./paths/file_classifications__get_files_id_metadata_enterprise_securityClassification-6VMVochwUWo.yml"
+  post:
+    "$ref": "./paths/file_classifications__post_files_id_metadata_enterprise_securityClassification-6VMVochwUWo.yml"
+  put:
+    "$ref": "./paths/file_classifications__put_files_id_metadata_enterprise_securityClassification-6VMVochwUWo.yml"
+  delete:
+    "$ref": "./paths/file_classifications__delete_files_id_metadata_enterprise_securityClassification-6VMVochwUWo.yml"
+
+"/files/{file_id}/metadata/{scope}/{template_key}":
+  get:
+    "$ref": "./paths/file_metadata__get_files_id_metadata_id_id.yml"
+  post:
+    "$ref": "./paths/file_metadata__post_files_id_metadata_id_id.yml"
+  put:
+    "$ref": "./paths/file_metadata__put_files_id_metadata_id_id.yml"
+  delete:
+    "$ref": "./paths/file_metadata__delete_files_id_metadata_id_id.yml"
+
+"/files/{file_id}/metadata/global/boxSkillsCards":
+  get:
+    "$ref": "./paths/skills__get_files_id_metadata_global_boxSkillsCards.yml"
+  post:
+    "$ref": "./paths/skills__post_files_id_metadata_global_boxSkillsCards.yml"
+  put:
+    "$ref": "./paths/skills__put_files_id_metadata_global_boxSkillsCards.yml"
+  delete:
+    "$ref": "./paths/skills__delete_files_id_metadata_global_boxSkillsCards.yml"
+
+"/files/{file_id}/watermark":
+  get:
+    "$ref": "./paths/file_watermarks__get_files_id_watermark.yml"
+  put:
+    "$ref": "./paths/file_watermarks__put_files_id_watermark.yml"
+  delete:
+    "$ref": "./paths/file_watermarks__delete_files_id_watermark.yml"
+
+"/file_requests/{file_request_id}":
+  get:
+    "$ref": "./paths/file_requests__get_file_requests_id.yml"
+  put:
+    "$ref": "./paths/file_requests__put_file_requests_id.yml"
+  delete:
+    "$ref": "./paths/file_requests__delete_file_requests_id.yml"
+
+"/file_requests/{file_request_id}/copy":
+  post:
+    "$ref": "./paths/file_requests__post_file_requests_id_copy.yml"
+
+"/folders/{folder_id}":
+  get:
+    "$ref": "./paths/folders__get_folders_id.yml"
+  post:
+    "$ref": "./paths/trashed_folders__post_folders_id.yml"
+  put:
+    "$ref": "./paths/folders__put_folders_id.yml"
+  delete:
+    "$ref": "./paths/folders__delete_folders_id.yml"
+
+"/folders/{folder_id}/items":
+  get:
+    "$ref": "./paths/folders__get_folders_id_items.yml"
+
+"/folders":
+  post:
+    "$ref": "./paths/folders__post_folders.yml"
+
+"/folders/{folder_id}/copy":
+  post:
+    "$ref": "./paths/folders__post_folders_id_copy.yml"
+
+"/folders/{folder_id}/collaborations":
+  get:
+    "$ref": "./paths/list_collaborations__get_folders_id_collaborations.yml"
+
+"/folders/{folder_id}/trash":
+  get:
+    "$ref": "./paths/trashed_folders__get_folders_id_trash.yml"
+  delete:
+    "$ref": "./paths/trashed_folders__delete_folders_id_trash.yml"
+
+"/folders/{folder_id}/metadata":
+  get:
+    "$ref": "./paths/folder_metadata__get_folders_id_metadata.yml"
+
+"/folders/{folder_id}/metadata/enterprise/securityClassification-6VMVochwUWo":
+  get:
+    "$ref": "./paths/folder_classifications__get_folders_id_metadata_enterprise_securityClassification-6VMVochwUWo.yml"
+  post:
+    "$ref": "./paths/folder_classifications__post_folders_id_metadata_enterprise_securityClassification-6VMVochwUWo.yml"
+  put:
+    "$ref": "./paths/folder_classifications__put_folders_id_metadata_enterprise_securityClassification-6VMVochwUWo.yml"
+  delete:
+    "$ref": "./paths/folder_classifications__delete_folders_id_metadata_enterprise_securityClassification-6VMVochwUWo.yml"
+
+"/folders/{folder_id}/metadata/{scope}/{template_key}":
+  get:
+    "$ref": "./paths/folder_metadata__get_folders_id_metadata_id_id.yml"
+  post:
+    "$ref": "./paths/folder_metadata__post_folders_id_metadata_id_id.yml"
+  put:
+    "$ref": "./paths/folder_metadata__put_folders_id_metadata_id_id.yml"
+  delete:
+    "$ref": "./paths/folder_metadata__delete_folders_id_metadata_id_id.yml"
+
+"/folders/trash/items":
+  get:
+    "$ref": "./paths/trashed_items__get_folders_trash_items.yml"
+
+"/folders/{folder_id}/watermark":
+  get:
+    "$ref": "./paths/folder_watermarks__get_folders_id_watermark.yml"
+  put:
+    "$ref": "./paths/folder_watermarks__put_folders_id_watermark.yml"
+  delete:
+    "$ref": "./paths/folder_watermarks__delete_folders_id_watermark.yml"
+
+"/folder_locks":
+  get:
+    "$ref": "./paths/folder_locks__get_folder_locks.yml"
+  post:
+    "$ref": "./paths/folder_locks__post_folder_locks.yml"
+
+"/folder_locks/{folder_lock_id}":
+  delete:
+    "$ref": "./paths/folder_locks__delete_folder_locks_id.yml"
+
+"/metadata_templates":
+  get:
+    "$ref": "./paths/metadata_templates__get_metadata_templates.yml"
+
+"/metadata_templates/enterprise/securityClassification-6VMVochwUWo/schema":
+  get:
+    "$ref": "./paths/classifications__get_metadata_templates_enterprise_securityClassification-6VMVochwUWo_schema.yml"
+  delete:
+    "$ref": "./paths/classifications__delete_metadata_templates_enterprise_securityClassification-6VMVochwUWo_schema.yml"
+
+"/metadata_templates/enterprise/securityClassification-6VMVochwUWo/schema#add":
+  put:
+    "$ref": "./paths/classifications__put_metadata_templates_enterprise_securityClassification-6VMVochwUWo_schema--add.yml"
+
+"/metadata_templates/enterprise/securityClassification-6VMVochwUWo/schema#update":
+  put:
+    "$ref": "./paths/classifications__put_metadata_templates_enterprise_securityClassification-6VMVochwUWo_schema--update.yml"
+
+"/metadata_templates/enterprise/securityClassification-6VMVochwUWo/schema#delete":
+  put:
+    "$ref": "./paths/classifications__put_metadata_templates_enterprise_securityClassification-6VMVochwUWo_schema--delete.yml"
+
+
+"/metadata_templates/{scope}/{template_key}/schema":
+  get:
+    "$ref": "./paths/metadata_templates__get_metadata_templates_id_id_schema.yml"
+  put:
+    "$ref": "./paths/metadata_templates__put_metadata_templates_id_id_schema.yml"
+  delete:
+    "$ref": "./paths/metadata_templates__delete_metadata_templates_id_id_schema.yml"
+
+"/metadata_templates/{template_id}":
+  get:
+    "$ref": "./paths/metadata_templates__get_metadata_templates_id.yml"
+
+"/metadata_templates/global":
+  get:
+    "$ref": "./paths/metadata_templates__get_metadata_templates_global.yml"
+
+"/metadata_templates/enterprise":
+  get:
+    "$ref": "./paths/metadata_templates__get_metadata_templates_enterprise.yml"
+
+"/metadata_templates/schema":
+  post:
+    "$ref": "./paths/metadata_templates__post_metadata_templates_schema.yml"
+
+"/metadata_templates/schema#classifications":
+  post:
+    "$ref": "./paths/classifications__post_metadata_templates_schema.yml"
+
+"/metadata_cascade_policies":
+  get:
+    "$ref": "./paths/metadata_cascade_policies__get_metadata_cascade_policies.yml"
+  post:
+    "$ref": "./paths/metadata_cascade_policies__post_metadata_cascade_policies.yml"
+
+"/metadata_cascade_policies/{metadata_cascade_policy_id}":
+  get:
+    "$ref": "./paths/metadata_cascade_policies__get_metadata_cascade_policies_id.yml"
+  delete:
+    "$ref": "./paths/metadata_cascade_policies__delete_metadata_cascade_policies_id.yml"
+
+"/metadata_cascade_policies/{metadata_cascade_policy_id}/apply":
+  post:
+    "$ref": "./paths/metadata_cascade_policies__post_metadata_cascade_policies_id_apply.yml"
+
+"/metadata_queries/execute_read":
+  post:
+    "$ref": "./paths/search__post_metadata_queries_execute_read.yml"
+
+"/metadata_query_indices":
+  get:
+    "$ref": "./paths/search__get_metadata_query_indices.yml"
+
+"/comments/{comment_id}":
+  get:
+    "$ref": "./paths/comments__get_comments_id.yml"
+  put:
+    "$ref": "./paths/comments__put_comments_id.yml"
+  delete:
+    "$ref": "./paths/comments__delete_comments_id.yml"
+
+"/comments":
+  post:
+    "$ref": "./paths/comments__post_comments.yml"
+
+"/collaborations/{collaboration_id}":
+  get:
+    "$ref": "./paths/collaborations__get_collaborations_id.yml"
+  put:
+    "$ref": "./paths/collaborations__put_collaborations_id.yml"
+  delete:
+    "$ref": "./paths/collaborations__delete_collaborations_id.yml"
+
+"/collaborations":
+  get:
+    "$ref": "./paths/list_collaborations__get_collaborations.yml"
+  post:
+    "$ref": "./paths/collaborations__post_collaborations.yml"
+
+"/search":
+  get:
+    "$ref": "./paths/search__get_search.yml"
+
+"/tasks":
+  post:
+    "$ref": "./paths/tasks__post_tasks.yml"
+
+"/tasks/{task_id}":
+  get:
+    "$ref": "./paths/tasks__get_tasks_id.yml"
+  put:
+    "$ref": "./paths/tasks__put_tasks_id.yml"
+  delete:
+    "$ref": "./paths/tasks__delete_tasks_id.yml"
+
+"/tasks/{task_id}/assignments":
+  get:
+    "$ref": "./paths/task_assignments__get_tasks_id_assignments.yml"
+
+"/task_assignments":
+  post:
+    "$ref": "./paths/task_assignments__post_task_assignments.yml"
+
+"/task_assignments/{task_assignment_id}":
+  get:
+    "$ref": "./paths/task_assignments__get_task_assignments_id.yml"
+  put:
+    "$ref": "./paths/task_assignments__put_task_assignments_id.yml"
+  delete:
+    "$ref": "./paths/task_assignments__delete_task_assignments_id.yml"
+
+"/shared_items":
+  get:
+    "$ref": "./paths/shared_links_files__get_shared_items.yml"
+
+"/files/{file_id}#get_shared_link":
+  get:
+    "$ref": "./paths/shared_links_files__get_files_id--get_shared_link.yml"
+
+"/files/{file_id}#add_shared_link":
+  put:
+    "$ref": "./paths/shared_links_files__put_files_id--add_shared_link.yml"
+
+"/files/{file_id}#update_shared_link":
+  put:
+    "$ref": "./paths/shared_links_files__put_files_id--update_shared_link.yml"
+
+"/files/{file_id}#remove_shared_link":
+  put:
+    "$ref": "./paths/shared_links_files__put_files_id--remove_shared_link.yml"
+
+"/shared_items#folders":
+  get:
+    "$ref": "./paths/shared_links_folders__get_shared_items--folders.yml"
+
+"/folders/{folder_id}#get_shared_link":
+  get:
+    "$ref": "./paths/shared_links_folders__get_folders_id--get_shared_link.yml"
+
+"/folders/{folder_id}#add_shared_link":
+  put:
+    "$ref": "./paths/shared_links_folders__put_folders_id--add_shared_link.yml"
+
+"/folders/{folder_id}#update_shared_link":
+  put:
+    "$ref": "./paths/shared_links_folders__put_folders_id--update_shared_link.yml"
+
+"/folders/{folder_id}#remove_shared_link":
+  put:
+    "$ref": "./paths/shared_links_folders__put_folders_id--remove_shared_link.yml"
+
+"/web_links":
+  post:
+    "$ref": "./paths/web_links__post_web_links.yml"
+
+"/web_links/{web_link_id}":
+  get:
+    "$ref": "./paths/web_links__get_web_links_id.yml"
+  post:
+    "$ref": "./paths/trashed_web_links__post_web_links_id.yml"
+  put:
+    "$ref": "./paths/web_links__put_web_links_id.yml"
+  delete:
+    "$ref": "./paths/web_links__delete_web_links_id.yml"
+
+"/web_links/{web_link_id}/trash":
+  get:
+    "$ref": "./paths/trashed_web_links__get_web_links_id_trash.yml"
+  delete:
+    "$ref": "./paths/trashed_web_links__delete_web_links_id_trash.yml"
+
+"/users":
+  get:
+    "$ref": "./paths/users__get_users.yml"
+  post:
+    "$ref": "./paths/users__post_users.yml"
+
+"/users/me":
+  get:
+    "$ref": "./paths/users__get_users_me.yml"
+
+"/users/{user_id}":
+  get:
+    "$ref": "./paths/users__get_users_id.yml"
+  put:
+    "$ref": "./paths/users__put_users_id.yml"
+  delete:
+    "$ref": "./paths/users__delete_users_id.yml"
+
+"/users/{user_id}/avatar":
+  get:
+    "$ref": "./paths/avatars__get_users_id_avatar.yml"
+
+"/users/{user_id}/folders/0":
+  put:
+    "$ref": "./paths/transfer__put_users_id_folders_0.yml"
+
+"/users/{user_id}/email_aliases":
+  get:
+    "$ref": "./paths/email_aliases__get_users_id_email_aliases.yml"
+  post:
+    "$ref": "./paths/email_aliases__post_users_id_email_aliases.yml"
+
+"/users/{user_id}/email_aliases/{email_alias_id}":
+  delete:
+    "$ref": "./paths/email_aliases__delete_users_id_email_aliases_id.yml"
+
+"/users/{user_id}/memberships":
+  get:
+    "$ref": "./paths/memberships__get_users_id_memberships.yml"
+
+"/invites":
+  post:
+    "$ref": "./paths/invites__post_invites.yml"
+
+"/invites/{invite_id}":
+  get:
+    "$ref": "./paths/invites__get_invites_id.yml"
+
+"/groups":
+  get:
+    "$ref": "./paths/groups__get_groups.yml"
+  post:
+    "$ref": "./paths/groups__post_groups.yml"
+
+"/groups/{group_id}":
+  get:
+    "$ref": "./paths/groups__get_groups_id.yml"
+  put:
+    "$ref": "./paths/groups__put_groups_id.yml"
+  delete:
+    "$ref": "./paths/groups__delete_groups_id.yml"
+
+"/groups/{group_id}/memberships":
+  get:
+    "$ref": "./paths/memberships__get_groups_id_memberships.yml"
+
+"/groups/{group_id}/collaborations":
+  get:
+    "$ref": "./paths/list_collaborations__get_groups_id_collaborations.yml"
+
+"/group_memberships":
+  post:
+    "$ref": "./paths/memberships__post_group_memberships.yml"
+
+"/group_memberships/{group_membership_id}":
+  get:
+    "$ref": "./paths/memberships__get_group_memberships_id.yml"
+  put:
+    "$ref": "./paths/memberships__put_group_memberships_id.yml"
+  delete:
+    "$ref": "./paths/memberships__delete_group_memberships_id.yml"
+
+"/webhooks":
+  get:
+    "$ref": "./paths/webhooks__get_webhooks.yml"
+  post:
+    "$ref": "./paths/webhooks__post_webhooks.yml"
+
+"/webhooks/{webhook_id}":
+  get:
+    "$ref": "./paths/webhooks__get_webhooks_id.yml"
+  put:
+    "$ref": "./paths/webhooks__put_webhooks_id.yml"
+  delete:
+    "$ref": "./paths/webhooks__delete_webhooks_id.yml"
+
+"/skill_invocations/{skill_id}":
+  put:
+    "$ref": "./paths/skills__put_skill_invocations_id.yml"
+
+"/events":
+  options:
+    "$ref": "./paths/events__options_events.yml"
+  get:
+    "$ref": "./paths/events__get_events.yml"
+
+"/collections":
+  get:
+    "$ref": "./paths/collections__get_collections.yml"
+
+"/collections/{collection_id}/items":
+  get:
+    "$ref": "./paths/collections__get_collections_id_items.yml"
+
+"/recent_items":
+  get:
+    "$ref": "./paths/recent_items__get_recent_items.yml"
+
+"/retention_policies":
+  get:
+    "$ref": "./paths/retention_policies__get_retention_policies.yml"
+  post:
+    "$ref": "./paths/retention_policies__post_retention_policies.yml"
+
+"/retention_policies/{retention_policy_id}":
+  get:
+    "$ref": "./paths/retention_policies__get_retention_policies_id.yml"
+  put:
+    "$ref": "./paths/retention_policies__put_retention_policies_id.yml"
+
+"/retention_policies/{retention_policy_id}/assignments":
+  get:
+    "$ref": "./paths/retention_policy_assignments__get_retention_policies_id_assignments.yml"
+
+"/retention_policy_assignments":
+  post:
+    "$ref": "./paths/retention_policy_assignments__post_retention_policy_assignments.yml"
+
+"/retention_policy_assignments/{retention_policy_assignment_id}":
+  get:
+    "$ref": "./paths/retention_policy_assignments__get_retention_policy_assignments_id.yml"
+
+"/retention_policy_assignments/{retention_policy_assignment_id}/files_under_retention":
+  get:
+    "$ref": "./paths/retention_policy_assignments__get_files_under_retention.yml"
+
+"/retention_policy_assignments/{retention_policy_assignment_id}/file_versions_under_retention":
+  get:
+    "$ref": "./paths/retention_policy_assignments__get_file_versions_under_retention.yml"
+
+"/legal_hold_policies":
+  get:
+    "$ref": "./paths/legal_hold_policies__get_legal_hold_policies.yml"
+  post:
+    "$ref": "./paths/legal_hold_policies__post_legal_hold_policies.yml"
+
+"/legal_hold_policies/{legal_hold_policy_id}":
+  get:
+    "$ref": "./paths/legal_hold_policies__get_legal_hold_policies_id.yml"
+  put:
+    "$ref": "./paths/legal_hold_policies__put_legal_hold_policies_id.yml"
+  delete:
+    "$ref": "./paths/legal_hold_policies__delete_legal_hold_policies_id.yml"
+
+"/legal_hold_policy_assignments":
+  get:
+    "$ref": "./paths/legal_hold_policy_assignments__get_legal_hold_policy_assignments.yml"
+  post:
+    "$ref": "./paths/legal_hold_policy_assignments__post_legal_hold_policy_assignments.yml"
+
+"/legal_hold_policy_assignments/{legal_hold_policy_assignment_id}":
+  get:
+    "$ref": "./paths/legal_hold_policy_assignments__get_legal_hold_policy_assignments_id.yml"
+  delete:
+    "$ref": "./paths/legal_hold_policy_assignments__delete_legal_hold_policy_assignments_id.yml"
+
+"/legal_hold_policy_assignments/{legal_hold_policy_assignment_id}/files_on_hold":
+  get:
+    "$ref": "./paths/legal_hold_policy_assignments__get_legal_hold_policy_assignments_id_files_on_hold.yml"
+
+"/file_version_retentions":
+  get:
+    "$ref": "./paths/file_version_retentions__get_file_version_retentions.yml"
+
+"/legal_hold_policy_assignments/{legal_hold_policy_assignment_id}/file_versions_on_hold":
+  get:
+    "$ref": "./paths/legal_hold_policy_assignments__get_legal_hold_policy_assignments_id_file_versions_on_hold.yml"
+
+"/file_version_retentions/{file_version_retention_id}":
+  get:
+    "$ref": "./paths/file_version_retentions__get_file_version_retentions_id.yml"
+
+"/file_version_legal_holds/{file_version_legal_hold_id}":
+  get:
+    "$ref": "./paths/file_version_legal_holds__get_file_version_legal_holds_id.yml"
+
+"/file_version_legal_holds":
+  get:
+    "$ref": "./paths/file_version_legal_holds__get_file_version_legal_holds.yml"
+
+"/device_pinners/{device_pinner_id}":
+  get:
+    "$ref": "./paths/device_pinners__get_device_pinners_id.yml"
+  delete:
+    "$ref": "./paths/device_pinners__delete_device_pinners_id.yml"
+
+"/enterprises/{enterprise_id}/device_pinners":
+  get:
+    "$ref": "./paths/device_pinners__get_enterprises_id_device_pinners.yml"
+
+"/terms_of_services":
+  get:
+    "$ref": "./paths/terms_of_services__get_terms_of_services.yml"
+  post:
+    "$ref": "./paths/terms_of_services__post_terms_of_services.yml"
+
+"/terms_of_services/{terms_of_service_id}":
+  get:
+    "$ref": "./paths/terms_of_services__get_terms_of_services_id.yml"
+  put:
+    "$ref": "./paths/terms_of_services__put_terms_of_services_id.yml"
+
+"/terms_of_service_user_statuses":
+  get:
+    "$ref": "./paths/terms_of_service_user_statuses__get_terms_of_service_user_statuses.yml"
+  post:
+    "$ref": "./paths/terms_of_service_user_statuses__post_terms_of_service_user_statuses.yml"
+
+"/terms_of_service_user_statuses/{terms_of_service_user_status_id}":
+  put:
+    "$ref": "./paths/terms_of_service_user_statuses__put_terms_of_service_user_statuses_id.yml"
+
+"/collaboration_whitelist_entries":
+  get:
+    "$ref": "./paths/collaboration_allowlist_entries__get_collaboration_whitelist_entries.yml"
+  post:
+    "$ref": "./paths/collaboration_allowlist_entries__post_collaboration_whitelist_entries.yml"
+
+"/collaboration_whitelist_entries/{collaboration_whitelist_entry_id}":
+  get:
+    "$ref": "./paths/collaboration_allowlist_entries__get_collaboration_whitelist_entries_id.yml"
+  delete:
+    "$ref": "./paths/collaboration_allowlist_entries__delete_collaboration_whitelist_entries_id.yml"
+
+"/collaboration_whitelist_exempt_targets":
+  get:
+    "$ref": "./paths/collaboration_allowlist_exempt_targets__get_collaboration_whitelist_exempt_targets.yml"
+  post:
+    "$ref": "./paths/collaboration_allowlist_exempt_targets__post_collaboration_whitelist_exempt_targets.yml"
+
+"/collaboration_whitelist_exempt_targets/{collaboration_whitelist_exempt_target_id}":
+  get:
+    "$ref": "./paths/collaboration_allowlist_exempt_targets__get_collaboration_whitelist_exempt_targets_id.yml"
+  delete:
+    "$ref": "./paths/collaboration_allowlist_exempt_targets__delete_collaboration_whitelist_exempt_targets_id.yml"
+
+"/storage_policies":
+  get:
+    "$ref": "./paths/storage_policies__get_storage_policies.yml"
+
+"/storage_policies/{storage_policy_id}":
+  get:
+    "$ref": "./paths/storage_policies__get_storage_policies_id.yml"
+
+"/storage_policy_assignments":
+  get:
+    "$ref": "./paths/storage_policy_assignments__get_storage_policy_assignments.yml"
+  post:
+    "$ref": "./paths/storage_policy_assignments__post_storage_policy_assignments.yml"
+
+"/storage_policy_assignments/{storage_policy_assignment_id}":
+  get:
+    "$ref": "./paths/storage_policy_assignments__get_storage_policy_assignments_id.yml"
+  put:
+    "$ref": "./paths/storage_policy_assignments__put_storage_policy_assignments_id.yml"
+  delete:
+    "$ref": "./paths/storage_policy_assignments__delete_storage_policy_assignments_id.yml"
+
+"/zip_downloads":
+  post:
+    "$ref": "./paths/zip_downloads__post_zip_downloads.yml"
+
+"/zip_downloads/{zip_download_id}/content":
+  get:
+    "$ref": "./paths/zip_downloads__get_zip_downloads_id_content.yml"
+
+"/zip_downloads/{zip_download_id}/status":
+  get:
+    "$ref": "./paths/zip_downloads__get_zip_downloads_id_status.yml"
+
+"/sign_requests/{sign_request_id}/cancel":
+  post:
+    "$ref": "./paths/sign_requests__post_sign_requests_id_cancel.yml"
+
+"/sign_requests/{sign_request_id}/resend":
+  post:
+    "$ref": "./paths/sign_requests__post_sign_requests_id_resend.yml"
+
+"/sign_requests/{sign_request_id}":
+  get:
+    "$ref": "./paths/sign_requests__get_sign_requests_id.yml"
+
+"/sign_requests":
+  get:
+    "$ref": "./paths/sign_requests__get_sign_requests.yml"
+  post:
+    "$ref": "./paths/sign_requests__post_sign_requests.yml"
+
+"/workflows":
+  get:
+    "$ref": "./paths/workflows__get_workflows.yml"
+
+"/workflows/{workflow_id}/start":
+  post:
+    "$ref": "./paths/workflows__post_workflows_id_start.yml"

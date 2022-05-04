@@ -1,0 +1,55 @@
+openapi: 3.0.3
+info:
+  $ref: ./defaults/info.yaml
+
+tags:
+  $ref: ./defaults/tags.yaml
+
+servers:
+  $ref: ./defaults/servers.yaml
+
+security:
+  $ref: ./defaults/security.yaml
+
+components:
+  $ref: './components/index.yaml'
+
+paths:
+  /config:
+    $ref: './paths/config.yaml#/paths/~1config'
+  /user:
+    $ref: './paths/user.yaml#/paths/~1user'
+  /user/{userId}/verify/{verificationKey}:
+    $ref: './paths/user.yaml#/paths/~1user~1{userId}~1verify~1{verificationKey}'
+  /user/forgot:
+    $ref: './paths/user.yaml#/paths/~1user~1forgot'
+  /user/{userId}/reset/{resetKey}:
+    $ref: './paths/user.yaml#/paths/~1user~1{userId}~1reset~1{resetKey}'
+  /user/auth/login:
+    $ref: './paths/user.yaml#/paths/~1user~1auth~1login'
+  /user/auth/google:
+    $ref: './paths/user.yaml#/paths/~1user~1auth~1google'
+  /user/auth/facebook:
+    $ref: './paths/user.yaml#/paths/~1user~1auth~1facebook'
+  /user/{userId}:
+    $ref: './paths/user.yaml#/paths/~1user~1{userId}'
+  /user/{userId}/secure:
+    $ref: './paths/user.yaml#/paths/~1user~1{userId}~1secure'
+  /user/auth/logout:
+    $ref: './paths/user.yaml#/paths/~1user~1auth~1logout'
+  /user/{userId}/device:
+    $ref: './paths/user.yaml#/paths/~1user~1{userId}~1device'
+  /blog/post:
+    $ref: './paths/blog.yaml#/paths/~1blog~1post'
+  /blog/post/{postId}:
+    $ref: './paths/blog.yaml#/paths/~1blog~1post~1{postId}'
+  /blog/post/{postId}/comment:
+    $ref: './paths/blog.yaml#/paths/~1blog~1post~1{postId}~1comment'
+  /blog/post/{postId}/comment/{commentId}:
+    $ref: './paths/blog.yaml#/paths/~1blog~1post~1{postId}~1comment~1{commentId}'
+  /{size}/smart/{imageUrl}:
+    $ref: './paths/media.yaml#/paths/~1{size}~1smart~1{imageUrl}'
+  /media/{image}:
+    $ref: './paths/media.yaml#/paths/~1media~1{image}'
+  /health:
+    $ref: './paths/health.yaml#/paths/~1health'

@@ -8,6 +8,8 @@ let expect = require('chai').expect,
   PET_STORE_SEPARATED_COMMON = '../data/petstore separate yaml/common',
   PET_STORE_MULTIPLE_FILES = '../data/petstore separate yaml',
   VALID_OPENAPI_31_PATH = '../data/valid_openapi31X',
+  BOX_OPENAPI = '../data/box-openapi',
+  MULTIFILE_DEF = '../data/multiDef',
   validPetstore = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore.yaml'),
   petstoreSeparatedPet = path.join(__dirname, PET_STORE_SEPARATED + '/Pet.yaml'),
   petstoreSeparatedError = path.join(__dirname, PET_STORE_SEPARATED_COMMON + '/Error.yaml'),
@@ -26,7 +28,14 @@ let expect = require('chai').expect,
   circularRef = path.join(__dirname, RELATED_FILES + '/circularRef.yaml'),
   oldPet = path.join(__dirname, RELATED_FILES + '/oldPet.yaml'),
   pet = path.join(__dirname, RELATED_FILES + '/Pet.yaml'),
-  validHopService31x = path.join(__dirname, VALID_OPENAPI_31_PATH + '/yaml/hopService.yaml');
+  validHopService31x = path.join(__dirname, VALID_OPENAPI_31_PATH + '/yaml/hopService.yaml'),
+  box_openapi = path.join(__dirname, BOX_OPENAPI + '/openapi.yml'),
+  box_openapiInfo = path.join(__dirname, BOX_OPENAPI + '/common/info.yml'),
+  box_openapiPaths = path.join(__dirname, BOX_OPENAPI + '/paths.yml'),
+  box_openapiSec = path.join(__dirname, BOX_OPENAPI + '/common/securitySchemes.yml'),
+  box_openapiSchemas = path.join(__dirname, BOX_OPENAPI + '/schemas.yml'),
+  box_openapiTags = path.join(__dirname, BOX_OPENAPI + '/common/tags.yml'),
+  rootMultiFileDef = path.join(__dirname, MULTIFILE_DEF + '/swagger.yaml');
 
 describe('detectRelatedFiles method', function () {
 
@@ -368,4 +377,70 @@ describe('detectRelatedFiles method', function () {
     expect(res.output.data[0].missingRelatedFiles.length).to.equal(6);
   });
 
+  it('should return 389 missing nodes for box-openapi files', async function () {
+    let contentRootFile = fs.readFileSync(box_openapi, 'utf8'),
+      contentFileInfo = fs.readFileSync(box_openapiInfo, 'utf8'),
+      contentFilePaths = fs.readFileSync(box_openapiPaths, 'utf8'),
+      contentFileSec = fs.readFileSync(box_openapiSec, 'utf8'),
+      contentFileSchemas = fs.readFileSync(box_openapiSchemas, 'utf8'),
+      contentFileTags = fs.readFileSync(box_openapiTags, 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/openapi.yml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/common/info.yml',
+            content: contentFileInfo
+          },
+          {
+            path: '/paths.yml',
+            content: contentFilePaths
+          },
+          {
+            path: '/common/securitySchemes.yml',
+            content: contentFileSec
+          },
+          {
+            path: '/schemas.yml',
+            content: contentFileSchemas
+          },
+          {
+            path: '/common/tags.yml',
+            content: contentFileTags
+          }
+        ]
+      };
+    const res = await Converter.detectRelatedFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].relatedFiles.length).to.equal(5);
+    expect(res.output.data[0].missingRelatedFiles.length).to.equal(389);
+  });
+
+  it('should return 10 missing nodes', async function () {
+    let contentRootFile = fs.readFileSync(rootMultiFileDef, 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/swagger.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+        ]
+      };
+    const res = await Converter.detectRelatedFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].relatedFiles.length).to.equal(0);
+    expect(res.output.data[0].missingRelatedFiles.length).to.equal(10);
+  });
 });

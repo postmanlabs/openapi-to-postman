@@ -1,0 +1,18 @@
+---
+title: Box Platform API
+
+description:
+  "$ref": "./description.md"
+
+termsOfService: https://cloud.app.box.com/s/rmwxu64h1ipr41u49w3bbuvbsa29wku9
+
+contact:
+  name: Box, Inc
+  url: https://box.dev
+  email: devrel@box.com
+
+license:
+  name: Apache-2.0
+  url: http://www.apache.org/licenses/LICENSE-2.0
+
+version: '2.0.0'

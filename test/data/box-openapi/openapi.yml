@@ -1,0 +1,28 @@
+---
+openapi: "3.0.2"
+
+info:
+  "$ref": "./common/info.yml"
+
+servers:
+  - url: https://api.box.com/2.0
+    description: Box Platform API server
+
+paths:
+  "$ref": "./paths.yml"
+
+components:
+  securitySchemes:
+    "$ref": "./common/securitySchemes.yml"
+  schemas:
+    "$ref": "./schemas.yml"
+
+security:
+  - OAuth2Security: []
+
+tags:
+  "$ref": "./common/tags.yml"
+
+externalDocs:
+  description: Box Developer Documentation
+  url: https://developer.box.com
