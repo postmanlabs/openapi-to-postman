@@ -1,6 +1,6 @@
 
 const expect = require('chai').expect,
-  { JsonPointerEncodeAndReplace,
+  { jsonPointerEncodeAndReplace,
     getJsonPointerRelationToRoot,
     concatJsonPointer,
     getKeyInComponents } = require('./../../lib/jsonPointer');
@@ -37,41 +37,41 @@ describe('getKeyInComponents function', function () {
 
 describe('getJsonPointerRelationToRoot function', function () {
   it('should return "#/components/schemas/Pets.yaml" no local path and schema', function () {
-    let res = getJsonPointerRelationToRoot(JsonPointerEncodeAndReplace, 'Pets.yaml', 'Pets.yaml', 'schemas');
+    let res = getJsonPointerRelationToRoot(jsonPointerEncodeAndReplace, 'Pets.yaml', 'Pets.yaml', 'schemas');
     expect(res).to.equal('#/components/schemas/Pets.yaml');
   });
   it('should return "#/components/schemas/hello.yaml/definitions/world" no local path and schema', function () {
-    let res = getJsonPointerRelationToRoot(JsonPointerEncodeAndReplace, 'hello.yaml', 'hello.yaml#/definitions/world',
+    let res = getJsonPointerRelationToRoot(jsonPointerEncodeAndReplace, 'hello.yaml', 'hello.yaml#/definitions/world',
       'schemas');
     expect(res).to.equal('#/components/schemas/hello.yaml/definitions/world');
   });
   it('should return "#/components/schemas/Error" no file path', function () {
-    let res = getJsonPointerRelationToRoot(JsonPointerEncodeAndReplace, '', '#/components/schemas/Error', 'schemas');
+    let res = getJsonPointerRelationToRoot(jsonPointerEncodeAndReplace, '', '#/components/schemas/Error', 'schemas');
     expect(res).to.equal('#/components/schemas/Error');
   });
 });
 
 describe('concatJsonPointer function ', function () {
   it('should return "#/components/schemas/Pets.yaml" no local path and schema', function () {
-    let res = concatJsonPointer(JsonPointerEncodeAndReplace, 'Pets.yaml', 'schemas');
+    let res = concatJsonPointer(jsonPointerEncodeAndReplace, 'Pets.yaml', 'schemas');
     expect(res).to.equal('#/components/schemas/Pets.yaml');
   });
 
   it('should return "#/components/schemas/other~1Pets.yaml" no local path and schema folder in filename', function () {
-    let res = concatJsonPointer(JsonPointerEncodeAndReplace, 'other/Pets.yaml', 'schemas');
+    let res = concatJsonPointer(jsonPointerEncodeAndReplace, 'other/Pets.yaml', 'schemas');
     expect(res).to.equal('#/components/schemas/other~1Pets.yaml');
   });
   it('should return "#/components/schemas/some~1Pet" no local path and schema folder in filename', function () {
-    let res = concatJsonPointer(JsonPointerEncodeAndReplace, 'some/Pet.yaml', 'schemas');
+    let res = concatJsonPointer(jsonPointerEncodeAndReplace, 'some/Pet.yaml', 'schemas');
     expect(res).to.equal('#/components/schemas/some~1Pet.yaml');
   });
   it('should return "#/components/schemas/hello.yaml/definitions/world" no local path and schema', function () {
-    let res = concatJsonPointer(JsonPointerEncodeAndReplace, 'hello.yaml', 'schemas', '/definitions/world');
+    let res = concatJsonPointer(jsonPointerEncodeAndReplace, 'hello.yaml', 'schemas', '/definitions/world');
     expect(res).to.equal('#/components/schemas/hello.yaml/definitions/world');
   });
 
   it('should return "#/components/schemas/~1Pets.yaml" no local path and schema', function () {
-    let res = concatJsonPointer(JsonPointerEncodeAndReplace, '/Pets.yaml', 'schemas');
+    let res = concatJsonPointer(jsonPointerEncodeAndReplace, '/Pets.yaml', 'schemas');
     expect(res).to.equal('#/components/schemas/~1Pets.yaml');
   });
 

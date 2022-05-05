@@ -2,8 +2,17 @@ const { getReferences,
     isLocalRef,
     getAdjacentAndMissing,
     findNodeFromPath,
-    getRelatedEntities } = require('./../../lib/relatedEntity'),
+    getRelatedEntities,
+    pathSolver } = require('./../../lib/relatedEntities'),
+  { isExtRef,
+    removeLocalReferenceFromPath } = require('./../../lib/jsonPointer'),
+  path = require('path'),
   expect = require('chai').expect,
+  PET_STORE_SEPARATED = '../data/petstore separate yaml/spec',
+  newPet = path.join(__dirname, PET_STORE_SEPARATED + '/NewPet.yaml'),
+  fs = require('fs'),
+  parse = require('./../../lib/parse.js'),
+  swaggerRoot = path.join(__dirname, PET_STORE_SEPARATED + '/swagger.yaml'),
   mockedInputPetstore = {
     'components': {
       'schemas': {
@@ -59,7 +68,7 @@ describe('getReferences function', function () {
           $ref: '#/components/schemas/Pet'
         }
       },
-      result = getReferences(inputNode, isLocalRef);
+      result = getReferences(inputNode, isLocalRef, pathSolver);
     expect(result.length).to.equal(1);
     expect(result[0].path).to.equal('#/components/schemas/Pet');
 
@@ -73,7 +82,7 @@ describe('getReferences function', function () {
           newPet: { $ref: '#/components/schemas/Pet' }
         }
       },
-      result = getReferences(inputNode, isLocalRef);
+      result = getReferences(inputNode, isLocalRef, pathSolver);
     expect(result.length).to.equal(1);
     expect(result[0].path).to.equal('#/components/schemas/Pet');
   });
@@ -86,9 +95,32 @@ describe('getReferences function', function () {
           newPet: { $ref: 'Pet.yaml' }
         }
       },
-      result = getReferences(inputNode, isLocalRef);
+      result = getReferences(inputNode, isLocalRef, pathSolver);
     expect(result.length).to.equal(0);
   });
+
+
+  it('should return 1 reference from input', function () {
+    const parsedContentFile = parse.getOasObject(fs.readFileSync(newPet, 'utf8')),
+      result = getReferences(parsedContentFile, isExtRef, removeLocalReferenceFromPath);
+    expect(result.length).to.equal(1);
+    expect(result[0].path).to.equal('Pet.yaml');
+
+  });
+
+  it('should return unique references from input', function () {
+    const parsedContentFile = parse.getOasObject(fs.readFileSync(swaggerRoot, 'utf8')),
+      result = getReferences(parsedContentFile, isExtRef, removeLocalReferenceFromPath);
+    expect(result.length).to.equal(5);
+    expect(result[0].path).to.equal('parameters.yaml');
+    expect(result[1].path).to.equal('parameters.yaml');
+    expect(result[2].path).to.equal('Pet.yaml');
+    expect(result[3].path).to.equal('../common/Error.yaml');
+    expect(result[4].path).to.equal('NewPet.yaml');
+
+  });
+
+
 });
 
 describe('findNodeFromPath method', function () {
