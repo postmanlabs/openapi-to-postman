@@ -1,4 +1,4 @@
-const { getRelatedFiles, getReferences, getAdjacentAndMissing,
+const { getRelatedFiles, getAdjacentAndMissing,
     calculatePath, calculatePathMissing } = require('./../../lib/relatedFiles'),
   expect = require('chai').expect,
   fs = require('fs'),
@@ -50,38 +50,6 @@ describe('getAdjacentAndMissing function', function () {
     expect(graphAdj[0].fileName).to.equal('/Pet.yaml');
     expect(missingNodes.length).to.equal(1);
     expect(missingNodes[0].path).to.equal('/common/Error.yaml');
-
-  });
-});
-
-describe('getReferences function', function () {
-  it('should return 1 reference from input', function () {
-    const contentFile = fs.readFileSync(newPet, 'utf8'),
-
-      inputNode = {
-        fileName: '/NewPet.yaml',
-        content: contentFile
-      },
-      result = getReferences(inputNode);
-    expect(result.length).to.equal(1);
-    expect(result[0].path).to.equal('Pet.yaml');
-
-  });
-
-  it('should return unique references from input', function () {
-    const contentFile = fs.readFileSync(swaggerRoot, 'utf8'),
-
-      inputNode = {
-        path: '/swagger.yaml',
-        content: contentFile
-      },
-      result = getReferences(inputNode);
-    expect(result.length).to.equal(5);
-    expect(result[0].path).to.equal('parameters.yaml');
-    expect(result[1].path).to.equal('parameters.yaml');
-    expect(result[2].path).to.equal('Pet.yaml');
-    expect(result[3].path).to.equal('../common/Error.yaml');
-    expect(result[4].path).to.equal('NewPet.yaml');
 
   });
 });
