@@ -204,4 +204,17 @@ describe('getRelatedEntities function', function () {
     expect(missingRelatedEntities.length).to.equal(1);
     expect(missingRelatedEntities[0].$ref).to.equal('#/components/schemas/Dog');
   });
+
+  it('should ignore external references', function () {
+    const inputNode = {
+        type: 'array',
+        items: {
+          $ref: 'pet.yaml'
+        }
+      },
+      { relatedEntities, missingRelatedEntities } = getRelatedEntities(inputNode, mockedInputPetstore);
+    expect(relatedEntities.length).to.equal(1);
+    expect(missingRelatedEntities.length).to.equal(0);
+  });
+
 });
