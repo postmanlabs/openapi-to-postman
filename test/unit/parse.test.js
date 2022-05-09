@@ -43,6 +43,16 @@ describe('PARSE FUNCTION TESTS', function() {
       result = parse.getOasObject(file);
 
     expect(result.oasObject.openapi).to.equal('3.0.0');
+    expect(result.inputFormat).to.equal(parse.YAML_FORMAT);
+  });
+
+  it('getOasObject function should return a valid oas object from a json file', function() {
+    let filePath = path.join(__dirname, '../data/valid_openapi/custom_headers.json'),
+      file = fs.readFileSync(filePath, 'utf8'),
+      result = parse.getOasObject(file);
+
+    expect(result.oasObject.openapi).to.equal('3.0.0');
+    expect(result.inputFormat).to.equal(parse.JSON_FORMAT);
   });
 
   it('mergeFiles function should merge all files in the folder correctly', function() {
