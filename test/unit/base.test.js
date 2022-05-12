@@ -1111,7 +1111,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         });
     });
 
-    it('[Github #10752]: Should convert value property in example' +
+    it('Should convert value property in example' +
     valuePropInExample, function(done) {
       var openapi = fs.readFileSync(valuePropInExample, 'utf8');
       Converter.convert({ type: 'string', data: openapi },
