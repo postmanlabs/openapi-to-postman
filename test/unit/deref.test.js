@@ -427,7 +427,7 @@ describe('DEREF FUNCTION TESTS ', function() {
           }
         },
         parameterSource = 'RESPONSE',
-        componentsAndPaths = { //eslint-disable-line
+        componentsAndPaths = {
           'components': {
             'examples': {
               'menu-basecrusts': {
