@@ -413,7 +413,7 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(deref._getEscaped(null, { randomObject: 1 })).to.equal(null);
     });
   });
-  describe('APIDES-597 | nullable field should be passed on to converted json schema', function() {
+  describe('APIDES-597 | nullable field should be passed on to converted/resolved json schema', function() {
     it('JSON schema should contain nullable fields if the parent refs to another schema', function(done) {
       var schema = {
           'type': 'object',
@@ -549,6 +549,7 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(output.properties.items.type).to.eql('array');
       expect(output.properties.items.items.type).to.eql('object');
       expect(output.properties.items.items.properties.addOnInfo.nullable).to.eql(true);
+      expect(output.properties.items.items.properties.addOnInfo.properties.addOnItems.nullable).to.eql(true);
       expect(output.properties.items.items.properties.itemId.nullable).to.eql(undefined);
       done();
     });
