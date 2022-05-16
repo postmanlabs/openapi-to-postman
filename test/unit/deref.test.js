@@ -413,4 +413,144 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(deref._getEscaped(null, { randomObject: 1 })).to.equal(null);
     });
   });
+  describe('APIDES-597 | nullable field should be passed on to converted json schema', function() {
+    it('JSON schema should contain nullable fields if the parent refs to another schema', function(done) {
+      var schema = {
+          'type': 'object',
+          'properties': {
+            'items': {
+              'type': 'array',
+              'items': {
+                '$ref': '#/components/schemas/MenuItem'
+              }
+            }
+          }
+        },
+        parameterSource = 'RESPONSE',
+        componentsAndPaths = { //eslint-disable-line
+          'components': {
+            'examples': {
+              'menu-basecrusts': {
+                'value': {
+                  'items': [
+                    {
+                      'itemId': 102000,
+                      'addOnInfo': null
+                    },
+                    {
+                      'itemId': 202100,
+                      'addOnInfo': null
+                    },
+                    {
+                      'itemId': 202206,
+                      'addOnInfo': null
+                    },
+                    {
+                      'itemId': 202900,
+                      'addOnInfo': {
+                        'addOnPrompt': 'Choose your drink',
+                        'addOnItems': null
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            'schemas': {
+              'MenuItem': {
+                'type': 'object',
+                'description': 'The detailed version of a MenuDisplayGroupItem..',
+                'required': [
+                  'itemId',
+                  'addOnInfo'
+                ],
+                'properties': {
+                  'itemId': {
+                    'type': 'integer',
+                    'format': 'integer'
+                  },
+                  'addOnInfo': {
+                    'type': 'object',
+                    'nullable': true,
+                    'description': 'The following items currently use addOnItems in the CV Clould Store menu:..',
+                    '$ref': '#/components/schemas/MenuItemAddOnInfo'
+                  }
+                }
+              },
+              'MenuItemAddOnInfo': {
+                'type': 'object',
+                'description': 'If an item has AddOns, this item contains the details.',
+                'required': [
+                  'addOnPrompt',
+                  'addOnItems'
+                ],
+                'properties': {
+                  'addOnPrompt': {
+                    'type': 'string',
+                    'description': 'This prompt is shown to the user to guide them in selecting their addOnItem'
+                  },
+                  'addOnItems': {
+                    'type': 'string',
+                    'nullable': true
+                  }
+                }
+              }
+            }
+          },
+          'paths': {
+            '/v1/menu-basecrusts': {
+              'get': {
+                'summary': '/v1/menu-basecrusts',
+                'operationId': '/v1/menu-basecrusts',
+                'description': 'Returns an array of all of the baseCrusts for a particular LocationNumber.',
+                'tags': [
+                  'menu'
+                ],
+                'responses': {
+                  '200': {
+                    'description': 'Successful MenuItem Response',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          'type': 'object',
+                          'properties': {
+                            'items': {
+                              'type': 'array',
+                              'items': {
+                                '$ref': '#/components/schemas/MenuItem'
+                              }
+                            }
+                          }
+                        },
+                        'examples': {
+                          'MenuExample': {
+                            '$ref': '#/components/examples/menu-basecrusts'
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                'parameters': [],
+                'schemaPathName': '/v1/menu-basecrusts'
+              },
+              'parameters': []
+            }
+          },
+          concreteUtils: schemaUtils30X
+        },
+        output;
+
+      output = deref.resolveRefs(schema, parameterSource, _.cloneDeep(componentsAndPaths));
+
+      expect(output.type).to.equal('object');
+      expect(output.format).to.be.undefined;
+      expect(output.pattern).to.eql(schema.pattern);
+      expect(output.properties.items.type).to.eql('array');
+      expect(output.properties.items.items.type).to.eql('object');
+      expect(output.properties.items.items.properties.addOnInfo.nullable).to.eql(true);
+      expect(output.properties.items.items.properties.itemId.nullable).to.eql(undefined);
+      done();
+    });
+  });
 });
