@@ -421,7 +421,7 @@ describe('DEREF FUNCTION TESTS ', function() {
             'items': {
               'type': 'array',
               'items': {
-                '$ref': '#/components/schemas/MenuItem'
+                '$ref': '#/components/schemas/SampleItem'
               }
             }
           }
@@ -430,25 +430,25 @@ describe('DEREF FUNCTION TESTS ', function() {
         componentsAndPaths = {
           'components': {
             'examples': {
-              'menu-basecrusts': {
+              'menu-abc': {
                 'value': {
                   'items': [
                     {
-                      'itemId': 102000,
+                      'itemId': 123,
                       'addOnInfo': null
                     },
                     {
-                      'itemId': 202100,
+                      'itemId': 456,
                       'addOnInfo': null
                     },
                     {
-                      'itemId': 202206,
+                      'itemId': 789,
                       'addOnInfo': null
                     },
                     {
-                      'itemId': 202900,
+                      'itemId': 101,
                       'addOnInfo': {
-                        'addOnPrompt': 'Choose your drink',
+                        'addOnPrompt': 'Lorem Ipsum',
                         'addOnItems': null
                       }
                     }
@@ -457,9 +457,9 @@ describe('DEREF FUNCTION TESTS ', function() {
               }
             },
             'schemas': {
-              'MenuItem': {
+              'SampleItem': {
                 'type': 'object',
-                'description': 'The detailed version of a MenuDisplayGroupItem..',
+                'description': 'Lorem ipsum dolor sit amet, consectetur adipiscing..',
                 'required': [
                   'itemId',
                   'addOnInfo'
@@ -472,14 +472,14 @@ describe('DEREF FUNCTION TESTS ', function() {
                   'addOnInfo': {
                     'type': 'object',
                     'nullable': true,
-                    'description': 'The following items currently use addOnItems in the CV Clould Store menu:..',
-                    '$ref': '#/components/schemas/MenuItemAddOnInfo'
+                    'description': 'Lorem ipsum dolor sit amet, consectetur adipiscing',
+                    '$ref': '#/components/schemas/SampleItemAddOnInfo'
                   }
                 }
               },
-              'MenuItemAddOnInfo': {
+              'SampleItemAddOnInfo': {
                 'type': 'object',
-                'description': 'If an item has AddOns, this item contains the details.',
+                'description': 'Lorem ipsum dolor sit amet, consectetur adipiscing',
                 'required': [
                   'addOnPrompt',
                   'addOnItems'
@@ -487,7 +487,7 @@ describe('DEREF FUNCTION TESTS ', function() {
                 'properties': {
                   'addOnPrompt': {
                     'type': 'string',
-                    'description': 'This prompt is shown to the user to guide them in selecting their addOnItem'
+                    'description': 'Lorem ipsum dolor sit amet, consectetur adipiscing'
                   },
                   'addOnItems': {
                     'type': 'string',
@@ -498,17 +498,17 @@ describe('DEREF FUNCTION TESTS ', function() {
             }
           },
           'paths': {
-            '/v1/menu-basecrusts': {
+            '/v1/menu-abc': {
               'get': {
-                'summary': '/v1/menu-basecrusts',
-                'operationId': '/v1/menu-basecrusts',
-                'description': 'Returns an array of all of the baseCrusts for a particular LocationNumber.',
+                'summary': '/v1/menu-abc',
+                'operationId': '/v1/menu-abc',
+                'description': 'Lorem ipsum dolor sit amet, consectetur adipiscing',
                 'tags': [
                   'menu'
                 ],
                 'responses': {
                   '200': {
-                    'description': 'Successful MenuItem Response',
+                    'description': 'Lorem ipsum dolor sit amet, consectetur.',
                     'content': {
                       'application/json': {
                         'schema': {
@@ -517,14 +517,14 @@ describe('DEREF FUNCTION TESTS ', function() {
                             'items': {
                               'type': 'array',
                               'items': {
-                                '$ref': '#/components/schemas/MenuItem'
+                                '$ref': '#/components/schemas/SampleItem'
                               }
                             }
                           }
                         },
                         'examples': {
                           'MenuExample': {
-                            '$ref': '#/components/examples/menu-basecrusts'
+                            '$ref': '#/components/examples/menu-abc'
                           }
                         }
                       }
@@ -532,7 +532,7 @@ describe('DEREF FUNCTION TESTS ', function() {
                   }
                 },
                 'parameters': [],
-                'schemaPathName': '/v1/menu-basecrusts'
+                'schemaPathName': '/v1/menu-abc'
               },
               'parameters': []
             }
