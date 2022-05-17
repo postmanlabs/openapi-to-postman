@@ -42,6 +42,11 @@ module.exports = {
     return schema.detectRelatedFiles();
   },
 
+  bundle: async function(input) {
+    var schema = new SchemaPack(input);
+    return schema.bundle();
+  },
+
   // new API
   SchemaPack
 };
