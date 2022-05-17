@@ -16,13 +16,28 @@ describe('fetchURLs function ', async function () {
     const res = await fetchURLs(['https://jsonplaceholder.typicode.com/posts'],
       '', () => {
         return Promise.resolve({
-          text: () => { return Promise.resolve('text'); }
+          text: () => { return Promise.resolve('text'); },
+          status: 200
         });
       });
 
     expect(res).to.not.be.undefined;
     expect(res.length).to.equal(1);
     expect(res[0].content).to.equal('text');
+  });
+
+  it('should report not found with custom function', async function () {
+    const res = await fetchURLs(['https://jsonplaceholder.typicode.com/posts'],
+      '', () => {
+        return Promise.resolve({
+          text: () => { return Promise.resolve('text'); },
+          status: 404
+        });
+      });
+
+    expect(res).to.not.be.undefined;
+    expect(res.length).to.equal(1);
+    expect(res[0].content).includes('NF');
   });
 
 });
