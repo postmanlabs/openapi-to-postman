@@ -29,19 +29,19 @@ paths:
         Sed tempus felis lobortis leo pulvinar rutrum. Nam mattis velit nisl, eu condimentum ligula luctus nec. Phasellus semper velit eget aliquet faucibus. In a mattis elit. Phasellus vel urna viverra, condimentum lorem id, rhoncus nibh. Ut pellentesque posuere elementum. Sed a varius odio. Morbi rhoncus ligula libero, vel eleifend nunc tristique vitae. Fusce et sem dui. Aenean nec scelerisque tortor. Fusce malesuada accumsan magna vel tempus. Quisque mollis felis eu dolor tristique, sit amet auctor felis gravida. Sed libero lorem, molestie sed nisl in, accumsan tempor nisi. Fusce sollicitudin massa ut lacinia mattis. Sed vel eleifend lorem. Pellentesque vitae felis pretium, pulvinar elit eu, euismod sapien.
       operationId: findPets
       parameters:
-        - $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remoteRefs/parameters.yaml#/tagsParam'
-        - $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remoteRefs/parameters.yaml#/limitsParam'
+        - $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/parameters.yaml#/tagsParam'
+        - $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/parameters.yaml#/limitsParam'
       responses:
         "200":
           description: pet response
           schema:
             type: array
             items:
-              $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remoteRefs/Pet.yaml'
+              $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/Pet.yaml'
         default:
           description: unexpected error
           schema:
-            $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remoteRefs/Error.yaml'
+            $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/Error.yaml'
 
     post:
       description: Creates a new pet in the store.  Duplicates are allowed
@@ -52,16 +52,16 @@ paths:
           description: Pet to add to the store
           required: true
           schema:
-            $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remoteRefs/NewPet.yaml'
+            $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/NewPet.yaml'
       responses:
         "200":
           description: pet response
           schema:
-            $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remoteRefs/Pet.yaml'
+            $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/Pet.yaml'
         default:
           description: unexpected error
           schema:
-            $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remoteRefs/Error.yaml'
+            $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/Error.yaml'
   /pets/{id}:
     get:
       description: Returns a user based on a single ID, if the user does not have access to the pet
@@ -77,11 +77,11 @@ paths:
         "200":
           description: pet response
           schema:
-            $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remoteRefs/Pet.yaml'
+            $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/Pet.yaml'
         default:
           description: unexpected error
           schema:
-            $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remoteRefs/Error.yaml'
+            $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/Error.yaml'
     delete:
       description: deletes a single pet based on the ID supplied
       operationId: deletePet
@@ -98,5 +98,5 @@ paths:
         default:
           description: unexpected error
           schema:
-            $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remoteRefs/Error.yaml'
+            $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/Error.yaml'
 

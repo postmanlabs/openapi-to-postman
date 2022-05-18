@@ -22,3 +22,5 @@ allowUrlPathVarMatching|boolean|-|false|Whether to allow matching path variables
 disableOptionalParameters|boolean|-|false|Whether to set optional parameters as disabled|CONVERSION
 keepImplicitHeaders|boolean|-|false|Whether to keep implicit headers from the OpenAPI specification, which are removed by default.|CONVERSION
 includeWebhooks|boolean|-|false|Select whether to include Webhooks in the generated collection|CONVERSION
+resolveRemoteRefs|boolean|-|false|Select whether to resolve remote references or not|CONVERSION, VALIDATION, BUNDLING
+remoteRefsResolver|function|-|undefined|Function that can resolve the given URL and provides content present at the reference|CONVERSION, VALIDATION, BUNDLING
