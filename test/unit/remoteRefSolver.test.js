@@ -66,4 +66,19 @@ describe('getRemoteReferences function ', async function () {
     expect(missingRemoteRefs).to.be.empty;
 
   });
+  it('should find the adjacent nodes with URL in $ref value as thenable', function (done) {
+    const contentFileSwaggerRemoteRef = fs.readFileSync(swaggerRemoteRef, 'utf8'),
+      inputNode = {
+        fileName: '/swagger.yaml',
+        content: contentFileSwaggerRemoteRef
+      };
+    getRemoteReferences(inputNode).then(({ remoteRefs, missingRemoteRefs }) => {
+      expect(remoteRefs).to.not.be.undefined;
+      expect(remoteRefs.length).to.equal(4);
+      expect(missingRemoteRefs).to.be.empty;
+      done();
+    });
+
+
+  });
 });

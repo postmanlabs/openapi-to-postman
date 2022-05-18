@@ -7,7 +7,8 @@ var expect = require('chai').expect,
   VALID_OPENAPI_PATH = '../data/valid_openapi',
   INVALID_OPENAPI_PATH = '../data/invalid_openapi',
   SWAGGER_20_FOLDER_YAML = '../data/valid_swagger/yaml/',
-  SWAGGER_20_FOLDER_JSON = '../data/valid_swagger/json/';
+  SWAGGER_20_FOLDER_JSON = '../data/valid_swagger/json/',
+  REMOTE_REFS_PATH = '../data/remote_refs';
 
 describe('CONVERT FUNCTION TESTS ', function() {
   // these two covers remaining part of util.js
@@ -49,7 +50,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml'),
       issue10229 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#10229.json'),
       deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml'),
-      valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml');
+      valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml'),
+      swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/swagger.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1126,6 +1128,20 @@ describe('CONVERT FUNCTION TESTS ', function() {
             .body).to.include('"value": "QA"');
           done();
         });
+    });
+
+    it('Should add collection level auth with type as `bearer`' +
+    securityTestCases, function(done) {
+      var openapi = fs.readFileSync(swaggerRemoteRef, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { resolveRemoteRefs: true }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        done();
+      });
     });
   });
   describe('Converting swagger 2.0 files', function() {
