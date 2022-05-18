@@ -8,7 +8,8 @@ var expect = require('chai').expect,
   VALIDATION_DATA_FOLDER_PATH = '../data/validationData',
   VALIDATION_DATA_OPTIONS_FOLDER_31_PATH = '../data/31CollectionTransactions/validateOptions',
   VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH = '../data/31CollectionTransactions/validate30Scenarios',
-  VALID_OPENAPI_FOLDER_PATH = '../data/valid_openapi';
+  VALID_OPENAPI_FOLDER_PATH = '../data/valid_openapi',
+  REMOTE_REFS_PATH = '../data/remote_refs';
 
 /**
  * Extract all transaction from collection and appends them into array
@@ -1307,4 +1308,27 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       done();
     });
   });
+
+  describe('getHost method', function () {
+    it('Should validate with remote references', function () {
+      let emptyParameterSpec = fs.readFileSync(path.join(__dirname, REMOTE_REFS_PATH + '/swagger.yaml'), 'utf-8'),
+        emptyParameterCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+          '/emptyParameterCollection.json'), 'utf-8'),
+        resultObj,
+        historyRequest = [],
+        schemaPack =
+          new Converter.SchemaPack({ type: 'string', data: emptyParameterSpec }, { resolveRemoteRefs: true });
+
+      getAllTransactions(JSON.parse(emptyParameterCollection), historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        resultObj = result.requests[historyRequest[0].id].endpoints[0];
+        expect(resultObj.mismatches).to.have.lengthOf(0);
+      });
+    });
+  });
+
 });
