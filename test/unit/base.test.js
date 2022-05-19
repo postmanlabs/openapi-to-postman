@@ -1130,9 +1130,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
         });
     });
 
-    it('Should add collection level auth with type as `bearer`' +
-    securityTestCases, function(done) {
-      var openapi = fs.readFileSync(swaggerRemoteRef, 'utf8');
+    it('Should convert collection and resolve remote references', function(done) {
+      let openapi = fs.readFileSync(swaggerRemoteRef, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { resolveRemoteRefs: true }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
@@ -1142,6 +1141,44 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data).to.have.property('item');
         done();
       });
+    });
+
+    it('Shouldconvert collection and resolve remote references using custom fetch', function(done) {
+      let openapi = fs.readFileSync(swaggerRemoteRef, 'utf8'),
+        customFetch = (url) => {
+          const url1 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+            'remoteRef/test/data/remote_refs/parameters.yaml',
+            url2 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+              'remoteRef/test/data/remote_refs/Pet.yaml',
+            url3 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+              'remoteRef/test/data/remote_refs/Error.yaml',
+            url4 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+              'remoteRef/test/data/remote_refs/NewPet.yaml',
+            path1 = swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/parameters.yaml'),
+            path2 = swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/Pet.yaml'),
+            path3 = swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/Error.yaml'),
+            path4 = swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/NewPet.yaml'),
+            urlMap = {};
+          urlMap[url1] = fs.readFileSync(path1, 'utf8');
+          urlMap[url2] = fs.readFileSync(path2, 'utf8');
+          urlMap[url3] = fs.readFileSync(path3, 'utf8');
+          urlMap[url4] = fs.readFileSync(path4, 'utf8');
+          let content = urlMap[url];
+          return Promise.resolve({
+            text: () => { return Promise.resolve(content); },
+            status: 200
+          });
+        };
+      Converter.convert({ type: 'string', data: openapi }, { resolveRemoteRefs: true, remoteRefsResolver: customFetch },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          done();
+        });
     });
   });
   describe('Converting swagger 2.0 files', function() {
