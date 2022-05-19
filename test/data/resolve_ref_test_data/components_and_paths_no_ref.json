@@ -1,0 +1,101 @@
+{
+    "components": {
+        "examples": {
+            "menu-abc": {
+                "value": {
+                    "items": [
+                        {
+                            "itemId": 123,
+                            "addOnInfo": null
+                        },
+                        {
+                            "itemId": 456,
+                            "addOnInfo": null
+                        },
+                        {
+                            "itemId": 789,
+                            "addOnInfo": null
+                        },
+                        {
+                            "itemId": 101,
+                            "addOnInfo": {
+                                "addOnPrompt": "Lorem Ipsum",
+                                "addOnItems": null
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "paths": {
+        "/v1/menu-abc": {
+            "get": {
+                "summary": "/v1/menu-abc",
+                "operationId": "/v1/menu-abc",
+                "description": "Lorem ipsum dolor sit amet, consectetur adipiscing",
+                "tags": [
+                    "menu"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lorem ipsum dolor sit amet, consectetur.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "description": "Lorem ipsum dolor sit amet",
+                                                "required": [
+                                                    "itemId",
+                                                    "addOnInfo"
+                                                ],
+                                                "properties": {
+                                                    "itemId": {
+                                                        "type": "integer",
+                                                        "format": "integer"
+                                                    },
+                                                    "addOnInfo": {
+                                                        "type": "object",
+                                                        "nullable": true,
+                                                        "description": "Lorem ipsum dolor sit amet",
+                                                        "required": [
+                                                            "addOnPrompt",
+                                                            "addOnItems"
+                                                        ],
+                                                        "properties": {
+                                                            "addOnPrompt": {
+                                                                "type": "string",
+                                                                "description": "Lorem ipsum dolor sit amet"
+                                                            },
+                                                            "addOnItems": {
+                                                                "type": "string",
+                                                                "nullable": true
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "examples": {
+                                    "MenuExample": {
+                                        "$ref": "#/components/examples/menu-abc"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [],
+                "schemaPathName": "/v1/menu-abc"
+            },
+            "parameters": []
+        }
+    }
+}

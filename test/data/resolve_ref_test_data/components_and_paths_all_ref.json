@@ -1,0 +1,111 @@
+{
+  "components": {
+    "examples": {
+      "menu-abc": {
+        "value": {
+          "items": [
+            {
+              "itemId": 123,
+              "addOnInfo": null
+            },
+            {
+              "itemId": 456,
+              "addOnInfo": null
+            },
+            {
+              "itemId": 789,
+              "addOnInfo": null
+            },
+            {
+              "itemId": 101,
+              "addOnInfo": {
+                "addOnPrompt": "Lorem Ipsum",
+                "addOnItems": null
+              }
+            }
+          ]
+        }
+      }
+    },
+    "schemas": {
+      "SampleItem": {
+        "type": "object",
+        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing..",
+        "required": [
+          "itemId",
+          "addOnInfo"
+        ],
+        "properties": {
+          "itemId": {
+            "type": "integer",
+            "format": "integer"
+          },
+          "addOnInfo": {
+            "type": "object",
+            "nullable": true,
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing",
+            "$ref": "#/components/schemas/SampleItemAddOnInfo"
+          }
+        }
+      },
+      "SampleItemAddOnInfo": {
+        "type": "object",
+        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing",
+        "required": [
+          "addOnPrompt",
+          "addOnItems"
+        ],
+        "properties": {
+          "addOnPrompt": {
+            "type": "string",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing"
+          },
+          "addOnItems": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/v1/menu-abc": {
+      "get": {
+        "summary": "/v1/menu-abc",
+        "operationId": "/v1/menu-abc",
+        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing",
+        "tags": [
+          "menu"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lorem ipsum dolor sit amet, consectetur.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SampleItem"
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "MenuExample": {
+                    "$ref": "#/components/examples/menu-abc"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [],
+        "schemaPathName": "/v1/menu-abc"
+      },
+      "parameters": []
+    }
+  }
+}

@@ -413,6 +413,7 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(deref._getEscaped(null, { randomObject: 1 })).to.equal(null);
     });
   });
+
   describe('APIDES-597 | nullable field should be passed on to converted/resolved json schema', function() {
     it('JSON schema should contain nullable fields if the parent refs to another schema', function(done) {
       var schema = {
@@ -427,37 +428,30 @@ describe('DEREF FUNCTION TESTS ', function() {
           }
         },
         parameterSource = 'RESPONSE',
-        componentsAndPaths = {
-          'components': {
-            'examples': {
-              'menu-abc': {
-                'value': {
-                  'items': [
-                    {
-                      'itemId': 123,
-                      'addOnInfo': null
-                    },
-                    {
-                      'itemId': 456,
-                      'addOnInfo': null
-                    },
-                    {
-                      'itemId': 789,
-                      'addOnInfo': null
-                    },
-                    {
-                      'itemId': 101,
-                      'addOnInfo': {
-                        'addOnPrompt': 'Lorem Ipsum',
-                        'addOnItems': null
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            'schemas': {
-              'SampleItem': {
+        componentsAndPaths = require('../data/resolve_ref_test_data/components_and_paths_all_ref.json'),
+        output;
+
+      componentsAndPaths.concreteUtils = schemaUtils30X;
+      output = deref.resolveRefs(schema, parameterSource, _.cloneDeep(componentsAndPaths));
+
+      expect(output.type).to.equal('object');
+      expect(output.format).to.be.undefined;
+      expect(output.pattern).to.eql(schema.pattern);
+      expect(output.properties.items.type).to.eql('array');
+      expect(output.properties.items.items.type).to.eql('object');
+      expect(output.properties.items.items.properties.addOnInfo.nullable).to.eql(true);
+      expect(output.properties.items.items.properties.addOnInfo.properties.addOnItems.nullable).to.eql(true);
+      expect(output.properties.items.items.properties.itemId.nullable).to.eql(undefined);
+      done();
+    });
+
+    it('JSON schema contains nullable fields if the parent specifies another schema (no child refs)', function(done) {
+      var schema = {
+          'type': 'object',
+          'properties': {
+            'items': {
+              'type': 'array',
+              'items': {
                 'type': 'object',
                 'description': 'Lorem ipsum dolor sit amet, consectetur adipiscing..',
                 'required': [
@@ -473,74 +467,31 @@ describe('DEREF FUNCTION TESTS ', function() {
                     'type': 'object',
                     'nullable': true,
                     'description': 'Lorem ipsum dolor sit amet, consectetur adipiscing',
-                    '$ref': '#/components/schemas/SampleItemAddOnInfo'
-                  }
-                }
-              },
-              'SampleItemAddOnInfo': {
-                'type': 'object',
-                'description': 'Lorem ipsum dolor sit amet, consectetur adipiscing',
-                'required': [
-                  'addOnPrompt',
-                  'addOnItems'
-                ],
-                'properties': {
-                  'addOnPrompt': {
-                    'type': 'string',
-                    'description': 'Lorem ipsum dolor sit amet, consectetur adipiscing'
-                  },
-                  'addOnItems': {
-                    'type': 'string',
-                    'nullable': true
+                    'required': [
+                      'addOnPrompt',
+                      'addOnItems'
+                    ],
+                    'properties': {
+                      'addOnPrompt': {
+                        'type': 'string',
+                        'description': 'Lorem ipsum dolor sit amet, consectetur adipiscing'
+                      },
+                      'addOnItems': {
+                        'type': 'string',
+                        'nullable': true
+                      }
+                    }
                   }
                 }
               }
             }
-          },
-          'paths': {
-            '/v1/menu-abc': {
-              'get': {
-                'summary': '/v1/menu-abc',
-                'operationId': '/v1/menu-abc',
-                'description': 'Lorem ipsum dolor sit amet, consectetur adipiscing',
-                'tags': [
-                  'menu'
-                ],
-                'responses': {
-                  '200': {
-                    'description': 'Lorem ipsum dolor sit amet, consectetur.',
-                    'content': {
-                      'application/json': {
-                        'schema': {
-                          'type': 'object',
-                          'properties': {
-                            'items': {
-                              'type': 'array',
-                              'items': {
-                                '$ref': '#/components/schemas/SampleItem'
-                              }
-                            }
-                          }
-                        },
-                        'examples': {
-                          'MenuExample': {
-                            '$ref': '#/components/examples/menu-abc'
-                          }
-                        }
-                      }
-                    }
-                  }
-                },
-                'parameters': [],
-                'schemaPathName': '/v1/menu-abc'
-              },
-              'parameters': []
-            }
-          },
-          concreteUtils: schemaUtils30X
+          }
         },
+        parameterSource = 'RESPONSE',
+        componentsAndPaths = require('../data/resolve_ref_test_data/components_and_paths_no_ref.json'),
         output;
 
+      componentsAndPaths.concreteUtils = schemaUtils30X;
       output = deref.resolveRefs(schema, parameterSource, _.cloneDeep(componentsAndPaths));
 
       expect(output.type).to.equal('object');
