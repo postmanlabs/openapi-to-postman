@@ -42,7 +42,9 @@ components:
     $ref: "./responses.yaml"
 
   schemas:
-    User:
-      $ref: "./schemas/index.yaml"
+    Monster:  
+      $ref: "./schemas/index.yaml#/Monster"
+    Dog:
+      $ref: "./schemas/index.yaml#/Dog"
     Toy:
       $ref: "./otherSchemas/toy.yaml"

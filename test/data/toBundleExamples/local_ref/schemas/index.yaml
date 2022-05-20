@@ -1,6 +1,10 @@
 User:
-  $ref: "./user.yaml"
-
+  type: object
+  properties:
+    id:
+      type: integer
+    userName:
+      type: string
 Monster:
   type: object
   properties:

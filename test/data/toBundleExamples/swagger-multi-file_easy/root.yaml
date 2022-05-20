@@ -14,35 +14,10 @@ paths:
   /users/{userId}:
     get:
       summary: Get a user by ID
-      parameters: ...
       responses:
         200:
           description: A single user.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
-        404:
-          $ref: "#/components/responses/NotFound"
-  /users:
-    get:
-      summary: Get all users
-      responses:
-        200:
-          description: A list of users.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
-
-components:
-  responses:
-    $ref: "./responses.yaml"
-
-  schemas:
-    User:
-      $ref: "./schemas/index.yaml"
-    Toy:
-      $ref: "./otherSchemas/toy.yaml"
+                $ref: "./schemas/user.yaml"
