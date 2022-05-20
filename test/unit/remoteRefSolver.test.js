@@ -24,6 +24,7 @@ describe('getAdjacentAndMissing function ', async function () {
     expect(missingNodes).to.be.empty;
 
   });
+
   it('should find the adjacent nodes with URL in $ref value multiple no repeated', async function () {
     const contentFilePetstoreRemoteRef = fs.readFileSync(swaggerRemoteRef, 'utf8'),
       inputNode = {
@@ -53,7 +54,7 @@ describe('getAdjacentAndMissing function ', async function () {
   });
 });
 
-describe('getRemoteReferences function ', async function () {
+describe('getRemoteReferences function ', function () {
   it('should find the adjacent nodes with URL in $ref value', async function () {
     const contentFileSwaggerRemoteRef = fs.readFileSync(swaggerRemoteRef, 'utf8'),
       inputNode = {
@@ -78,7 +79,5 @@ describe('getRemoteReferences function ', async function () {
       expect(missingRemoteRefs).to.be.empty;
       done();
     });
-
-
   });
 });
