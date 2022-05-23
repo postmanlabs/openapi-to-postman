@@ -1,6 +1,6 @@
 type: object
 allOf:
-  - $ref: 'Pet.yaml'
+  - $ref: 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/Pet.yaml'
   - required:
       - name
     properties:

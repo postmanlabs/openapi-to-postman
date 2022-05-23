@@ -16,7 +16,7 @@ describe('getAdjacentAndMissing function ', async function () {
         fileName: '/petstore.yaml',
         content: contentFilePetstoreRemoteRef
       },
-      { graphAdj, missingNodes } = await getAdjacentAndMissing(inputNode);
+      { graphAdj, missingNodes } = await getAdjacentAndMissing(inputNode, {});
     expect(graphAdj).to.not.be.undefined;
     expect(graphAdj.length).to.equal(1);
     expect(graphAdj[0].content).to.not.be.undefined;
@@ -31,7 +31,7 @@ describe('getAdjacentAndMissing function ', async function () {
         fileName: '/swagger.yaml',
         content: contentFilePetstoreRemoteRef
       },
-      { graphAdj, missingNodes } = await getAdjacentAndMissing(inputNode);
+      { graphAdj, missingNodes } = await getAdjacentAndMissing(inputNode, {});
     expect(graphAdj).to.not.be.undefined;
     expect(graphAdj.length).to.equal(4);
     expect(graphAdj[0].content).to.not.be.undefined;
@@ -46,7 +46,7 @@ describe('getAdjacentAndMissing function ', async function () {
         fileName: '/swaggerMissing.yaml',
         content: contentFilePetstoreRemoteRef
       },
-      { graphAdj, missingNodes } = await getAdjacentAndMissing(inputNode);
+      { graphAdj, missingNodes } = await getAdjacentAndMissing(inputNode, {});
     expect(graphAdj).to.not.be.undefined;
     expect(graphAdj.length).to.equal(0);
     expect(missingNodes).to.not.be.empty;
