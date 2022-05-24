@@ -6,29 +6,26 @@ const expect = require('chai').expect,
     getKeyInComponents } = require('./../../lib/jsonPointer');
 
 describe('getKeyInComponents function', function () {
-  it('should return ["components", "schemas", "pet.yaml"] when is pointing the entire file', function () {
+  it('should return ["schemas", "pet.yaml"] when is pointing the entire file', function () {
     const result = getKeyInComponents(['components', 'schemas'], 'pet.yaml');
-    expect(result.length).to.equal(3);
-    expect(result[0]).to.equal('components');
-    expect(result[1]).to.equal('schemas');
-    expect(result[2]).to.equal('pet.yaml');
+    expect(result.length).to.equal(2);
+    expect(result[0]).to.equal('schemas');
+    expect(result[1]).to.equal('pet.yaml');
   });
 
-  it('should return ["components", "schemas", "pet.yaml", "definitions", "world"] when is pointing to a local ref',
+  it('should return ["schemas", "pet.yaml", "definitions", "world"] when is pointing to a local ref',
     function () {
       const result = getKeyInComponents(['components', 'schemas'], 'pet.yaml', '/definitions/world');
-      expect(result.length).to.equal(3);
-      expect(result[0]).to.equal('components');
-      expect(result[1]).to.equal('schemas');
-      expect(result[2]).to.equal('pet.yaml#/definitions/world');
+      expect(result.length).to.equal(2);
+      expect(result[0]).to.equal('schemas');
+      expect(result[1]).to.equal('pet.yaml#/definitions/world');
     });
 
   it('should return ["components", "schemas", "folder/pet.yaml"] when there is an scaped slash', function () {
     const result = getKeyInComponents(['components', 'schemas'], 'folder~1pet.yaml');
-    expect(result.length).to.equal(3);
-    expect(result[0]).to.equal('components');
-    expect(result[1]).to.equal('schemas');
-    expect(result[2]).to.equal('folder/pet.yaml');
+    expect(result.length).to.equal(2);
+    expect(result[0]).to.equal('schemas');
+    expect(result[1]).to.equal('folder/pet.yaml');
   });
 });
 
