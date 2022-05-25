@@ -12,7 +12,7 @@ let expect = require('chai').expect,
   withRefInItems = path.join(__dirname, BUNDLES_FOLDER + '/with_ref_in_items');
 
 describe('bundle files method - 3.0', function () {
-  it('Should return bundled file with an schema called from a response', async function () {
+  it('Should return bundled file with a schema called from a response', async function () {
     let contentRootFile = fs.readFileSync(easyFolder + '/root.yaml', 'utf8'),
       user = fs.readFileSync(easyFolder + '/schemas/user.yaml', 'utf8'),
       expected = fs.readFileSync(easyFolder + '/expected.json', 'utf8'),
@@ -73,8 +73,7 @@ describe('bundle files method - 3.0', function () {
     expect(JSON.stringify(res.output.data.bundledContent)).to.be.equal(expected);
   });
 
-  it('Should return bundled file in yaml format when user does not provide bundleFormat' +
-    ' and the provided input is yaml', async function () {
+  it('Should return bundled file in same format than root file', async function () {
     let contentRootFile = fs.readFileSync(easyFolder + '/root.yaml', 'utf8'),
       user = fs.readFileSync(easyFolder + '/schemas/user.yaml', 'utf8'),
       expected = fs.readFileSync(easyFolder + '/expected.yaml', 'utf8'),
@@ -101,7 +100,7 @@ describe('bundle files method - 3.0', function () {
     expect(JSON.stringify(res.output.data.bundledContent)).to.be.equal(expected);
   });
 
-  it('Should return bundled file from root with components with', async function () {
+  it('Should return bundled file from root with components within', async function () {
     let contentRootFile = fs.readFileSync(swaggerMultifileFolder + '/v1.yaml', 'utf8'),
       responses = fs.readFileSync(swaggerMultifileFolder + '/responses.yaml', 'utf8'),
       schemasIndex = fs.readFileSync(swaggerMultifileFolder + '/schemas/index.yaml', 'utf8'),
@@ -197,7 +196,7 @@ describe('bundle files method - 3.0', function () {
     expect(JSON.stringify(res.output.data.bundledContent)).to.be.equal(expected);
   });
 
-  it('Should return bundled file from a petstore separated yaml', async function () {
+  it('Should return bundled file from a root file with multiple references', async function () {
     let contentRootFile = fs.readFileSync(petstoreFolder + '/spec/swagger.yaml', 'utf8'),
       newPet = fs.readFileSync(petstoreFolder + '/spec/NewPet.yaml', 'utf8'),
       openapi = fs.readFileSync(petstoreFolder + '/spec/openapi.yaml', 'utf8'),
@@ -215,7 +214,7 @@ describe('bundle files method - 3.0', function () {
       limitParameter = fs.readFileSync(petstoreFolder + '/parameters/query/limit.yaml', 'utf8'),
       petIdParameter = fs.readFileSync(petstoreFolder + '/parameters/path/petId.yaml', 'utf8'),
       errorCommon = fs.readFileSync(petstoreFolder + '/common/Error.yaml', 'utf8'),
-      expected = fs.readFileSync(petstoreFolder + '/bundleExpected.json', 'utf8'),
+      expected = fs.readFileSync(petstoreFolder + '/bundleExp.yaml', 'utf8'),
       input = {
         type: 'folder',
         specificationVersion: '3.0',
@@ -226,7 +225,7 @@ describe('bundle files method - 3.0', function () {
           }
         ],
         options: {},
-        bundleFormat: 'JSON',
+        bundleFormat: 'yaml',
         data: [
           {
             path: '/spec/NewPet.yaml',
@@ -297,7 +296,7 @@ describe('bundle files method - 3.0', function () {
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data.bundledContent)).to.be.equal(expected);
+    expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 
   it('Should return bundled file with schemas called from parameters', async function () {
