@@ -11,7 +11,7 @@ let expect = require('chai').expect,
   withParamsFolder = path.join(__dirname, BUNDLES_FOLDER + '/with_parameters'),
   withRefInItems = path.join(__dirname, BUNDLES_FOLDER + '/with_ref_in_items');
 
-describe('bundle files method', function () {
+describe('bundle files method - 3.0', function () {
   it('Should return bundled file with an schema called from a response', async function () {
     let contentRootFile = fs.readFileSync(easyFolder + '/root.yaml', 'utf8'),
       user = fs.readFileSync(easyFolder + '/schemas/user.yaml', 'utf8'),
@@ -30,7 +30,9 @@ describe('bundle files method', function () {
             path: '/schemas/user.yaml',
             content: user
           }
-        ]
+        ],
+        options: {},
+        bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
@@ -40,6 +42,62 @@ describe('bundle files method', function () {
       .to.be.equal('#/components/schemas/~1schemas~1user.yaml');
     expect(Object.keys(res.output.data.bundledContent.components.schemas['/schemas/user.yaml']))
       .to.have.members(['type', 'properties']);
+    expect(JSON.stringify(res.output.data.bundledContent)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file in yaml format providing bundleFormat', async function () {
+    let contentRootFile = fs.readFileSync(easyFolder + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(easyFolder + '/schemas/user.yaml', 'utf8'),
+      expected = fs.readFileSync(easyFolder + '/expected.yaml', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          }
+        ],
+        options: {},
+        bundleFormat: 'yaml'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data.bundledContent)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file in yaml format when user does not provide bundleFormat' +
+    ' and the provided input is yaml', async function () {
+    let contentRootFile = fs.readFileSync(easyFolder + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(easyFolder + '/schemas/user.yaml', 'utf8'),
+      expected = fs.readFileSync(easyFolder + '/expected.yaml', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          }
+        ],
+        options: {}
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data.bundledContent)).to.be.equal(expected);
   });
 
@@ -61,6 +119,8 @@ describe('bundle files method', function () {
             content: contentRootFile
           }
         ],
+        options: {},
+        bundleFormat: 'JSON',
         data: [
           {
             path: '/responses.yaml',
@@ -110,6 +170,8 @@ describe('bundle files method', function () {
             content: contentRootFile
           }
         ],
+        options: {},
+        bundleFormat: 'JSON',
         data: [
           {
             path: '/responses.yaml',
@@ -163,6 +225,8 @@ describe('bundle files method', function () {
             content: contentRootFile
           }
         ],
+        options: {},
+        bundleFormat: 'JSON',
         data: [
           {
             path: '/spec/NewPet.yaml',
@@ -250,6 +314,8 @@ describe('bundle files method', function () {
             content: contentRootFile
           }
         ],
+        options: {},
+        bundleFormat: 'JSON',
         data: [
           {
             path: '/schemas/user.yaml',
@@ -286,6 +352,8 @@ describe('bundle files method', function () {
             content: contentRootFile
           }
         ],
+        options: {},
+        bundleFormat: 'JSON',
         data: [
           {
             path: '/schemas/user.yaml',
