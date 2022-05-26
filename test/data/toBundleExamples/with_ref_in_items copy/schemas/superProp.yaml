@@ -1,0 +1,7 @@
+type: object
+properties:
+  superInt:
+    type: integer
+  superName:
+    type: string
+  $ref: ./secretProp.yaml
