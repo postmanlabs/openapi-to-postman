@@ -39,12 +39,7 @@ describe('bundle files method - 3.0', function () {
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(res.output.data.bundledContent.paths['/users/{userId}'].get.responses['200']
-      .content['application/json'].schema.$ref)
-      .to.be.equal('#/components/schemas/~1schemas~1user.yaml');
-    expect(Object.keys(res.output.data.bundledContent.components.schemas['/schemas/user.yaml']))
-      .to.have.members(['type', 'properties']);
-    expect(JSON.stringify(res.output.data.bundledContent, null, 2)).to.be.equal(expected);
+    expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 
   it('Should return bundled file in yaml format providing bundleFormat - schema_from_response', async function () {
@@ -153,7 +148,7 @@ describe('bundle files method - 3.0', function () {
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data.bundledContent, null, 2)).to.be.equal(expected);
+    expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 
   it('Should return bundled file - local_references', async function () {
@@ -196,7 +191,7 @@ describe('bundle files method - 3.0', function () {
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data.bundledContent, null, 2)).to.be.equal(expected);
+    expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 
   it('Should return bundled file - petstore separated yaml', async function () {
@@ -332,12 +327,7 @@ describe('bundle files method - 3.0', function () {
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(res.output.data.bundledContent.paths['/users/{userId}'].get.responses['200']
-      .content['application/json'].schema.$ref)
-      .to.be.equal('#/components/schemas/~1schemas~1user.yaml');
-    expect(Object.keys(res.output.data.bundledContent.components.schemas['/schemas/user.yaml']))
-      .to.have.members(['type', 'properties']);
-    expect(JSON.stringify(res.output.data.bundledContent, null, 2)).to.be.equal(expected);
+    expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 
   it('Should return bundled file - with_ref_in_items', async function () {
@@ -370,7 +360,7 @@ describe('bundle files method - 3.0', function () {
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data.bundledContent, null, 2))
+    expect(res.output.data.bundledContent)
       .to.be.equal(expected);
   });
 
@@ -419,7 +409,7 @@ describe('bundle files method - 3.0', function () {
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data.bundledContent, null, 2)).to.be.equal(expected);
+    expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 
   it('Should return bundled file - multiple_references_from_root_components', async function () {
@@ -487,6 +477,6 @@ describe('bundle files method - 3.0', function () {
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data.bundledContent, null, 2)).to.be.equal(expected);
+    expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 });
