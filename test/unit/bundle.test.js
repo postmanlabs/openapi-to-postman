@@ -217,7 +217,7 @@ describe('bundle files method - 3.0', function () {
       limitParameter = fs.readFileSync(petstoreFolder + '/parameters/query/limit.yaml', 'utf8'),
       petIdParameter = fs.readFileSync(petstoreFolder + '/parameters/path/petId.yaml', 'utf8'),
       errorCommon = fs.readFileSync(petstoreFolder + '/common/Error.yaml', 'utf8'),
-      expected = fs.readFileSync(petstoreFolder + '/bundleExpected.json', 'utf8'),
+      expected = fs.readFileSync(petstoreFolder + '/bundleExp.yaml', 'utf8'),
       input = {
         type: 'folder',
         specificationVersion: '3.0',
@@ -228,7 +228,7 @@ describe('bundle files method - 3.0', function () {
           }
         ],
         options: {},
-        bundleFormat: 'JSON',
+        bundleFormat: 'yaml',
         data: [
           {
             path: '/spec/NewPet.yaml',
@@ -299,7 +299,7 @@ describe('bundle files method - 3.0', function () {
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data.bundledContent, null, 2)).to.be.equal(expected);
+    expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 
   it('Should return bundled file - with_parameters', async function () {
