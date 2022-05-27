@@ -1,4 +1,4 @@
-const { convertSwaggerToOpenapi } = require('../../lib/swaggerUtils/swaggerToOpenapi'),
+const { convertToOAS30IfSwagger } = require('../../lib/swaggerUtils/swaggerToOpenapi'),
   fs = require('fs'),
   path = require('path'),
   SWAGGER_20_FOLDER_JSON = '../data/valid_swagger/json/',
@@ -12,7 +12,7 @@ describe('Test swaggerToOpenapi method', function() {
       fileData = fs.readFileSync(fileSource, 'utf8'),
       parsedSpec = utils.parseSpec(fileData);
 
-    convertSwaggerToOpenapi(utils, parsedSpec.openapi, (error, openapi) => {
+    convertToOAS30IfSwagger(utils, parsedSpec.openapi, (error, openapi) => {
       expect(error).to.be.null;
       expect(openapi.openapi).to.be.equal('3.0.0');
     });
@@ -23,7 +23,7 @@ describe('Test swaggerToOpenapi method', function() {
       fileData = fs.readFileSync(fileSource, 'utf8'),
       parsedSpec = utils.parseSpec(fileData);
 
-    convertSwaggerToOpenapi(utils, parsedSpec.openapi, (error, openapi) => {
+    convertToOAS30IfSwagger(utils, parsedSpec.openapi, (error, openapi) => {
       expect(error.message).to.be.equal('Unsupported swagger/OpenAPI version: undefined');
       expect(openapi).to.be.undefined;
     });

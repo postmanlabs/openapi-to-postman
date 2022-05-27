@@ -34,7 +34,7 @@ describe('parseSpec method', function () {
     const parsedSpec = concreteUtils.parseSpec(fileContent, {});
 
     expect(parsedSpec.result).to.be.false;
-    expect(parsedSpec.reason).to.equal('The value of swagger field must be 2.0');
+    expect(parsedSpec.reason).to.equal('The value of "swagger" field must be 2.0');
   });
 
   it('should return false and no paths message', function () {
