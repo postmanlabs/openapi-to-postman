@@ -11,6 +11,7 @@ describe('Test swaggerToOpenapi method', function() {
     const fileSource = path.join(__dirname, SWAGGER_20_FOLDER_JSON + '/sampleswagger.json'),
       fileData = fs.readFileSync(fileSource, 'utf8'),
       parsedSpec = utils.parseSpec(fileData);
+
     convertSwaggerToOpenapi(utils, parsedSpec.openapi, (error, openapi) => {
       expect(error).to.be.null;
       expect(openapi.openapi).to.be.equal('3.0.0');
@@ -21,6 +22,7 @@ describe('Test swaggerToOpenapi method', function() {
     const fileSource = path.join(__dirname, SWAGGER_20_INVALID_FOLDER_JSON + '/invalid_no_info.json'),
       fileData = fs.readFileSync(fileSource, 'utf8'),
       parsedSpec = utils.parseSpec(fileData);
+
     convertSwaggerToOpenapi(utils, parsedSpec.openapi, (error, openapi) => {
       expect(error.message).to.be.equal('Unsupported swagger/OpenAPI version: undefined');
       expect(openapi).to.be.undefined;
