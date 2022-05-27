@@ -16,16 +16,40 @@
     }
   ],
   "paths": {
-    "/users/": {
+    "/users/{userId}": {
       "get": {
         "summary": "Get a user by ID",
+        "parameters": "...",
         "responses": {
           "200": {
             "description": "A single user.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/~1schemas~1user.yaml"
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "summary": "Get all users",
+        "responses": {
+          "200": {
+            "description": "A list of users.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
                 }
               }
             }
@@ -35,8 +59,24 @@
     }
   },
   "components": {
+    "responses": {
+      "NotFound": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "schemas": {
-      "/schemas/user.yaml": {
+      "User": {
         "type": "object",
         "properties": {
           "id": {
@@ -44,22 +84,16 @@
           },
           "userName": {
             "type": "string"
-          },
-          "superProps": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/~1schemas~1superProp.yaml"
-            }
           }
         }
       },
-      "/schemas/superProp.yaml": {
+      "Toy": {
         "type": "object",
         "properties": {
-          "superInt": {
+          "id": {
             "type": "integer"
           },
-          "superName": {
+          "toyName": {
             "type": "string"
           }
         }

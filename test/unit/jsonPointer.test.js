@@ -6,26 +6,27 @@ const expect = require('chai').expect,
     getKeyInComponents } = require('./../../lib/jsonPointer');
 
 describe('getKeyInComponents function', function () {
-  it('should return ["schemas", "pet.yaml"] when is pointing the entire file', function () {
+  it('should return [[], true] when is pointing to an element in components', function () {
     const result = getKeyInComponents(['components', 'schemas'], 'pet.yaml');
-    expect(result.length).to.equal(2);
-    expect(result[0]).to.equal('schemas');
-    expect(result[1]).to.equal('pet.yaml');
+    expect(result).to.be.an('array').with.length(2);
+    expect(result[0].length).to.equal(0);
+    expect(result[1]).to.equal(true);
   });
 
-  it('should return ["schemas", "pet.yaml", "definitions", "world"] when is pointing to a local ref',
+  it('should return [[], true] when is pointing to a local ref in components',
     function () {
       const result = getKeyInComponents(['components', 'schemas'], 'pet.yaml', '/definitions/world');
-      expect(result.length).to.equal(2);
-      expect(result[0]).to.equal('schemas');
-      expect(result[1]).to.equal('pet.yaml#/definitions/world');
+      expect(result).to.be.an('array').with.length(2);
+      expect(result[0].length).to.equal(0);
+      expect(result[1]).to.equal(true);
     });
 
-  it('should return ["components", "schemas", "folder/pet.yaml"] when there is an scaped slash', function () {
-    const result = getKeyInComponents(['components', 'schemas'], 'folder~1pet.yaml');
-    expect(result.length).to.equal(2);
-    expect(result[0]).to.equal('schemas');
-    expect(result[1]).to.equal('folder/pet.yaml');
+  it('should return [["schemas", "folder/pet.yaml"], false] when there is an scaped slash', function () {
+    const result = getKeyInComponents(['path', 'schemas'], 'folder~1pet.yaml');
+    expect(result).to.be.an('array').with.length(2);
+    expect(result[0].length).to.equal(2);
+    expect(result[0][0]).to.equal('schemas');
+    expect(result[1]).to.equal(false);
   });
 });
 

@@ -1,1 +1,81 @@
-{"openapi":"3.0.0","info":{"title":"Sample API","description":"Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.","version":"0.1.9"},"servers":[{"url":"http://api.example.com/v1","description":"Optional server description, e.g. Main (production) server"},{"url":"http://staging-api.example.com","description":"Optional server description, e.g. Internal staging server for testing"}],"paths":{"/users/{userId}":{"get":{"summary":"Get a user by ID","parameters":[{"$ref":"#/components/parameters/~1parameters~1index.yaml%23tagsParam"},{"$ref":"#/components/parameters/~1parameters~1index.yaml%23limitsParam"}],"responses":{"200":{"description":"A single user.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/~1schemas~1user.yaml"}}}}}}}},"components":{"parameters":{"/parameters/index.yaml#tagsParam":{"name":"tags","in":"query","description":"tags to filter by","required":false,"type":"array","collectionFormat":"csv","items":{"type":"string"}},"/parameters/index.yaml#limitsParam":{"name":"limit","in":"query","description":"maximum number of results to return","required":false,"type":"integer","format":"int32"}},"schemas":{"/schemas/user.yaml":{"type":"object","properties":{"id":{"type":"integer"},"userName":{"type":"string"}}}}}}
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Sample API",
+    "description": "Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.",
+    "version": "0.1.9"
+  },
+  "servers": [
+    {
+      "url": "http://api.example.com/v1",
+      "description": "Optional server description, e.g. Main (production) server"
+    },
+    {
+      "url": "http://staging-api.example.com",
+      "description": "Optional server description, e.g. Internal staging server for testing"
+    }
+  ],
+  "paths": {
+    "/users/{userId}": {
+      "get": {
+        "summary": "Get a user by ID",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/~1parameters~1index.yaml%23tagsParam"
+          },
+          {
+            "$ref": "#/components/parameters/~1parameters~1index.yaml%23limitsParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A single user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/~1schemas~1user.yaml"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "/parameters/index.yaml#tagsParam": {
+        "name": "tags",
+        "in": "query",
+        "description": "tags to filter by",
+        "required": false,
+        "type": "array",
+        "collectionFormat": "csv",
+        "items": {
+          "type": "string"
+        }
+      },
+      "/parameters/index.yaml#limitsParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "maximum number of results to return",
+        "required": false,
+        "type": "integer",
+        "format": "int32"
+      }
+    },
+    "schemas": {
+      "/schemas/user.yaml": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "userName": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
