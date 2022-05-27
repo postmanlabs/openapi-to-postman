@@ -11,40 +11,23 @@ servers:
     description: Optional server description, e.g. Internal staging server for testing
 
 paths:
-  /users/{userId}:
+  /users:
     get:
       summary: Get a user by ID
-      parameters: ...
       responses:
         200:
           description: A single user.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
-        404:
-          $ref: "#/components/responses/NotFound"
-  /users:
+                $ref: "./schemas/user/user.yaml"
+  /clients:
     get:
-      summary: Get all users
+      summary: Get a user by ID
       responses:
         200:
-          description: A list of users.
+          description: A single user.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
-
-components:
-  responses:
-    $ref: "./responses.yaml"
-
-  schemas:
-    Monster:  
-      $ref: "./schemas/index.yaml#/Monster"
-    Dog:
-      $ref: "./schemas/index.yaml#/Dog"
-    Toy:
-      $ref: "./otherSchemas/toy.yaml"
+                $ref: "./schemas/client/client.yaml"

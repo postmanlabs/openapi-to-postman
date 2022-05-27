@@ -1,0 +1,107 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Sample API",
+    "description": "Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.",
+    "version": "0.1.9"
+  },
+  "servers": [
+    {
+      "url": "http://api.example.com/v1",
+      "description": "Optional server description, e.g. Main (production) server"
+    },
+    {
+      "url": "http://staging-api.example.com",
+      "description": "Optional server description, e.g. Internal staging server for testing"
+    }
+  ],
+  "paths": {
+    "/users": {
+      "get": {
+        "summary": "Get a user by ID",
+        "responses": {
+          "200": {
+            "description": "A single user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/~1schemas~1user~1user.yaml"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clients": {
+      "get": {
+        "summary": "Get a user by ID",
+        "responses": {
+          "200": {
+            "description": "A single user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/~1schemas~1client~1client.yaml"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "/schemas/user/user.yaml": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "userName": {
+            "type": "string"
+          },
+          "special": {
+            "type": "object",
+            "properties": {
+              "specialUserId": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "/schemas/client/client.yaml": {
+        "type": "object",
+        "properties": {
+          "idClient": {
+            "type": "integer"
+          },
+          "clientName": {
+            "type": "string"
+          },
+          "special": {
+            "type": "object",
+            "properties": {
+              "specialClientId": {
+                "type": "string"
+              },
+              "magic": {
+                "type": "object",
+                "properties": {
+                  "magicNumber": {
+                    "type": "integer"
+                  },
+                  "magicString": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

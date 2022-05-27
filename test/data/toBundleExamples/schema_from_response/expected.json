@@ -16,7 +16,7 @@
     }
   ],
   "paths": {
-    "/users/": {
+    "/users/{userId}": {
       "get": {
         "summary": "Get a user by ID",
         "responses": {
@@ -43,23 +43,6 @@
             "type": "integer"
           },
           "userName": {
-            "type": "string"
-          },
-          "superProps": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/~1schemas~1superProp.yaml"
-            }
-          }
-        }
-      },
-      "/schemas/superProp.yaml": {
-        "type": "object",
-        "properties": {
-          "superInt": {
-            "type": "integer"
-          },
-          "superName": {
             "type": "string"
           }
         }
