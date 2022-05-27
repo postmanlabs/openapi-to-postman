@@ -14,7 +14,7 @@ let expect = require('chai').expect,
   nestedHard = path.join(__dirname, BUNDLES_FOLDER + '/multiple_references_from_root_components');
 
 describe('bundle files method - 3.0', function () {
-  it('Should return bundled file - schema_from_response', async function () {
+  it('Should return bundled file as json - schema_from_response', async function () {
     let contentRootFile = fs.readFileSync(schemaFromResponse + '/root.yaml', 'utf8'),
       user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
       expected = fs.readFileSync(schemaFromResponse + '/expected.json', 'utf8'),
@@ -42,7 +42,7 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 
-  it('Should return bundled file in yaml format providing bundleFormat - schema_from_response', async function () {
+  it('Should return bundled file as yaml - schema_from_response', async function () {
     let contentRootFile = fs.readFileSync(schemaFromResponse + '/root.yaml', 'utf8'),
       user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
       expected = fs.readFileSync(schemaFromResponse + '/expected.yaml', 'utf8'),
@@ -70,8 +70,7 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 
-  it('Should return bundled file in yaml format when user does not provide bundleFormat' +
-    ' and the provided input is yaml - schema_from_response', async function () {
+  it('Should return bundled file in same format than root file - schema_from_response', async function () {
     let contentRootFile = fs.readFileSync(schemaFromResponse + '/root.yaml', 'utf8'),
       user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
       expected = fs.readFileSync(schemaFromResponse + '/expected.yaml', 'utf8'),
@@ -194,7 +193,7 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 
-  it('Should return bundled file - petstore separated yaml', async function () {
+  it('Should return bundled file - petstore separated example', async function () {
     let contentRootFile = fs.readFileSync(petstoreFolder + '/spec/swagger.yaml', 'utf8'),
       newPet = fs.readFileSync(petstoreFolder + '/spec/NewPet.yaml', 'utf8'),
       openapi = fs.readFileSync(petstoreFolder + '/spec/openapi.yaml', 'utf8'),
