@@ -43,6 +43,16 @@ describe('PARSE FUNCTION TESTS', function() {
       result = parse.getOasObject(file);
 
     expect(result.oasObject.openapi).to.equal('3.0.0');
+    expect(result.inputFormat).to.equal(parse.YAML_FORMAT);
+  });
+
+  it('getOasObject function should return a valid oas object from a json file', function() {
+    let filePath = path.join(__dirname, '../data/valid_openapi/custom_headers.json'),
+      file = fs.readFileSync(filePath, 'utf8'),
+      result = parse.getOasObject(file);
+
+    expect(result.oasObject.openapi).to.equal('3.0.0');
+    expect(result.inputFormat).to.equal(parse.JSON_FORMAT);
   });
 
   it('mergeFiles function should merge all files in the folder correctly', function() {
@@ -58,4 +68,20 @@ describe('PARSE FUNCTION TESTS', function() {
       '"string"}}}}}');
     });
   });
+
+  it('toJson should return a json string', function() {
+    const result = parse.toJSON({ data: 'array', type: 'folder' });
+    expect(result).to.equal('{"data":"array","type":"folder"}');
+  });
+
+  it('toJson should return a prety json string', function() {
+    const result = parse.toJSON({ data: 'array', type: 'folder' }, 2);
+    expect(result).to.equal('{\n  "data": "array",\n  "type": "folder"\n}');
+  });
+
+  it('toYAML should return a json string', function() {
+    const result = parse.toYAML({ data: 'array', type: 'folder' });
+    expect(result).to.equal('data: array\ntype: folder\n');
+  });
+
 });

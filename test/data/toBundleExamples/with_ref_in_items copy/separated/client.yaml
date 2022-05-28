@@ -1,0 +1,10 @@
+type: object
+properties:
+  id:
+    type: integer
+  userName:
+    type: string
+  superProps:
+    type: array
+    items:
+      $ref: ./secretProp.yaml

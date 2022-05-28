@@ -1,0 +1,4 @@
+id:
+  type: integer
+userName:
+  type: string
