@@ -1123,6 +1123,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].type).to.equal('collection');
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
+        fs.writeFileSync('coll.json', JSON.stringify(conversionResult.output[0].data));
         done();
       });
     });

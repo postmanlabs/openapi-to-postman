@@ -11,14 +11,6 @@ info:
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-host: petstore.swagger.io
-basePath: /api
-schemes:
-  - http
-consumes:
-  - application/json
-produces:
-  - application/json
 paths:
   /pets:
     get:

@@ -1,7 +1,7 @@
 let expect = require('chai').expect,
   fs = require('fs'),
   path = require('path'),
-  { getAdjacentAndMissing, getRemoteReferences } = require('../../lib/remoteRefSolver'),
+  { getAdjacentAndMissing, getRemoteReferences, mapToLocalPath } = require('../../lib/remoteRefSolver'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
   REMOTE_REFS_PATH = '../data/remote_refs',
   petstoreRemoteRef = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore.yaml'),
@@ -21,12 +21,19 @@ describe('getAdjacentAndMissing function ', async function () {
     expect(graphAdj.length).to.equal(1);
     expect(graphAdj[0].content).to.not.be.undefined;
     expect(graphAdj[0].content).to.not.be.empty;
+    expect(graphAdj[0].fileName).to.eq('//postman-echo.com/get');
+    expect(graphAdj[0].url).to.eq('https://postman-echo.com/get');
     expect(missingNodes).to.be.empty;
 
   });
 
   it('should find the adjacent nodes with URL in $ref value multiple no repeated', async function () {
     const contentFilePetstoreRemoteRef = fs.readFileSync(swaggerRemoteRef, 'utf8'),
+      exFn0 = '//raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/' +
+        'parameters.yaml',
+      exFn1 = '//raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/Pet.yaml',
+      exFn2 = '//raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/Error.yaml',
+      exFn3 = '//raw.githubusercontent.com/postmanlabs/openapi-to-postman/remoteRef/test/data/remote_refs/NewPet.yaml',
       inputNode = {
         fileName: '/swagger.yaml',
         content: contentFilePetstoreRemoteRef
@@ -35,7 +42,14 @@ describe('getAdjacentAndMissing function ', async function () {
     expect(graphAdj).to.not.be.undefined;
     expect(graphAdj.length).to.equal(4);
     expect(graphAdj[0].content).to.not.be.undefined;
-    expect(graphAdj[0].content).to.not.be.empty;
+    expect(graphAdj[0].fileName).to.equal(exFn0);
+    expect(graphAdj[0].url).to.not.be.empty;
+    expect(graphAdj[1].fileName).to.equal(exFn1);
+    expect(graphAdj[1].url).to.not.be.empty;
+    expect(graphAdj[2].fileName).to.equal(exFn2);
+    expect(graphAdj[2].url).to.not.be.empty;
+    expect(graphAdj[3].fileName).to.equal(exFn3);
+    expect(graphAdj[3].url).to.not.be.empty;
     expect(missingNodes).to.be.empty;
 
   });
@@ -79,5 +93,20 @@ describe('getRemoteReferences function ', function () {
       expect(missingRemoteRefs).to.be.empty;
       done();
     });
+  });
+});
+
+describe('mapToLocalPath method', function () {
+  it('should return //localhost/projects for entry "http://localhost:3000/projects"', function () {
+    const result = mapToLocalPath('http://localhost:3000/projects');
+    expect(result).to.equal('//localhost/projects');
+  });
+
+  it('should return //raw.githubusercontent.com/postmanlabs/remoteRef/test/data/remote_refs/Pet.yaml' +
+    'for entry https://raw.githubusercontent.com/postmanlabs/remoteRef/test/data/remote_refs/Pet.yaml"',
+  function () {
+    const result =
+    mapToLocalPath('https://raw.githubusercontent.com/postmanlabs/remoteRef/test/data/remote_refs/Pet.yaml');
+    expect(result).to.equal('//raw.githubusercontent.com/postmanlabs/remoteRef/test/data/remote_refs/Pet.yaml');
   });
 });
