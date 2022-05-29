@@ -11,7 +11,7 @@ servers:
     description: Optional server description, e.g. Internal staging server for testing
 
 paths:
-  /users/:
+  /users/{userId}:
     get:
       summary: Get a user by ID
       responses:
@@ -20,4 +20,4 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./schemas/user.yaml"
+                $ref: "./schemas/user.yaml#/User"
