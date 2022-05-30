@@ -16,7 +16,9 @@ let expect = require('chai').expect,
   withRefInItems = path.join(__dirname, BUNDLES_FOLDER + '/with_ref_in_items'),
   sameRefDiffSource = path.join(__dirname, BUNDLES_FOLDER + '/same_ref_different_source'),
   nestedHard = path.join(__dirname, BUNDLES_FOLDER + '/multiple_references_from_root_components'),
-  localFromExternal = path.join(__dirname, BUNDLES_FOLDER + '/bring_local_dependencies_from_external');
+  localFromExternal = path.join(__dirname, BUNDLES_FOLDER + '/bring_local_dependencies_from_external'),
+  localFromExternalMultiple = path
+    .join(__dirname, BUNDLES_FOLDER + '/bring_local_dependencies_from_external_multiple_local');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -535,6 +537,39 @@ describe('bundle files method - 3.0', function () {
           {
             path: '/schemas/user.yaml',
             content: user
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled file as json - bring_local_dependencies_from_external_multiple_local', async function () {
+    let contentRootFile = fs.readFileSync(localFromExternalMultiple + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(localFromExternalMultiple + '/schemas/user.yaml', 'utf8'),
+      food = fs.readFileSync(localFromExternalMultiple + '/schemas/food.yaml', 'utf8'),
+      expected = fs.readFileSync(localFromExternalMultiple + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          },
+          {
+            path: '/schemas/food.yaml',
+            content: food
           }
         ],
         options: {},
