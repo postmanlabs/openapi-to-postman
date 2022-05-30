@@ -1310,24 +1310,29 @@ describe('VALIDATE FUNCTION TESTS ', function () {
   });
 
   describe('validateTransaction with remote references', function () {
-    it('Should validate with remote references', function () {
-      let emptyParameterSpec = fs.readFileSync(path.join(__dirname, REMOTE_REFS_PATH + '/swagger.yaml'), 'utf-8'),
-        emptyParameterCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
-          '/emptyParameterCollection.json'), 'utf-8'),
-        resultObj,
-        historyRequest = [],
-        schemaPack =
-          new Converter.SchemaPack({ type: 'string', data: emptyParameterSpec }, { resolveRemoteRefs: true });
+    it('Should validate correctly with remote references', function () {
+      let fileData = fs.readFileSync(path.join(__dirname, REMOTE_REFS_PATH + '/swagger.yaml'), 'utf-8'),
+        options = {
+          resolveRemoteRefs: true
+        },
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options);
 
-      getAllTransactions(JSON.parse(emptyParameterCollection), historyRequest);
-
-      schemaPack.validateTransaction(historyRequest, (err, result) => {
+      schemaPack.convert((err, conversionResult) => {
         expect(err).to.be.null;
-        expect(result).to.be.an('object');
-        resultObj = result.requests[historyRequest[0].id].endpoints[0];
-        expect(resultObj.mismatches).to.have.lengthOf(0);
+        expect(conversionResult.result).to.equal(true);
+
+        let historyRequest = [];
+
+        getAllTransactions(conversionResult.output[0].data, historyRequest);
+        schemaPack.validateTransaction(historyRequest, (err, result) => {
+          expect(err).to.be.null;
+          expect(result).to.be.an('object');
+          let requestIds = Object.keys(result.requests);
+          requestIds.forEach((requestId) => {
+            expect(result.requests[requestId].endpoints[0].matched).to.be.true;
+          });
+        });
       });
     });
   });
-
 });
