@@ -1309,7 +1309,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
     });
   });
 
-  describe('getHost method', function () {
+  describe('validateTransaction with remote references', function () {
     it('Should validate with remote references', function () {
       let emptyParameterSpec = fs.readFileSync(path.join(__dirname, REMOTE_REFS_PATH + '/swagger.yaml'), 'utf-8'),
         emptyParameterCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
@@ -1322,7 +1322,6 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       getAllTransactions(JSON.parse(emptyParameterCollection), historyRequest);
 
       schemaPack.validateTransaction(historyRequest, (err, result) => {
-        // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
         expect(err).to.be.null;
         expect(result).to.be.an('object');
         resultObj = result.requests[historyRequest[0].id].endpoints[0];
