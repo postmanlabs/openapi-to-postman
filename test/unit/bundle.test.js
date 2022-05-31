@@ -650,7 +650,6 @@ describe('bundle files method - 3.0', function () {
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    fs.writeFileSync('coll.json', JSON.stringify(res.output.data.bundledContent));
     expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 
@@ -745,7 +744,6 @@ describe('bundle files method - 3.0', function () {
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    fs.writeFileSync('coll.json', JSON.stringify(res.output.data.bundledContent));
     expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 });
