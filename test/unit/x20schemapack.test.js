@@ -13,6 +13,7 @@ describe('SchemaPack instance creation', function() {
         data: fileData
       },
       schemapack = new SchemaPack(input);
+
     expect(schemapack);
   });
 
@@ -23,6 +24,7 @@ describe('SchemaPack instance creation', function() {
         data: fileSource
       },
       schemapack = new SchemaPack(input);
+
     expect(schemapack);
   });
 });
@@ -35,6 +37,7 @@ describe('getMetaData method', function() {
         data: fileSource
       },
       schemapack = new SchemaPack(input);
+
     schemapack.getMetaData((error, result) => {
       expect(error).to.be.null;
       expect(result.result).to.be.true;
@@ -52,6 +55,7 @@ describe('Convert method', function() {
         data: fileData
       },
       schemapack = new SchemaPack(input);
+
     schemapack.convert((error, result) => {
       expect(error).to.be.null;
       expect(result.result).to.be.true;
@@ -105,17 +109,12 @@ describe('Swagger 2.0  schemapack mergeAndValidate method', function() {
   });
 
   it('Should merge correctly the files in folder - basicExample', function(done) {
-    let folderPath = path.join(__dirname, '../data/swaggerMultifile/uberTest'),
+    let folderPath = path.join(__dirname, '../data/swaggerMultifile/basicExample'),
       files = [],
       array = [
         { fileName: folderPath + '/index.yaml' },
-        { fileName: folderPath + '/definitions/Activities.yaml' },
-        { fileName: folderPath + '/definitions/Activity.yaml' },
-        { fileName: folderPath + '/definitions/Error.yaml' },
-        { fileName: folderPath + '/definitions/Product.yaml' },
-        { fileName: folderPath + '/definitions/ProductList.yaml' },
-        { fileName: folderPath + '/definitions/Profile.yaml' },
-        { fileName: folderPath + '/definitions/PriceEstimate.yaml' }
+        { fileName: folderPath + '/info.yaml' },
+        { fileName: folderPath + '/paths.yaml' }
       ];
 
     array.forEach((item) => {
@@ -139,7 +138,9 @@ describe('Swagger 2.0  schemapack mergeAndValidate method', function() {
           expect(result.output.length).to.equal(1);
           expect(result.output[0].type).to.have.equal('collection');
           expect(result.output[0].data).to.have.property('info');
+          expect(result.output[0].data.info.name).to.equal('Sample API');
           expect(result.output[0].data).to.have.property('item');
+          expect(result.output[0].data.item[0].request.name).to.equal('Returns a list of users.');
           done();
         });
       }
@@ -186,6 +187,16 @@ describe('Swagger 2.0  schemapack mergeAndValidate method', function() {
           expect(result.output[0].type).to.have.equal('collection');
           expect(result.output[0].data).to.have.property('info');
           expect(result.output[0].data).to.have.property('item');
+          expect(result.output[0].data.item[0].response[0].body).to.include('product_id');
+          expect(result.output[0].data.item[0].response[0].body).to.include('description');
+          expect(result.output[0].data.item[1].item[0].response[0].body).to.include('product_id');
+          expect(result.output[0].data.item[1].item[0].response[0].body).to.include('currency_code');
+          expect(result.output[0].data.item[2].response[0].body).to.include('first_name');
+          expect(result.output[0].data.item[2].response[0].body).to.include('last_name');
+          expect(result.output[0].data.item[3].response[0].body).to.include('offset');
+          expect(result.output[0].data.item[3].response[0].body).to.include('limit');
+          expect(result.output[0].data.item[0].response[1].body).to.include('code');
+          expect(result.output[0].data.item[0].response[1].body).to.include('message');
           done();
         });
       }
