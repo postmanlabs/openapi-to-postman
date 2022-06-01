@@ -22,8 +22,10 @@ let expect = require('chai').expect,
   refTags = path.join(__dirname, BUNDLES_FOLDER + '/referenced_tags'),
   refInfo = path.join(__dirname, BUNDLES_FOLDER + '/referenced_info'),
   refPaths = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths'),
-  refPathsRefToLocalSchema = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths_local_schema');
-
+  refPathsRefToLocalSchema = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths_local_schema'),
+  SWAGGER_MULTIFILE_FOLDER = '../data/toBundleExamples/swagger20',
+  basicExample = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/basicExample'),
+  simpleRef = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/simpleRef');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -748,10 +750,8 @@ describe('bundle files method - 3.0', function () {
   });
 });
 
-
 describe('getReferences method when node does not have any reference', function() {
-  it('Should return ' +
-    ' - schema_from_response', function() {
+  it('Should return reference data empty if there are not any reference', function() {
     const userData = 'type: object\n' +
         'properties:\n' +
         '  id:\n' +
@@ -771,8 +771,7 @@ describe('getReferences method when node does not have any reference', function(
     expect(Object.keys(result.nodeReferenceDirectory).length).to.equal(0);
   });
 
-  it('Should return ' +
-    ' - schema_from_response', function() {
+  it('Should return the reference data - schema_from_response', function() {
     const userData = 'User:\n' +
       '  $ref: \"./user.yaml\"\n' +
       '\n' +
@@ -805,5 +804,78 @@ describe('getReferences method when node does not have any reference', function(
       .to.equal('the/parent/user.yaml');
     expect(result.referencesInNode[0].path).to.equal('./user.yaml');
     expect(result.referencesInNode[0].newValue.$ref).to.equal('the/parent/user.yaml');
+  });
+});
+
+describe('bundle files method - 2.0', function() {
+  it('Should return bundled result from - basicExample', async function() {
+    let contentRootFile = fs.readFileSync(basicExample + '/index.yaml', 'utf8'),
+      info = fs.readFileSync(basicExample + '/info.yaml', 'utf8'),
+      paths = fs.readFileSync(basicExample + '/paths.yaml', 'utf8'),
+      expected = fs.readFileSync(basicExample + '/bundleExpected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/index.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/info.yaml',
+            content: info
+          },
+          {
+            path: '/paths.yaml',
+            content: paths
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled result from - simpleRef', async function() {
+    let contentRootFile = fs.readFileSync(simpleRef + '/index.yaml', 'utf8'),
+      info = fs.readFileSync(simpleRef + '/info.yaml', 'utf8'),
+      paths = fs.readFileSync(simpleRef + '/paths.yaml', 'utf8'),
+      pet = fs.readFileSync(simpleRef + '/pet.yaml', 'utf8'),
+      expected = fs.readFileSync(simpleRef + '/bundleExpected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/index.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/info.yaml',
+            content: info
+          },
+          {
+            path: '/paths.yaml',
+            content: paths
+          },
+          {
+            path: '/pet.yaml',
+            content: pet
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 });
