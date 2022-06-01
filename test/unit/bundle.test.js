@@ -22,9 +22,14 @@ let expect = require('chai').expect,
   refTags = path.join(__dirname, BUNDLES_FOLDER + '/referenced_tags'),
   refInfo = path.join(__dirname, BUNDLES_FOLDER + '/referenced_info'),
   refPaths = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths'),
-  refPathsRefToLocalSchema = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths_local_schema'),
   SWAGGER_MULTIFILE_FOLDER = '../data/toBundleExamples/swagger20',
+  refPathsRefToLocalSchema = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths_local_schema'),
+  refInfo20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_info'),
+  refTags20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_tags'),
   basicExample = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/basicExample'),
+  refPaths20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_paths'),
+  refPathsRefToLocalSchema20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_paths_local_schema'),
+  refExample = path.join(__dirname, BUNDLES_FOLDER + '/referenced_examples'),
   nestedRefs = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/nestedRefs'),
   nestedLocalRef = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/nestedLocalRef'),
   withParametersAndItems = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/withParametersAndItems'),
@@ -758,62 +763,33 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(res.output.data.bundledContent).to.be.equal(expected);
   });
-});
 
-describe('getReferences method when node does not have any reference', function() {
-  it('Should return reference data empty if there are not any reference', function() {
-    const userData = 'type: object\n' +
-        'properties:\n' +
-        '  id:\n' +
-        '    type: integer\n' +
-        '  userName:\n' +
-        '    type: string',
-      userNode = parse.getOasObject(userData),
-      nodeIsRoot = false,
-      result = getReferences(
-        userNode.oasObject,
-        nodeIsRoot,
-        removeLocalReferenceFromPath,
-        'the/parent/filename'
-      );
-
-    expect(result.referencesInNode).to.be.an('array').with.length(0);
-    expect(Object.keys(result.nodeReferenceDirectory).length).to.equal(0);
-  });
-
-  it('Should return the reference data - schema_from_response', function() {
-    const userData = 'User:\n' +
-      '  $ref: \"./user.yaml\"\n' +
-      '\n' +
-      'Monster:\n' +
-      '  type: object\n' +
-      '  properties:\n' +
-      '    id:\n' +
-      '      type: integer\n' +
-      '    clientName:\n' +
-      '      type: string\n' +
-      'Dog:\n' +
-      '  type: object\n' +
-      '  properties:\n' +
-      '    id:\n' +
-      '      type: integer\n' +
-      '    clientName:\n' +
-      '      type: string',
-      userNode = parse.getOasObject(userData),
-      nodeIsRoot = false,
-      result = getReferences(
-        userNode.oasObject,
-        nodeIsRoot,
-        removeLocalReferenceFromPath,
-        'the/parent/filename'
-      );
-    expect(result.nodeReferenceDirectory).to.be.an('object');
-    expect(Object.keys(result.nodeReferenceDirectory).length).to.equal(1);
-    expect(result.referencesInNode).to.be.an('array').with.length(1);
-    expect(Object.keys(result.nodeReferenceDirectory)[0])
-      .to.equal('the/parent/user.yaml');
-    expect(result.referencesInNode[0].path).to.equal('./user.yaml');
-    expect(result.referencesInNode[0].newValue.$ref).to.equal('the/parent/user.yaml');
+  it('Should return bundled file with referenced example', async function () {
+    let contentRootFile = fs.readFileSync(refExample + '/root.yaml', 'utf8'),
+      example = fs.readFileSync(refExample + '/examples.yaml', 'utf8'),
+      expected = fs.readFileSync(refExample + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/examples.yaml',
+            content: example
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
   });
 });
 
@@ -1236,5 +1212,184 @@ describe('bundle files method - 2.0', function() {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled file with referenced info from root', async function () {
+    let contentRootFile = fs.readFileSync(refInfo20 + '/root.yaml', 'utf8'),
+      info = fs.readFileSync(refInfo20 + '/info/info.yaml', 'utf8'),
+      expected = fs.readFileSync(refInfo20 + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/info/info.yaml',
+            content: info
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled file with referenced tags from root', async function () {
+    let contentRootFile = fs.readFileSync(refTags20 + '/root.yaml', 'utf8'),
+      tags = fs.readFileSync(refTags20 + '/tags/tags.yaml', 'utf8'),
+      expected = fs.readFileSync(refTags20 + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/tags/tags.yaml',
+            content: tags
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled file with referenced paths from root', async function () {
+    let contentRootFile = fs.readFileSync(refPaths20 + '/root.yaml', 'utf8'),
+      paths = fs.readFileSync(refPaths20 + '/paths/paths.yaml', 'utf8'),
+      path = fs.readFileSync(refPaths20 + '/paths/path.yaml', 'utf8'),
+      expected = fs.readFileSync(refPaths20 + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/paths/paths.yaml',
+            content: paths
+          },
+          {
+            path: '/paths/path.yaml',
+            content: path
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled file with referenced paths from root - path references local schema', async function () {
+    let contentRootFile = fs.readFileSync(refPathsRefToLocalSchema20 + '/root.yaml', 'utf8'),
+      paths = fs.readFileSync(refPathsRefToLocalSchema20 + '/paths/paths.yaml', 'utf8'),
+      path = fs.readFileSync(refPathsRefToLocalSchema20 + '/paths/path.yaml', 'utf8'),
+      expected = fs.readFileSync(refPathsRefToLocalSchema20 + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/paths/paths.yaml',
+            content: paths
+          },
+          {
+            path: '/paths/path.yaml',
+            content: path
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+});
+
+describe('getReferences method when node does not have any reference', function() {
+  it('Should return reference data empty if there are not any reference', function() {
+    const userData = 'type: object\n' +
+        'properties:\n' +
+        '  id:\n' +
+        '    type: integer\n' +
+        '  userName:\n' +
+        '    type: string',
+      userNode = parse.getOasObject(userData),
+      nodeIsRoot = false,
+      result = getReferences(
+        userNode.oasObject,
+        nodeIsRoot,
+        removeLocalReferenceFromPath,
+        'the/parent/filename'
+      );
+
+    expect(result.referencesInNode).to.be.an('array').with.length(0);
+    expect(Object.keys(result.nodeReferenceDirectory).length).to.equal(0);
+  });
+
+  it('Should return the reference data - schema_from_response', function() {
+    const userData = 'User:\n' +
+      '  $ref: \"./user.yaml\"\n' +
+      '\n' +
+      'Monster:\n' +
+      '  type: object\n' +
+      '  properties:\n' +
+      '    id:\n' +
+      '      type: integer\n' +
+      '    clientName:\n' +
+      '      type: string\n' +
+      'Dog:\n' +
+      '  type: object\n' +
+      '  properties:\n' +
+      '    id:\n' +
+      '      type: integer\n' +
+      '    clientName:\n' +
+      '      type: string',
+      userNode = parse.getOasObject(userData),
+      nodeIsRoot = false,
+      result = getReferences(
+        userNode.oasObject,
+        nodeIsRoot,
+        removeLocalReferenceFromPath,
+        'the/parent/filename'
+      );
+    expect(result.nodeReferenceDirectory).to.be.an('object');
+    expect(Object.keys(result.nodeReferenceDirectory).length).to.equal(1);
+    expect(result.referencesInNode).to.be.an('array').with.length(1);
+    expect(Object.keys(result.nodeReferenceDirectory)[0])
+      .to.equal('the/parent/user.yaml');
+    expect(result.referencesInNode[0].path).to.equal('./user.yaml');
+    expect(result.referencesInNode[0].newValue.$ref).to.equal('the/parent/user.yaml');
   });
 });
