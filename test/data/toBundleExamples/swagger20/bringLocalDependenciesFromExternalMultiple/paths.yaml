@@ -1,0 +1,16 @@
+/users:
+  get:
+    summary: Returns a list of users.
+    description: Optional extended description in Markdown.
+    parameters:
+      - $ref: "./parameters/parameters.yaml#/Parameter1"
+      - $ref: "./parameters/parameters.yaml#/Parameter2"
+    produces:
+      - application/json
+    responses:
+      200:
+        description: OK
+        schema:
+          type: array
+          items:
+            $ref: "./pet.yaml#/Pet"
