@@ -22,13 +22,13 @@ let expect = require('chai').expect,
   refTags = path.join(__dirname, BUNDLES_FOLDER + '/referenced_tags'),
   refInfo = path.join(__dirname, BUNDLES_FOLDER + '/referenced_info'),
   refPaths = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths'),
-  refPathsRefToLocalSchema = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths_local_schema'),
-  refInfo20 = path.join(__dirname, BUNDLES_FOLDER + '/referenced_info_2_0'),
-  refTags20 = path.join(__dirname, BUNDLES_FOLDER + '/referenced_tags_2_0'),
   SWAGGER_MULTIFILE_FOLDER = '../data/toBundleExamples/swagger20',
+  refPathsRefToLocalSchema = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths_local_schema'),
+  refInfo20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_info'),
+  refTags20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_tags'),
   basicExample = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/basicExample'),
   simpleRef = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/simpleRef'),
-  refPaths20 = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths_2_0');
+  refPaths20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_paths');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
