@@ -18,7 +18,12 @@ let expect = require('chai').expect,
   nestedHard = path.join(__dirname, BUNDLES_FOLDER + '/multiple_references_from_root_components'),
   localFromExternal = path.join(__dirname, BUNDLES_FOLDER + '/bring_local_dependencies_from_external'),
   localFromExternalMultiple = path
-    .join(__dirname, BUNDLES_FOLDER + '/bring_local_dependencies_from_external_multiple_local');
+    .join(__dirname, BUNDLES_FOLDER + '/bring_local_dependencies_from_external_multiple_local'),
+  refTags = path.join(__dirname, BUNDLES_FOLDER + '/referenced_tags'),
+  refInfo = path.join(__dirname, BUNDLES_FOLDER + '/referenced_info'),
+  refPaths = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths'),
+  refPathsRefToLocalSchema = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths_local_schema');
+
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -613,6 +618,128 @@ describe('bundle files method - 3.0', function () {
             content: toySchema
           }
         ]
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled file with referenced tags from root', async function () {
+    let contentRootFile = fs.readFileSync(refTags + '/root.yaml', 'utf8'),
+      tags = fs.readFileSync(refTags + '/tags/tags.yaml', 'utf8'),
+      expected = fs.readFileSync(refTags + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/tags/tags.yaml',
+            content: tags
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled file with referenced info from root', async function () {
+    let contentRootFile = fs.readFileSync(refInfo + '/root.yaml', 'utf8'),
+      info = fs.readFileSync(refInfo + '/info/info.yaml', 'utf8'),
+      expected = fs.readFileSync(refInfo + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/info/info.yaml',
+            content: info
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled file with referenced paths from root', async function () {
+    let contentRootFile = fs.readFileSync(refPaths + '/root.yaml', 'utf8'),
+      paths = fs.readFileSync(refPaths + '/paths/paths.yaml', 'utf8'),
+      path = fs.readFileSync(refPaths + '/paths/path.yaml', 'utf8'),
+      expected = fs.readFileSync(refPaths + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/paths/paths.yaml',
+            content: paths
+          },
+          {
+            path: '/paths/path.yaml',
+            content: path
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled file with referenced paths from root - path references local schema', async function () {
+    let contentRootFile = fs.readFileSync(refPathsRefToLocalSchema + '/root.yaml', 'utf8'),
+      paths = fs.readFileSync(refPathsRefToLocalSchema + '/paths/paths.yaml', 'utf8'),
+      path = fs.readFileSync(refPathsRefToLocalSchema + '/paths/path.yaml', 'utf8'),
+      expected = fs.readFileSync(refPathsRefToLocalSchema + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/paths/paths.yaml',
+            content: paths
+          },
+          {
+            path: '/paths/path.yaml',
+            content: path
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
