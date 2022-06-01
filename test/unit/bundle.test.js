@@ -22,7 +22,9 @@ let expect = require('chai').expect,
   refTags = path.join(__dirname, BUNDLES_FOLDER + '/referenced_tags'),
   refInfo = path.join(__dirname, BUNDLES_FOLDER + '/referenced_info'),
   refPaths = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths'),
-  refPathsRefToLocalSchema = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths_local_schema');
+  refPathsRefToLocalSchema = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths_local_schema'),
+  refInfo20 = path.join(__dirname, BUNDLES_FOLDER + '/referenced_info_2_0'),
+  refTags20 = path.join(__dirname, BUNDLES_FOLDER + '/referenced_tags_2_0');
 
 
 describe('bundle files method - 3.0', function () {
@@ -748,6 +750,63 @@ describe('bundle files method - 3.0', function () {
   });
 });
 
+describe('bundle files method - 2.0', function () {
+  it('Should return bundled file with referenced info from root', async function () {
+    let contentRootFile = fs.readFileSync(refInfo20 + '/root.yaml', 'utf8'),
+      info = fs.readFileSync(refInfo20 + '/info/info.yaml', 'utf8'),
+      expected = fs.readFileSync(refInfo20 + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/info/info.yaml',
+            content: info
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled file with referenced tags from root', async function () {
+    let contentRootFile = fs.readFileSync(refTags20 + '/root.yaml', 'utf8'),
+      tags = fs.readFileSync(refTags20 + '/tags/tags.yaml', 'utf8'),
+      expected = fs.readFileSync(refTags20 + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/tags/tags.yaml',
+            content: tags
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+});
 
 describe('getReferences method when node does not have any reference', function() {
   it('Should return ' +
