@@ -25,6 +25,16 @@ let expect = require('chai').expect,
   refPathsRefToLocalSchema = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths_local_schema'),
   SWAGGER_MULTIFILE_FOLDER = '../data/toBundleExamples/swagger20',
   basicExample = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/basicExample'),
+  nestedRefs = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/nestedRefs'),
+  nestedLocalRef = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/nestedLocalRef'),
+  withParametersAndItems = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/withParametersAndItems'),
+  bringLocalFromExternal = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/bringLocalDependenciesFromExternal'),
+  bringLocalFromExternalWithItems = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER +
+    '/bringLocalDependenciesFromExternalWithItems'),
+  bringLocalFromExternalMultiple = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER +
+    '/bringLocalDependenciesFromExternalMultiple'),
+  multipleRefFromRootComponents = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/multipleRefFromRootComponents'),
+  sameRefDifferentSource = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/sameRefDifferentSource'),
   simpleRef = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/simpleRef');
 
 describe('bundle files method - 3.0', function () {
@@ -808,6 +818,355 @@ describe('getReferences method when node does not have any reference', function(
 });
 
 describe('bundle files method - 2.0', function() {
+  it('Should return bundled result from - sameRefDifferentSource', async function() {
+    let contentRootFile = fs.readFileSync(sameRefDifferentSource + '/index.yaml', 'utf8'),
+      info = fs.readFileSync(sameRefDifferentSource + '/info.yaml', 'utf8'),
+      paths = fs.readFileSync(sameRefDifferentSource + '/paths.yaml', 'utf8'),
+      user = fs.readFileSync(sameRefDifferentSource + '/schemas/user.yaml', 'utf8'),
+      userDetail = fs.readFileSync(sameRefDifferentSource + '/schemas/detail.yaml', 'utf8'),
+      client = fs.readFileSync(sameRefDifferentSource + '/otherSchemas/client.yaml', 'utf8'),
+      clientDetail = fs.readFileSync(sameRefDifferentSource + '/otherSchemas/detail.yaml', 'utf8'),
+      expected = fs.readFileSync(sameRefDifferentSource + '/bundleExpected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/index.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/info.yaml',
+            content: info
+          },
+          {
+            path: '/paths.yaml',
+            content: paths
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          },
+          {
+            path: '/schemas/detail.yaml',
+            content: userDetail
+          },
+          {
+            path: '/otherSchemas/client.yaml',
+            content: client
+          },
+          {
+            path: '/otherSchemas/detail.yaml',
+            content: clientDetail
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled result from - multipleRefFromRootComponents', async function() {
+    let contentRootFile = fs.readFileSync(multipleRefFromRootComponents + '/index.yaml', 'utf8'),
+      info = fs.readFileSync(multipleRefFromRootComponents + '/info.yaml', 'utf8'),
+      paths = fs.readFileSync(multipleRefFromRootComponents + '/paths.yaml', 'utf8'),
+      pet = fs.readFileSync(multipleRefFromRootComponents + '/pet.yaml', 'utf8'),
+      parameters = fs.readFileSync(multipleRefFromRootComponents + '/parameters/parameters.yaml', 'utf8'),
+      expected = fs.readFileSync(multipleRefFromRootComponents + '/bundleExpected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/index.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/info.yaml',
+            content: info
+          },
+          {
+            path: '/paths.yaml',
+            content: paths
+          },
+          {
+            path: '/pet.yaml',
+            content: pet
+          },
+          {
+            path: '/parameters/parameters.yaml',
+            content: parameters
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled result from - bringLocalDependenciesFromExternalMultiple', async function() {
+    let contentRootFile = fs.readFileSync(bringLocalFromExternalMultiple + '/index.yaml', 'utf8'),
+      info = fs.readFileSync(bringLocalFromExternalMultiple + '/info.yaml', 'utf8'),
+      paths = fs.readFileSync(bringLocalFromExternalMultiple + '/paths.yaml', 'utf8'),
+      pet = fs.readFileSync(bringLocalFromExternalMultiple + '/pet.yaml', 'utf8'),
+      food = fs.readFileSync(bringLocalFromExternalMultiple + '/food.yaml', 'utf8'),
+      parameters = fs.readFileSync(bringLocalFromExternalMultiple + '/parameters/parameters.yaml', 'utf8'),
+      expected = fs.readFileSync(bringLocalFromExternalMultiple + '/bundleExpected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/index.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/info.yaml',
+            content: info
+          },
+          {
+            path: '/paths.yaml',
+            content: paths
+          },
+          {
+            path: '/pet.yaml',
+            content: pet
+          },
+          {
+            path: '/food.yaml',
+            content: food
+          },
+          {
+            path: '/parameters/parameters.yaml',
+            content: parameters
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled result from - bringLocalDependenciesFromExternalWithItems', async function() {
+    let contentRootFile = fs.readFileSync(bringLocalFromExternalWithItems + '/index.yaml', 'utf8'),
+      info = fs.readFileSync(bringLocalFromExternalWithItems + '/info.yaml', 'utf8'),
+      paths = fs.readFileSync(bringLocalFromExternalWithItems + '/paths.yaml', 'utf8'),
+      pet = fs.readFileSync(bringLocalFromExternalWithItems + '/pet.yaml', 'utf8'),
+      expected = fs.readFileSync(bringLocalFromExternalWithItems + '/bundleExpected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/index.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/info.yaml',
+            content: info
+          },
+          {
+            path: '/paths.yaml',
+            content: paths
+          },
+          {
+            path: '/pet.yaml',
+            content: pet
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled result from - bringLocalDependenciesFromExternal', async function() {
+    let contentRootFile = fs.readFileSync(bringLocalFromExternal + '/index.yaml', 'utf8'),
+      info = fs.readFileSync(bringLocalFromExternal + '/info.yaml', 'utf8'),
+      paths = fs.readFileSync(bringLocalFromExternal + '/paths.yaml', 'utf8'),
+      pet = fs.readFileSync(bringLocalFromExternal + '/pet.yaml', 'utf8'),
+      expected = fs.readFileSync(bringLocalFromExternal + '/bundleExpected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/index.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/info.yaml',
+            content: info
+          },
+          {
+            path: '/paths.yaml',
+            content: paths
+          },
+          {
+            path: '/pet.yaml',
+            content: pet
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled result from - withParametersAndItems', async function() {
+    let contentRootFile = fs.readFileSync(withParametersAndItems + '/index.yaml', 'utf8'),
+      info = fs.readFileSync(withParametersAndItems + '/info.yaml', 'utf8'),
+      paths = fs.readFileSync(withParametersAndItems + '/paths.yaml', 'utf8'),
+      pet = fs.readFileSync(withParametersAndItems + '/pet.yaml', 'utf8'),
+      parameters = fs.readFileSync(withParametersAndItems + '/parameters/parameters.yaml', 'utf8'),
+      expected = fs.readFileSync(withParametersAndItems + '/bundleExpected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/index.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/info.yaml',
+            content: info
+          },
+          {
+            path: '/paths.yaml',
+            content: paths
+          },
+          {
+            path: '/pet.yaml',
+            content: pet
+          },
+          {
+            path: '/parameters/parameters.yaml',
+            content: parameters
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled result from - nestedLocalRef', async function() {
+    let contentRootFile = fs.readFileSync(nestedLocalRef + '/index.yaml', 'utf8'),
+      info = fs.readFileSync(nestedLocalRef + '/info.yaml', 'utf8'),
+      paths = fs.readFileSync(nestedLocalRef + '/paths.yaml', 'utf8'),
+      pet = fs.readFileSync(nestedLocalRef + '/schemas/pet.yaml', 'utf8'),
+      favoriteFood = fs.readFileSync(nestedLocalRef + '/schemas/favorite_food.yaml', 'utf8'),
+      expected = fs.readFileSync(nestedLocalRef + '/bundleExpected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/index.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/info.yaml',
+            content: info
+          },
+          {
+            path: '/paths.yaml',
+            content: paths
+          },
+          {
+            path: '/schemas/pet.yaml',
+            content: pet
+          },
+          {
+            path: '/schemas/favorite_food.yaml',
+            content: favoriteFood
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled result from - nestedRefs', async function() {
+    let contentRootFile = fs.readFileSync(nestedRefs + '/index.yaml', 'utf8'),
+      info = fs.readFileSync(nestedRefs + '/info.yaml', 'utf8'),
+      paths = fs.readFileSync(nestedRefs + '/paths.yaml', 'utf8'),
+      pet = fs.readFileSync(nestedRefs + '/schemas/pet.yaml', 'utf8'),
+      favoriteFood = fs.readFileSync(nestedRefs + '/schemas/favorite_food.yaml', 'utf8'),
+      expected = fs.readFileSync(nestedRefs + '/bundleExpected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/index.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/info.yaml',
+            content: info
+          },
+          {
+            path: '/paths.yaml',
+            content: paths
+          },
+          {
+            path: '/schemas/pet.yaml',
+            content: pet
+          },
+          {
+            path: '/schemas/favorite_food.yaml',
+            content: favoriteFood
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
   it('Should return bundled result from - basicExample', async function() {
     let contentRootFile = fs.readFileSync(basicExample + '/index.yaml', 'utf8'),
       info = fs.readFileSync(basicExample + '/info.yaml', 'utf8'),
