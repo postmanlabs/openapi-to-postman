@@ -1,0 +1,31 @@
+description: Returns all pets alesuada ac...
+operationId: findPets
+responses:
+  "200":
+    description: pet response
+    content:
+      application/json:
+        schema:
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: integer
+              format: int32
+            message:
+              type: string
+  default:
+    description: unexpected error
+    content:
+      application/json:
+        schema:
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: integer
+              format: int32
+            message:
+              type: string

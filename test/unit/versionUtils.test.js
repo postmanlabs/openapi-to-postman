@@ -271,6 +271,7 @@ describe('filterOptionsByVersion method', function() {
         }
       ],
       optionsFiltered = filterOptionsByVersion(optionsMock, '2.0');
+
     expect(optionsFiltered).to.be.an('array');
     expect(optionsFiltered.map((option) => {
       return option.id;
