@@ -419,12 +419,14 @@ describe('bundle files method - 3.0', function () {
           }
         ]
       };
-    const res = await Converter.bundle(input);
-    expect(res).to.not.be.empty;
-    expect(res.result).to.be.false;
-    expect(res.reason).to.equal('Invalid format. Input must be in YAML or JSON ' +
-      'format. Specification is not a valid YAML. YAMLException: duplicated mapping' +
-      ' key at line 30, column -54:\n    components:\n    ^');
+    try {
+      await Converter.bundle(input);
+    }
+    catch (error) {
+      expect(error.message).to.equal('Invalid format. Input must be in YAML or JSON ' +
+        'format. Specification is not a valid YAML. YAMLException: duplicated mapping' +
+        ' key at line 30, column -54:\n    components:\n    ^');
+    }
   });
 
   it('Should return bundled file from same_ref_different_source', async function () {
@@ -828,6 +830,35 @@ describe('bundle files method - 3.0', function () {
     catch (error) {
       expect(error).to.not.be.undefined;
       expect(error.message).to.equal('Input object must have "type" and "data" information');
+    }
+  });
+
+  it('should return error when input has no root files', async function () {
+    let contentRootFile = fs.readFileSync(refExample + '/root.yaml', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    try {
+      await Converter.bundle(input);
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"RootFiles" parameter should be provided');
     }
   });
 });
