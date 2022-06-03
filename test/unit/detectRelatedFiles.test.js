@@ -139,8 +139,7 @@ describe('detectRelatedFiles method', function () {
             content: contentFileMissedRef
           }
         ],
-        data: [
-        ]
+        data: [{}]
       },
       res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -242,8 +241,7 @@ describe('detectRelatedFiles method', function () {
             content: contentFileHop
           }
         ],
-        data: [
-        ]
+        data: [{}]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -266,8 +264,7 @@ describe('detectRelatedFiles method', function () {
             content: contentFileHop
           }
         ],
-        data: [
-        ]
+        data: [{}]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -286,8 +283,7 @@ describe('detectRelatedFiles method', function () {
             content: contentFile
           }
         ],
-        data: [
-        ]
+        data: [{}]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -366,6 +362,43 @@ describe('detectRelatedFiles method', function () {
     expect(res.result).to.be.true;
     expect(res.output.data[0].relatedFiles.length).to.equal(5);
     expect(res.output.data[0].missingRelatedFiles.length).to.equal(6);
+  });
+
+  it('should return error when "type" parameter is not sent', async function () {
+    let contentRootFile = fs.readFileSync(petstoreMultipleFiles, 'utf8'),
+      contentFileResPets = fs.readFileSync(resourcesPets, 'utf8'),
+      input = {
+        rootFiles: [
+          {
+            path: '/openapi.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/resources/pets.yaml',
+            content: contentFileResPets
+          }
+        ]
+      };
+
+    try {
+      await Converter.detectRelatedFiles(input);
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Type" parameter should be provided');
+    }
+  });
+
+  it('should return error when input is an empty object', async function () {
+    try {
+      await Converter.detectRelatedFiles({});
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('Input object must have "type" and "data" information');
+    }
   });
 
 });
