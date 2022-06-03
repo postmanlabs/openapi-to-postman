@@ -139,10 +139,7 @@ describe('detectRelatedFiles method', function () {
             content: contentFileMissedRef
           }
         ],
-        data: [{
-
-        }
-        ]
+        data: [{}]
       },
       res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -244,11 +241,7 @@ describe('detectRelatedFiles method', function () {
             content: contentFileHop
           }
         ],
-        data: [
-          {
-
-          }
-        ]
+        data: [{}]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -271,9 +264,7 @@ describe('detectRelatedFiles method', function () {
             content: contentFileHop
           }
         ],
-        data: [{
-
-        }]
+        data: [{}]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -292,8 +283,7 @@ describe('detectRelatedFiles method', function () {
             content: contentFile
           }
         ],
-        data: [{
-        }]
+        data: [{}]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
