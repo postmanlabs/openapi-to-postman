@@ -792,6 +792,44 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(res.output.data.bundledContent).to.be.equal(expected);
   });
+
+  it('should return error when "type" parameter is not sent', async function () {
+    let contentRootFile = fs.readFileSync(refExample + '/root.yaml', 'utf8'),
+      example = fs.readFileSync(refExample + '/examples.yaml', 'utf8'),
+      input = {
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/examples.yaml',
+            content: example
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    try {
+      await Converter.bundle(input);
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Type" parameter should be provided');
+    }
+  });
+
+  it('should return error when input is an empty object', async function () {
+    try {
+      await Converter.bundle({});
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('Input object must have "type" and "data" information');
+    }
+  });
 });
 
 describe('bundle files method - 2.0', function() {
