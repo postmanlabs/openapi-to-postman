@@ -401,12 +401,14 @@ describe('bundle files method - 3.0', function () {
           }
         ]
       };
-    const res = await Converter.bundle(input);
-    expect(res).to.not.be.empty;
-    expect(res.result).to.be.false;
-    expect(res.reason).to.equal('Invalid format. Input must be in YAML or JSON ' +
-      'format. Specification is not a valid YAML. YAMLException: duplicated mapping' +
-      ' key at line 30, column -54:\n    components:\n    ^');
+    try {
+      await Converter.bundle(input);
+    }
+    catch (error) {
+      expect(error.message).to.equal('Invalid format. Input must be in YAML or JSON ' +
+        'format. Specification is not a valid YAML. YAMLException: duplicated mapping' +
+        ' key at line 30, column -54:\n    components:\n    ^');
+    }
   });
 
   it('Should return bundled file from same_ref_different_source', async function () {
@@ -746,6 +748,76 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(res.output.data.bundledContent).to.be.equal(expected);
   });
+
+  it('Should take the root file from data array', async function () {
+    let contentRootFile = fs.readFileSync(sameRefDiffSource + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(sameRefDiffSource + '/schemas/user/user.yaml', 'utf8'),
+      client = fs.readFileSync(sameRefDiffSource + '/schemas/client/client.yaml', 'utf8'),
+      specialUser = fs.readFileSync(sameRefDiffSource + '/schemas/user/special.yaml', 'utf8'),
+      specialClient = fs.readFileSync(sameRefDiffSource + '/schemas/client/special.yaml', 'utf8'),
+      magic = fs.readFileSync(sameRefDiffSource + '/schemas/client/magic.yaml', 'utf8'),
+      expected = fs.readFileSync(sameRefDiffSource + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/schemas/user/user.yaml',
+            content: user
+          },
+          {
+            path: '/schemas/user/special.yaml',
+            content: specialUser
+          },
+          {
+            path: '/schemas/client/client.yaml',
+            content: client
+          },
+          {
+            path: '/schemas/client/special.yaml',
+            content: specialClient
+          },
+          {
+            path: '/schemas/client/magic.yaml',
+            content: magic
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+
+  });
+
+  it('Should throw error when input has not root files', async function () {
+    let user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [],
+        data: [
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    try {
+      await Converter.bundle(input);
+    }
+    catch (error) {
+      expect(error.message).to.equal('Input should have at least one root file');
+    }
+  });
 });
 
 
@@ -805,5 +877,51 @@ describe('getReferences method when node does not have any reference', function(
       .to.equal('the/parent/user.yaml');
     expect(result.referencesInNode[0].path).to.equal('./user.yaml');
     expect(result.referencesInNode[0].newValue.$ref).to.equal('the/parent/user.yaml');
+  });
+
+  it('should return error when "type" parameter is not sent', async function () {
+    let input = {
+      rootFiles: [
+        {
+          path: '/root.yaml',
+          content: ''
+        }
+      ],
+      data: [
+        {
+          path: '/examples.yaml',
+          content: ''
+        }
+      ],
+      options: {},
+      bundleFormat: 'JSON'
+    };
+    try {
+      await Converter.bundle(input);
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Type" parameter should be provided');
+    }
+  });
+
+  it('should return error when input is an empty object', async function () {
+    try {
+      await Converter.bundle({});
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('Input object must have "type" and "data" information');
+    }
+  });
+
+  it('should return error when input data is an empty array', async function () {
+    try {
+      await Converter.bundle({ type: 'folder', data: [] });
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Data" parameter should be provided');
+    }
   });
 });

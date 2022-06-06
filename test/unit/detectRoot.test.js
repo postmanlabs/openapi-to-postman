@@ -218,7 +218,7 @@ describe('detectRoot method', function() {
       await Converter.detectRootFiles(input);
     }
     catch (ex) {
-      expect(ex.message).to.equal('undefined input');
+      expect(ex.message).to.equal('"Path" of the data element should be provided');
     }
   });
 
@@ -264,6 +264,47 @@ describe('detectRoot method', function() {
     expect(res.result).to.be.true;
     expect(res.output.data[0].path).to.equal(validHopService31x);
 
+  });
+
+  it('should return error when "type" parameter is not sent', async function () {
+    let input = {
+      data: [
+        {
+          path: validPetstore
+        },
+        {
+          path: validHopService31x
+        }
+      ]
+    };
+
+    try {
+      await Converter.detectRootFiles(input);
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Type" parameter should be provided');
+    }
+  });
+
+  it('should return error when input is an empty object', async function () {
+    try {
+      await Converter.detectRootFiles({});
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('Input object must have "type" and "data" information');
+    }
+  });
+
+  it('should return error when input data is an empty array', async function () {
+    try {
+      await Converter.detectRootFiles({ type: 'folder', data: [] });
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Data" parameter should be provided');
+    }
   });
 
 });

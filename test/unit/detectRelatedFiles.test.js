@@ -30,7 +30,7 @@ let expect = require('chai').expect,
 
 describe('detectRelatedFiles method', function () {
 
-  it('should return empty data when there is no root in the entry', async function () {
+  it('should return error when there is no root in the entry', async function () {
     let contentFile = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
       input = {
         type: 'folder',
@@ -44,10 +44,12 @@ describe('detectRelatedFiles method', function () {
           }
         ]
       };
-    const res = await Converter.detectRelatedFiles(input);
-    expect(res).to.not.be.empty;
-    expect(res.result).to.be.true;
-    expect(res.output.data.length).to.equal(0);
+    try {
+      await Converter.detectRelatedFiles(input);
+    }
+    catch (error) {
+      expect(error.message).to.equal('Input should have at least one root file');
+    }
   });
 
   it('should locate root and return empty data when there is no ref', async function () {
@@ -139,8 +141,7 @@ describe('detectRelatedFiles method', function () {
             content: contentFileMissedRef
           }
         ],
-        data: [
-        ]
+        data: [{}]
       },
       res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -242,8 +243,7 @@ describe('detectRelatedFiles method', function () {
             content: contentFileHop
           }
         ],
-        data: [
-        ]
+        data: [{}]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -266,8 +266,7 @@ describe('detectRelatedFiles method', function () {
             content: contentFileHop
           }
         ],
-        data: [
-        ]
+        data: [{}]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -286,8 +285,7 @@ describe('detectRelatedFiles method', function () {
             content: contentFile
           }
         ],
-        data: [
-        ]
+        data: [{}]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -368,4 +366,50 @@ describe('detectRelatedFiles method', function () {
     expect(res.output.data[0].missingRelatedFiles.length).to.equal(6);
   });
 
+  it('should return error when "type" parameter is not sent', async function () {
+    let contentRootFile = fs.readFileSync(petstoreMultipleFiles, 'utf8'),
+      contentFileResPets = fs.readFileSync(resourcesPets, 'utf8'),
+      input = {
+        rootFiles: [
+          {
+            path: '/openapi.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/resources/pets.yaml',
+            content: contentFileResPets
+          }
+        ]
+      };
+
+    try {
+      await Converter.detectRelatedFiles(input);
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Type" parameter should be provided');
+    }
+  });
+
+  it('should return error when input is an empty object', async function () {
+    try {
+      await Converter.detectRelatedFiles({});
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('Input object must have "type" and "data" information');
+    }
+  });
+
+  it('should return error when input data is an empty array', async function () {
+    try {
+      await Converter.detectRelatedFiles({ type: 'folder', data: [] });
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Data" parameter should be provided');
+    }
+  });
 });
