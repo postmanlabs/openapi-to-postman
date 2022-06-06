@@ -30,7 +30,7 @@ let expect = require('chai').expect,
 
 describe('detectRelatedFiles method', function () {
 
-  it('should return empty data when there is no root in the entry', async function () {
+  it('should return error when there is no root in the entry', async function () {
     let contentFile = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
       input = {
         type: 'folder',
@@ -44,10 +44,12 @@ describe('detectRelatedFiles method', function () {
           }
         ]
       };
-    const res = await Converter.detectRelatedFiles(input);
-    expect(res).to.not.be.empty;
-    expect(res.result).to.be.true;
-    expect(res.output.data.length).to.equal(0);
+    try {
+      await Converter.detectRelatedFiles(input);
+    }
+    catch (error) {
+      expect(error.message).to.equal('Input should have at least one root file');
+    }
   });
 
   it('should locate root and return empty data when there is no ref', async function () {
