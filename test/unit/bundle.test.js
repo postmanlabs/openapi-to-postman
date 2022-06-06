@@ -806,4 +806,50 @@ describe('getReferences method when node does not have any reference', function(
     expect(result.referencesInNode[0].path).to.equal('./user.yaml');
     expect(result.referencesInNode[0].newValue.$ref).to.equal('the/parent/user.yaml');
   });
+
+  it('should return error when "type" parameter is not sent', async function () {
+    let input = {
+      rootFiles: [
+        {
+          path: '/root.yaml',
+          content: ''
+        }
+      ],
+      data: [
+        {
+          path: '/examples.yaml',
+          content: ''
+        }
+      ],
+      options: {},
+      bundleFormat: 'JSON'
+    };
+    try {
+      await Converter.bundle(input);
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Type" parameter should be provided');
+    }
+  });
+
+  it('should return error when input is an empty object', async function () {
+    try {
+      await Converter.bundle({});
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('Input object must have "type" and "data" information');
+    }
+  });
+
+  it('should return error when input data is an empty array', async function () {
+    try {
+      await Converter.bundle({ type: 'folder', data: [] });
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Data" parameter should be provided');
+    }
+  });
 });
