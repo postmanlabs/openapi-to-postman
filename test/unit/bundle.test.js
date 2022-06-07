@@ -35,11 +35,14 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/schemas/user.yaml',
             content: user
@@ -63,11 +66,14 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/schemas/user.yaml',
             content: user
@@ -91,11 +97,14 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/schemas/user.yaml',
             content: user
@@ -123,13 +132,16 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/v1.yaml',
-            content: contentRootFile
+            path: '/v1.yaml'
           }
         ],
         options: {},
         bundleFormat: 'JSON',
         data: [
+          {
+            path: '/v1.yaml',
+            content: contentRootFile
+          },
           {
             path: '/responses.yaml',
             content: responses
@@ -175,13 +187,16 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         options: {},
         bundleFormat: 'JSON',
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/responses.yaml',
             content: responses
@@ -230,13 +245,16 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/spec/swagger.yaml',
-            content: contentRootFile
+            path: '/spec/swagger.yaml'
           }
         ],
         options: {},
         bundleFormat: 'yaml',
         data: [
+          {
+            path: '/spec/swagger.yaml',
+            content: contentRootFile
+          },
           {
             path: '/spec/NewPet.yaml',
             content: newPet
@@ -319,13 +337,16 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         options: {},
         bundleFormat: 'JSON',
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/schemas/user.yaml',
             content: user
@@ -352,13 +373,16 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         options: {},
         bundleFormat: 'JSON',
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/schemas/user.yaml',
             content: user
@@ -384,13 +408,16 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/wrongRoot.yaml',
-            content: contentRootFile
+            path: '/wrongRoot.yaml'
           }
         ],
         options: {},
         bundleFormat: 'JSON',
         data: [
+          {
+            path: '/wrongRoot.yaml',
+            content: contentRootFile
+          },
           {
             path: '/schemas/user.yaml',
             content: user
@@ -424,11 +451,14 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/schemas/user/user.yaml',
             content: user
@@ -476,11 +506,14 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/responses.yaml',
             content: responses
@@ -536,11 +569,14 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/schemas/user.yaml',
             content: user
@@ -565,11 +601,14 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/schemas/user.yaml',
             content: user
@@ -600,13 +639,16 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         options: {},
         bundleFormat: 'JSON',
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/schemas/index.yaml',
             content: schemasIndex
@@ -636,11 +678,14 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/tags/tags.yaml',
             content: tags
@@ -664,11 +709,14 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/info/info.yaml',
             content: info
@@ -693,11 +741,14 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/paths/paths.yaml',
             content: paths
@@ -726,11 +777,14 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/root.yaml',
-            content: contentRootFile
+            path: '/root.yaml'
           }
         ],
         data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
           {
             path: '/paths/paths.yaml',
             content: paths
@@ -749,14 +803,8 @@ describe('bundle files method - 3.0', function () {
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
   });
 
-  it('Should take the root file from data array', async function () {
+  it('Should throw error when root files is undefined', async function () {
     let contentRootFile = fs.readFileSync(sameRefDiffSource + '/root.yaml', 'utf8'),
-      user = fs.readFileSync(sameRefDiffSource + '/schemas/user/user.yaml', 'utf8'),
-      client = fs.readFileSync(sameRefDiffSource + '/schemas/client/client.yaml', 'utf8'),
-      specialUser = fs.readFileSync(sameRefDiffSource + '/schemas/user/special.yaml', 'utf8'),
-      specialClient = fs.readFileSync(sameRefDiffSource + '/schemas/client/special.yaml', 'utf8'),
-      magic = fs.readFileSync(sameRefDiffSource + '/schemas/client/magic.yaml', 'utf8'),
-      expected = fs.readFileSync(sameRefDiffSource + '/expected.json', 'utf8'),
       input = {
         type: 'multiFile',
         specificationVersion: '3.0',
@@ -764,38 +812,20 @@ describe('bundle files method - 3.0', function () {
           {
             path: '/root.yaml',
             content: contentRootFile
-          },
-          {
-            path: '/schemas/user/user.yaml',
-            content: user
-          },
-          {
-            path: '/schemas/user/special.yaml',
-            content: specialUser
-          },
-          {
-            path: '/schemas/client/client.yaml',
-            content: client
-          },
-          {
-            path: '/schemas/client/special.yaml',
-            content: specialClient
-          },
-          {
-            path: '/schemas/client/magic.yaml',
-            content: magic
           }
         ],
         options: {},
         bundleFormat: 'JSON'
       };
-    const res = await Converter.bundle(input);
-    expect(res).to.not.be.empty;
-    expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    try {
+      await Converter.bundle(input);
+    }
+    catch (error) {
+      expect(error.message).to.equal('Input should have at least one root file');
+    }
   });
 
-  it('Should throw error when input has not root files', async function () {
+  it('Should throw error when root files is empty array', async function () {
     let user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
       input = {
         type: 'multiFile',
@@ -833,15 +863,21 @@ describe('bundle files method - 3.0', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
+            path: '/root.yaml'
+          },
+          {
+            path: '/root2.yaml'
+          }
+        ],
+        data: [
+          {
             path: '/root.yaml',
             content: contentRootFile
           },
           {
             path: '/root2.yaml',
             content: contentRootFile2
-          }
-        ],
-        data: [
+          },
           {
             path: '/schemas/user.yaml',
             content: user
@@ -871,6 +907,33 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
     expect(JSON.stringify(res.output.data[1].bundledContent, null, 2)).to.be.equal(expected2);
+  });
+
+  it('Should throw error when root is not present in data array', async function () {
+    let user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    try {
+      await Converter.bundle(input);
+    }
+    catch (error) {
+      expect(error.message).to.equal('Root file content not found in data array');
+    }
   });
 });
 
