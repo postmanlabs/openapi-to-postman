@@ -47,20 +47,26 @@
           "type": "string"
         },
         "favoriteFood": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "brand": {
-              "type": "string"
-            }
-          }
+          "$ref": "#/definitions/~1schemas~1favorite_food.yaml%23~1FavoriteFood"
         },
         "foodPrice": {
-          "type": "integer"
+          "$ref": "#/definitions/~1schemas~1favorite_food.yaml%23~1Price"
         }
       }
+    },
+    "/schemas/favorite_food.yaml#/FavoriteFood": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "brand": {
+          "type": "string"
+        }
+      }
+    },
+    "/schemas/favorite_food.yaml#/Price": {
+      "type": "integer"
     }
   }
 }
