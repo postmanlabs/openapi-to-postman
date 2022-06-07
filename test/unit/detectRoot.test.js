@@ -20,7 +20,7 @@ describe('detectRoot method', function() {
   it('should return one root 3.0 correctly no specific version', async function() {
     let contentFile = fs.readFileSync(validPetstore, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         data: [
           {
             path: '/petstore.yaml',
@@ -38,7 +38,7 @@ describe('detectRoot method', function() {
   it('should return one root 3.0 correctly', async function() {
     let contentFile = fs.readFileSync(validPetstore, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         data: [
           {
@@ -56,7 +56,7 @@ describe('detectRoot method', function() {
   it('should return no root when specific version is not present', async function() {
     let contentFile = fs.readFileSync(validPetstore, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.1',
         data: [
           {
@@ -75,7 +75,7 @@ describe('detectRoot method', function() {
     let petRoot = fs.readFileSync(petstoreSeparated, 'utf8'),
       petSchema = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         data: [
           {
@@ -98,7 +98,7 @@ describe('detectRoot method', function() {
   it('should return one root 3.1 correctly', async function() {
     let contentFile = fs.readFileSync(validHopService31x, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.1',
         data: [
           {
@@ -117,7 +117,7 @@ describe('detectRoot method', function() {
     let petstoreContent = fs.readFileSync(validPetstore, 'utf8'),
       hopService31x = fs.readFileSync(validHopService31x, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0.0',
         data: [
           {
@@ -141,7 +141,7 @@ describe('detectRoot method', function() {
     let petstoreContent = fs.readFileSync(validPetstore, 'utf8'),
       hopService31x = fs.readFileSync(validHopService31x, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.1.0',
         data: [
           {
@@ -163,7 +163,7 @@ describe('detectRoot method', function() {
 
   it('should return no root file when there is not a root file present', async function() {
     let input = {
-      type: 'folder',
+      type: 'multiFile',
       specificationVersion: '3.0.0',
       data: [
         {
@@ -182,7 +182,7 @@ describe('detectRoot method', function() {
     let petstoreContent = fs.readFileSync(validPetstore, 'utf8'),
       noAuthContent = fs.readFileSync(noauth, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0.0',
         data: [
           {
@@ -205,7 +205,7 @@ describe('detectRoot method', function() {
 
   it('should propagate one error correctly', async function () {
     let input = {
-      type: 'folder',
+      type: 'multiFile',
       specificationVersion: '3.0.0',
       data: [
         {
@@ -226,7 +226,7 @@ describe('detectRoot method', function() {
     let petRoot = fs.readFileSync(petstoreSeparatedJson, 'utf8'),
       petSchema = fs.readFileSync(petstoreSeparatedPetJson, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         data: [
           {
@@ -248,7 +248,7 @@ describe('detectRoot method', function() {
 
   it('should read content when is not present 3.0 and no specific version', async function () {
     let input = {
-      type: 'folder',
+      type: 'multiFile',
       specificationVersion: '3.1.0',
       data: [
         {
@@ -299,7 +299,7 @@ describe('detectRoot method', function() {
 
   it('should return error when input data is an empty array', async function () {
     try {
-      await Converter.detectRootFiles({ type: 'folder', data: [] });
+      await Converter.detectRootFiles({ type: 'multiFile', data: [] });
     }
     catch (error) {
       expect(error).to.not.be.undefined;

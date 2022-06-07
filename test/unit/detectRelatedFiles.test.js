@@ -33,7 +33,7 @@ describe('detectRelatedFiles method', function () {
   it('should return error when there is no root in the entry', async function () {
     let contentFile = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
         ],
@@ -55,7 +55,7 @@ describe('detectRelatedFiles method', function () {
   it('should locate root and return empty data when there is no ref', async function () {
     let contentFile = fs.readFileSync(validPetstore, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
         ],
@@ -78,7 +78,7 @@ describe('detectRelatedFiles method', function () {
     const contentFileMissedRef = fs.readFileSync(missedRef, 'utf8'),
       contentFilePet = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
@@ -106,7 +106,7 @@ describe('detectRelatedFiles method', function () {
     const contentFilRefToRoot = fs.readFileSync(refToRoot, 'utf8'),
       contentFilePet = fs.readFileSync(circularRefNewPet, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
@@ -133,7 +133,7 @@ describe('detectRelatedFiles method', function () {
   it('should not return local ref as missing node', async function () {
     const contentFileMissedRef = fs.readFileSync(internalRefOnly, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
@@ -157,7 +157,7 @@ describe('detectRelatedFiles method', function () {
       contentFileOldPet = fs.readFileSync(oldPet, 'utf8'),
       contentFilePet = fs.readFileSync(pet, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
@@ -193,7 +193,7 @@ describe('detectRelatedFiles method', function () {
       newPetContent = fs.readFileSync(newPet, 'utf8'),
       errorContent = fs.readFileSync(petstoreSeparatedError, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
@@ -231,7 +231,7 @@ describe('detectRelatedFiles method', function () {
     let contentFilePet = fs.readFileSync(validPetstore, 'utf8'),
       contentFileHop = fs.readFileSync(validHopService31x, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.1',
         rootFiles: [
           {
@@ -255,7 +255,7 @@ describe('detectRelatedFiles method', function () {
     let contentFilePet = fs.readFileSync(validPetstore, 'utf8'),
       contentFileHop = fs.readFileSync(validHopService31x, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         rootFiles: [
           {
             path: '/petstore.yaml',
@@ -277,7 +277,7 @@ describe('detectRelatedFiles method', function () {
   it('should return 5 missing related files', async function () {
     let contentFile = fs.readFileSync(petstoreMultipleFiles, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
@@ -298,7 +298,7 @@ describe('detectRelatedFiles method', function () {
     let contentRootFile = fs.readFileSync(petstoreMultipleFiles, 'utf8'),
       contentFileResPets = fs.readFileSync(resourcesPets, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
@@ -328,7 +328,7 @@ describe('detectRelatedFiles method', function () {
       contentFileSchemaIndex = fs.readFileSync(schemaIndex, 'utf8'),
       contentFileResponseIndex = fs.readFileSync(responseIndex, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
@@ -405,7 +405,7 @@ describe('detectRelatedFiles method', function () {
 
   it('should return error when input data is an empty array', async function () {
     try {
-      await Converter.detectRelatedFiles({ type: 'folder', data: [] });
+      await Converter.detectRelatedFiles({ type: 'multiFile', data: [] });
     }
     catch (error) {
       expect(error).to.not.be.undefined;
