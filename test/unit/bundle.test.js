@@ -54,6 +54,7 @@ describe('bundle files method - 3.0', function () {
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
   });
 
@@ -798,6 +799,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -935,6 +937,185 @@ describe('bundle files method - 3.0', function () {
       expect(error.message).to.equal('Root file content not found in data array');
     }
   });
+  it('Should return bundled 1 file with 2 root but 1 is missing', async function () {
+    let contentRootFile = fs.readFileSync(schemaFromResponse + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
+      expected = fs.readFileSync(schemaFromResponse + '/expected.json', 'utf8'),
+      responses = fs.readFileSync(localRefFolder + '/responses.yaml', 'utf8'),
+      schemasIndex = fs.readFileSync(localRefFolder + '/schemas/index.yaml', 'utf8'),
+      schemasClient = fs.readFileSync(localRefFolder + '/schemas/client.yaml', 'utf8'),
+      toySchema = fs.readFileSync(localRefFolder + '/otherSchemas/toy.yaml', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          },
+          {
+            path: '/root2.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          },
+          {
+            path: '/responses.yaml',
+            content: responses
+          },
+          {
+            path: '/schemas/index.yaml',
+            content: schemasIndex
+          },
+          {
+            path: '/schemas/client.yaml',
+            content: schemasClient
+          },
+          {
+            path: '/otherSchemas/toy.yaml',
+            content: toySchema
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(res.output.data.length).to.equal(1);
+  });
+
+  it('Should bundle only the files with the specified version 3.1', async function () {
+    let contentRootFile = fs.readFileSync(schemaFromResponse + '/root.yaml', 'utf8'),
+      contentRootFile31 = fs.readFileSync(schemaFromResponse + '/root3_1.yaml', 'utf8'),
+      user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
+      expected = fs.readFileSync(schemaFromResponse + '/expected3_1.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.1',
+        rootFiles: [
+          {
+            path: '/root3_1.yaml'
+          },
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/root3_1.yaml',
+            content: contentRootFile31
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.1');
+    expect(res.output.data.length).to.equal(1);
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should bundle only the files with the specified version 3.0', async function () {
+    let contentRootFile = fs.readFileSync(schemaFromResponse + '/root.yaml', 'utf8'),
+      contentRootFile31 = fs.readFileSync(schemaFromResponse + '/root3_1.yaml', 'utf8'),
+      user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
+      expected = fs.readFileSync(schemaFromResponse + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root3_1.yaml'
+          },
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/root3_1.yaml',
+            content: contentRootFile31
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(res.output.data.length).to.equal(1);
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('should bundle files to 3.0 when specificationVersion is not provided', async function () {
+    let contentRootFile = fs.readFileSync(schemaFromResponse + '/root.yaml', 'utf8'),
+      contentRootFile31 = fs.readFileSync(schemaFromResponse + '/root3_1.yaml', 'utf8'),
+      user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
+      expected = fs.readFileSync(schemaFromResponse + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        rootFiles: [
+          {
+            path: '/root3_1.yaml'
+          },
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/root3_1.yaml',
+            content: contentRootFile31
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(res.output.data.length).to.equal(1);
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
 });
 
 
@@ -1039,6 +1220,20 @@ describe('getReferences method when node does not have any reference', function(
     catch (error) {
       expect(error).to.not.be.undefined;
       expect(error.message).to.equal('"Data" parameter should be provided');
+    }
+  });
+
+  it('should return error when "type" parameter is not multiFile', async function () {
+    try {
+      await Converter.bundle({
+        type: 'folder',
+        bundleFormat: 'JSON',
+        data: []
+      });
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Type" parameter value allowed is multiFile');
     }
   });
 });
