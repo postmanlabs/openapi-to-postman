@@ -77,29 +77,7 @@
             "type": "string"
           },
           "special": {
-            "$ref": "#/components/schemas/~1schemas~1client~1special.yaml"
-          }
-        }
-      },
-      "/schemas/client/special.yaml": {
-        "type": "object",
-        "properties": {
-          "specialClientId": {
-            "type": "string"
-          },
-          "magic": {
-            "$ref": "#/components/schemas/~1schemas~1client~1magic.yaml"
-          }
-        }
-      },
-      "/schemas/client/magic.yaml": {
-        "type": "object",
-        "properties": {
-          "magicNumber": {
-            "type": "integer"
-          },
-          "magicString": {
-            "type": "string"
+            "$ref": "#/components/schemas/~1schemas~1user~1special.yaml"
           }
         }
       },

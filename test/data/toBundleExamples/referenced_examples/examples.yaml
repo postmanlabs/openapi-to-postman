@@ -1,0 +1,5 @@
+foo:
+  summary: sum
+  value:
+    code: 1
+    message: test error message
