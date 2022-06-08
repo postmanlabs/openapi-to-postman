@@ -442,4 +442,51 @@ describe('detectRelatedFiles method', function () {
       expect(error.message).to.equal('"Data" parameter should be provided');
     }
   });
+
+  it('Should throw error when root is not present in data array', async function () {
+    let contentFileHop = fs.readFileSync(validHopService31x, 'utf8'),
+      input = {
+        type: 'multiFile',
+        rootFiles: [
+          {
+            path: '/petstore.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/hopService.yaml',
+            content: contentFileHop
+          }]
+      };
+    try {
+      await Converter.detectRelatedFiles(input);
+    }
+    catch (error) {
+      expect(error.message).to.equal('Root file content not found in data array');
+    }
+  });
+
+  it('Should return 1 file with 2 root but 1 is missing', async function () {
+    let contentFilePet = fs.readFileSync(validPetstore, 'utf8'),
+      input = {
+        type: 'multiFile',
+        rootFiles: [
+          {
+            path: '/petstore.yaml'
+          },
+          {
+            path: '/petstore2.yaml'
+          }
+        ],
+        data: [{
+          path: '/petstore.yaml',
+          content: contentFilePet
+        }]
+      };
+    const res = await Converter.detectRelatedFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].rootFile.path).to.equal('/petstore.yaml');
+    expect(res.output.data.length).to.equal(1);
+  });
 });
