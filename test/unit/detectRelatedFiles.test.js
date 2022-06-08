@@ -52,13 +52,11 @@ describe('detectRelatedFiles method', function () {
     }
   });
 
-  it('should locate root and return empty data when there is no ref', async function () {
+  it('should throw error when rootfiles is undefined', async function () {
     let contentFile = fs.readFileSync(validPetstore, 'utf8'),
       input = {
         type: 'multiFile',
         specificationVersion: '3.0',
-        rootFiles: [
-        ],
         data: [
           {
             path: '/petstore.yaml',
@@ -66,12 +64,12 @@ describe('detectRelatedFiles method', function () {
           }
         ]
       };
-    const res = await Converter.detectRelatedFiles(input);
-    expect(res).to.not.be.empty;
-    expect(res.result).to.be.true;
-    expect(res.output.data[0].rootFile.path).to.equal('/petstore.yaml');
-    expect(res.output.data[0].relatedFiles.length).to.equal(0);
-    expect(res.output.data[0].missingRelatedFiles.length).to.equal(0);
+    try {
+      await Converter.detectRelatedFiles(input);
+    }
+    catch (error) {
+      expect(error.message).to.equal('Input should have at least one root file');
+    }
   });
 
   it('should return adjacent and missing nodes', async function () {
@@ -82,11 +80,14 @@ describe('detectRelatedFiles method', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/missedRef.yaml',
-            content: contentFileMissedRef
+            path: '/missedRef.yaml'
           }
         ],
         data: [
+          {
+            path: '/missedRef.yaml',
+            content: contentFileMissedRef
+          },
           {
             path: '/Pet.yaml',
             content: contentFilePet
@@ -110,11 +111,14 @@ describe('detectRelatedFiles method', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: 'refToRoot.yaml',
-            content: contentFilRefToRoot
+            path: 'refToRoot.yaml'
           }
         ],
         data: [
+          {
+            path: 'refToRoot.yaml',
+            content: contentFilRefToRoot
+          },
           {
             path: 'NewPet.yaml',
             content: contentFilePet
@@ -137,11 +141,13 @@ describe('detectRelatedFiles method', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/deepObjectLengthProperty.yaml',
-            content: contentFileMissedRef
+            path: '/deepObjectLengthProperty.yaml'
           }
         ],
-        data: [{}]
+        data: [{
+          path: '/deepObjectLengthProperty.yaml',
+          content: contentFileMissedRef
+        }]
       },
       res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -161,11 +167,14 @@ describe('detectRelatedFiles method', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: 'circularRef.yaml',
-            content: contentCircularRef
+            path: 'circularRef.yaml'
           }
         ],
         data: [
+          {
+            path: 'circularRef.yaml',
+            content: contentCircularRef
+          },
           {
             path: 'oldPet.yaml',
             content: contentFileOldPet
@@ -197,11 +206,14 @@ describe('detectRelatedFiles method', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: 'separatedFiles/spec/swagger.yaml',
-            content: swaggerRootContent
+            path: 'separatedFiles/spec/swagger.yaml'
           }
         ],
         data: [
+          {
+            path: 'separatedFiles/spec/swagger.yaml',
+            content: swaggerRootContent
+          },
           {
             path: 'separatedFiles/spec/Pet.yaml',
             content: petContent
@@ -235,15 +247,20 @@ describe('detectRelatedFiles method', function () {
         specificationVersion: '3.1',
         rootFiles: [
           {
-            path: '/petstore.yaml',
-            content: contentFilePet
+            path: '/petstore.yaml'
           },
           {
-            path: '/hopService.yaml',
-            content: contentFileHop
+            path: '/hopService.yaml'
           }
         ],
-        data: [{}]
+        data: [{
+          path: '/petstore.yaml',
+          content: contentFilePet
+        },
+        {
+          path: '/hopService.yaml',
+          content: contentFileHop
+        }]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -258,15 +275,20 @@ describe('detectRelatedFiles method', function () {
         type: 'multiFile',
         rootFiles: [
           {
-            path: '/petstore.yaml',
-            content: contentFilePet
+            path: '/petstore.yaml'
           },
           {
-            path: '/hopService.yaml',
-            content: contentFileHop
+            path: '/hopService.yaml'
           }
         ],
-        data: [{}]
+        data: [{
+          path: '/petstore.yaml',
+          content: contentFilePet
+        },
+        {
+          path: '/hopService.yaml',
+          content: contentFileHop
+        }]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -281,11 +303,13 @@ describe('detectRelatedFiles method', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/openapi.yaml',
-            content: contentFile
+            path: '/openapi.yaml'
           }
         ],
-        data: [{}]
+        data: [{
+          path: '/openapi.yaml',
+          content: contentFile
+        }]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -302,11 +326,14 @@ describe('detectRelatedFiles method', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/openapi.yaml',
-            content: contentRootFile
+            path: '/openapi.yaml'
           }
         ],
         data: [
+          {
+            path: '/openapi.yaml',
+            content: contentRootFile
+          },
           {
             path: '/resources/pets.yaml',
             content: contentFileResPets
@@ -332,11 +359,14 @@ describe('detectRelatedFiles method', function () {
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/openapi.yaml',
-            content: contentRootFile
+            path: '/openapi.yaml'
           }
         ],
         data: [
+          {
+            path: '/openapi.yaml',
+            content: contentRootFile
+          },
           {
             path: '/resources/pets.yaml',
             content: contentFileResPets
