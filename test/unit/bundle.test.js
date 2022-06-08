@@ -799,6 +799,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
