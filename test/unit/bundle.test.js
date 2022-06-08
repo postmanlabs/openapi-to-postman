@@ -56,6 +56,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.0');
@@ -88,6 +89,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'yaml'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data[0].bundledContent).to.be.equal(expected);
@@ -118,6 +120,7 @@ describe('bundle files method - 3.0', function () {
         options: {}
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data[0].bundledContent).to.be.equal(expected);
@@ -174,6 +177,7 @@ describe('bundle files method - 3.0', function () {
         ]
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -221,6 +225,7 @@ describe('bundle files method - 3.0', function () {
         ]
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -327,6 +332,7 @@ describe('bundle files method - 3.0', function () {
         ]
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data[0].bundledContent).to.be.equal(expected);
@@ -363,6 +369,7 @@ describe('bundle files method - 3.0', function () {
         ]
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -399,6 +406,7 @@ describe('bundle files method - 3.0', function () {
         ]
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -433,6 +441,7 @@ describe('bundle files method - 3.0', function () {
           }
         ]
       };
+
     try {
       await Converter.bundle(input);
     }
@@ -489,6 +498,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -560,6 +570,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'json'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -591,6 +602,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -627,6 +639,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -669,6 +682,7 @@ describe('bundle files method - 3.0', function () {
         ]
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -700,6 +714,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -731,6 +746,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -767,6 +783,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -823,6 +840,7 @@ describe('bundle files method - 3.0', function () {
         options: {},
         bundleFormat: 'JSON'
       };
+
     try {
       await Converter.bundle(input);
     }
@@ -846,6 +864,7 @@ describe('bundle files method - 3.0', function () {
         options: {},
         bundleFormat: 'JSON'
       };
+
     try {
       await Converter.bundle(input);
     }
@@ -909,6 +928,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -934,6 +954,7 @@ describe('bundle files method - 3.0', function () {
         options: {},
         bundleFormat: 'JSON'
       };
+
     try {
       await Converter.bundle(input);
     }
@@ -956,6 +977,9 @@ describe('bundle files method - 3.0', function () {
         rootFiles: [
           {
             path: '/root.yaml'
+          },
+          {
+            path: '/root2.yaml'
           }
         ],
         data: [
@@ -988,6 +1012,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -1028,6 +1053,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.1');
@@ -1069,6 +1095,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.0');
@@ -1109,6 +1136,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.0');
@@ -1142,6 +1170,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -1170,6 +1199,7 @@ describe('bundle files method - 3.0', function () {
         options: {},
         bundleFormat: 'JSON'
       };
+
     try {
       await Converter.bundle(input);
     }
@@ -1204,6 +1234,7 @@ describe('bundle files method - 3.0', function () {
         options: {},
         bundleFormat: 'JSON'
       };
+
     try {
       await Converter.bundle(input);
     }
@@ -1249,6 +1280,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -1306,6 +1338,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -1343,6 +1376,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
