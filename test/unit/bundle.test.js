@@ -1074,6 +1074,47 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.data.length).to.equal(1);
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
   });
+
+  it('should bundle files to 3.0 when specificationVersion is not provided', async function () {
+    let contentRootFile = fs.readFileSync(schemaFromResponse + '/root.yaml', 'utf8'),
+      contentRootFile31 = fs.readFileSync(schemaFromResponse + '/root3_1.yaml', 'utf8'),
+      user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
+      expected = fs.readFileSync(schemaFromResponse + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        rootFiles: [
+          {
+            path: '/root3_1.yaml'
+          },
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/root3_1.yaml',
+            content: contentRootFile31
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(res.output.data.length).to.equal(1);
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
 });
 
 
@@ -1178,6 +1219,20 @@ describe('getReferences method when node does not have any reference', function(
     catch (error) {
       expect(error).to.not.be.undefined;
       expect(error.message).to.equal('"Data" parameter should be provided');
+    }
+  });
+
+  it('should return error when "type" parameter is not multiFile', async function () {
+    try {
+      await Converter.bundle({
+        type: 'folder',
+        bundleFormat: 'JSON',
+        data: []
+      });
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Type" parameter value allowed is multiFile');
     }
   });
 });
