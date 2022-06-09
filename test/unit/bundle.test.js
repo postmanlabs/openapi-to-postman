@@ -826,8 +826,14 @@ describe('bundle files method - 3.0', function () {
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
   });
 
-  it('Should throw error when root files is undefined', async function () {
+  it('Should take the root file from data array root file prop undefined', async function () {
     let contentRootFile = fs.readFileSync(sameRefDiffSource + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(sameRefDiffSource + '/schemas/user/user.yaml', 'utf8'),
+      client = fs.readFileSync(sameRefDiffSource + '/schemas/client/client.yaml', 'utf8'),
+      specialUser = fs.readFileSync(sameRefDiffSource + '/schemas/user/special.yaml', 'utf8'),
+      specialClient = fs.readFileSync(sameRefDiffSource + '/schemas/client/special.yaml', 'utf8'),
+      magic = fs.readFileSync(sameRefDiffSource + '/schemas/client/magic.yaml', 'utf8'),
+      expected = fs.readFileSync(sameRefDiffSource + '/expected.json', 'utf8'),
       input = {
         type: 'multiFile',
         specificationVersion: '3.0',
@@ -835,6 +841,46 @@ describe('bundle files method - 3.0', function () {
           {
             path: '/root.yaml',
             content: contentRootFile
+          },
+          {
+            path: '/schemas/user/user.yaml',
+            content: user
+          },
+          {
+            path: '/schemas/user/special.yaml',
+            content: specialUser
+          },
+          {
+            path: '/schemas/client/client.yaml',
+            content: client
+          },
+          {
+            path: '/schemas/client/special.yaml',
+            content: specialClient
+          },
+          {
+            path: '/schemas/client/magic.yaml',
+            content: magic
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should throw error when root files is undefined and in data there is no root file', async function () {
+    let user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        data: [
+          {
+            path: '/schemas/user.yaml',
+            content: user
           }
         ],
         options: {},
@@ -849,7 +895,54 @@ describe('bundle files method - 3.0', function () {
     }
   });
 
-  it('Should throw error when root files is empty array', async function () {
+  it('Should take the root file from data array root file prop empty array', async function () {
+    let contentRootFile = fs.readFileSync(sameRefDiffSource + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(sameRefDiffSource + '/schemas/user/user.yaml', 'utf8'),
+      client = fs.readFileSync(sameRefDiffSource + '/schemas/client/client.yaml', 'utf8'),
+      specialUser = fs.readFileSync(sameRefDiffSource + '/schemas/user/special.yaml', 'utf8'),
+      specialClient = fs.readFileSync(sameRefDiffSource + '/schemas/client/special.yaml', 'utf8'),
+      magic = fs.readFileSync(sameRefDiffSource + '/schemas/client/magic.yaml', 'utf8'),
+      expected = fs.readFileSync(sameRefDiffSource + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/schemas/user/user.yaml',
+            content: user
+          },
+          {
+            path: '/schemas/user/special.yaml',
+            content: specialUser
+          },
+          {
+            path: '/schemas/client/client.yaml',
+            content: client
+          },
+          {
+            path: '/schemas/client/special.yaml',
+            content: specialClient
+          },
+          {
+            path: '/schemas/client/magic.yaml',
+            content: magic
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should throw error when root files is empty array and in data there is no root file', async function () {
     let user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
       input = {
         type: 'multiFile',
