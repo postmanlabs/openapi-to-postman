@@ -872,7 +872,7 @@ describe('bundle files method - 3.0', function () {
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
   });
 
-  it('Should throw error when root files is undefinied and in data there is no root file', async function () {
+  it('Should throw error when root files is undefined and in data there is no root file', async function () {
     let user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
       input = {
         type: 'multiFile',
