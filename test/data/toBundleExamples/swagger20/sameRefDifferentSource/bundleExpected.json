@@ -87,21 +87,6 @@
         }
       }
     },
-    "/schemas/detail.yaml#/Detail": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "userName": {
-          "type": "string"
-        },
-        "userDescription": {
-          "type": "string"
-        }
-      }
-    },
     "/otherSchemas/detail.yaml#/Detail": {
       "type": "object",
       "properties": {
@@ -113,6 +98,21 @@
           "type": "string"
         },
         "clientDescription": {
+          "type": "string"
+        }
+      }
+    },
+    "/schemas/detail.yaml#/Detail": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "userName": {
+          "type": "string"
+        },
+        "userDescription": {
           "type": "string"
         }
       }
