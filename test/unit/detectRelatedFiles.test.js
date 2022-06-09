@@ -489,4 +489,44 @@ describe('detectRelatedFiles method', function () {
     expect(res.output.data[0].rootFile.path).to.equal('/petstore.yaml');
     expect(res.output.data.length).to.equal(1);
   });
+
+  it('Should take the root file from data array root file prop empty array', async function () {
+    let contentFile = fs.readFileSync(swaggerRoot, 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+        ],
+        data: [
+          {
+            path: '/swagger.yaml',
+            content: contentFile
+          }
+        ]
+      };
+    const res = await Converter.detectRelatedFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].rootFile.path).to.equal('/swagger.yaml');
+    expect(res.output.data.length).to.equal(1);
+  });
+
+  it('Should take the root file from data array root file prop undefined', async function () {
+    let contentFile = fs.readFileSync(swaggerRoot, 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        data: [
+          {
+            path: '/swagger.yaml',
+            content: contentFile
+          }
+        ]
+      };
+    const res = await Converter.detectRelatedFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].rootFile.path).to.equal('/swagger.yaml');
+    expect(res.output.data.length).to.equal(1);
+  });
 });
