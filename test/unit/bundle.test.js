@@ -1026,6 +1026,8 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
     expect(JSON.stringify(res.output.data[1].bundledContent, null, 2)).to.be.equal(expected2);
+    expect(res.output.data[0].rootFile.path).to.equal('/root.yaml');
+    expect(res.output.data[1].rootFile.path).to.equal('/root2.yaml');
   });
 
   it('Should throw error when root is not present in data array', async function () {
