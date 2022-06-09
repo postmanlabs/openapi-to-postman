@@ -1116,6 +1116,49 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.data.length).to.equal(1);
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
   });
+
+  it('Should bundle according to the input root format when bundleFormat is not present', async function () {
+    let contentRootFile = fs.readFileSync(schemaFromResponse + '/root.yaml', 'utf8'),
+      contentRootJSON = fs.readFileSync(schemaFromResponse + '/root.json', 'utf8'),
+      user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
+      expectedJSON = fs.readFileSync(schemaFromResponse + '/expected.json', 'utf8'),
+      expected = fs.readFileSync(schemaFromResponse + '/expected.yaml', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.json'
+          },
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/root.json',
+            content: contentRootJSON
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          }
+        ],
+        options: {}
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(res.output.data.length).to.equal(2);
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expectedJSON);
+    expect(res.output.data[1].bundledContent).to.be.equal(expected);
+  });
 });
 
 
@@ -1177,63 +1220,4 @@ describe('getReferences method when node does not have any reference', function(
     expect(result.referencesInNode[0].newValue.$ref).to.equal('the/parent/user.yaml');
   });
 
-  it('should return error when "type" parameter is not sent', async function () {
-    let input = {
-      rootFiles: [
-        {
-          path: '/root.yaml',
-          content: ''
-        }
-      ],
-      data: [
-        {
-          path: '/examples.yaml',
-          content: ''
-        }
-      ],
-      options: {},
-      bundleFormat: 'JSON'
-    };
-    try {
-      await Converter.bundle(input);
-    }
-    catch (error) {
-      expect(error).to.not.be.undefined;
-      expect(error.message).to.equal('"Type" parameter should be provided');
-    }
-  });
-
-  it('should return error when input is an empty object', async function () {
-    try {
-      await Converter.bundle({});
-    }
-    catch (error) {
-      expect(error).to.not.be.undefined;
-      expect(error.message).to.equal('Input object must have "type" and "data" information');
-    }
-  });
-
-  it('should return error when input data is an empty array', async function () {
-    try {
-      await Converter.bundle({ type: 'multiFile', data: [] });
-    }
-    catch (error) {
-      expect(error).to.not.be.undefined;
-      expect(error.message).to.equal('"Data" parameter should be provided');
-    }
-  });
-
-  it('should return error when "type" parameter is not multiFile', async function () {
-    try {
-      await Converter.bundle({
-        type: 'folder',
-        bundleFormat: 'JSON',
-        data: []
-      });
-    }
-    catch (error) {
-      expect(error).to.not.be.undefined;
-      expect(error.message).to.equal('"Type" parameter value allowed is multiFile');
-    }
-  });
 });
