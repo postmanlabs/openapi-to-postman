@@ -1,0 +1,7 @@
+type: object
+rock:
+  type: boolean
+friendly:
+  type: string
+lastNested:
+  $ref: "./lastNested.yaml"

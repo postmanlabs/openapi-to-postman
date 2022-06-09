@@ -25,44 +25,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/~1schemas~1user.yaml%23~1User"
+                  "$ref": "./schemas/user.yaml"
                 }
               }
             }
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "/schemas/user.yaml#/User": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "userName": {
-            "type": "string"
-          },
-          "pet": {
-            "type": "object",
-            "properties": {
-              "theUsersPet": {
-                "$ref": "#/components/schemas/~1schemas~1user.yaml%23~1Pet"
-              }
-            }
-          }
-        }
-      },
-      "/schemas/user.yaml#/Pet": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "breed": {
-            "type": "string"
           }
         }
       }
