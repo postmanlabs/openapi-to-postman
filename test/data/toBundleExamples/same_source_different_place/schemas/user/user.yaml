@@ -1,0 +1,8 @@
+type: object
+properties:
+  id:
+    type: integer
+  userName:
+    type: string
+  special:
+    $ref: ./special.yaml

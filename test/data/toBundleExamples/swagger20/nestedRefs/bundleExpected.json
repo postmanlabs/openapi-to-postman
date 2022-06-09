@@ -47,15 +47,18 @@
           "type": "string"
         },
         "favoriteFood": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "brand": {
-              "type": "string"
-            }
-          }
+          "$ref": "#/definitions/~1schemas~1favorite_food.yaml"
+        }
+      }
+    },
+    "/schemas/favorite_food.yaml": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "brand": {
+          "type": "string"
         }
       }
     }

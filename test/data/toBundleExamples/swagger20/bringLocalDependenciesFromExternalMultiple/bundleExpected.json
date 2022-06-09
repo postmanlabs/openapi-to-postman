@@ -80,37 +80,46 @@
           "type": "string"
         },
         "Color": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "uses": {
-              "type": "string"
-            },
-            "color": {
-              "type": "string"
-            }
-          }
+          "$ref": "#/definitions/~1pet.yaml%23~1Color"
         },
         "FavoriteFood": {
-          "type": "object",
-          "properties": {
-            "brand": {
-              "type": "string"
-            },
-            "benefits": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/~1food.yaml%23~1Benefit"
-              }
-            },
-            "cost": {
-              "type": "string"
-            }
-          }
+          "$ref": "#/definitions/~1food.yaml%23~1Food"
         }
       }
+    },
+    "/pet.yaml#/Color": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "uses": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        }
+      }
+    },
+    "/food.yaml#/Food": {
+      "type": "object",
+      "properties": {
+        "brand": {
+          "$ref": "#/definitions/~1food.yaml%23~1Brand"
+        },
+        "benefits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/~1food.yaml%23~1Benefit"
+          }
+        },
+        "cost": {
+          "type": "string"
+        }
+      }
+    },
+    "/food.yaml#/Brand": {
+      "type": "string"
     },
     "/food.yaml#/Benefit": {
       "type": "object",

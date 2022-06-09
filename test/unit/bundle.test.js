@@ -40,8 +40,12 @@ let expect = require('chai').expect,
     '/bringLocalDependenciesFromExternalMultiple'),
   multipleRefFromRootComponents = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/multipleRefFromRootComponents'),
   sameRefDifferentSource = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/sameRefDifferentSource'),
+  nestedProperties20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/nestedProperties20'),
   simpleRef = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/simpleRef'),
-  refExample20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_example');
+  refExample20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_example'),
+  properties = path.join(__dirname, BUNDLES_FOLDER + '/properties'),
+  sameSourceDifferentPlace = path.join(__dirname, BUNDLES_FOLDER + '/same_source_different_place'),
+  nestedProperties = path.join(__dirname, BUNDLES_FOLDER + '/nestedProperties');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -861,9 +865,186 @@ describe('bundle files method - 3.0', function () {
       expect(error.message).to.equal('"RootFiles" parameter should be provided');
     }
   });
+
+  it('Should return bundled file as json - sameSourceDifferentPlace', async function () {
+    let contentRootFile = fs.readFileSync(sameSourceDifferentPlace + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(sameSourceDifferentPlace + '/schemas/user/user.yaml', 'utf8'),
+      special = fs.readFileSync(sameSourceDifferentPlace + '/schemas/user/special.yaml', 'utf8'),
+      client = fs.readFileSync(sameSourceDifferentPlace + '/schemas/client/client.yaml', 'utf8'),
+      expected = fs.readFileSync(sameSourceDifferentPlace + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/schemas/user/user.yaml',
+            content: user
+          },
+          {
+            path: '/schemas/user/special.yaml',
+            content: special
+          },
+          {
+            path: '/schemas/client/client.yaml',
+            content: client
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled file as json - nestedProperties', async function () {
+    let contentRootFile = fs.readFileSync(nestedProperties + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(nestedProperties + '/schemas/user.yaml', 'utf8'),
+      prop = fs.readFileSync(nestedProperties + '/properties/prop.yaml', 'utf8'),
+      nestedProp = fs.readFileSync(nestedProperties + '/properties/nestedProp.yaml', 'utf8'),
+      lastNested = fs.readFileSync(nestedProperties + '/properties/lastNested.yaml', 'utf8'),
+      warrior = fs.readFileSync(nestedProperties + '/properties/warrior.yaml', 'utf8'),
+      country = fs.readFileSync(nestedProperties + '/properties/country.yaml', 'utf8'),
+      expected = fs.readFileSync(nestedProperties + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          },
+          {
+            path: '/properties/prop.yaml',
+            content: prop
+          },
+          {
+            path: '/properties/nestedProp.yaml',
+            content: nestedProp
+          },
+          {
+            path: '/properties/country.yaml',
+            content: country
+          },
+          {
+            path: '/properties/lastNested.yaml',
+            content: lastNested
+          },
+          {
+            path: '/properties/warrior.yaml',
+            content: warrior
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled file as json - properties', async function () {
+    let contentRootFile = fs.readFileSync(properties + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(properties + '/schemas/user.yaml', 'utf8'),
+      prop = fs.readFileSync(properties + '/schemas/prop.yaml', 'utf8'),
+      expected = fs.readFileSync(properties + '/expected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          },
+          {
+            path: '/schemas/prop.yaml',
+            content: prop
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
 });
 
 describe('bundle files method - 2.0', function() {
+  it('Should return bundled result from - nestedProperties20', async function() {
+    let contentRootFile = fs.readFileSync(nestedProperties20 + '/index.yaml', 'utf8'),
+      info = fs.readFileSync(nestedProperties20 + '/info.yaml', 'utf8'),
+      paths = fs.readFileSync(nestedProperties20 + '/paths.yaml', 'utf8'),
+      age = fs.readFileSync(nestedProperties20 + '/schemas/age.yaml', 'utf8'),
+      hobbies = fs.readFileSync(nestedProperties20 + '/schemas/hobbies.yaml', 'utf8'),
+      hobby = fs.readFileSync(nestedProperties20 + '/schemas/hobby.yaml', 'utf8'),
+      user = fs.readFileSync(nestedProperties20 + '/schemas/user.yaml', 'utf8'),
+      expected = fs.readFileSync(nestedProperties20 + '/bundleExpected.json', 'utf8'),
+      input = {
+        type: 'folder',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/index.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/info.yaml',
+            content: info
+          },
+          {
+            path: '/paths.yaml',
+            content: paths
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          },
+          {
+            path: '/schemas/age.yaml',
+            content: age
+          },
+          {
+            path: '/schemas/hobbies.yaml',
+            content: hobbies
+          },
+          {
+            path: '/schemas/hobby.yaml',
+            content: hobby
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.bundledContent).to.be.equal(expected);
+  });
+
   it('Should return bundled result from - sameRefDifferentSource', async function() {
     let contentRootFile = fs.readFileSync(sameRefDifferentSource + '/index.yaml', 'utf8'),
       info = fs.readFileSync(sameRefDifferentSource + '/info.yaml', 'utf8'),
