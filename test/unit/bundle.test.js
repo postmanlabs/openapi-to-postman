@@ -1382,6 +1382,49 @@ describe('bundle files method - 3.0', function () {
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
     expect(res.output.data.length).to.equal(1);
   });
+
+  it('Should bundle according to the input root format when bundleFormat is not present', async function () {
+    let contentRootFileYAML = fs.readFileSync(schemaFromResponse + '/root.yaml', 'utf8'),
+      contentRootJSON = fs.readFileSync(schemaFromResponse + '/root.json', 'utf8'),
+      user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
+      expectedJSON = fs.readFileSync(schemaFromResponse + '/expected.json', 'utf8'),
+      expectedYAML = fs.readFileSync(schemaFromResponse + '/expected.yaml', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.json'
+          },
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFileYAML
+          },
+          {
+            path: '/root.json',
+            content: contentRootJSON
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          }
+        ],
+        options: {}
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(res.output.data.length).to.equal(2);
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expectedJSON);
+    expect(res.output.data[1].bundledContent).to.be.equal(expectedYAML);
+  });
 });
 
 
