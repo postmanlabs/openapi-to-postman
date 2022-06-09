@@ -22,7 +22,11 @@ let expect = require('chai').expect,
   refTags = path.join(__dirname, BUNDLES_FOLDER + '/referenced_tags'),
   refInfo = path.join(__dirname, BUNDLES_FOLDER + '/referenced_info'),
   refPaths = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths'),
-  refPathsRefToLocalSchema = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths_local_schema');
+  refPathsRefToLocalSchema = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths_local_schema'),
+  refExample = path.join(__dirname, BUNDLES_FOLDER + '/referenced_examples'),
+  properties = path.join(__dirname, BUNDLES_FOLDER + '/properties'),
+  sameSourceDifferentPlace = path.join(__dirname, BUNDLES_FOLDER + '/same_source_different_place'),
+  nestedProperties = path.join(__dirname, BUNDLES_FOLDER + '/nestedProperties');
 
 
 describe('bundle files method - 3.0', function () {
@@ -52,6 +56,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.0');
@@ -84,6 +89,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'yaml'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data[0].bundledContent).to.be.equal(expected);
@@ -114,6 +120,7 @@ describe('bundle files method - 3.0', function () {
         options: {}
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data[0].bundledContent).to.be.equal(expected);
@@ -170,6 +177,7 @@ describe('bundle files method - 3.0', function () {
         ]
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -217,6 +225,7 @@ describe('bundle files method - 3.0', function () {
         ]
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -323,6 +332,7 @@ describe('bundle files method - 3.0', function () {
         ]
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data[0].bundledContent).to.be.equal(expected);
@@ -359,6 +369,7 @@ describe('bundle files method - 3.0', function () {
         ]
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -395,6 +406,7 @@ describe('bundle files method - 3.0', function () {
         ]
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -429,6 +441,7 @@ describe('bundle files method - 3.0', function () {
           }
         ]
       };
+
     try {
       await Converter.bundle(input);
     }
@@ -485,6 +498,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -556,6 +570,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'json'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -587,6 +602,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -623,6 +639,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -665,6 +682,7 @@ describe('bundle files method - 3.0', function () {
         ]
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -696,6 +714,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -727,6 +746,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -763,6 +783,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -819,6 +840,7 @@ describe('bundle files method - 3.0', function () {
         options: {},
         bundleFormat: 'JSON'
       };
+
     try {
       await Converter.bundle(input);
     }
@@ -842,6 +864,7 @@ describe('bundle files method - 3.0', function () {
         options: {},
         bundleFormat: 'JSON'
       };
+
     try {
       await Converter.bundle(input);
     }
@@ -905,6 +928,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -930,6 +954,7 @@ describe('bundle files method - 3.0', function () {
         options: {},
         bundleFormat: 'JSON'
       };
+
     try {
       await Converter.bundle(input);
     }
@@ -937,6 +962,7 @@ describe('bundle files method - 3.0', function () {
       expect(error.message).to.equal('Root file content not found in data array');
     }
   });
+
   it('Should return bundled 1 file with 2 root but 1 is missing', async function () {
     let contentRootFile = fs.readFileSync(schemaFromResponse + '/root.yaml', 'utf8'),
       user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
@@ -986,6 +1012,7 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
@@ -1116,6 +1143,245 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.data.length).to.equal(1);
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
   });
+
+  it('Should return bundled file with referenced example', async function () {
+    let contentRootFile = fs.readFileSync(refExample + '/root.yaml', 'utf8'),
+      example = fs.readFileSync(refExample + '/examples.yaml', 'utf8'),
+      expected = fs.readFileSync(refExample + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/examples.yaml',
+            content: example
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(res.output.data.length).to.equal(1);
+  });
+
+  it('should return error when "type" parameter is not sent', async function () {
+    let contentRootFile = fs.readFileSync(refExample + '/root.yaml', 'utf8'),
+      example = fs.readFileSync(refExample + '/examples.yaml', 'utf8'),
+      input = {
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/examples.yaml',
+            content: example
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+
+    try {
+      await Converter.bundle(input);
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Type" parameter should be provided');
+    }
+  });
+
+  it('should return error when input is an empty object', async function () {
+    try {
+      await Converter.bundle({});
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('Input object must have "type" and "data" information');
+    }
+  });
+
+  it('should return error when input has no root files', async function () {
+    let contentRootFile = fs.readFileSync(refExample + '/root.yaml', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+
+    try {
+      await Converter.bundle(input);
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('Input should have at least one root file');
+    }
+  });
+
+  it('Should return bundled file as json - sameSourceDifferentPlace', async function () {
+    let contentRootFile = fs.readFileSync(sameSourceDifferentPlace + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(sameSourceDifferentPlace + '/schemas/user/user.yaml', 'utf8'),
+      special = fs.readFileSync(sameSourceDifferentPlace + '/schemas/user/special.yaml', 'utf8'),
+      client = fs.readFileSync(sameSourceDifferentPlace + '/schemas/client/client.yaml', 'utf8'),
+      expected = fs.readFileSync(sameSourceDifferentPlace + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/schemas/user/user.yaml',
+            content: user
+          },
+          {
+            path: '/schemas/user/special.yaml',
+            content: special
+          },
+          {
+            path: '/schemas/client/client.yaml',
+            content: client
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(res.output.data.length).to.equal(1);
+  });
+
+  it('Should return bundled file as json - nestedProperties', async function () {
+    let contentRootFile = fs.readFileSync(nestedProperties + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(nestedProperties + '/schemas/user.yaml', 'utf8'),
+      prop = fs.readFileSync(nestedProperties + '/properties/prop.yaml', 'utf8'),
+      nestedProp = fs.readFileSync(nestedProperties + '/properties/nestedProp.yaml', 'utf8'),
+      lastNested = fs.readFileSync(nestedProperties + '/properties/lastNested.yaml', 'utf8'),
+      warrior = fs.readFileSync(nestedProperties + '/properties/warrior.yaml', 'utf8'),
+      country = fs.readFileSync(nestedProperties + '/properties/country.yaml', 'utf8'),
+      expected = fs.readFileSync(nestedProperties + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          },
+          {
+            path: '/properties/prop.yaml',
+            content: prop
+          },
+          {
+            path: '/properties/nestedProp.yaml',
+            content: nestedProp
+          },
+          {
+            path: '/properties/country.yaml',
+            content: country
+          },
+          {
+            path: '/properties/lastNested.yaml',
+            content: lastNested
+          },
+          {
+            path: '/properties/warrior.yaml',
+            content: warrior
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(res.output.data.length).to.equal(1);
+  });
+
+  it('Should return bundled file as json - properties', async function () {
+    let contentRootFile = fs.readFileSync(properties + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(properties + '/schemas/user.yaml', 'utf8'),
+      prop = fs.readFileSync(properties + '/schemas/prop.yaml', 'utf8'),
+      expected = fs.readFileSync(properties + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          },
+          {
+            path: '/schemas/prop.yaml',
+            content: prop
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(res.output.data.length).to.equal(1);
+  });
 });
 
 
@@ -1177,63 +1443,4 @@ describe('getReferences method when node does not have any reference', function(
     expect(result.referencesInNode[0].newValue.$ref).to.equal('the/parent/user.yaml');
   });
 
-  it('should return error when "type" parameter is not sent', async function () {
-    let input = {
-      rootFiles: [
-        {
-          path: '/root.yaml',
-          content: ''
-        }
-      ],
-      data: [
-        {
-          path: '/examples.yaml',
-          content: ''
-        }
-      ],
-      options: {},
-      bundleFormat: 'JSON'
-    };
-    try {
-      await Converter.bundle(input);
-    }
-    catch (error) {
-      expect(error).to.not.be.undefined;
-      expect(error.message).to.equal('"Type" parameter should be provided');
-    }
-  });
-
-  it('should return error when input is an empty object', async function () {
-    try {
-      await Converter.bundle({});
-    }
-    catch (error) {
-      expect(error).to.not.be.undefined;
-      expect(error.message).to.equal('Input object must have "type" and "data" information');
-    }
-  });
-
-  it('should return error when input data is an empty array', async function () {
-    try {
-      await Converter.bundle({ type: 'multiFile', data: [] });
-    }
-    catch (error) {
-      expect(error).to.not.be.undefined;
-      expect(error.message).to.equal('"Data" parameter should be provided');
-    }
-  });
-
-  it('should return error when "type" parameter is not multiFile', async function () {
-    try {
-      await Converter.bundle({
-        type: 'folder',
-        bundleFormat: 'JSON',
-        data: []
-      });
-    }
-    catch (error) {
-      expect(error).to.not.be.undefined;
-      expect(error.message).to.equal('"Type" parameter value allowed is multiFile');
-    }
-  });
 });

@@ -25,7 +25,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/~1schemas~1user.yaml%23~1User"
+                  "$ref": "#/components/schemas/~1schemas~1user.yaml"
                 }
               }
             }
@@ -36,7 +36,7 @@
   },
   "components": {
     "schemas": {
-      "/schemas/user.yaml#/User": {
+      "/schemas/user.yaml": {
         "type": "object",
         "properties": {
           "id": {
@@ -45,24 +45,22 @@
           "userName": {
             "type": "string"
           },
-          "pet": {
-            "type": "object",
-            "properties": {
-              "theUsersPet": {
-                "$ref": "#/components/schemas/~1schemas~1user.yaml%23~1Pet"
-              }
-            }
+          "complexProp": {
+            "$ref": "#/components/schemas/~1schemas~1prop.yaml"
           }
         }
       },
-      "/schemas/user.yaml#/Pet": {
+      "/schemas/prop.yaml": {
         "type": "object",
         "properties": {
-          "name": {
+          "firstName": {
             "type": "string"
           },
-          "breed": {
+          "secondName": {
             "type": "string"
+          },
+          "age": {
+            "type": "integer"
           }
         }
       }

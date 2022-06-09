@@ -25,7 +25,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/~1schemas~1user.yaml%23~1User"
+                  "$ref": "#/components/schemas/~1schemas~1user.yaml"
                 }
               }
             }
@@ -36,7 +36,7 @@
   },
   "components": {
     "schemas": {
-      "/schemas/user.yaml#/User": {
+      "/schemas/user.yaml": {
         "type": "object",
         "properties": {
           "id": {
@@ -45,69 +45,78 @@
           "userName": {
             "type": "string"
           },
-          "pet": {
-            "type": "object",
-            "properties": {
-              "favoriteFood": {
-                "$ref": "#/components/schemas/~1schemas~1food.yaml%23Food"
-              },
-              "theUsersPet": {
-                "$ref": "#/components/schemas/~1schemas~1user.yaml%23~1Pet"
-              }
+          "complexProp": {
+            "$ref": "#/components/schemas/~1properties~1prop.yaml"
+          }
+        }
+      },
+      "/properties/prop.yaml": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "secondName": {
+            "type": "string"
+          },
+          "age": {
+            "type": "integer"
+          },
+          "nestedProp": {
+            "$ref": "#/components/schemas/~1properties~1nestedProp.yaml"
+          },
+          "country": {
+            "$ref": "#/components/schemas/~1properties~1country.yaml"
+          },
+          "warrior": {
+            "$ref": "#/components/schemas/~1properties~1warrior.yaml"
+          }
+        }
+      },
+      "/properties/nestedProp.yaml": {
+        "type": "object",
+        "rock": {
+          "type": "boolean"
+        },
+        "friendly": {
+          "type": "string"
+        },
+        "lastNested": {
+          "type": "object",
+          "properties": {
+            "this": {
+              "type": "string"
+            },
+            "is": {
+              "type": "string"
+            },
+            "the": {
+              "type": "string"
+            },
+            "last": {
+              "type": "integer"
             }
           }
         }
       },
-      "/schemas/food.yaml#Food": {
+      "/properties/country.yaml": {
         "type": "object",
         "properties": {
-          "brand": {
-            "$ref": "#/components/schemas/~1schemas~1food.yaml%23~1Brand"
+          "region": {
+            "type": "string"
           },
-          "benefits": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/~1schemas~1food.yaml%23~1Benefit"
-            }
-          },
-          "cost": {
+          "flag": {
             "type": "string"
           }
         }
       },
-      "/schemas/user.yaml#/Pet": {
+      "/properties/warrior.yaml": {
         "type": "object",
         "properties": {
-          "name": {
+          "power": {
             "type": "string"
           },
-          "breed": {
-            "type": "string"
-          },
-          "color": {
-            "$ref": "#/components/schemas/~1schemas~1user.yaml%23~1Colors"
-          }
-        }
-      },
-      "/schemas/user.yaml#/Colors": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/~1schemas~1user.yaml%23~1Color"
-        }
-      },
-      "/schemas/user.yaml#/Color": {
-        "type": "string"
-      },
-      "/schemas/food.yaml#/Brand": {
-        "type": "string"
-      },
-      "/schemas/food.yaml#/Benefit": {
-        "type": "object",
-        "properties": {
-          "benefit": {
-            "type": "string"
-          },
-          "detail": {
+          "weapon": {
             "type": "string"
           }
         }

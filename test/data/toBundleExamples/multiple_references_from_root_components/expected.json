@@ -80,31 +80,13 @@
         "type": "object",
         "properties": {
           "userInfo": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "integer"
-              },
-              "userName": {
-                "type": "string"
-              }
-            }
+            "$ref": "#/components/schemas/~1schemas~1user.yaml"
           },
           "carType": {
-            "type": "object",
-            "properties": {
-              "model": {
-                "type": "string"
-              }
-            }
+            "$ref": "#/components/schemas/~1schemas~1carType.yaml"
           },
           "work": {
-            "type": "object",
-            "properties": {
-              "office": {
-                "type": "string"
-              }
-            }
+            "$ref": "#/components/schemas/~1otherSchemas~1work.yaml"
           }
         }
       },
@@ -118,6 +100,36 @@
             "type": "string"
           }
         }
+      },
+      "/schemas/user.yaml": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "userName": {
+            "type": "string"
+          }
+        }
+      },
+      "/schemas/carType.yaml": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "$ref": "#/components/schemas/~1otherSchemas~1model.yaml"
+          }
+        }
+      },
+      "/otherSchemas/work.yaml": {
+        "type": "object",
+        "properties": {
+          "office": {
+            "type": "string"
+          }
+        }
+      },
+      "/otherSchemas/model.yaml": {
+        "type": "string"
       }
     }
   }
