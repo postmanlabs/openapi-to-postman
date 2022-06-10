@@ -26,7 +26,12 @@ let expect = require('chai').expect,
   refExample = path.join(__dirname, BUNDLES_FOLDER + '/referenced_examples'),
   properties = path.join(__dirname, BUNDLES_FOLDER + '/properties'),
   sameSourceDifferentPlace = path.join(__dirname, BUNDLES_FOLDER + '/same_source_different_place'),
-  nestedProperties = path.join(__dirname, BUNDLES_FOLDER + '/nestedProperties');
+  nestedProperties = path.join(__dirname, BUNDLES_FOLDER + '/nestedProperties'),
+  referencedResponse = path.join(__dirname, BUNDLES_FOLDER + '/referenced_response'),
+  referencedParameter = path.join(__dirname, BUNDLES_FOLDER + '/referenced_parameter'),
+  referencedRequestBody = path.join(__dirname, BUNDLES_FOLDER + '/referenced_request_body'),
+  referencedHeader = path.join(__dirname, BUNDLES_FOLDER + '/referenced_header'),
+  referencedLink = path.join(__dirname, BUNDLES_FOLDER + '/referenced_link');
 
 
 describe('bundle files method - 3.0', function () {
@@ -1519,6 +1524,166 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.data.length).to.equal(2);
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expectedJSON);
     expect(res.output.data[1].bundledContent).to.be.equal(expectedYAML);
+  });
+
+  it('Should return bundled file - referenced response', async function () {
+    let contentRoot = fs.readFileSync(referencedResponse + '/root.yaml', 'utf8'),
+      contentRef = fs.readFileSync(referencedResponse + '/hello.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedResponse + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRoot
+          },
+          {
+            path: '/hello.yaml',
+            content: contentRef
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file - referenced Parameter', async function () {
+    let contentRoot = fs.readFileSync(referencedParameter + '/root.yaml', 'utf8'),
+      contentRef = fs.readFileSync(referencedParameter + '/hello.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedParameter + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRoot
+          },
+          {
+            path: '/hello.yaml',
+            content: contentRef
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file - referenced Request Body', async function () {
+    let contentRoot = fs.readFileSync(referencedRequestBody + '/root.yaml', 'utf8'),
+      contentRef = fs.readFileSync(referencedRequestBody + '/hello.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedRequestBody + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRoot
+          },
+          {
+            path: '/hello.yaml',
+            content: contentRef
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file - referenced Header', async function () {
+    let contentRoot = fs.readFileSync(referencedHeader + '/root.yaml', 'utf8'),
+      contentRef = fs.readFileSync(referencedHeader + '/header.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedHeader + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRoot
+          },
+          {
+            path: '/header.yaml',
+            content: contentRef
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file - referenced Link', async function () {
+    let contentRoot = fs.readFileSync(referencedLink + '/root.yaml', 'utf8'),
+      contentRef = fs.readFileSync(referencedLink + '/link.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedLink + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRoot
+          },
+          {
+            path: '/link.yaml',
+            content: contentRef
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
   });
 });
 
