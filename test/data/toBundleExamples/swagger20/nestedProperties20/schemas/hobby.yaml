@@ -1,6 +1,6 @@
 type: object
 properties:
-  power:
+  name:
     type: string
-  weapon:
-    type: string
+  position:
+    type: integer

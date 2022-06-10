@@ -22,7 +22,7 @@
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/~1schemas~1user.yaml"
+              "$ref": "#/definitions/~1schemas~1user.yaml%23User"
             }
           }
         }
@@ -39,7 +39,7 @@
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/~1otherSchemas~1client.yaml"
+              "$ref": "#/definitions/~1otherSchemas~1client.yaml%23Client"
             }
           }
         }
@@ -47,42 +47,38 @@
     }
   },
   "definitions": {
-    "/schemas/user.yaml": {
-      "User": {
-        "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "detail": {
-            "type": "array",
-            "items": {
-              "$ref": "#/definitions/~1schemas~1detail.yaml%23~1Detail"
-            }
+    "/schemas/user.yaml#User": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "detail": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/~1schemas~1detail.yaml%23~1Detail"
           }
         }
       }
     },
-    "/otherSchemas/client.yaml": {
-      "Client": {
-        "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "details": {
-            "type": "array",
-            "items": {
-              "$ref": "#/definitions/~1otherSchemas~1detail.yaml%23~1Detail"
-            }
+    "/otherSchemas/client.yaml#Client": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/~1otherSchemas~1detail.yaml%23~1Detail"
           }
         }
       }

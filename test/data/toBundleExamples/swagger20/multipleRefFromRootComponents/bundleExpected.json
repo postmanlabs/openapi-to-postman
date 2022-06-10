@@ -52,18 +52,21 @@
           "type": "string"
         },
         "Color": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "uses": {
-              "type": "string"
-            },
-            "color": {
-              "type": "string"
-            }
-          }
+          "$ref": "#/definitions/~1pet.yaml%23~1Color"
+        }
+      }
+    },
+    "/pet.yaml#/Color": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "uses": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
         }
       }
     }
