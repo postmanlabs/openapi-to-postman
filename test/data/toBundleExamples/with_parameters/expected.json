@@ -21,10 +21,10 @@
         "summary": "Get a user by ID",
         "parameters": [
           {
-            "$ref": "#/components/parameters/~1parameters~1index.yaml%23tagsParam"
+            "$ref": "#/components/parameters/_parameters_index.yaml-tagsParam"
           },
           {
-            "$ref": "#/components/parameters/~1parameters~1index.yaml%23limitsParam"
+            "$ref": "#/components/parameters/_parameters_index.yaml-limitsParam"
           }
         ],
         "responses": {
@@ -33,7 +33,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/~1schemas~1user.yaml"
+                  "$ref": "#/components/schemas/_schemas_user.yaml"
                 }
               }
             }
@@ -44,7 +44,7 @@
   },
   "components": {
     "parameters": {
-      "/parameters/index.yaml#tagsParam": {
+      "_parameters_index.yaml-tagsParam": {
         "name": "tags",
         "in": "query",
         "description": "tags to filter by",
@@ -55,7 +55,7 @@
           "type": "string"
         }
       },
-      "/parameters/index.yaml#limitsParam": {
+      "_parameters_index.yaml-limitsParam": {
         "name": "limit",
         "in": "query",
         "description": "maximum number of results to return",
@@ -65,7 +65,7 @@
       }
     },
     "schemas": {
-      "/schemas/user.yaml": {
+      "_schemas_user.yaml": {
         "type": "object",
         "properties": {
           "id": {

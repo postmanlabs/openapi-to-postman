@@ -28,7 +28,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/~1paths~1path.yaml%23~1components~1schemas~1Pet"
+                    "$ref": "#/components/schemas/_paths_path.yaml-_components_schemas_Pet"
                   }
                 }
               }
@@ -39,7 +39,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/~1paths~1path.yaml%23~1components~1schemas~1Error"
+                  "$ref": "#/components/schemas/_paths_path.yaml-_components_schemas_Error"
                 }
               }
             }
@@ -83,10 +83,10 @@
           }
         }
       },
-      "/paths/path.yaml#/components/schemas/Pet": {
+      "_paths_path.yaml-_components_schemas_Pet": {
         "$ref": "#/components/schemas/Pet"
       },
-      "/paths/path.yaml#/components/schemas/Error": {
+      "_paths_path.yaml-_components_schemas_Error": {
         "$ref": "#/components/schemas/Error"
       }
     }
