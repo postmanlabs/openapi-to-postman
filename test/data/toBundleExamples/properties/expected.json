@@ -25,7 +25,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/~1schemas~1user.yaml"
+                  "$ref": "#/components/schemas/_schemas_user.yaml"
                 }
               }
             }
@@ -36,7 +36,7 @@
   },
   "components": {
     "schemas": {
-      "/schemas/user.yaml": {
+      "_schemas_user.yaml": {
         "type": "object",
         "properties": {
           "id": {
@@ -46,11 +46,11 @@
             "type": "string"
           },
           "complexProp": {
-            "$ref": "#/components/schemas/~1schemas~1prop.yaml"
+            "$ref": "#/components/schemas/_schemas_prop.yaml"
           }
         }
       },
-      "/schemas/prop.yaml": {
+      "_schemas_prop.yaml": {
         "type": "object",
         "properties": {
           "firstName": {

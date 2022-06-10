@@ -25,7 +25,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/~1schemas~1user.yaml%23~1User"
+                  "$ref": "#/components/schemas/_schemas_user.yaml-_User"
                 }
               }
             }
@@ -36,7 +36,7 @@
   },
   "components": {
     "schemas": {
-      "/schemas/user.yaml#/User": {
+      "_schemas_user.yaml-_User": {
         "type": "object",
         "properties": {
           "id": {
@@ -49,13 +49,13 @@
             "type": "object",
             "properties": {
               "theUsersPet": {
-                "$ref": "#/components/schemas/~1schemas~1user.yaml%23~1Pet"
+                "$ref": "#/components/schemas/_schemas_user.yaml-_Pet"
               }
             }
           }
         }
       },
-      "/schemas/user.yaml#/Pet": {
+      "_schemas_user.yaml-_Pet": {
         "type": "object",
         "properties": {
           "name": {

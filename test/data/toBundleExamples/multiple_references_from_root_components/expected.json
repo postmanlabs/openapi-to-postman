@@ -80,13 +80,13 @@
         "type": "object",
         "properties": {
           "userInfo": {
-            "$ref": "#/components/schemas/~1schemas~1user.yaml"
+            "$ref": "#/components/schemas/_schemas_user.yaml"
           },
           "carType": {
-            "$ref": "#/components/schemas/~1schemas~1carType.yaml"
+            "$ref": "#/components/schemas/_schemas_carType.yaml"
           },
           "work": {
-            "$ref": "#/components/schemas/~1otherSchemas~1work.yaml"
+            "$ref": "#/components/schemas/_otherSchemas_work.yaml"
           }
         }
       },
@@ -101,7 +101,7 @@
           }
         }
       },
-      "/schemas/user.yaml": {
+      "_schemas_user.yaml": {
         "type": "object",
         "properties": {
           "id": {
@@ -112,15 +112,15 @@
           }
         }
       },
-      "/schemas/carType.yaml": {
+      "_schemas_carType.yaml": {
         "type": "object",
         "properties": {
           "model": {
-            "$ref": "#/components/schemas/~1otherSchemas~1model.yaml"
+            "$ref": "#/components/schemas/_otherSchemas_model.yaml"
           }
         }
       },
-      "/otherSchemas/work.yaml": {
+      "_otherSchemas_work.yaml": {
         "type": "object",
         "properties": {
           "office": {
@@ -128,7 +128,7 @@
           }
         }
       },
-      "/otherSchemas/model.yaml": {
+      "_otherSchemas_model.yaml": {
         "type": "string"
       }
     }
