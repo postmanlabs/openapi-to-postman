@@ -22,7 +22,7 @@
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/definitions/~1paths~1path.yaml%23~1definitions~1Error"
+              "$ref": "#/definitions/_paths_path.yaml-_definitions_Error"
             }
           },
           "description": "Returns all pets from the system that the user has access to,",
@@ -33,7 +33,7 @@
             "200": {
               "description": "A list of pets.,",
               "schema": {
-                "$ref": "#/definitions/~1paths~1path.yaml%23~1definitions~1Pet"
+                "$ref": "#/definitions/_paths_path.yaml-_definitions_Pet"
               }
             }
           }
@@ -75,10 +75,10 @@
         }
       }
     },
-    "/paths/path.yaml#/definitions/Error": {
+    "_paths_path.yaml-_definitions_Error": {
       "$ref": "#/definitions/Error"
     },
-    "/paths/path.yaml#/definitions/Pet": {
+    "_paths_path.yaml-_definitions_Pet": {
       "$ref": "#/definitions/Pet"
     }
   }

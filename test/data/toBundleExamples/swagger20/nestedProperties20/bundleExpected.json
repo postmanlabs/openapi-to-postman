@@ -24,7 +24,7 @@
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/~1schemas~1user.yaml"
+                "$ref": "#/definitions/_schemas_user.yaml"
               }
             }
           }
@@ -33,27 +33,27 @@
     }
   },
   "definitions": {
-    "/schemas/user.yaml": {
+    "_schemas_user.yaml": {
       "type": "object",
       "properties": {
         "age": {
-          "$ref": "#/definitions/~1schemas~1age.yaml"
+          "$ref": "#/definitions/_schemas_age.yaml"
         },
         "hobbies": {
-          "$ref": "#/definitions/~1schemas~1hobbies.yaml"
+          "$ref": "#/definitions/_schemas_hobbies.yaml"
         }
       }
     },
-    "/schemas/age.yaml": {
+    "_schemas_age.yaml": {
       "type": "string"
     },
-    "/schemas/hobbies.yaml": {
+    "_schemas_hobbies.yaml": {
       "type": "array",
       "items": {
-        "$ref": "#/definitions/~1schemas~1hobby.yaml"
+        "$ref": "#/definitions/_schemas_hobby.yaml"
       }
     },
-    "/schemas/hobby.yaml": {
+    "_schemas_hobby.yaml": {
       "type": "object",
       "properties": {
         "name": {
