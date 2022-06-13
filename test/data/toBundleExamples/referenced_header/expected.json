@@ -25,7 +25,7 @@
             "description": "An paged array of pets",
             "headers": {
               "x-next": {
-                "$ref": "#/components/headers/~1header.yaml"
+                "$ref": "#/components/headers/_header.yaml"
               }
             },
             "content": {
@@ -62,7 +62,7 @@
       }
     },
     "headers": {
-      "/header.yaml": {
+      "_header.yaml": {
         "description": "A link to the next page of responses",
         "schema": {
           "type": "string"

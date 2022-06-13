@@ -30,7 +30,7 @@
               }
             },
             "links": {
-              "$ref": "#/components/links/~1link.yaml"
+              "$ref": "#/components/links/_link.yaml"
             }
           }
         }
@@ -59,7 +59,7 @@
       }
     },
     "links": {
-      "/link.yaml": {
+      "_link.yaml": {
         "operationId": "getRepository",
         "parameters": {
           "username": "$response.body#/owner/username",

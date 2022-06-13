@@ -22,7 +22,7 @@
         "operationId": "findPets",
         "parameters": [
           {
-            "$ref": "#/components/parameters/~1hello.yaml"
+            "$ref": "#/components/parameters/_hello.yaml"
           }
         ],
         "responses": {
@@ -61,7 +61,7 @@
       }
     },
     "parameters": {
-      "/hello.yaml": {
+      "_hello.yaml": {
         "name": "tags",
         "in": "query",
         "description": "tags to filter by",

@@ -31,7 +31,7 @@
           }
         },
         "requestBody": {
-          "$ref": "#/components/requestBodies/~1hello.yaml"
+          "$ref": "#/components/requestBodies/_hello.yaml"
         }
       }
     }
@@ -58,7 +58,7 @@
       }
     },
     "requestBodies": {
-      "/hello.yaml": {
+      "_hello.yaml": {
         "content": {
           "application/json": {
             "schema": {
