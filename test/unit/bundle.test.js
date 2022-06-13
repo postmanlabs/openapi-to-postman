@@ -31,7 +31,9 @@ let expect = require('chai').expect,
   referencedParameter = path.join(__dirname, BUNDLES_FOLDER + '/referenced_parameter'),
   referencedRequestBody = path.join(__dirname, BUNDLES_FOLDER + '/referenced_request_body'),
   referencedHeader = path.join(__dirname, BUNDLES_FOLDER + '/referenced_header'),
-  referencedLink = path.join(__dirname, BUNDLES_FOLDER + '/referenced_link');
+  referencedLink = path.join(__dirname, BUNDLES_FOLDER + '/referenced_link'),
+  referencedCallback = path.join(__dirname, BUNDLES_FOLDER + '/referenced_callback'),
+  referencedSecuritySchemes = path.join(__dirname, BUNDLES_FOLDER + '/referenced_security_schemes');
 
 
 describe('bundle files method - 3.0', function () {
@@ -1673,6 +1675,70 @@ describe('bundle files method - 3.0', function () {
           },
           {
             path: '/link.yaml',
+            content: contentRef
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file - referenced Callback', async function () {
+    let contentRoot = fs.readFileSync(referencedCallback + '/root.yaml', 'utf8'),
+      contentRef = fs.readFileSync(referencedCallback + '/callback.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedCallback + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRoot
+          },
+          {
+            path: '/callback.yaml',
+            content: contentRef
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file - referenced Security Schemes', async function () {
+    let contentRoot = fs.readFileSync(referencedSecuritySchemes + '/root.yaml', 'utf8'),
+      contentRef = fs.readFileSync(referencedSecuritySchemes + '/sschemes.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedSecuritySchemes + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRoot
+          },
+          {
+            path: '/sschemes.yaml',
             content: contentRef
           }
         ],
