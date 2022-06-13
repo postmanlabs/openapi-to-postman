@@ -25,7 +25,8 @@ paths:
             items:
                 $ref: "#/components/schemas/Pet"
           links:
-            $ref: "./link.yaml"
+            theLinkId:
+              $ref: "./link.yaml"
 components:
   schemas:
     Pet:

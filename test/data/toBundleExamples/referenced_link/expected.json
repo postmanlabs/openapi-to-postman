@@ -30,7 +30,9 @@
               }
             },
             "links": {
-              "$ref": "#/components/links/_link.yaml"
+              "theLinkId": {
+                "$ref": "#/components/links/_link.yaml"
+              }
             }
           }
         }
