@@ -24,7 +24,6 @@ let expect = require('chai').expect,
   refPaths = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths'),
   SWAGGER_MULTIFILE_FOLDER = '../data/toBundleExamples/swagger20',
   refPathsRefToLocalSchema = path.join(__dirname, BUNDLES_FOLDER + '/referenced_paths_local_schema'),
-  refInfo20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_info'),
   refTags20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_tags'),
   basicExample = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/basicExample'),
   refPaths20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_paths'),
@@ -2277,38 +2276,6 @@ describe('bundle files method - 2.0', function() {
           {
             path: '/pet.yaml',
             content: pet
-          }
-        ],
-        options: {},
-        bundleFormat: 'JSON'
-      };
-    const res = await Converter.bundle(input);
-
-    expect(res).to.not.be.empty;
-    expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
-  });
-
-  it('Should return bundled file with referenced info from root', async function () {
-    let contentRootFile = fs.readFileSync(refInfo20 + '/root.yaml', 'utf8'),
-      info = fs.readFileSync(refInfo20 + '/info/info.yaml', 'utf8'),
-      expected = fs.readFileSync(refInfo20 + '/expected.json', 'utf8'),
-      input = {
-        type: 'multiFile',
-        specificationVersion: '2.0',
-        rootFiles: [
-          {
-            path: '/root.yaml'
-          }
-        ],
-        data: [
-          {
-            path: '/root.yaml',
-            content: contentRootFile
-          },
-          {
-            path: '/info/info.yaml',
-            content: info
           }
         ],
         options: {},
