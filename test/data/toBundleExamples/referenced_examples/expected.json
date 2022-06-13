@@ -32,7 +32,7 @@
                   }
                 },
                 "example": {
-                  "$ref": "#/components/examples/~1examples.yaml%23~1foo"
+                  "$ref": "#/components/examples/_examples.yaml-_foo"
                 }
               }
             }
@@ -88,7 +88,7 @@
       }
     },
     "examples": {
-      "/examples.yaml#/foo": {
+      "_examples.yaml-_foo": {
         "summary": "sum",
         "value": {
           "code": 1,

@@ -25,7 +25,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/~1schemas~1user~1user.yaml"
+                  "$ref": "#/components/schemas/_schemas_user_user.yaml"
                 }
               }
             }
@@ -42,7 +42,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/~1schemas~1client~1client.yaml"
+                  "$ref": "#/components/schemas/_schemas_client_client.yaml"
                 }
               }
             }
@@ -53,7 +53,7 @@
   },
   "components": {
     "schemas": {
-      "/schemas/user/user.yaml": {
+      "_schemas_user_user.yaml": {
         "type": "object",
         "properties": {
           "id": {
@@ -63,11 +63,11 @@
             "type": "string"
           },
           "special": {
-            "$ref": "#/components/schemas/~1schemas~1user~1special.yaml"
+            "$ref": "#/components/schemas/_schemas_user_special.yaml"
           }
         }
       },
-      "/schemas/client/client.yaml": {
+      "_schemas_client_client.yaml": {
         "type": "object",
         "properties": {
           "idClient": {
@@ -77,11 +77,11 @@
             "type": "string"
           },
           "special": {
-            "$ref": "#/components/schemas/~1schemas~1user~1special.yaml"
+            "$ref": "#/components/schemas/_schemas_user_special.yaml"
           }
         }
       },
-      "/schemas/user/special.yaml": {
+      "_schemas_user_special.yaml": {
         "type": "object",
         "properties": {
           "specialUserId": {
