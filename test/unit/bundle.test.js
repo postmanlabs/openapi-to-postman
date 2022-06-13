@@ -51,7 +51,10 @@ let expect = require('chai').expect,
   referencedHeader = path.join(__dirname, BUNDLES_FOLDER + '/referenced_header'),
   referencedLink = path.join(__dirname, BUNDLES_FOLDER + '/referenced_link'),
   referencedCallback = path.join(__dirname, BUNDLES_FOLDER + '/referenced_callback'),
-  referencedSecuritySchemes = path.join(__dirname, BUNDLES_FOLDER + '/referenced_security_schemes');
+  referencedSecuritySchemes = path.join(__dirname, BUNDLES_FOLDER + '/referenced_security_schemes'),
+  SWAGGER_PETSTORE_FOLDER = path.join(__dirname, '../data/swaggerMultifile/petstore-separate-yaml'),
+  additionalProperties20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/additionalProperties'),
+  additionalProperties = path.join(__dirname, BUNDLES_FOLDER + '/additionalProperties');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -1768,6 +1771,42 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
   });
+
+  it('Should bundle file from - additionalProperties 3.0', async function() {
+    let contentRootFile = fs.readFileSync(additionalProperties + '/root.yaml', 'utf8'),
+      pet = fs.readFileSync(additionalProperties + '/pet.yaml', 'utf8'),
+      additionalProps = fs.readFileSync(additionalProperties + '/additionalProperties.yaml', 'utf8'),
+      expected = fs.readFileSync(additionalProperties + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/pet.yaml',
+            content: pet
+          },
+          {
+            path: '/additionalProperties.yaml',
+            content: additionalProps
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
 });
 
 describe('bundle files method - 2.0', function() {
@@ -2421,6 +2460,88 @@ describe('bundle files method - 2.0', function() {
       };
     const res = await Converter.bundle(input);
 
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file from - petstore-separated-yaml (contains allOf)', async function() {
+    let contentRootFile = fs.readFileSync(SWAGGER_PETSTORE_FOLDER + '/spec/swagger.yaml', 'utf8'),
+      parameters = fs.readFileSync(SWAGGER_PETSTORE_FOLDER + '/spec/parameters.yaml', 'utf8'),
+      pet = fs.readFileSync(SWAGGER_PETSTORE_FOLDER + '/spec/Pet.yaml', 'utf8'),
+      newPet = fs.readFileSync(SWAGGER_PETSTORE_FOLDER + '/spec/NewPet.yaml', 'utf8'),
+      error = fs.readFileSync(SWAGGER_PETSTORE_FOLDER + '/common/Error.yaml', 'utf8'),
+      expected = fs.readFileSync(SWAGGER_PETSTORE_FOLDER + '/expectedBundle.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/spec/swagger.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/spec/swagger.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/spec/parameters.yaml',
+            content: parameters
+          },
+          {
+            path: '/spec/Pet.yaml',
+            content: pet
+          },
+          {
+            path: '/spec/NewPet.yaml',
+            content: newPet
+          },
+          {
+            path: '/common/Error.yaml',
+            content: error
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should bundle file from - additionalProperties 2.0', async function() {
+    let contentRootFile = fs.readFileSync(additionalProperties20 + '/root.yaml', 'utf8'),
+      pet = fs.readFileSync(additionalProperties20 + '/pet.yaml', 'utf8'),
+      additionalProps = fs.readFileSync(additionalProperties20 + '/additionalProperties.yaml', 'utf8'),
+      expected = fs.readFileSync(additionalProperties20 + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/pet.yaml',
+            content: pet
+          },
+          {
+            path: '/additionalProperties.yaml',
+            content: additionalProps
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
