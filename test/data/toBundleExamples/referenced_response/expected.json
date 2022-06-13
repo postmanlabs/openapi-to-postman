@@ -22,7 +22,7 @@
         "operationId": "findPets",
         "responses": {
           "200": {
-            "$ref": "#/components/responses/_hello.yaml"
+            "$ref": "#/components/responses/_response.yaml"
           }
         }
       }
@@ -30,7 +30,7 @@
   },
   "components": {
     "responses": {
-      "_hello.yaml": {
+      "_response.yaml": {
         "content": {
           "application/json": {
             "schema": {

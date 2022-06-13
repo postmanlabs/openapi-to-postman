@@ -24,7 +24,7 @@ paths:
             items:
                 $ref: "#/components/schemas/Pet"
       requestBody:
-        $ref: "./hello.yaml"
+        $ref: "./rbody.yaml"
 components:
   schemas:
     Pet:

@@ -18,7 +18,7 @@ paths:
       description: Returns all pets alesuada ac...
       operationId: findPets
       parameters:
-        -  $ref: "./hello.yaml"
+        -  $ref: "./parameter.yaml"
       responses:
         200:
           description: pet response

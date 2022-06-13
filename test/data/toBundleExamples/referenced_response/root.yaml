@@ -19,4 +19,4 @@ paths:
       operationId: findPets
       responses:
         200:
-          $ref: "./hello.yaml"
+          $ref: "./response.yaml"
