@@ -21,7 +21,7 @@
           "200": {
             "description": "A list of pets.,",
             "schema": {
-              "$ref": "#/definitions/~1schemas~1pet.yaml"
+              "$ref": "#/definitions/_schemas_pet.yaml"
             }
           }
         }
@@ -29,7 +29,7 @@
     }
   },
   "definitions": {
-    "/schemas/pet.yaml": {
+    "_schemas_pet.yaml": {
       "type": "object",
       "required": [
         "id",
@@ -47,14 +47,14 @@
           "type": "string"
         },
         "favoriteFood": {
-          "$ref": "#/definitions/~1schemas~1favorite_food.yaml%23~1FavoriteFood"
+          "$ref": "#/definitions/_schemas_favorite_food.yaml-_FavoriteFood"
         },
         "foodPrice": {
-          "$ref": "#/definitions/~1schemas~1favorite_food.yaml%23~1Price"
+          "$ref": "#/definitions/_schemas_favorite_food.yaml-_Price"
         }
       }
     },
-    "/schemas/favorite_food.yaml#/FavoriteFood": {
+    "_schemas_favorite_food.yaml-_FavoriteFood": {
       "type": "object",
       "properties": {
         "name": {
@@ -65,7 +65,7 @@
         }
       }
     },
-    "/schemas/favorite_food.yaml#/Price": {
+    "_schemas_favorite_food.yaml-_Price": {
       "type": "integer"
     }
   }

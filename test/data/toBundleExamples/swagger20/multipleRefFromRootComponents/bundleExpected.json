@@ -52,11 +52,11 @@
           "type": "string"
         },
         "Color": {
-          "$ref": "#/definitions/~1pet.yaml%23~1Color"
+          "$ref": "#/definitions/_pet.yaml-_Color"
         }
       }
     },
-    "/pet.yaml#/Color": {
+    "_pet.yaml-_Color": {
       "type": "object",
       "properties": {
         "name": {

@@ -22,7 +22,7 @@
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/~1schemas~1user.yaml%23User"
+              "$ref": "#/definitions/_schemas_user.yaml-User"
             }
           }
         }
@@ -39,7 +39,7 @@
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/~1otherSchemas~1client.yaml%23Client"
+              "$ref": "#/definitions/_otherSchemas_client.yaml-Client"
             }
           }
         }
@@ -47,7 +47,7 @@
     }
   },
   "definitions": {
-    "/schemas/user.yaml#User": {
+    "_schemas_user.yaml-User": {
       "type": "object",
       "required": [
         "id",
@@ -60,12 +60,12 @@
         "detail": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/~1schemas~1detail.yaml%23~1Detail"
+            "$ref": "#/definitions/_schemas_detail.yaml-_Detail"
           }
         }
       }
     },
-    "/otherSchemas/client.yaml#Client": {
+    "_otherSchemas_client.yaml-Client": {
       "type": "object",
       "required": [
         "id",
@@ -78,12 +78,12 @@
         "details": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/~1otherSchemas~1detail.yaml%23~1Detail"
+            "$ref": "#/definitions/_otherSchemas_detail.yaml-_Detail"
           }
         }
       }
     },
-    "/otherSchemas/detail.yaml#/Detail": {
+    "_otherSchemas_detail.yaml-_Detail": {
       "type": "object",
       "properties": {
         "id": {
@@ -98,7 +98,7 @@
         }
       }
     },
-    "/schemas/detail.yaml#/Detail": {
+    "_schemas_detail.yaml-_Detail": {
       "type": "object",
       "properties": {
         "id": {

@@ -25,7 +25,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/~1schemas~1user.yaml"
+                  "$ref": "#/components/schemas/_schemas_user.yaml"
                 }
               }
             }
@@ -36,7 +36,7 @@
   },
   "components": {
     "schemas": {
-      "/schemas/user.yaml": {
+      "_schemas_user.yaml": {
         "type": "object",
         "properties": {
           "id": {
@@ -46,11 +46,11 @@
             "type": "string"
           },
           "complexProp": {
-            "$ref": "#/components/schemas/~1properties~1prop.yaml"
+            "$ref": "#/components/schemas/_properties_prop.yaml"
           }
         }
       },
-      "/properties/prop.yaml": {
+      "_properties_prop.yaml": {
         "type": "object",
         "properties": {
           "firstName": {
@@ -63,17 +63,17 @@
             "type": "integer"
           },
           "nestedProp": {
-            "$ref": "#/components/schemas/~1properties~1nestedProp.yaml"
+            "$ref": "#/components/schemas/_properties_nestedProp.yaml"
           },
           "country": {
-            "$ref": "#/components/schemas/~1properties~1country.yaml"
+            "$ref": "#/components/schemas/_properties_country.yaml"
           },
           "warrior": {
-            "$ref": "#/components/schemas/~1properties~1warrior.yaml"
+            "$ref": "#/components/schemas/_properties_warrior.yaml"
           }
         }
       },
-      "/properties/nestedProp.yaml": {
+      "_properties_nestedProp.yaml": {
         "type": "object",
         "rock": {
           "type": "boolean"
@@ -99,7 +99,7 @@
           }
         }
       },
-      "/properties/country.yaml": {
+      "_properties_country.yaml": {
         "type": "object",
         "properties": {
           "region": {
@@ -110,7 +110,7 @@
           }
         }
       },
-      "/properties/warrior.yaml": {
+      "_properties_warrior.yaml": {
         "type": "object",
         "properties": {
           "power": {

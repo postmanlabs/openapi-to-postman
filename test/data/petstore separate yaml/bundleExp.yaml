@@ -53,19 +53,19 @@ paths:
         euismod sapien.
       operationId: findPets
       parameters:
-        - $ref: '#/components/parameters/~1spec~1parameters.yaml%23~1tagsParam'
-        - $ref: '#/components/parameters/~1spec~1parameters.yaml%23~1limitsParam'
+        - $ref: '#/components/parameters/_spec_parameters.yaml-_tagsParam'
+        - $ref: '#/components/parameters/_spec_parameters.yaml-_limitsParam'
       responses:
         '200':
           description: pet response
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/~1spec~1Pet.yaml'
+              $ref: '#/components/schemas/_spec_Pet.yaml'
         default:
           description: unexpected error
           schema:
-            $ref: '#/components/schemas/~1common~1Error.yaml'
+            $ref: '#/components/schemas/_common_Error.yaml'
     post:
       description: Creates a new pet in the store.  Duplicates are allowed
       operationId: addPet
@@ -75,16 +75,16 @@ paths:
           description: Pet to add to the store
           required: true
           schema:
-            $ref: '#/components/schemas/~1spec~1NewPet.yaml'
+            $ref: '#/components/schemas/_spec_NewPet.yaml'
       responses:
         '200':
           description: pet response
           schema:
-            $ref: '#/components/schemas/~1spec~1Pet.yaml'
+            $ref: '#/components/schemas/_spec_Pet.yaml'
         default:
           description: unexpected error
           schema:
-            $ref: '#/components/schemas/~1common~1Error.yaml'
+            $ref: '#/components/schemas/_common_Error.yaml'
   '/pets/{id}':
     get:
       description: >-
@@ -102,11 +102,11 @@ paths:
         '200':
           description: pet response
           schema:
-            $ref: '#/components/schemas/~1spec~1Pet.yaml'
+            $ref: '#/components/schemas/_spec_Pet.yaml'
         default:
           description: unexpected error
           schema:
-            $ref: '#/components/schemas/~1common~1Error.yaml'
+            $ref: '#/components/schemas/_common_Error.yaml'
     delete:
       description: deletes a single pet based on the ID supplied
       operationId: deletePet
@@ -123,10 +123,10 @@ paths:
         default:
           description: unexpected error
           schema:
-            $ref: '#/components/schemas/~1common~1Error.yaml'
+            $ref: '#/components/schemas/_common_Error.yaml'
 components:
   parameters:
-    /spec/parameters.yaml#/tagsParam:
+    _spec_parameters.yaml-_tagsParam:
       name: tags
       in: query
       description: tags to filter by
@@ -135,7 +135,7 @@ components:
       collectionFormat: csv
       items:
         type: string
-    /spec/parameters.yaml#/limitsParam:
+    _spec_parameters.yaml-_limitsParam:
       name: limit
       in: query
       description: maximum number of results to return
@@ -143,7 +143,7 @@ components:
       type: integer
       format: int32
   schemas:
-    /spec/Pet.yaml:
+    _spec_Pet.yaml:
       type: object
       required:
         - id
@@ -156,7 +156,7 @@ components:
           type: string
         tag:
           type: string
-    /common/Error.yaml:
+    _common_Error.yaml:
       type: object
       required:
         - code
@@ -167,10 +167,10 @@ components:
           format: int32
         message:
           type: string
-    /spec/NewPet.yaml:
+    _spec_NewPet.yaml:
       type: object
       allOf:
-        - $ref: '#/components/schemas/~1spec~1Pet.yaml'
+        - $ref: '#/components/schemas/_spec_Pet.yaml'
         - required:
             - name
           properties:
