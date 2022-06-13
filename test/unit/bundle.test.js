@@ -1530,7 +1530,7 @@ describe('bundle files method - 3.0', function () {
 
   it('Should return bundled file - referenced response', async function () {
     let contentRoot = fs.readFileSync(referencedResponse + '/root.yaml', 'utf8'),
-      contentRef = fs.readFileSync(referencedResponse + '/hello.yaml', 'utf8'),
+      contentRef = fs.readFileSync(referencedResponse + '/response.yaml', 'utf8'),
       expected = fs.readFileSync(referencedResponse + '/expected.json', 'utf8'),
       input = {
         type: 'multiFile',
@@ -1546,7 +1546,7 @@ describe('bundle files method - 3.0', function () {
             content: contentRoot
           },
           {
-            path: '/hello.yaml',
+            path: '/response.yaml',
             content: contentRef
           }
         ],
@@ -1562,7 +1562,7 @@ describe('bundle files method - 3.0', function () {
 
   it('Should return bundled file - referenced Parameter', async function () {
     let contentRoot = fs.readFileSync(referencedParameter + '/root.yaml', 'utf8'),
-      contentRef = fs.readFileSync(referencedParameter + '/hello.yaml', 'utf8'),
+      contentRef = fs.readFileSync(referencedParameter + '/parameter.yaml', 'utf8'),
       expected = fs.readFileSync(referencedParameter + '/expected.json', 'utf8'),
       input = {
         type: 'multiFile',
@@ -1578,7 +1578,7 @@ describe('bundle files method - 3.0', function () {
             content: contentRoot
           },
           {
-            path: '/hello.yaml',
+            path: '/parameter.yaml',
             content: contentRef
           }
         ],
@@ -1594,7 +1594,7 @@ describe('bundle files method - 3.0', function () {
 
   it('Should return bundled file - referenced Request Body', async function () {
     let contentRoot = fs.readFileSync(referencedRequestBody + '/root.yaml', 'utf8'),
-      contentRef = fs.readFileSync(referencedRequestBody + '/hello.yaml', 'utf8'),
+      contentRef = fs.readFileSync(referencedRequestBody + '/rbody.yaml', 'utf8'),
       expected = fs.readFileSync(referencedRequestBody + '/expected.json', 'utf8'),
       input = {
         type: 'multiFile',
@@ -1610,7 +1610,7 @@ describe('bundle files method - 3.0', function () {
             content: contentRoot
           },
           {
-            path: '/hello.yaml',
+            path: '/rbody.yaml',
             content: contentRef
           }
         ],
