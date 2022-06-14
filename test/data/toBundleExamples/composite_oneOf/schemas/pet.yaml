@@ -1,0 +1,6 @@
+type: object
+properties:
+  petId:
+    type: integer
+  petName:
+    type: string
