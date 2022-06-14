@@ -2550,7 +2550,7 @@ describe('bundle files method - 2.0', function() {
   });
 
   it('Should return bundled file - referenced Security Schemes', async function () {
-    let contentRootFile = fs.readFileSync(referencedSecuritySchemes20 + '/root.yaml', 'utf8'),
+    let contentRoot = fs.readFileSync(referencedSecuritySchemes20 + '/root.yaml', 'utf8'),
       contentRef = fs.readFileSync(referencedSecuritySchemes20 + '/sschemes.yaml', 'utf8'),
       expected = fs.readFileSync(referencedSecuritySchemes20 + '/expected.json', 'utf8'),
       input = {
@@ -2564,7 +2564,7 @@ describe('bundle files method - 2.0', function() {
         data: [
           {
             path: '/root.yaml',
-            content: contentRootFile
+            content: contentRoot
           },
           {
             path: '/sschemes.yaml',
