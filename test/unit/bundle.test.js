@@ -33,7 +33,8 @@ let expect = require('chai').expect,
   referencedHeader = path.join(__dirname, BUNDLES_FOLDER + '/referenced_header'),
   referencedLink = path.join(__dirname, BUNDLES_FOLDER + '/referenced_link'),
   referencedCallback = path.join(__dirname, BUNDLES_FOLDER + '/referenced_callback'),
-  referencedSecuritySchemes = path.join(__dirname, BUNDLES_FOLDER + '/referenced_security_schemes');
+  referencedSecuritySchemes = path.join(__dirname, BUNDLES_FOLDER + '/referenced_security_schemes'),
+  additionalProperties = path.join(__dirname, BUNDLES_FOLDER + '/additionalProperties');
 
 
 describe('bundle files method - 3.0', function () {
@@ -1740,6 +1741,43 @@ describe('bundle files method - 3.0', function () {
           {
             path: '/sschemes.yaml',
             content: contentRef
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should bundle file from - additionalProperties', async function() {
+    let contentRoot = fs.readFileSync(additionalProperties + '/root.yaml', 'utf8'),
+      pet = fs.readFileSync(additionalProperties + '/pet.yaml', 'utf8'),
+      additionalProps = fs.readFileSync(additionalProperties + '/additionalProperties.yaml', 'utf8'),
+      expected = fs.readFileSync(additionalProperties + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRoot
+          },
+          {
+            path: '/pet.yaml',
+            content: pet
+          },
+          {
+            path: '/additionalProperties.yaml',
+            content: additionalProps
           }
         ],
         options: {},
