@@ -357,7 +357,7 @@ describe('validateSupportedVersion method', function () {
   });
 
   it('should return false with version undefined', function () {
-    const result = validateSupportedVersion('');
+    const result = validateSupportedVersion();
     expect(result).to.be.false;
   });
 });
