@@ -56,7 +56,10 @@ let expect = require('chai').expect,
   additionalProperties20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/additionalProperties'),
   additionalProperties = path.join(__dirname, BUNDLES_FOLDER + '/additionalProperties'),
   referencedSecuritySchemes20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_security_schemes'),
-  referencedResponse20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_response');
+  referencedResponse20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_response'),
+  compositeOneOf = path.join(__dirname, BUNDLES_FOLDER + '/composite_oneOf'),
+  compositeNot = path.join(__dirname, BUNDLES_FOLDER + '/composite_not'),
+  compositeAnyOf = path.join(__dirname, BUNDLES_FOLDER + '/composite_anyOf');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -1805,6 +1808,112 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should bundle composite file with oneOf - composite_oneOf', async function() {
+    let contentRoot = fs.readFileSync(compositeOneOf + '/root.yaml', 'utf8'),
+      pet = fs.readFileSync(compositeOneOf + '/schemas/pet.yaml', 'utf8'),
+      user = fs.readFileSync(compositeOneOf + '/schemas/user.yaml', 'utf8'),
+      expected = fs.readFileSync(compositeOneOf + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRoot
+          },
+          {
+            path: '/schemas/pet.yaml',
+            content: pet
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should bundle composite file with anyOf - composite_anyOf', async function() {
+    let contentRoot = fs.readFileSync(compositeAnyOf + '/root.yaml', 'utf8'),
+      pet = fs.readFileSync(compositeAnyOf + '/schemas/pet.yaml', 'utf8'),
+      user = fs.readFileSync(compositeAnyOf + '/schemas/user.yaml', 'utf8'),
+      expected = fs.readFileSync(compositeAnyOf + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRoot
+          },
+          {
+            path: '/schemas/pet.yaml',
+            content: pet
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should bundle composite file with not - composite_not', async function() {
+    let contentRoot = fs.readFileSync(compositeNot + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(compositeNot + '/schemas/user.yaml', 'utf8'),
+      expected = fs.readFileSync(compositeNot + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRoot
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
