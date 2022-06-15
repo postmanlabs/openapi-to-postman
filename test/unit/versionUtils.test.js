@@ -1,7 +1,8 @@
 const { getSpecVersion,
     filterOptionsByVersion,
     compareVersion,
-    getVersionRegexBySpecificationVersion } = require('../../lib/common/versionUtils'),
+    getVersionRegexBySpecificationVersion,
+    validateSupportedVersion } = require('../../lib/common/versionUtils'),
   expect = require('chai').expect;
 
 describe('getSpecVersion', function() {
@@ -328,4 +329,37 @@ describe('getVersionRegexBySpecificationVersion method', function () {
     expect(result.toString()).to.equal('/openapi[\'|\"]?:\\s?[\\]?[\'|\"]?3.0/');
   });
 });
+
+describe('validateSupportedVersion method', function () {
+  it('should return true with version 3.0', function () {
+    const result = validateSupportedVersion('3.0');
+    expect(result).to.be.true;
+  });
+
+  it('should return true with version 2.0', function () {
+    const result = validateSupportedVersion('2.0');
+    expect(result).to.be.true;
+  });
+
+  it('should return true with version 3.1', function () {
+    const result = validateSupportedVersion('3.1');
+    expect(result).to.be.true;
+  });
+
+  it('should return false with version "any"', function () {
+    const result = validateSupportedVersion('any');
+    expect(result).to.be.false;
+  });
+
+  it('should return false with version ""', function () {
+    const result = validateSupportedVersion('');
+    expect(result).to.be.false;
+  });
+
+  it('should return false with version undefined', function () {
+    const result = validateSupportedVersion();
+    expect(result).to.be.false;
+  });
+});
+
 
