@@ -55,7 +55,8 @@ let expect = require('chai').expect,
   SWAGGER_PETSTORE_FOLDER = path.join(__dirname, '../data/swaggerMultifile/petstore-separate-yaml'),
   additionalProperties20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/additionalProperties'),
   additionalProperties = path.join(__dirname, BUNDLES_FOLDER + '/additionalProperties'),
-  referencedSecuritySchemes20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_security_schemes');
+  referencedSecuritySchemes20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_security_schemes'),
+  referencedResponse20 = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER + '/referenced_response');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -2568,6 +2569,38 @@ describe('bundle files method - 2.0', function() {
           {
             path: '/sschemes.yaml',
             content: contentRef
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should bundle file from - referenced response 2.0', async function() {
+    let contentRootFile = fs.readFileSync(referencedResponse20 + '/root.yaml', 'utf8'),
+      referenced = fs.readFileSync(referencedResponse20 + '/response.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedResponse20 + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/response.yaml',
+            content: referenced
           }
         ],
         options: {},
