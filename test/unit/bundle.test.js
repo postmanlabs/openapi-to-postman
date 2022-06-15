@@ -1820,7 +1820,7 @@ describe('bundle files method - 3.0', function () {
       expected = fs.readFileSync(compositeOneOf + '/expected.json', 'utf8'),
       input = {
         type: 'multiFile',
-        specificationVersion: '3.0',
+        specificationVersion: '3.0.0',
         rootFiles: [
           {
             path: '/root.yaml'
