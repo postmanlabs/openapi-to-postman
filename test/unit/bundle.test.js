@@ -1918,6 +1918,34 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
   });
+
+  it('Should throw error when version is not correct', async function () {
+    let contentRoot = fs.readFileSync(compositeNot + '/root.yaml', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: 'Anything',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRoot
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+
+    try {
+      await Converter.bundle(input);
+    }
+    catch (error) {
+      expect(error.message).to.equal('The provided version "Anything" is not valid');
+    }
+  });
 });
 
 describe('bundle files method - 2.0', function() {
