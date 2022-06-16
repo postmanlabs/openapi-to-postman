@@ -26,5 +26,6 @@ paths:
                     type: integer
                   client:
                     type: object
-                    not: 
+                    not:
                       $ref: "./schemas/user.yaml"
+

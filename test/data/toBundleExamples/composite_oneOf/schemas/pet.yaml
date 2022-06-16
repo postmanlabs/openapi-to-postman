@@ -3,4 +3,4 @@ properties:
   petId:
     type: integer
   petName:
-    type: string 
+    type: string

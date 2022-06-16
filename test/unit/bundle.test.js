@@ -1755,8 +1755,8 @@ describe('bundle files method - 3.0', function () {
     expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
   });
 
-  it('Should bundle file from - additionalProperties 3.0', async function() {
-    let contentRootFile = fs.readFileSync(additionalProperties + '/root.yaml', 'utf8'),
+  it('Should bundle file from - additionalProperties', async function() {
+    let contentRoot = fs.readFileSync(additionalProperties + '/root.yaml', 'utf8'),
       pet = fs.readFileSync(additionalProperties + '/pet.yaml', 'utf8'),
       additionalProps = fs.readFileSync(additionalProperties + '/additionalProperties.yaml', 'utf8'),
       expected = fs.readFileSync(additionalProperties + '/expected.json', 'utf8'),
@@ -1771,7 +1771,7 @@ describe('bundle files method - 3.0', function () {
         data: [
           {
             path: '/root.yaml',
-            content: contentRootFile
+            content: contentRoot
           },
           {
             path: '/pet.yaml',
@@ -1798,7 +1798,7 @@ describe('bundle files method - 3.0', function () {
       expected = fs.readFileSync(compositeOneOf + '/expected.json', 'utf8'),
       input = {
         type: 'multiFile',
-        specificationVersion: '3.0.0',
+        specificationVersion: '3.0',
         rootFiles: [
           {
             path: '/root.yaml'
