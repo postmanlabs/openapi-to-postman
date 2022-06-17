@@ -94,6 +94,12 @@ components:
           uniqueItems: true
           items:
             type: string
+        user:
+          type: object
+          properties:
+            entityId:
+              type: string
+              maxLength: 5
         isFavorite:
           type: boolean
         needThis:

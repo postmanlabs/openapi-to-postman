@@ -691,13 +691,22 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
     it('should work for example', function() {
       var bodyWithExample = {
+          example: 'This is a sample value'
+        },
+        retValExample = SchemaUtils.convertToPmBodyData(bodyWithExample, 'application/json');
+
+      expect(retValExample).to.equal('This is a sample value');
+    });
+
+    it('should work for example with value property', function() {
+      var bodyWithExample = {
           example: {
             value: 'This is a sample value'
           }
         },
         retValExample = SchemaUtils.convertToPmBodyData(bodyWithExample, 'application/json');
 
-      expect(retValExample).to.equal('This is a sample value');
+      expect(retValExample.value).to.equal('This is a sample value');
     });
 
     it('should work for examples', function() {
@@ -1678,10 +1687,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
               description: 'body description',
               content: {
                 'text/plain': {
-                  example: {
-                    summary: 'A list containing two items',
-                    value: 'text/plain description'
-                  }
+                  example: 'text/plain description'
                 }
               }
             },
@@ -1690,7 +1696,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             exampleParametersResolution: 'example'
           });
           resultBody = result.body.raw;
-          expect(resultBody).to.equal('"text/plain description"');
+          expect(resultBody)
+            .to.equal('"text/plain description"');
           expect(result.contentHeader).to.deep.include(
             { key: 'Content-Type', value: 'text/plain' });
           done();
@@ -1701,10 +1708,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
               description: 'body description',
               content: {
                 'text/html': {
-                  example: {
-                    summary: 'A list containing two items',
-                    value: '<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>'
-                  }
+                  example: '<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>'
                 }
               }
             },
@@ -1857,10 +1861,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             description: 'body description',
             content: {
               'text/plain': {
-                example: {
-                  summary: 'A list containing two items',
-                  value: 'text/plain description'
-                }
+                example: 'text/plain description'
               }
             }
           },
@@ -1877,10 +1878,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             description: 'body description',
             content: {
               'text/html': {
-                example: {
-                  summary: 'A list containing two items',
-                  value: '<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>'
-                }
+                example: '<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>'
               }
             }
           },

@@ -302,6 +302,112 @@ describe('validateSchema', function () {
       result = validateSchemaAJVDraft04(null, valueToUse);
     expect(result.filteredValidationError).to.be.undefined;
   });
+
+  it('Fix for GITHUB#479: should validate as correct input <integer> for type integer', function () {
+    const schema = {
+        type: 'object',
+        properties: {
+          id: {
+            type: [
+              'integer',
+              'boolean'
+            ],
+            examples: [
+              111111
+            ]
+          },
+          hasPet: {
+            type: [
+              'boolean'
+            ]
+          }
+        }
+      },
+      valueToUse = {
+        'id': '<integer>',
+        'hasPet': '<boolean>'
+      },
+      result = validateSchema(schema, valueToUse);
+    expect(result).to.be.empty;
+  });
+
+  it('Fix for GITHUB#479: should validate as incorrect input <boolean> for type integer', function () {
+    const schema = {
+        type: 'object',
+        properties: {
+          id: {
+            type: [
+              'integer'
+            ],
+            examples: [
+              111111
+            ]
+          },
+          hasPet: {
+            type: [
+              'boolean'
+            ]
+          }
+        }
+      },
+      valueToUse = {
+        'id': '<boolean>',
+        'hasPet': '<boolean>'
+      },
+      result = validateSchema(schema, valueToUse);
+    expect(result[0].instancePath).equal('/id');
+  });
+
+  it('Fix for GITHUB#479: should validate as correct input <long> for type integer format int64', function () {
+    const schema = {
+        type: 'object',
+        properties: {
+          id: {
+            type: [
+              'integer'
+            ],
+            format: 'int64'
+          },
+          hasPet: {
+            type: [
+              'boolean'
+            ]
+          }
+        }
+      },
+      valueToUse = {
+        'id': '<long>',
+        'hasPet': '<boolean>'
+      },
+      result = validateSchema(schema, valueToUse);
+    expect(result).to.be.empty;
+  });
+
+  it('Fix for GITHUB#479: should validate as correct input <long> for type integer boolean format int64', function () {
+    const schema = {
+        type: 'object',
+        properties: {
+          id: {
+            type: [
+              'integer',
+              'boolean'
+            ],
+            format: 'int64'
+          },
+          hasPet: {
+            type: [
+              'boolean'
+            ]
+          }
+        }
+      },
+      valueToUse = {
+        'id': '<long>',
+        'hasPet': '<boolean>'
+      },
+      result = validateSchema(schema, valueToUse);
+    expect(result).to.be.empty;
+  });
 });
 
 describe('getDraftToUse', function() {

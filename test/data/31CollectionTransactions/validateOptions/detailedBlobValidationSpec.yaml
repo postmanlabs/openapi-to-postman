@@ -17,33 +17,33 @@ paths:
           description: ID of the user
           required: true
           schema:
-            type: 
+            type:
               - integer
             format: int32
       requestBody:
         content:
           application/json:
             schema:
-              type: 
+              type:
                 - object
               properties:
                 data:
-                  type: 
+                  type:
                     - array
                   items:
                     $ref: '#/components/schemas/Entity'
                 meta:
-                  type: 
+                  type:
                     - object
                   maxProperties: 1
                   additionalProperties: false
                   properties:
                     numberOfResults:
-                      type: 
+                      type:
                         - number
                       format: int32
                     totalPages:
-                      type: 
+                      type:
                         - number
                       format: int32
       responses:
@@ -52,7 +52,7 @@ paths:
 components:
   schemas:
     Entity:
-      type: 
+      type:
         - object
       title: Entity
       description: A single and unique entity linked to a user
@@ -62,42 +62,42 @@ components:
         id: [needThis, accountNumber]
       properties:
         entityId:
-          type: 
+          type:
             - string
           maxLength: 5
         accountNumber:
-          type: 
+          type:
             - string
           minLength: 50
         entityName:
-          type: 
+          type:
             - string
           format: ipv4
         entityPhone:
-          type: 
+          type:
             - string
         incType:
-          type: 
+          type:
             - string
           enum: ['Postman']
         companyNumber:
-          type: 
+          type:
             - number
           exclusiveMinimum: 10000
         website:
-          type: 
+          type:
             - number
         turnover:
-          type: 
+          type:
             - integer
           format: int32
           multipleOf: 7
         description:
-          type: 
+          type:
             - string
           pattern: '[abc]+'
         status:
-          type: 
+          type:
             - string
           enum:
             - pending
@@ -107,15 +107,21 @@ components:
             - tradingAccepted
             - tradingRejected
         wants:
-          type: 
+          type:
             - array
           uniqueItems: true
           items:
-            type: 
+            type:
               - string
+        user:
+          type: object
+          properties:
+            entityId:
+              type: string
+              maxLength: 5
         isFavorite:
-          type: 
+          type:
             - boolean
         needThis:
-          type: 
+          type:
             - string

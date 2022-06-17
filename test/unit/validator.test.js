@@ -63,6 +63,197 @@ function getFoldersByVersion(folder30Path, folder31Path) {
   }];
 }
 
+
+describe('Validation with different resolution parameters options', function () {
+  it('Should validate correctly with request and example parameters as Schema', function () {
+    let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
+        '/issue#479_2.yaml'), 'utf8'),
+      expectedRequestBody =
+         '{"data":[{"entityId":"<string>","user":{"id":"<long>","age":"<integer>","created_at":"<dateTime>"},' +
+         '"isFavorite":"<integer>","needThis":"<string>"},' +
+         '{"entityId":"<string>","user":{"id":"<long>","age":"<integer>","created_at":"<dateTime>"},' +
+         '"isFavorite":"<integer>","needThis":"<string>"}]}',
+      expectedResponseBody =
+         '[{"id":"<long>","name":"<string>","tag":"<string>","created_at":"<dateTime>","birthday":"<date>"' +
+         ',"floatField":"<float>","doubleField":"<double>","content":"<byte>","file":"<binary>",' +
+         '"root_pass":"<password>"},' +
+         '{"id":"<long>","name":"<string>","tag":"<string>","created_at":"<dateTime>","birthday":"<date>"' +
+         ',"floatField":"<float>","doubleField":"<double>","content":"<byte>","file":"<binary>",' +
+         '"root_pass":"<password>"}]',
+      options = {
+        requestParametersResolution: 'Schema',
+        exampleParametersResolution: 'Schema',
+        showMissingInSchemaErrors: true,
+        strictRequestMatching: true,
+        ignoreUnresolvedVariables: true,
+        validateMetadata: true,
+        suggestAvailableFixes: true,
+        detailedBlobValidation: true
+      },
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options);
+    schemaPack.convert((err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      let historyRequest = [];
+
+      getAllTransactions(conversionResult.output[0].data, historyRequest);
+
+      const fixedResponseBody = historyRequest[0].response[0].body.replace(/\s/g, ''),
+        fixedRequestBody = historyRequest[0].request.body.raw.replace(/\s/g, '');
+      expect(fixedResponseBody).to.equal(expectedResponseBody);
+      expect(fixedRequestBody).to.equal(expectedRequestBody);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        let requestIds = Object.keys(result.requests);
+        expect(err).to.be.null;
+        requestIds.forEach((requestId) => {
+          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
+          const responsesIds = Object.keys(result.requests[requestId].endpoints[0].responses);
+          responsesIds.forEach((responseId) => {
+            expect(result.requests[requestId].endpoints[0].responses[responseId].matched).to.be.true;
+          });
+        });
+      });
+    });
+  });
+
+  it('Should validate correctly with request as schema and example parameters as Example', function () {
+    let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
+        '/issue#479_2.yaml'), 'utf8'),
+      expectedBody =
+         '{"data":[{"entityId":"<string>","user":{"id":"<long>","age":"<integer>","created_at":"<dateTime>"},' +
+         '"isFavorite":"<integer>","needThis":"<string>"},' +
+         '{"entityId":"<string>","user":{"id":"<long>","age":"<integer>","created_at":"<dateTime>"},' +
+         '"isFavorite":"<integer>","needThis":"<string>"}]}',
+      options = {
+        requestParametersResolution: 'Schema',
+        exampleParametersResolution: 'Example',
+        showMissingInSchemaErrors: true,
+        strictRequestMatching: true,
+        ignoreUnresolvedVariables: true,
+        validateMetadata: true,
+        suggestAvailableFixes: true,
+        detailedBlobValidation: true
+      },
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options);
+    schemaPack.convert((err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      let historyRequest = [];
+
+      getAllTransactions(conversionResult.output[0].data, historyRequest);
+
+      const fixedBody = historyRequest[0].request.body.raw.replace(/\s/g, '');
+      expect(fixedBody).to.equal(expectedBody);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        let requestIds = Object.keys(result.requests);
+        expect(err).to.be.null;
+        requestIds.forEach((requestId) => {
+          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
+          const responsesIds = Object.keys(result.requests[requestId].endpoints[0].responses);
+          responsesIds.forEach((responseId) => {
+            expect(result.requests[requestId].endpoints[0].responses[responseId].matched).to.be.true;
+          });
+        });
+      });
+    });
+  });
+
+  it('Should validate correctly with request as Example and example parameters as Schema', function () {
+    let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
+        '/issue#479_2.yaml'), 'utf8'),
+      expectedResponseBody =
+        '[{"id":"<long>","name":"<string>","tag":"<string>","created_at":"<dateTime>","birthday":"<date>"' +
+        ',"floatField":"<float>","doubleField":"<double>","content":"<byte>","file":"<binary>",' +
+        '"root_pass":"<password>"},' +
+        '{"id":"<long>","name":"<string>","tag":"<string>","created_at":"<dateTime>","birthday":"<date>"' +
+        ',"floatField":"<float>","doubleField":"<double>","content":"<byte>","file":"<binary>",' +
+        '"root_pass":"<password>"}]',
+      options = {
+        requestParametersResolution: 'Example',
+        exampleParametersResolution: 'Schema',
+        showMissingInSchemaErrors: true,
+        strictRequestMatching: true,
+        ignoreUnresolvedVariables: true,
+        validateMetadata: true,
+        suggestAvailableFixes: true,
+        detailedBlobValidation: true
+      },
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options);
+    schemaPack.convert((err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      let historyRequest = [];
+
+      getAllTransactions(conversionResult.output[0].data, historyRequest);
+
+      const fixedResponseBody = historyRequest[0].response[0].body.replace(/\s/g, '');
+      expect(fixedResponseBody).to.equal(expectedResponseBody);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        let requestIds = Object.keys(result.requests);
+        expect(err).to.be.null;
+        requestIds.forEach((requestId) => {
+          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
+          const responsesIds = Object.keys(result.requests[requestId].endpoints[0].responses);
+          responsesIds.forEach((responseId) => {
+            expect(result.requests[requestId].endpoints[0].responses[responseId].matched).to.be.true;
+          });
+        });
+      });
+    });
+  });
+
+  it('Should validate correctly with request and example parameters as Example', function () {
+    let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
+        '/issue#479_2.yaml'), 'utf8'),
+      options = {
+        requestParametersResolution: 'Example',
+        exampleParametersResolution: 'Example',
+        showMissingInSchemaErrors: true,
+        strictRequestMatching: true,
+        ignoreUnresolvedVariables: true,
+        validateMetadata: true,
+        suggestAvailableFixes: true,
+        detailedBlobValidation: true
+      },
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options);
+    schemaPack.convert((err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      let historyRequest = [];
+
+      getAllTransactions(conversionResult.output[0].data, historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+        let requestIds = Object.keys(result.requests);
+        expect(err).to.be.null;
+        requestIds.forEach((requestId) => {
+          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
+          const responsesIds = Object.keys(result.requests[requestId].endpoints[0].responses);
+          responsesIds.forEach((responseId) => {
+            expect(result.requests[requestId].endpoints[0].responses[responseId].matched).to.be.true;
+          });
+        });
+      });
+    });
+  });
+
+
+});
 describe('The validator must validate generated collection from schema against schema itself', function () {
   var validOpenapiFolder = fs.readdirSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH)),
     suggestedFixProps = ['key', 'actualValue', 'suggestedValue'],
@@ -391,21 +582,22 @@ describe('The Validation option', function () {
             { detailedBlobValidation: true }),
           historyRequest = [],
           resultObj,
-          violatedKeywords = [
-            'data.items.minProperties',
-            'data.items.required',
-            'data.items.properties.entityId.maxLength',
-            'data.items.properties.accountNumber.minLength',
-            'data.items.properties.entityName.format',
-            'data.items.properties.incType.enum',
-            'data.items.properties.companyNumber.exclusiveMinimum',
-            'data.items.properties.website.type',
-            'data.items.properties.turnover.multipleOf',
-            'data.items.properties.description.pattern',
-            'data.items.properties.wants.uniqueItems',
-            'meta.maxProperties',
-            'meta.additionalProperties'
-          ];
+          violatedKeywords = {
+            'data.items.minProperties': '$.request.body.data[0]',
+            'data.items.required': '$.request.body.data[0]',
+            'data.items.properties.entityId.maxLength': '$.request.body.data[0].entityId',
+            'data.items.properties.accountNumber.minLength': '$.request.body.data[0].accountNumber',
+            'data.items.properties.entityName.format': '$.request.body.data[0].entityName',
+            'data.items.properties.incType.enum': '$.request.body.data[0].incType',
+            'data.items.properties.companyNumber.exclusiveMinimum': '$.request.body.data[0].companyNumber',
+            'data.items.properties.website.type': '$.request.body.data[0].website',
+            'data.items.properties.turnover.multipleOf': '$.request.body.data[0].turnover',
+            'data.items.properties.description.pattern': '$.request.body.data[0].description',
+            'data.items.properties.wants.uniqueItems': '$.request.body.data[0].wants',
+            'data.items.properties.user.properties.entityId.maxLength': '$.request.body.data[0].user.entityId',
+            'meta.maxProperties': '$.request.body.meta',
+            'meta.additionalProperties': '$.request.body.meta'
+          };
 
         getAllTransactions(JSON.parse(collection), historyRequest);
         schemaPack.validateTransaction(historyRequest, (err, result) => {
@@ -416,7 +608,8 @@ describe('The Validation option', function () {
           _.forEach(resultObj.mismatches, (mismatch) => {
             // remove starting string '$.paths[/user].post.requestBody.content[application/json].schema.properties.'
             let localJsonPath = mismatch.schemaJsonPath.slice(76);
-            expect(_.includes(violatedKeywords, localJsonPath)).to.eql(true);
+            expect(_.includes(_.keys(violatedKeywords), localJsonPath)).to.eql(true);
+            expect(_.includes(_.values(violatedKeywords), mismatch.transactionJsonPath)).to.eql(true);
 
             // mark matched path as empty to ensure repetition does'n occur
             violatedKeywords[_.indexOf(violatedKeywords, localJsonPath)] = '';
@@ -506,6 +699,13 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH
         ),
         '/compositeSchemaSpec.yaml'
+      ),
+      invalidTypeProperty = getSpecsPathByVersion(
+        getFoldersByVersion(
+          VALIDATION_DATA_FOLDER_PATH,
+          VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH
+        ),
+        '/invalidTypeProperty.yaml'
       );
 
     emptyParameterSpecs.forEach((specData) => {
@@ -749,7 +949,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
             ignoreUnresolvedVariables: true,
             validateMetadata: true,
             suggestAvailableFixes: true,
-            detailedBlobValidation: false
+            detailedBlobValidation: true
           },
           schemaPack = new Converter.SchemaPack({ type: 'string', data: primitiveDataTypeBodySpec }, options);
 
@@ -762,11 +962,13 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           // request body is boolean
           resultObj = result.requests[historyRequest[0].id].endpoints[0];
           expect(resultObj.mismatches).to.have.lengthOf(0);
-
+          const responseId = _.keys(resultObj.responses)[0];
           // request body is integer
-          responseObj = resultObj.responses[_.keys(resultObj.responses)[0]];
+          responseObj = resultObj.responses[responseId];
           expect(responseObj.mismatches).to.have.lengthOf(1);
           expect(responseObj.mismatches[0].suggestedFix.suggestedValue).to.be.within(5, 10);
+          expect(responseObj.mismatches[0].transactionJsonPath).to
+            .equal(`$.responses[${responseId}].body`);
           done();
         });
       });
@@ -957,6 +1159,36 @@ describe('VALIDATE FUNCTION TESTS ', function () {
             objectType2: 'prop named objectType2'
           });
 
+          done();
+        });
+      });
+    });
+    invalidTypeProperty.forEach((specData) => {
+      it('Should correctly suggest value and report transactionJsonPath on a body property with incorrect value ' +
+        specData.version, function (done) {
+        let invalidTypePropertySpec = fs.readFileSync(specData.path, 'utf-8'),
+          invalidTypePropertyCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+            '/invalidTypeProperty.json'), 'utf-8'),
+          options = { suggestAvailableFixes: true, detailedBlobValidation: true },
+          resultObj,
+          historyRequest = [],
+          schemaPack = new Converter.SchemaPack({ type: 'string', data: invalidTypePropertySpec }, options);
+
+        getAllTransactions(JSON.parse(invalidTypePropertyCollection), historyRequest);
+
+        schemaPack.validateTransaction(historyRequest, (err, result) => {
+          expect(err).to.be.null;
+          expect(result).to.be.an('object');
+          resultObj = result.requests[historyRequest[0].id].endpoints[0];
+          const responseId = _.keys(resultObj.responses)[0],
+            responseMissmatches = resultObj.responses[responseId].mismatches;
+          expect(responseMissmatches).to.have.lengthOf(2);
+          expect(responseMissmatches[0].transactionJsonPath)
+            .to.equal(`$.responses[${responseId}].body[0].tag`);
+          expect(responseMissmatches[0].suggestedFix.key).to.equal('tag');
+          expect(responseMissmatches[1].transactionJsonPath)
+            .to.equal(`$.responses[${responseId}].body[1].tag`);
+          expect(responseMissmatches[1].suggestedFix.key).to.equal('tag');
           done();
         });
       });
