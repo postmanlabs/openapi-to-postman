@@ -38,7 +38,7 @@ describe('bundle files method - 3.1', function () {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.1');
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled file as json - webhook object', async function () {
@@ -71,6 +71,6 @@ describe('bundle files method - 3.1', function () {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.1');
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 });
