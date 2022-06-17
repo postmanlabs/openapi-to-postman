@@ -80,7 +80,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled result from - sameRefDifferentSource', async function() {
@@ -137,7 +137,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled result from - multipleRefFromRootComponents', async function() {
@@ -184,7 +184,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled result from - bringLocalDependenciesFromExternalMultiple', async function() {
@@ -236,7 +236,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled result from - bringLocalDependenciesFromExternalWithItems', async function() {
@@ -278,7 +278,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled result from - bringLocalDependenciesFromExternal', async function() {
@@ -320,7 +320,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled result from - withParametersAndItems', async function() {
@@ -367,7 +367,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled result from - nestedLocalRef', async function() {
@@ -414,7 +414,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled result from - nestedRefs', async function() {
@@ -461,7 +461,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled result from - basicExample', async function() {
@@ -498,7 +498,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled result from - simpleRef', async function() {
@@ -540,7 +540,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled file with referenced tags from root', async function () {
@@ -572,7 +572,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled file with referenced paths from root', async function () {
@@ -609,7 +609,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled file with referenced paths from root - path references local schema', async function () {
@@ -646,7 +646,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled file with referenced example', async function () {
@@ -678,7 +678,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled file from - petstore-separated-yaml (contains allOf)', async function() {
@@ -724,7 +724,7 @@ describe('bundle files method - 2.0', function() {
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should bundle file from - additionalProperties 2.0', async function() {
@@ -760,7 +760,7 @@ describe('bundle files method - 2.0', function() {
     const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should return bundled file - referenced Security Schemes', async function () {
@@ -792,7 +792,7 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
   it('Should bundle file from - referenced response 2.0', async function() {
@@ -824,6 +824,6 @@ describe('bundle files method - 2.0', function() {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(JSON.stringify(res.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 });
