@@ -37,7 +37,8 @@ let expect = require('chai').expect,
   additionalProperties = path.join(__dirname, BUNDLES_FOLDER + '/additionalProperties'),
   compositeOneOf = path.join(__dirname, BUNDLES_FOLDER + '/composite_oneOf'),
   compositeNot = path.join(__dirname, BUNDLES_FOLDER + '/composite_not'),
-  compositeAnyOf = path.join(__dirname, BUNDLES_FOLDER + '/composite_anyOf');
+  compositeAnyOf = path.join(__dirname, BUNDLES_FOLDER + '/composite_anyOf'),
+  longPath = path.join(__dirname, BUNDLES_FOLDER + '/longPath');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -1923,6 +1924,63 @@ describe('bundle files method - 3.0', function () {
     catch (error) {
       expect(error.message).to.equal('The provided version "Anything" is not valid');
     }
+  });
+
+  it('Should bundle long paths into shorter ones', async function () {
+    let contentRootFile = fs.readFileSync(longPath + '/root.yaml', 'utf8'),
+      client = fs.readFileSync(longPath + '/client.json', 'utf8'),
+      magic = fs.readFileSync(longPath + '/magic.yaml', 'utf8'),
+      special = fs.readFileSync(longPath + '/special.yaml', 'utf8'),
+      userSpecial = fs.readFileSync(longPath + '/userSpecial.yaml', 'utf8'),
+      user = fs.readFileSync(longPath + '/user.yaml', 'utf8'),
+      expected = fs.readFileSync(longPath + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/pm/openapi-to-postman/test/data/toBundleExamples/same_ref_different_source/root.yaml'
+          }
+        ],
+        data: [
+          {
+            'content': contentRootFile,
+            'path': '/pm/openapi-to-postman/test/data/toBundleExamples/same_ref_different_source/root.yaml'
+          },
+          {
+            'content': client,
+            'path': '/pm/openapi-to-postman/test/data/toBundleExamples/same_ref_different_source/schemas' +
+              '/client/client.json'
+          },
+          {
+            'content': magic,
+            'path': '/pm/openapi-to-postman/test/data/toBundleExamples/same_ref_different_source/schemas' +
+              '/client/magic.yaml'
+          },
+          {
+            'content': special,
+            'path': '/pm/openapi-to-postman/test/data/toBundleExamples/same_ref_different_source/schemas' +
+              '/client/special.yaml'
+          },
+          {
+            'content': userSpecial,
+            'path': '/pm/openapi-to-postman/test/data/toBundleExamples/same_ref_different_source/schemas' +
+              '/user/special.yaml'
+          },
+          {
+            'content': user,
+            'path': '/pm/openapi-to-postman/test/data/toBundleExamples/same_ref_different_source/schemas/user/user.yaml'
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 });
 
