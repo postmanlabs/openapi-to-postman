@@ -1,0 +1,94 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Sample API",
+    "description": "Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.",
+    "version": "0.1.9"
+  },
+  "servers": [
+    {
+      "url": "http://api.example.com/v1",
+      "description": "Optional server description, e.g. Main (production) server"
+    },
+    {
+      "url": "http://staging-api.example.com",
+      "description": "Optional server description, e.g. Internal staging server for testing"
+    }
+  ],
+  "paths": {
+    "/users": {
+      "get": {
+        "summary": "Get a user by ID",
+        "responses": {
+          "200": {
+            "description": "A single user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/_schemas_user_user.yaml"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clients": {
+      "get": {
+        "summary": "Get a user by ID",
+        "responses": {
+          "200": {
+            "description": "A single user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/_schemas_client_client.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "_schemas_user_user.yaml": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "userName": {
+            "type": "string"
+          },
+          "special": {
+            "$ref": "#/components/schemas/_schemas_user_special.yaml"
+          }
+        }
+      },
+      "_schemas_client_client.json": {
+        "type": "object",
+        "properties": {
+          "idClient": {
+            "type": "integer"
+          },
+          "clientName": {
+            "type": "string"
+          },
+          "special": {
+            "$ref": "#/components/schemas/_schemas_user_special.yaml"
+          }
+        }
+      },
+      "_schemas_user_special.yaml": {
+        "type": "object",
+        "properties": {
+          "specialUserId": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
