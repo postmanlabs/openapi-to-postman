@@ -8,13 +8,13 @@ const expect = require('chai').expect,
 
 describe('getKeyInComponents function', function () {
   it('should return [] when is pointing to an element in components', function () {
-    const result = getKeyInComponents(['components', 'schemas'], 'pet.yaml');
+    const result = getKeyInComponents(['components', 'schemas'], 'pet.yaml', '3.0', '');
     expect(result).to.be.an('array').with.length(0);
   });
 
   it('should return [] when is pointing to a local ref in components',
     function () {
-      const result = getKeyInComponents(['components', 'schemas'], 'pet.yaml', '/definitions/world');
+      const result = getKeyInComponents(['components', 'schemas'], 'pet.yaml', '/definitions/world', '3.0', '');
       expect(result).to.be.an('array').with.length(0);
     });
 
