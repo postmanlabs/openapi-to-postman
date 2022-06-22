@@ -21,7 +21,7 @@ describe('getKeyInComponents function', function () {
     });
 
   it('should return ["schemas", "_folder_pet.yaml"] when the filename _folder_pet.yaml', function () {
-    const result = getKeyInComponents(['path', 'schemas'], '_folder_pet.yaml');
+    const result = getKeyInComponents(['path', 'schemas'], '_folder_pet.yaml', '3.0', '');
     expect(result).to.be.an('array').with.length(2);
     expect(result[0]).to.equal('schemas');
     expect(result[1]).to.equal('_folder_pet.yaml');
