@@ -38,6 +38,7 @@ let expect = require('chai').expect,
   compositeOneOf = path.join(__dirname, BUNDLES_FOLDER + '/composite_oneOf'),
   compositeNot = path.join(__dirname, BUNDLES_FOLDER + '/composite_not'),
   compositeAnyOf = path.join(__dirname, BUNDLES_FOLDER + '/composite_anyOf'),
+  longPath = path.join(__dirname, BUNDLES_FOLDER + '/longPath'),
   schemaCollision = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_from_responses'),
   schemaCollisionWRootComponent = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_w_root_components');
 
@@ -2002,6 +2003,63 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.specification.version).to.equal('3.0');
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
+
+  it('Should bundle long paths into shorter ones', async function () {
+    let contentRootFile = fs.readFileSync(longPath + '/root.yaml', 'utf8'),
+      client = fs.readFileSync(longPath + '/client.json', 'utf8'),
+      magic = fs.readFileSync(longPath + '/magic.yaml', 'utf8'),
+      special = fs.readFileSync(longPath + '/special.yaml', 'utf8'),
+      userSpecial = fs.readFileSync(longPath + '/userSpecial.yaml', 'utf8'),
+      user = fs.readFileSync(longPath + '/user.yaml', 'utf8'),
+      expected = fs.readFileSync(longPath + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/pm/openapi-to-postman/test/data/toBundleExamples/same_ref_different_source/root.yaml'
+          }
+        ],
+        data: [
+          {
+            'content': contentRootFile,
+            'path': '/pm/openapi-to-postman/test/data/toBundleExamples/same_ref_different_source/root.yaml'
+          },
+          {
+            'content': client,
+            'path': '/pm/openapi-to-postman/test/data/toBundleExamples/same_ref_different_source/schemas' +
+              '/client/client.json'
+          },
+          {
+            'content': magic,
+            'path': '/pm/openapi-to-postman/test/data/toBundleExamples/same_ref_different_source/schemas' +
+              '/client/magic.yaml'
+          },
+          {
+            'content': special,
+            'path': '/pm/openapi-to-postman/test/data/toBundleExamples/same_ref_different_source/schemas' +
+              '/client/special.yaml'
+          },
+          {
+            'content': userSpecial,
+            'path': '/pm/openapi-to-postman/test/data/toBundleExamples/same_ref_different_source/schemas' +
+              '/user/special.yaml'
+          },
+          {
+            'content': user,
+            'path': '/pm/openapi-to-postman/test/data/toBundleExamples/same_ref_different_source/schemas/user/user.yaml'
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
 });
 
 describe('getReferences method when node does not have any reference', function() {
@@ -2051,7 +2109,9 @@ describe('getReferences method when node does not have any reference', function(
         nodeIsRoot,
         removeLocalReferenceFromPath,
         'the/parent/filename',
-        {}
+        '3.0',
+        {},
+        ''
       );
     expect(result.nodeReferenceDirectory).to.be.an('object');
     expect(Object.keys(result.nodeReferenceDirectory).length).to.equal(1);
