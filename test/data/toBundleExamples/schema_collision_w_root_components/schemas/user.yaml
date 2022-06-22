@@ -1,0 +1,8 @@
+type: object
+properties:
+  aCollisionedItem:
+    type: integer
+  userName:
+    type: string
+  randomString:
+    type: string
