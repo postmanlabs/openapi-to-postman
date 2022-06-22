@@ -1933,6 +1933,45 @@ describe('bundle files method - 3.0', function () {
       expect(error.message).to.equal('The provided version "Anything" is not valid');
     }
   });
+
+
+  it('should ignore reference when is empty content', async function() {
+    let input =
+    {
+      type: 'multiFile',
+      specificationVersion: '3.0',
+      bundleFormat: 'JSON',
+      data: [
+        {
+          path: 'hello.yaml',
+          content: ''
+        },
+        {
+          path: 'openapi.yaml',
+          content: 'openapi: 3.0.0\n' +
+            'info:\n' +
+            '  title: hello world\n' +
+            '  version: 0.1.1\n' +
+            'paths:\n' +
+            '  /hello:\n' +
+            '    get:\n' +
+            '      summary: get the hello\n' +
+            '      responses:\n' +
+            '        200:\n' +
+            '          description: sample des\n' +
+            '          content:\n' +
+            '            application/json:\n' +
+            '              schema:\n' +
+            '                $ref: \'./hello.yaml\''
+        }
+      ]
+    };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+  });
+
 });
 
 
