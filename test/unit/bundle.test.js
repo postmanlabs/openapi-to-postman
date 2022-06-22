@@ -37,7 +37,9 @@ let expect = require('chai').expect,
   additionalProperties = path.join(__dirname, BUNDLES_FOLDER + '/additionalProperties'),
   compositeOneOf = path.join(__dirname, BUNDLES_FOLDER + '/composite_oneOf'),
   compositeNot = path.join(__dirname, BUNDLES_FOLDER + '/composite_not'),
-  compositeAnyOf = path.join(__dirname, BUNDLES_FOLDER + '/composite_anyOf');
+  compositeAnyOf = path.join(__dirname, BUNDLES_FOLDER + '/composite_anyOf'),
+  schemaCollision = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_from_responses'),
+  schemaCollisionWRootComponent = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_w_root_components');
 
 
 describe('bundle files method - 3.0', function () {
@@ -1933,6 +1935,82 @@ describe('bundle files method - 3.0', function () {
       expect(error.message).to.equal('The provided version "Anything" is not valid');
     }
   });
+
+  it('Should return bundled file as json - schema_collision_from_responses', async function () {
+    let contentRootFile = fs.readFileSync(schemaCollision + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(schemaCollision + '/schemas_/_user.yaml', 'utf8'),
+      user1 = fs.readFileSync(schemaCollision + '/schemas/__user.yaml', 'utf8'),
+      user2 = fs.readFileSync(schemaCollision + '/schemas__/user.yaml', 'utf8'),
+      expected = fs.readFileSync(schemaCollision + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/schemas__/user.yaml',
+            content: user2
+          },
+          {
+            path: '/schemas_/_user.yaml',
+            content: user
+          },
+          {
+            path: '/schemas/__user.yaml',
+            content: user1
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file as json - schema_collision_w_root_components', async function () {
+    let contentRootFile = fs.readFileSync(schemaCollisionWRootComponent + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(schemaCollisionWRootComponent + '/schemas/user.yaml', 'utf8'),
+      expected = fs.readFileSync(schemaCollisionWRootComponent + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/schemas/user.yaml',
+            content: user
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
 });
 
 
@@ -1951,7 +2029,8 @@ describe('getReferences method when node does not have any reference', function(
         userNode.oasObject,
         nodeIsRoot,
         removeLocalReferenceFromPath,
-        'the/parent/filename'
+        'the/parent/filename',
+        {}
       );
 
     expect(result.referencesInNode).to.be.an('array').with.length(0);
@@ -1983,7 +2062,8 @@ describe('getReferences method when node does not have any reference', function(
         userNode.oasObject,
         nodeIsRoot,
         removeLocalReferenceFromPath,
-        'the/parent/filename'
+        'the/parent/filename',
+        {}
       );
     expect(result.nodeReferenceDirectory).to.be.an('object');
     expect(Object.keys(result.nodeReferenceDirectory).length).to.equal(1);
