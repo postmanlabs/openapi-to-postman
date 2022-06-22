@@ -703,6 +703,8 @@ describe('bundle files method - 3.0', function () {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
+    fs.writeFileSync('bundled.json', JSON.stringify(res.output.data[0].bundledContent));
+
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
@@ -1938,43 +1940,6 @@ describe('bundle files method - 3.0', function () {
   });
 
 
-  it('should ignore reference when is empty content', async function() {
-    let input =
-    {
-      type: 'multiFile',
-      specificationVersion: '3.0',
-      bundleFormat: 'JSON',
-      data: [
-        {
-          path: 'hello.yaml',
-          content: ''
-        },
-        {
-          path: 'openapi.yaml',
-          content: 'openapi: 3.0.0\n' +
-            'info:\n' +
-            '  title: hello world\n' +
-            '  version: 0.1.1\n' +
-            'paths:\n' +
-            '  /hello:\n' +
-            '    get:\n' +
-            '      summary: get the hello\n' +
-            '      responses:\n' +
-            '        200:\n' +
-            '          description: sample des\n' +
-            '          content:\n' +
-            '            application/json:\n' +
-            '              schema:\n' +
-            '                $ref: \'./hello.yaml\''
-        }
-      ]
-    };
-    const res = await Converter.bundle(input);
-    expect(res).to.not.be.empty;
-    expect(res.result).to.be.true;
-    expect(res.output.specification.version).to.equal('3.0');
-  });
-
   it('Should return bundled file as json - schema_collision_from_responses', async function () {
     let contentRootFile = fs.readFileSync(schemaCollision + '/root.yaml', 'utf8'),
       user = fs.readFileSync(schemaCollision + '/schemas_/_user.yaml', 'utf8'),
@@ -2107,6 +2072,157 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.specification.version).to.equal('3.0');
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
+
+  it('should ignore reference when is empty content and no root is sent', async function () {
+    let input =
+    {
+      type: 'multiFile',
+      specificationVersion: '3.0',
+      bundleFormat: 'YAML',
+      data: [
+        {
+          path: 'hello.yaml',
+          content: ''
+        },
+        {
+          path: 'openapi.yaml',
+          content: 'openapi: 3.0.0\n' +
+            'info:\n' +
+            '  title: hello world\n' +
+            '  version: 0.1.1\n' +
+            'paths:\n' +
+            '  /hello:\n' +
+            '    get:\n' +
+            '      summary: get the hello\n' +
+            '      responses:\n' +
+            '        \'200\':\n' +
+            '          description: sample des\n' +
+            '          content:\n' +
+            '            application/json:\n' +
+            '              schema:\n' +
+            '                $ref: ./hello.yaml\n'
+        }
+      ]
+    };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(res.output.data[0].bundledContent).to.be.equal(input.data[1].content);
+  });
+
+  it('should ignore reference when is empty content', async function () {
+    let input =
+    {
+      type: 'multiFile',
+      specificationVersion: '3.0',
+      bundleFormat: 'YAML',
+      rootFiles: [{ path: 'openapi.yaml' }],
+      data: [
+        {
+          path: 'hello.yaml',
+          content: ''
+        },
+        {
+          path: 'openapi.yaml',
+          content: 'openapi: 3.0.0\n' +
+            'info:\n' +
+            '  title: hello world\n' +
+            '  version: 0.1.1\n' +
+            'paths:\n' +
+            '  /hello:\n' +
+            '    get:\n' +
+            '      summary: get the hello\n' +
+            '      responses:\n' +
+            '        \'200\':\n' +
+            '          description: sample des\n' +
+            '          content:\n' +
+            '            application/json:\n' +
+            '              schema:\n' +
+            '                $ref: ./hello.yaml\n'
+        }
+      ]
+    };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(res.output.data[0].bundledContent).to.be.equal(input.data[1].content);
+  });
+
+  it('should ignore reference when is invalid content', async function () {
+    let input =
+    {
+      type: 'multiFile',
+      specificationVersion: '3.0',
+      bundleFormat: 'YAML',
+      rootFiles: [{ path: 'openapi.yaml' }],
+      data: [
+        {
+          path: 'hello.yaml',
+          content: 'asd'
+        },
+        {
+          path: 'openapi.yaml',
+          content: 'openapi: 3.0.0\n' +
+            'info:\n' +
+            '  title: hello world\n' +
+            '  version: 0.1.1\n' +
+            'paths:\n' +
+            '  /hello:\n' +
+            '    get:\n' +
+            '      summary: get the hello\n' +
+            '      responses:\n' +
+            '        \'200\':\n' +
+            '          description: sample des\n' +
+            '          content:\n' +
+            '            application/json:\n' +
+            '              schema:\n' +
+            '                $ref: ./hello.yaml\n'
+        }
+      ]
+    };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(res.output.data[0].bundledContent).to.be.equal(input.data[1].content);
+  });
+
+  it('should ignore reference when is invalid', async function () {
+    let input =
+    {
+      type: 'multiFile',
+      specificationVersion: '3.0',
+      bundleFormat: 'YAML',
+      rootFiles: [{ path: 'openapi.yaml' }],
+      data: [
+        {
+          path: 'openapi.yaml',
+          content: 'openapi: 3.0.0\n' +
+            'info:\n' +
+            '  title: hello world\n' +
+            '  version: 0.1.1\n' +
+            'paths:\n' +
+            '  /hello:\n' +
+            '    get:\n' +
+            '      summary: get the hello\n' +
+            '      responses:\n' +
+            '        \'200\':\n' +
+            '          description: sample des\n' +
+            '          content:\n' +
+            '            application/json:\n' +
+            '              schema:\n' +
+            '                $ref: ./hello.yaml\n'
+        }
+      ]
+    };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(res.output.data[0].bundledContent).to.be.equal(input.data[0].content);
+  });
 });
 
 
@@ -2163,7 +2279,8 @@ describe('getReferences method when node does not have any reference', function(
         'the/parent/filename',
         '3.0',
         {},
-        ''
+        '',
+        []
       );
     expect(result.nodeReferenceDirectory).to.be.an('object');
     expect(Object.keys(result.nodeReferenceDirectory).length).to.equal(1);
