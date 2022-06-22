@@ -1,0 +1,109 @@
+{
+  "swagger": 2,
+  "info": {
+    "title": "Sample API",
+    "description": "Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.",
+    "version": "0.1.9"
+  },
+  "servers": [
+    {
+      "url": "http://api.example.com/v1",
+      "description": "Optional server description, e.g. Main (production) server"
+    },
+    {
+      "url": "http://staging-api.example.com",
+      "description": "Optional server description, e.g. Internal staging server for testing"
+    }
+  ],
+  "paths": {
+    "/users/{userId}": {
+      "get": {
+        "summary": "Get a user by ID",
+        "responses": {
+          "200": {
+            "description": "A single user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/_schemas___user.yaml"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/weird": {
+      "get": {
+        "summary": "Get a user by ID",
+        "responses": {
+          "200": {
+            "description": "A single user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/_schemas___user.yaml_RQm8"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/other": {
+      "get": {
+        "summary": "Get a user by ID",
+        "responses": {
+          "200": {
+            "description": "A single user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/_schemas___user.yaml_mvS0"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "_schemas___user.yaml": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "userName": {
+          "type": "string"
+        }
+      }
+    },
+    "_schemas___user.yaml_RQm8": {
+      "type": "object",
+      "properties": {
+        "otherCollisionedId": {
+          "type": "integer"
+        },
+        "someData": {
+          "type": "string"
+        }
+      }
+    },
+    "_schemas___user.yaml_mvS0": {
+      "type": "object",
+      "properties": {
+        "aCollisionedItem": {
+          "type": "integer"
+        },
+        "userName": {
+          "type": "string"
+        },
+        "randomString": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
