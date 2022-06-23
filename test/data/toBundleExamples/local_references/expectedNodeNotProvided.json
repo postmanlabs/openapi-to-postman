@@ -60,7 +60,7 @@
   },
   "components": {
     "responses": {
-      "/responses.yaml": "This related node was not found in provided data"
+      "$ref": "./responses.yaml"
     },
     "schemas": {
       "Monster": {
