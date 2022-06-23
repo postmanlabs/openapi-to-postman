@@ -703,8 +703,6 @@ describe('bundle files method - 3.0', function () {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    fs.writeFileSync('bundled.json', JSON.stringify(res.output.data[0].bundledContent));
-
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
