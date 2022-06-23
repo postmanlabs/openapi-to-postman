@@ -180,6 +180,14 @@ const optionIds = [
       default: false,
       description: 'Whether to allow matching path variables that are available as part of URL itself ' +
         'in the collection request'
+    },
+    includeReferenceMap: {
+      name: 'Include Reference map',
+      type: 'boolean',
+      default: false,
+      description: 'Whether or not to include reference map or not as part of output',
+      external: false,
+      usage: ['BUNDLE']
     }
   };
 
