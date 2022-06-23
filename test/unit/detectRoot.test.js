@@ -246,7 +246,7 @@ describe('detectRoot method', function() {
     expect(res.output.data[0].path).to.equal('/swagger.json');
   });
 
-  it('should read content when is not present 3.0 and no specific version', async function () {
+  it('should not read content from FS when is not present', async function () {
     let input = {
       type: 'multiFile',
       specificationVersion: '3.1.0',
@@ -262,8 +262,7 @@ describe('detectRoot method', function() {
     const res = await Converter.detectRootFiles(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(res.output.data[0].path).to.equal(validHopService31x);
-
+    expect(res.output.data.length).to.equal(0);
   });
 
   it('should return error when "type" parameter is not sent', async function () {
