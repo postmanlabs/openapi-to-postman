@@ -663,8 +663,8 @@ describe('bundle files method - 3.0', function () {
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
-  it('Should return a "/missing/node/path": NotProvided' +
-    ' in the place of a not providen node - local_references', async function () {
+  it('Should return the not handled reference ($ref: ./responses.yaml) ' +
+    'in the place of a not provided node - local_references', async function () {
     let contentRootFile = fs.readFileSync(localRefFolder + '/root.yaml', 'utf8'),
       schemasIndex = fs.readFileSync(localRefFolder + '/schemas/index.yaml', 'utf8'),
       schemasClient = fs.readFileSync(localRefFolder + '/schemas/client.yaml', 'utf8'),
