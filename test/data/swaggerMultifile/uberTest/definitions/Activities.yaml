@@ -1,0 +1,17 @@
+properties:
+  offset:
+    type: integer
+    format: int32
+    description: Position in pagination.
+  limit:
+    type: integer
+    format: int32
+    description: Number of items to retrieve (100 max).
+  count:
+    type: integer
+    format: int32
+    description: Total number of items available.
+  history:
+    type: array
+    items:
+      $ref: '#/definitions/Activity'

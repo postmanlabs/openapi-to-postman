@@ -1,0 +1,219 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "API Gateway / Cognito Sample API",
+    "description": "Pet store sample that uses Cognito Developer Authenticated Identities to generate credentials through a Java Lambda Function",
+    "version": "1.0.0"
+  },
+  "host": "execute-api.us-east-1.amazonaws.com",
+  "schemes": [
+    "https"
+  ],
+  "basePath": "/",
+  "produces": [
+    "application/json"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "paths": {
+    "/users": {
+      "post": {
+        "summary": "Registers a new user",
+        "description": "Creates a new user in the DynamoDB backend database and returns a set \nof temporary credentials to sign future requests.\n",
+        "produces": [
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "name": "NewUser",
+            "in": "body",
+            "description": "New user details.",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          }
+        ],
+        "tags": [
+          "Auth"
+        ],
+        "x-postman-meta": {
+          "currentHelper": "awsSigV4",
+          "helperAttributes": {
+            "accessKey": "{{aws_access_key_id}}",
+            "secretKey": "{{aws_secret_access_key}}",
+            "region": "eu-west-1",
+            "service": "execute-api",
+            "saveHelper": true
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The username of the new user and set of temporary credentials",
+            "schema": {
+              "$ref": "#/definitions/RegisterUserResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "User": {
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "A unique username for the user"
+        },
+        "password": {
+          "type": "string",
+          "description": "A password for the new user"
+        }
+      }
+    },
+    "RegisterUserResponse": {
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "The username of the new user"
+        },
+        "identityId": {
+          "type": "string",
+          "description": "The unique identifier for the new user"
+        },
+        "token": {
+          "type": "string",
+          "description": "An OpenID token for the new user"
+        },
+        "credentials": {
+          "properties": {
+            "accessKey": {
+              "type": "string",
+              "description": "Temporary access key to sign requests"
+            },
+            "secretKey": {
+              "type": "string",
+              "description": "Temporary secret access key to sign requests"
+            },
+            "sessionToken": {
+              "type": "string",
+              "description": "Tempoarary session token"
+            },
+            "expiration": {
+              "type": "integer",
+              "description": "Expiration date of the temporary credentials in millis since 1/1/1970\n"
+            }
+          }
+        }
+      }
+    },
+    "LoginUserResponse": {
+      "properties": {
+        "identityId": {
+          "type": "string",
+          "description": "The unique identifier for the new user"
+        },
+        "token": {
+          "type": "string",
+          "description": "An OpenID token for the new user"
+        },
+        "credentials": {
+          "properties": {
+            "accessKey": {
+              "type": "string",
+              "description": "Temporary access key to sign requests"
+            },
+            "secretKey": {
+              "type": "string",
+              "description": "Temporary secret access key to sign requests"
+            },
+            "sessionToken": {
+              "type": "string",
+              "description": "Tempoarary session token"
+            },
+            "expiration": {
+              "type": "integer",
+              "description": "Expiration date of the temporary credentials in millis since 1/1/1970\n"
+            }
+          }
+        }
+      }
+    },
+    "NewPet": {
+      "properties": {
+        "petType": {
+          "type": "string",
+          "description": "Free text pet type"
+        },
+        "petName": {
+          "type": "string",
+          "description": "Free text pet name"
+        },
+        "petAge": {
+          "type": "integer",
+          "description": "Age of the new pet"
+        }
+      }
+    },
+    "NewPetResponse": {
+      "properties": {
+        "petId": {
+          "type": "string",
+          "description": "The generated unique identifier for the new pet"
+        }
+      }
+    },
+    "Pet": {
+      "properties": {
+        "petId": {
+          "type": "string",
+          "description": "The generated unique identifier for the new pet"
+        },
+        "petType": {
+          "type": "string",
+          "description": "Free text pet type"
+        },
+        "petName": {
+          "type": "string",
+          "description": "Free text pet name"
+        },
+        "petAge": {
+          "type": "integer",
+          "description": "Age of the new pet"
+        }
+      }
+    },
+    "Pets": {
+      "type": "array",
+      "items": {
+        "$ref": "Pet"
+      }
+    },
+    "Error": {
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
