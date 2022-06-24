@@ -50,7 +50,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       issue10229 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#10229.json'),
       deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml'),
       valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml'),
-      petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml');
+      petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml'),
+      formDataParamDescription = path.join(__dirname, VALID_OPENAPI_PATH, '/form_data_param_description.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1138,6 +1139,21 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.result).to.equal(true);
           expect(conversionResult.output[0].data.item[0].request.url.variable[0].value).to.equal('value,1');
           expect(conversionResult.output[0].data.item[0].request.url.query[1].key).to.equal('user[value]');
+          done();
+        });
+    });
+
+    it('[Github #559]Should convert description in form data parameters' +
+    petstoreParamExample, function(done) {
+      var openapi = fs.readFileSync(formDataParamDescription, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        { }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output[0].data.item[0].request.body.formdata[0].description)
+            .to.equal('Request param description');
+          expect(conversionResult.output[0].data.item[0].request.body.formdata[0].key).to.equal('requestParam');
+          expect(conversionResult.output[0].data.item[0].request.body.formdata[0].value).to.equal('<string>');
           done();
         });
     });
