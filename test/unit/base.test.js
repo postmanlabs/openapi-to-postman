@@ -51,7 +51,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
       deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml'),
       valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml'),
       petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml'),
-      invalidNullInfo = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-null-info.json');
+      invalidNullInfo = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-null-info.json'),
+      invalidNullInfoTitle = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-title.json'),
+      invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1150,6 +1152,30 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(err).to.be.null;
           expect(conversionResult.result).to.equal(false);
           expect(conversionResult.reason).to.equal('Specification must contain a valid not null info');
+          done();
+        });
+    });
+
+    it('The converter must throw an error for invalid null info title', function (done) {
+      var openapi = fs.readFileSync(invalidNullInfoTitle, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(false);
+          expect(conversionResult.reason)
+            .to.equal('Specification must contain a title in order to generate a collection');
+          done();
+        });
+    });
+
+    it('The converter must throw an error for invalid null info version', function (done) {
+      var openapi = fs.readFileSync(invalidNullInfoVersion, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(false);
+          expect(conversionResult.reason)
+            .to.equal('Specification must contain a semantic version number of the API in the Info Object');
           done();
         });
     });

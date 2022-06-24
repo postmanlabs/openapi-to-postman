@@ -42,8 +42,24 @@ describe('parseSpec method', function () {
       .to.equal('Specification must contain a semantic version number of the API in the Info Object');
   });
 
+  it('should return false and Spec must contain information version different than null', function () {
+    let fileContent = fs.readFileSync(invalid31xFolder + '/invalid-info-null-version.json', 'utf8');
+    const parsedSpec = concreteUtils.parseSpec(fileContent, { includeWebhooks: false });
+    expect(parsedSpec.result).to.be.false;
+    expect(parsedSpec.reason)
+      .to.equal('Specification must contain a semantic version number of the API in the Info Object');
+  });
+
   it('should return false and Spec must contain information title', function () {
     let fileContent = fs.readFileSync(invalid31xFolder + '/invalid-info-no-title.json', 'utf8');
+    const parsedSpec = concreteUtils.parseSpec(fileContent, { includeWebhooks: false });
+    expect(parsedSpec.result).to.be.false;
+    expect(parsedSpec.reason)
+      .to.equal('Specification must contain a title in order to generate a collection');
+  });
+
+  it('should return false and Spec must contain information title different than null', function () {
+    let fileContent = fs.readFileSync(invalid31xFolder + '/invalid-info-null-title.json', 'utf8');
     const parsedSpec = concreteUtils.parseSpec(fileContent, { includeWebhooks: false });
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason)
