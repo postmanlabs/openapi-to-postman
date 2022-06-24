@@ -349,6 +349,7 @@ describe('bundle files method - 3.0', function () {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data[0].bundledContent).to.be.equal(expected);
+
   });
 
   it('Should return bundled file - with_parameters', async function () {
@@ -2227,7 +2228,9 @@ describe('getReferences method when node does not have any reference', function(
         nodeIsRoot,
         removeLocalReferenceFromPath,
         'the/parent/filename',
-        {}
+        '3.0',
+        {},
+        ''
       );
 
     expect(result.referencesInNode).to.be.an('array').with.length(0);
