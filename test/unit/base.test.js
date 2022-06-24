@@ -50,7 +50,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       issue10229 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#10229.json'),
       deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml'),
       valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml'),
-      petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml');
+      petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml'),
+      invalidNullInfo = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-null-info.json');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1138,6 +1139,17 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.result).to.equal(true);
           expect(conversionResult.output[0].data.item[0].request.url.variable[0].value).to.equal('value,1');
           expect(conversionResult.output[0].data.item[0].request.url.query[1].key).to.equal('user[value]');
+          done();
+        });
+    });
+
+    it('The converter must throw an error for invalid null info', function (done) {
+      var openapi = fs.readFileSync(invalidNullInfo, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(false);
+          expect(conversionResult.reason).to.equal('Specification must contain a valid not null info');
           done();
         });
     });
