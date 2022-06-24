@@ -25,7 +25,8 @@ const optionIds = [
     'disableOptionalParameters',
     'keepImplicitHeaders',
     'includeWebhooks',
-    'allowUrlPathVarMatching'
+    'allowUrlPathVarMatching',
+    'includeReferenceMap'
   ],
   expectedOptions = {
     collapseFolders: {
