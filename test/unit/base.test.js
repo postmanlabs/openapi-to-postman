@@ -1151,7 +1151,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
         {}, (err, conversionResult) => {
           expect(err).to.be.null;
           expect(conversionResult.result).to.equal(false);
-          expect(conversionResult.reason).to.equal('Specification must contain a valid not null info');
+          expect(conversionResult.reason)
+            .to.equal('Specification must contain an Info Object for the meta-data of the API');
           done();
         });
     });

@@ -31,7 +31,7 @@ describe('parseSpec method', function () {
     let fileContent = fs.readFileSync(invalid31xFolder + '/invalid-null-info.json', 'utf8');
     const parsedSpec = concreteUtils.parseSpec(fileContent, { includeWebhooks: false });
     expect(parsedSpec.result).to.be.false;
-    expect(parsedSpec.reason).to.equal('Specification must contain a valid not null info');
+    expect(parsedSpec.reason).to.equal('Specification must contain an Info Object for the meta-data of the API');
   });
 
   it('should return false and Spec must contain information version', function () {
