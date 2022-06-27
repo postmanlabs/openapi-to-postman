@@ -1127,7 +1127,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
 
-    it('Shouldconvert collection and resolve remote references using custom fetch', function(done) {
+    it('Should convert collection and resolve remote references using custom fetch', function(done) {
       let openapi = fs.readFileSync(swaggerRemoteRef, 'utf8'),
         customFetch = (url) => {
           const url1 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +

@@ -8,8 +8,7 @@ var expect = require('chai').expect,
   VALIDATION_DATA_FOLDER_PATH = '../data/validationData',
   VALIDATION_DATA_OPTIONS_FOLDER_31_PATH = '../data/31CollectionTransactions/validateOptions',
   VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH = '../data/31CollectionTransactions/validate30Scenarios',
-  VALID_OPENAPI_FOLDER_PATH = '../data/valid_openapi',
-  REMOTE_REFS_PATH = '../data/remote_refs';
+  VALID_OPENAPI_FOLDER_PATH = '../data/valid_openapi';
 
 /**
  * Extract all transaction from collection and appends them into array
@@ -1306,33 +1305,6 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       expect(result[0].name).to.eql('GET /{jobid}');
       expect(result[1].name).to.eql('GET /lookups');
       done();
-    });
-  });
-
-  describe('validateTransaction with remote references', function () {
-    it('Should validate correctly with remote references', function () {
-      let fileData = fs.readFileSync(path.join(__dirname, REMOTE_REFS_PATH + '/swagger.yaml'), 'utf-8'),
-        options = {
-          resolveRemoteRefs: true
-        },
-        schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options);
-
-      schemaPack.convert((err, conversionResult) => {
-        expect(err).to.be.null;
-        expect(conversionResult.result).to.equal(true);
-
-        let historyRequest = [];
-
-        getAllTransactions(conversionResult.output[0].data, historyRequest);
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
-          expect(err).to.be.null;
-          expect(result).to.be.an('object');
-          let requestIds = Object.keys(result.requests);
-          requestIds.forEach((requestId) => {
-            expect(result.requests[requestId].endpoints[0].matched).to.be.true;
-          });
-        });
-      });
     });
   });
 });
