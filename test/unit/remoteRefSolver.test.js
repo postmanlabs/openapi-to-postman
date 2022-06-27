@@ -149,7 +149,6 @@ describe('resolveRemote and bundle', function () {
         fileName: 'swagger.yaml',
         content: openapi
       }, undefined, customFetch),
-      parsed = { oasObject: specRoot.parsed, inputFormat: 'YAML' },
       bundleRes = schemaUtils.processRelatedFiles({
         type: 'folder',
         specificationVersion: '3.0.0',
@@ -157,7 +156,7 @@ describe('resolveRemote and bundle', function () {
           {
             fileName: 'root.yaml',
             content: openapi,
-            parsed: parsed.parsed
+            parsed: specRoot.parsed
           }
         ],
         data: remoteRefs,
