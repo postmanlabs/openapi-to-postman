@@ -50,8 +50,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
       issue10229 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#10229.json'),
       deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml'),
       valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml'),
-      petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml');
-
+      petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml'),
+      queryParamWithEnumResolveAsExample =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/query_param_with_enum_resolve_as_example.json');
 
     it('Should add collection level auth with type as `bearer`' +
     securityTestCases, function(done) {
@@ -1140,6 +1141,23 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data.item[0].request.url.query[1].key).to.equal('user[value]');
           done();
         });
+    });
+
+    it('[Github #518]- integer query params with enum values get default value of NaN' +
+    descriptionInBodyParams, function(done) {
+      var openapi = fs.readFileSync(queryParamWithEnumResolveAsExample, 'utf8');
+      Converter.convert({
+        type: 'string',
+        data: openapi
+      }, {
+        schemaFaker: true,
+        requestParametersResolution: 'Example'
+      }, (err, conversionResult) => {
+        let fakedParam = conversionResult.output[0].data.item[0].request.url.query[0].value;
+        expect(err).to.be.null;
+        expect(fakedParam).to.be.equal('120');
+        done();
+      });
     });
   });
   describe('Converting swagger 2.0 files', function() {
