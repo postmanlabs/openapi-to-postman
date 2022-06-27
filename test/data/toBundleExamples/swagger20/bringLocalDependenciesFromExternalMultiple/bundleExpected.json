@@ -17,10 +17,10 @@
         "description": "Optional extended description in Markdown.",
         "parameters": [
           {
-            "$ref": "#/parameters/~1parameters~1parameters.yaml%23~1Parameter1"
+            "$ref": "#/parameters/_parameters_parameters.yaml-_Parameter1"
           },
           {
-            "$ref": "#/parameters/~1parameters~1parameters.yaml%23~1Parameter2"
+            "$ref": "#/parameters/_parameters_parameters.yaml-_Parameter2"
           }
         ],
         "produces": [
@@ -32,7 +32,7 @@
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/~1pet.yaml%23~1Pet"
+                "$ref": "#/definitions/_pet.yaml-_Pet"
               }
             }
           }
@@ -41,7 +41,7 @@
     }
   },
   "parameters": {
-    "/parameters/parameters.yaml#/Parameter1": {
+    "_parameters_parameters.yaml-_Parameter1": {
       "name": "tags",
       "in": "query",
       "description": "tags to filter by",
@@ -52,7 +52,7 @@
         "type": "string"
       }
     },
-    "/parameters/parameters.yaml#/Parameter2": {
+    "_parameters_parameters.yaml-_Parameter2": {
       "name": "limit",
       "in": "query",
       "description": "maximum number of results to return",
@@ -62,7 +62,7 @@
     }
   },
   "definitions": {
-    "/pet.yaml#/Pet": {
+    "_pet.yaml-_Pet": {
       "type": "object",
       "required": [
         "id",
@@ -80,39 +80,48 @@
           "type": "string"
         },
         "Color": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "uses": {
-              "type": "string"
-            },
-            "color": {
-              "type": "string"
-            }
-          }
+          "$ref": "#/definitions/_pet.yaml-_Color"
         },
         "FavoriteFood": {
-          "type": "object",
-          "properties": {
-            "brand": {
-              "type": "string"
-            },
-            "benefits": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/~1food.yaml%23~1Benefit"
-              }
-            },
-            "cost": {
-              "type": "string"
-            }
-          }
+          "$ref": "#/definitions/_food.yaml-_Food"
         }
       }
     },
-    "/food.yaml#/Benefit": {
+    "_pet.yaml-_Color": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "uses": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        }
+      }
+    },
+    "_food.yaml-_Food": {
+      "type": "object",
+      "properties": {
+        "brand": {
+          "$ref": "#/definitions/_food.yaml-_Brand"
+        },
+        "benefits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/_food.yaml-_Benefit"
+          }
+        },
+        "cost": {
+          "type": "string"
+        }
+      }
+    },
+    "_food.yaml-_Brand": {
+      "type": "string"
+    },
+    "_food.yaml-_Benefit": {
       "type": "object",
       "properties": {
         "benefit": {

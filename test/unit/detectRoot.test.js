@@ -20,7 +20,7 @@ describe('detectRoot method', function() {
   it('should return one root 3.0 correctly no specific version', async function() {
     let contentFile = fs.readFileSync(validPetstore, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         data: [
           {
             path: '/petstore.yaml',
@@ -32,13 +32,13 @@ describe('detectRoot method', function() {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data[0].path).to.equal('/petstore.yaml');
-    expect(res.output.specification.version).to.equal('3.0.0');
+    expect(res.output.specification.version).to.equal('3.0');
   });
 
   it('should return one root 3.0 correctly', async function() {
     let contentFile = fs.readFileSync(validPetstore, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         data: [
           {
@@ -56,7 +56,7 @@ describe('detectRoot method', function() {
   it('should return no root when specific version is not present', async function() {
     let contentFile = fs.readFileSync(validPetstore, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.1',
         data: [
           {
@@ -75,7 +75,7 @@ describe('detectRoot method', function() {
     let petRoot = fs.readFileSync(petstoreSeparated, 'utf8'),
       petSchema = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         data: [
           {
@@ -98,7 +98,7 @@ describe('detectRoot method', function() {
   it('should return one root 3.1 correctly', async function() {
     let contentFile = fs.readFileSync(validHopService31x, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.1',
         data: [
           {
@@ -117,7 +117,7 @@ describe('detectRoot method', function() {
     let petstoreContent = fs.readFileSync(validPetstore, 'utf8'),
       hopService31x = fs.readFileSync(validHopService31x, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0.0',
         data: [
           {
@@ -141,7 +141,7 @@ describe('detectRoot method', function() {
     let petstoreContent = fs.readFileSync(validPetstore, 'utf8'),
       hopService31x = fs.readFileSync(validHopService31x, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.1.0',
         data: [
           {
@@ -163,7 +163,7 @@ describe('detectRoot method', function() {
 
   it('should return no root file when there is not a root file present', async function() {
     let input = {
-      type: 'folder',
+      type: 'multiFile',
       specificationVersion: '3.0.0',
       data: [
         {
@@ -182,7 +182,7 @@ describe('detectRoot method', function() {
     let petstoreContent = fs.readFileSync(validPetstore, 'utf8'),
       noAuthContent = fs.readFileSync(noauth, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0.0',
         data: [
           {
@@ -205,7 +205,7 @@ describe('detectRoot method', function() {
 
   it('should propagate one error correctly', async function () {
     let input = {
-      type: 'folder',
+      type: 'multiFile',
       specificationVersion: '3.0.0',
       data: [
         {
@@ -218,7 +218,7 @@ describe('detectRoot method', function() {
       await Converter.detectRootFiles(input);
     }
     catch (ex) {
-      expect(ex.message).to.equal('undefined input');
+      expect(ex.message).to.equal('"Path" of the data element should be provided');
     }
   });
 
@@ -226,7 +226,7 @@ describe('detectRoot method', function() {
     let petRoot = fs.readFileSync(petstoreSeparatedJson, 'utf8'),
       petSchema = fs.readFileSync(petstoreSeparatedPetJson, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         data: [
           {
@@ -246,9 +246,9 @@ describe('detectRoot method', function() {
     expect(res.output.data[0].path).to.equal('/swagger.json');
   });
 
-  it('should read content when is not present 3.0 and no specific version', async function () {
+  it('should not read content from FS when is not present', async function () {
     let input = {
-      type: 'folder',
+      type: 'multiFile',
       specificationVersion: '3.1.0',
       data: [
         {
@@ -262,8 +262,69 @@ describe('detectRoot method', function() {
     const res = await Converter.detectRootFiles(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
-    expect(res.output.data[0].path).to.equal(validHopService31x);
-
+    expect(res.output.data.length).to.equal(0);
   });
 
+  it('should return error when "type" parameter is not sent', async function () {
+    let input = {
+      data: [
+        {
+          path: validPetstore
+        },
+        {
+          path: validHopService31x
+        }
+      ]
+    };
+
+    try {
+      await Converter.detectRootFiles(input);
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Type" parameter should be provided');
+    }
+  });
+
+  it('should return error when input is an empty object', async function () {
+    try {
+      await Converter.detectRootFiles({});
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('Input object must have "type" and "data" information');
+    }
+  });
+
+  it('should return error when input data is an empty array', async function () {
+    try {
+      await Converter.detectRootFiles({ type: 'multiFile', data: [] });
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Data" parameter should be provided');
+    }
+  });
+
+  it('should not read content from FS when is not present ', async function () {
+    let petSchema = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        data: [
+          {
+            path: validPetstore
+          },
+          {
+            path: '/Pet.yaml',
+            content: petSchema
+          }
+        ]
+      };
+    const res = await Converter.detectRootFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data.length).to.equal(0);
+
+  });
 });

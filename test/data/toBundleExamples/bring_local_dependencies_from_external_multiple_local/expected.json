@@ -25,7 +25,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/~1schemas~1user.yaml%23~1User"
+                  "$ref": "#/components/schemas/_schemas_user.yaml-_User"
                 }
               }
             }
@@ -36,7 +36,7 @@
   },
   "components": {
     "schemas": {
-      "/schemas/user.yaml#/User": {
+      "_schemas_user.yaml-_User": {
         "type": "object",
         "properties": {
           "id": {
@@ -49,44 +49,59 @@
             "type": "object",
             "properties": {
               "favoriteFood": {
-                "type": "object",
-                "properties": {
-                  "brand": {
-                    "type": "string"
-                  },
-                  "benefits": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/~1schemas~1food.yaml%23~1Benefit"
-                    }
-                  },
-                  "cost": {
-                    "type": "string"
-                  }
-                }
+                "$ref": "#/components/schemas/_schemas_food.yaml-Food"
               },
               "theUsersPet": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "breed": {
-                    "type": "string"
-                  },
-                  "color": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/~1schemas~1user.yaml%23~1Color"
-                    }
-                  }
-                }
+                "$ref": "#/components/schemas/_schemas_user.yaml-_Pet"
               }
             }
           }
         }
       },
-      "/schemas/food.yaml#/Benefit": {
+      "_schemas_food.yaml-Food": {
+        "type": "object",
+        "properties": {
+          "brand": {
+            "$ref": "#/components/schemas/_schemas_food.yaml-_Brand"
+          },
+          "benefits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/_schemas_food.yaml-_Benefit"
+            }
+          },
+          "cost": {
+            "type": "string"
+          }
+        }
+      },
+      "_schemas_user.yaml-_Pet": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "breed": {
+            "type": "string"
+          },
+          "color": {
+            "$ref": "#/components/schemas/_schemas_user.yaml-_Colors"
+          }
+        }
+      },
+      "_schemas_user.yaml-_Colors": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/_schemas_user.yaml-_Color"
+        }
+      },
+      "_schemas_user.yaml-_Color": {
+        "type": "string"
+      },
+      "_schemas_food.yaml-_Brand": {
+        "type": "string"
+      },
+      "_schemas_food.yaml-_Benefit": {
         "type": "object",
         "properties": {
           "benefit": {
@@ -96,9 +111,6 @@
             "type": "string"
           }
         }
-      },
-      "/schemas/user.yaml#/Color": {
-        "type": "string"
       }
     }
   }

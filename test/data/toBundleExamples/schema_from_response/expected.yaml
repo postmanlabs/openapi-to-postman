@@ -20,10 +20,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/~1schemas~1user.yaml'
+                $ref: '#/components/schemas/_schemas_user.yaml'
 components:
   schemas:
-    /schemas/user.yaml:
+    _schemas_user.yaml:
       type: object
       properties:
         id:

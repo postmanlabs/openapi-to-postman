@@ -21,7 +21,7 @@
           "200": {
             "description": "A list of pets.,",
             "schema": {
-              "$ref": "#/definitions/~1pet.yaml"
+              "$ref": "#/definitions/_pet.yaml"
             }
           }
         }
@@ -29,7 +29,7 @@
     }
   },
   "definitions": {
-    "/pet.yaml": {
+    "_pet.yaml": {
       "type": "object",
       "required": [
         "id",

@@ -24,7 +24,7 @@
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/~1pet.yaml%23~1Pet"
+                "$ref": "#/definitions/_pet.yaml-_Pet"
               }
             }
           }
@@ -33,7 +33,7 @@
     }
   },
   "definitions": {
-    "/pet.yaml#/Pet": {
+    "_pet.yaml-_Pet": {
       "type": "object",
       "required": [
         "id",
@@ -51,18 +51,21 @@
           "type": "string"
         },
         "Color": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "uses": {
-              "type": "string"
-            },
-            "color": {
-              "type": "string"
-            }
-          }
+          "$ref": "#/definitions/_pet.yaml-_Color"
+        }
+      }
+    },
+    "_pet.yaml-_Color": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "uses": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
         }
       }
     }

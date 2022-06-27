@@ -8,7 +8,7 @@
       200:
         description: OK
         schema:
-          $ref: "./schemas/user.yaml"
+          $ref: "./schemas/user.yaml#User"
 /clients:
   get:
     summary: Returns a list of users.
@@ -19,4 +19,4 @@
       200:
         description: OK
         schema:
-          $ref: "./otherSchemas/client.yaml"
+          $ref: "./otherSchemas/client.yaml#Client"

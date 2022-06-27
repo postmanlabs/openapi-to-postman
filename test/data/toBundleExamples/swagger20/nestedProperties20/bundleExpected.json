@@ -1,0 +1,68 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Sample API",
+    "description": "API description in Markdown.",
+    "version": "1.0.0"
+  },
+  "host": "api.example.com",
+  "basePath": "/v1",
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/users": {
+      "get": {
+        "summary": "Returns a list of users.",
+        "description": "Optional extended description in Markdown.",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/_schemas_user.yaml"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "_schemas_user.yaml": {
+      "type": "object",
+      "properties": {
+        "age": {
+          "$ref": "#/definitions/_schemas_age.yaml"
+        },
+        "hobbies": {
+          "$ref": "#/definitions/_schemas_hobbies.yaml"
+        }
+      }
+    },
+    "_schemas_age.yaml": {
+      "type": "string"
+    },
+    "_schemas_hobbies.yaml": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/_schemas_hobby.yaml"
+      }
+    },
+    "_schemas_hobby.yaml": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "position": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

@@ -30,10 +30,10 @@ let expect = require('chai').expect,
 
 describe('detectRelatedFiles method', function () {
 
-  it('should return empty data when there is no root in the entry', async function () {
+  it('should return error when there is no root in the entry', async function () {
     let contentFile = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
         ],
@@ -44,19 +44,19 @@ describe('detectRelatedFiles method', function () {
           }
         ]
       };
-    const res = await Converter.detectRelatedFiles(input);
-    expect(res).to.not.be.empty;
-    expect(res.result).to.be.true;
-    expect(res.output.data.length).to.equal(0);
+    try {
+      await Converter.detectRelatedFiles(input);
+    }
+    catch (error) {
+      expect(error.message).to.equal('Input should have at least one root file');
+    }
   });
 
-  it('should locate root and return empty data when there is no ref', async function () {
+  it('should throw error when rootfiles is undefined', async function () {
     let contentFile = fs.readFileSync(validPetstore, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
-        rootFiles: [
-        ],
         data: [
           {
             path: '/petstore.yaml',
@@ -64,27 +64,30 @@ describe('detectRelatedFiles method', function () {
           }
         ]
       };
-    const res = await Converter.detectRelatedFiles(input);
-    expect(res).to.not.be.empty;
-    expect(res.result).to.be.true;
-    expect(res.output.data[0].rootFile.path).to.equal('/petstore.yaml');
-    expect(res.output.data[0].relatedFiles.length).to.equal(0);
-    expect(res.output.data[0].missingRelatedFiles.length).to.equal(0);
+    try {
+      await Converter.detectRelatedFiles(input);
+    }
+    catch (error) {
+      expect(error.message).to.equal('Input should have at least one root file');
+    }
   });
 
   it('should return adjacent and missing nodes', async function () {
     const contentFileMissedRef = fs.readFileSync(missedRef, 'utf8'),
       contentFilePet = fs.readFileSync(petstoreSeparatedPet, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/missedRef.yaml',
-            content: contentFileMissedRef
+            path: '/missedRef.yaml'
           }
         ],
         data: [
+          {
+            path: '/missedRef.yaml',
+            content: contentFileMissedRef
+          },
           {
             path: '/Pet.yaml',
             content: contentFilePet
@@ -104,15 +107,18 @@ describe('detectRelatedFiles method', function () {
     const contentFilRefToRoot = fs.readFileSync(refToRoot, 'utf8'),
       contentFilePet = fs.readFileSync(circularRefNewPet, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: 'refToRoot.yaml',
-            content: contentFilRefToRoot
+            path: 'refToRoot.yaml'
           }
         ],
         data: [
+          {
+            path: 'refToRoot.yaml',
+            content: contentFilRefToRoot
+          },
           {
             path: 'NewPet.yaml',
             content: contentFilePet
@@ -131,16 +137,17 @@ describe('detectRelatedFiles method', function () {
   it('should not return local ref as missing node', async function () {
     const contentFileMissedRef = fs.readFileSync(internalRefOnly, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/deepObjectLengthProperty.yaml',
-            content: contentFileMissedRef
+            path: '/deepObjectLengthProperty.yaml'
           }
         ],
-        data: [
-        ]
+        data: [{
+          path: '/deepObjectLengthProperty.yaml',
+          content: contentFileMissedRef
+        }]
       },
       res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -156,15 +163,18 @@ describe('detectRelatedFiles method', function () {
       contentFileOldPet = fs.readFileSync(oldPet, 'utf8'),
       contentFilePet = fs.readFileSync(pet, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: 'circularRef.yaml',
-            content: contentCircularRef
+            path: 'circularRef.yaml'
           }
         ],
         data: [
+          {
+            path: 'circularRef.yaml',
+            content: contentCircularRef
+          },
           {
             path: 'oldPet.yaml',
             content: contentFileOldPet
@@ -192,15 +202,18 @@ describe('detectRelatedFiles method', function () {
       newPetContent = fs.readFileSync(newPet, 'utf8'),
       errorContent = fs.readFileSync(petstoreSeparatedError, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: 'separatedFiles/spec/swagger.yaml',
-            content: swaggerRootContent
+            path: 'separatedFiles/spec/swagger.yaml'
           }
         ],
         data: [
+          {
+            path: 'separatedFiles/spec/swagger.yaml',
+            content: swaggerRootContent
+          },
           {
             path: 'separatedFiles/spec/Pet.yaml',
             content: petContent
@@ -230,20 +243,24 @@ describe('detectRelatedFiles method', function () {
     let contentFilePet = fs.readFileSync(validPetstore, 'utf8'),
       contentFileHop = fs.readFileSync(validHopService31x, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.1',
         rootFiles: [
           {
-            path: '/petstore.yaml',
-            content: contentFilePet
+            path: '/petstore.yaml'
           },
           {
-            path: '/hopService.yaml',
-            content: contentFileHop
+            path: '/hopService.yaml'
           }
         ],
-        data: [
-        ]
+        data: [{
+          path: '/petstore.yaml',
+          content: contentFilePet
+        },
+        {
+          path: '/hopService.yaml',
+          content: contentFileHop
+        }]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -255,19 +272,23 @@ describe('detectRelatedFiles method', function () {
     let contentFilePet = fs.readFileSync(validPetstore, 'utf8'),
       contentFileHop = fs.readFileSync(validHopService31x, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         rootFiles: [
           {
-            path: '/petstore.yaml',
-            content: contentFilePet
+            path: '/petstore.yaml'
           },
           {
-            path: '/hopService.yaml',
-            content: contentFileHop
+            path: '/hopService.yaml'
           }
         ],
-        data: [
-        ]
+        data: [{
+          path: '/petstore.yaml',
+          content: contentFilePet
+        },
+        {
+          path: '/hopService.yaml',
+          content: contentFileHop
+        }]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -278,16 +299,17 @@ describe('detectRelatedFiles method', function () {
   it('should return 5 missing related files', async function () {
     let contentFile = fs.readFileSync(petstoreMultipleFiles, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/openapi.yaml',
-            content: contentFile
+            path: '/openapi.yaml'
           }
         ],
-        data: [
-        ]
+        data: [{
+          path: '/openapi.yaml',
+          content: contentFile
+        }]
       };
     const res = await Converter.detectRelatedFiles(input);
     expect(res).to.not.be.empty;
@@ -300,15 +322,18 @@ describe('detectRelatedFiles method', function () {
     let contentRootFile = fs.readFileSync(petstoreMultipleFiles, 'utf8'),
       contentFileResPets = fs.readFileSync(resourcesPets, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/openapi.yaml',
-            content: contentRootFile
+            path: '/openapi.yaml'
           }
         ],
         data: [
+          {
+            path: '/openapi.yaml',
+            content: contentRootFile
+          },
           {
             path: '/resources/pets.yaml',
             content: contentFileResPets
@@ -330,15 +355,18 @@ describe('detectRelatedFiles method', function () {
       contentFileSchemaIndex = fs.readFileSync(schemaIndex, 'utf8'),
       contentFileResponseIndex = fs.readFileSync(responseIndex, 'utf8'),
       input = {
-        type: 'folder',
+        type: 'multiFile',
         specificationVersion: '3.0',
         rootFiles: [
           {
-            path: '/openapi.yaml',
-            content: contentRootFile
+            path: '/openapi.yaml'
           }
         ],
         data: [
+          {
+            path: '/openapi.yaml',
+            content: contentRootFile
+          },
           {
             path: '/resources/pets.yaml',
             content: contentFileResPets
@@ -368,4 +396,137 @@ describe('detectRelatedFiles method', function () {
     expect(res.output.data[0].missingRelatedFiles.length).to.equal(6);
   });
 
+  it('should return error when "type" parameter is not sent', async function () {
+    let contentRootFile = fs.readFileSync(petstoreMultipleFiles, 'utf8'),
+      contentFileResPets = fs.readFileSync(resourcesPets, 'utf8'),
+      input = {
+        rootFiles: [
+          {
+            path: '/openapi.yaml',
+            content: contentRootFile
+          }
+        ],
+        data: [
+          {
+            path: '/resources/pets.yaml',
+            content: contentFileResPets
+          }
+        ]
+      };
+
+    try {
+      await Converter.detectRelatedFiles(input);
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Type" parameter should be provided');
+    }
+  });
+
+  it('should return error when input is an empty object', async function () {
+    try {
+      await Converter.detectRelatedFiles({});
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('Input object must have "type" and "data" information');
+    }
+  });
+
+  it('should return error when input data is an empty array', async function () {
+    try {
+      await Converter.detectRelatedFiles({ type: 'multiFile', data: [] });
+    }
+    catch (error) {
+      expect(error).to.not.be.undefined;
+      expect(error.message).to.equal('"Data" parameter should be provided');
+    }
+  });
+
+  it('Should throw error when root is not present in data array', async function () {
+    let contentFileHop = fs.readFileSync(validHopService31x, 'utf8'),
+      input = {
+        type: 'multiFile',
+        rootFiles: [
+          {
+            path: '/petstore.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/hopService.yaml',
+            content: contentFileHop
+          }]
+      };
+    try {
+      await Converter.detectRelatedFiles(input);
+    }
+    catch (error) {
+      expect(error.message).to.equal('Root file content not found in data array');
+    }
+  });
+
+  it('Should return 1 file with 2 root but 1 is missing', async function () {
+    let contentFilePet = fs.readFileSync(validPetstore, 'utf8'),
+      input = {
+        type: 'multiFile',
+        rootFiles: [
+          {
+            path: '/petstore.yaml'
+          },
+          {
+            path: '/petstore2.yaml'
+          }
+        ],
+        data: [{
+          path: '/petstore.yaml',
+          content: contentFilePet
+        }]
+      };
+    const res = await Converter.detectRelatedFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].rootFile.path).to.equal('/petstore.yaml');
+    expect(res.output.data.length).to.equal(1);
+  });
+
+  it('Should take the root file from data array root file prop empty array', async function () {
+    let contentFile = fs.readFileSync(swaggerRoot, 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+        ],
+        data: [
+          {
+            path: '/swagger.yaml',
+            content: contentFile
+          }
+        ]
+      };
+    const res = await Converter.detectRelatedFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].rootFile.path).to.equal('/swagger.yaml');
+    expect(res.output.data.length).to.equal(1);
+  });
+
+  it('Should take the root file from data array root file prop undefined', async function () {
+    let contentFile = fs.readFileSync(swaggerRoot, 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        data: [
+          {
+            path: '/swagger.yaml',
+            content: contentFile
+          }
+        ]
+      };
+    const res = await Converter.detectRelatedFiles(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].rootFile.path).to.equal('/swagger.yaml');
+    expect(res.output.data.length).to.equal(1);
+  });
 });
