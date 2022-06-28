@@ -151,7 +151,7 @@ describe('getRemoteReferences function ', function () {
 });
 
 describe('getRemoteReferencesArray function', function () {
-  it('should return localhost:3000 for entry "http://localhost:3000/projects"', async function () {
+  it('should return references and missin from multiple inputs', async function () {
     let openapi = fs.readFileSync(swaggerRemoteRef, 'utf8'),
       openapiMissing = fs.readFileSync(swaggerRemoteRefMissing, 'utf8'),
       res = await getRemoteReferencesArray([{

@@ -1138,10 +1138,10 @@ describe('CONVERT FUNCTION TESTS ', function() {
               'remoteRef/test/data/remote_refs/Error.yaml',
             url4 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
               'remoteRef/test/data/remote_refs/NewPet.yaml',
-            path1 = swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/parameters.yaml'),
-            path2 = swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/Pet.yaml'),
-            path3 = swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/Error.yaml'),
-            path4 = swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/NewPet.yaml'),
+            path1 = path.join(__dirname, REMOTE_REFS_PATH + '/parameters.yaml'),
+            path2 = path.join(__dirname, REMOTE_REFS_PATH + '/Pet.yaml'),
+            path3 = path.join(__dirname, REMOTE_REFS_PATH + '/Error.yaml'),
+            path4 = path.join(__dirname, REMOTE_REFS_PATH + '/NewPet.yaml'),
             urlMap = {};
           urlMap[url1] = fs.readFileSync(path1, 'utf8');
           urlMap[url2] = fs.readFileSync(path2, 'utf8');
