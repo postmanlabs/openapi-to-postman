@@ -174,26 +174,28 @@ describe('getRemoteReferencesArray function', function () {
 
 describe('resolveRemote and bundle', function () {
   it('Should resolve remote references and bundle using custom fetch', async function () {
-    let openapi = fs.readFileSync(swaggerRemoteRef, 'utf8'),
+    let bundleRes,
+      openapi = fs.readFileSync(swaggerRemoteRef, 'utf8'),
       expected = fs.readFileSync(bundleExpected, 'utf8'),
       { remoteRefs, specRoot } = await getRemoteReferences({
-        fileName: 'swagger.yaml',
+        fileName: 'root.yaml',
         content: openapi
-      }, undefined, customFetchOK),
-      bundleRes = schemaUtils.processRelatedFiles({
-        type: 'folder',
-        specificationVersion: '3.0.0',
-        rootFiles: [
-          {
-            fileName: 'root.yaml',
-            content: openapi,
-            parsed: specRoot.parsed
-          }
-        ],
-        data: remoteRefs,
-        options: {},
-        bundleFormat: 'object'
-      }, true);
+      }, undefined, customFetchOK);
+    remoteRefs.push(specRoot);
+    bundleRes = schemaUtils.processRelatedFiles({
+      type: 'folder',
+      specificationVersion: '3.0.0',
+      rootFiles: [
+        {
+          fileName: 'root.yaml',
+          content: openapi,
+          parsed: specRoot.parsed
+        }
+      ],
+      data: remoteRefs,
+      options: {},
+      bundleFormat: 'object'
+    }, true);
     expect(bundleRes).to.not.be.null;
     expect(JSON.stringify(bundleRes.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
   });

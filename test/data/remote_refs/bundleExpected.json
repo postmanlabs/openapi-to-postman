@@ -22,10 +22,10 @@
         "operationId": "findPets",
         "parameters": [
           {
-            "$ref": "#/components/parameters/_parameters.yaml-_tagsParam"
+            "$ref": "#/components/parameters/https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_parameters.yaml-_tagsParam"
           },
           {
-            "$ref": "#/components/parameters/_parameters.yaml-_limitsParam"
+            "$ref": "#/components/parameters/https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_parameters.yaml-_limitsParam"
           }
         ],
         "responses": {
@@ -36,7 +36,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/_Pet.yaml"
+                    "$ref": "#/components/schemas/https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_Pet.yaml"
                   }
                 }
               }
@@ -47,7 +47,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/_Error.yaml"
+                  "$ref": "#/components/schemas/https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_Error.yaml"
                 }
               }
             }
@@ -64,7 +64,7 @@
             "description": "Pet to add to the store",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/_NewPet.yaml"
+              "$ref": "#/components/schemas/https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_NewPet.yaml"
             }
           }
         ],
@@ -74,7 +74,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/_Pet.yaml"
+                  "$ref": "#/components/schemas/https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_Pet.yaml"
                 }
               }
             }
@@ -84,7 +84,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/_Error.yaml"
+                  "$ref": "#/components/schemas/https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_Error.yaml"
                 }
               }
             }
@@ -112,7 +112,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/_Pet.yaml"
+                  "$ref": "#/components/schemas/https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_Pet.yaml"
                 }
               }
             }
@@ -122,7 +122,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/_Error.yaml"
+                  "$ref": "#/components/schemas/https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_Error.yaml"
                 }
               }
             }
@@ -151,7 +151,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/_Error.yaml"
+                  "$ref": "#/components/schemas/https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_Error.yaml"
                 }
               }
             }
@@ -162,7 +162,7 @@
   },
   "components": {
     "parameters": {
-      "_parameters.yaml-_tagsParam": {
+      "https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_parameters.yaml-_tagsParam": {
         "name": "tags",
         "in": "query",
         "description": "tags to filter by",
@@ -173,7 +173,7 @@
           "type": "string"
         }
       },
-      "_parameters.yaml-_limitsParam": {
+      "https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_parameters.yaml-_limitsParam": {
         "name": "limit",
         "in": "query",
         "description": "maximum number of results to return",
@@ -183,7 +183,7 @@
       }
     },
     "schemas": {
-      "_Pet.yaml": {
+      "https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_Pet.yaml": {
         "type": "object",
         "required": [
           "id",
@@ -202,7 +202,7 @@
           }
         }
       },
-      "_Error.yaml": {
+      "https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_Error.yaml": {
         "type": "object",
         "required": [
           "code",
@@ -218,11 +218,11 @@
           }
         }
       },
-      "_NewPet.yaml": {
+      "https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_NewPet.yaml": {
         "type": "object",
         "allOf": [
           {
-            "$ref": "#/components/schemas/_Pet.yaml"
+            "$ref": "#/components/schemas/https__raw.githubusercontent.com_postmanlabs_openapi-to-postman_remoteRef_test_data_remote_refs_Pet.yaml"
           },
           {
             "required": [

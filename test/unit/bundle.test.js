@@ -8,6 +8,7 @@ let expect = require('chai').expect,
   path = require('path'),
   BUNDLES_FOLDER = '../data/toBundleExamples',
   PETSTORE_FOLDER = '../data/petstore separate yaml',
+  REMOTE_REFS_PATH = '../data/remote_refs',
   nestedRefsFromRootComponents = path.join(__dirname, BUNDLES_FOLDER + '/nested_references_from_root_components'),
   localRefFolder = path.join(__dirname, BUNDLES_FOLDER + '/local_references'),
   schemaFromResponse = path.join(__dirname, BUNDLES_FOLDER + '/schema_from_response'),
@@ -40,7 +41,39 @@ let expect = require('chai').expect,
   compositeAnyOf = path.join(__dirname, BUNDLES_FOLDER + '/composite_anyOf'),
   longPath = path.join(__dirname, BUNDLES_FOLDER + '/longPath'),
   schemaCollision = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_from_responses'),
-  schemaCollisionWRootComponent = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_w_root_components');
+  schemaCollisionWRootComponent = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_w_root_components'),
+  swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/swagger.yaml'),
+  swaggerRemoteRefMissing = path.join(__dirname, REMOTE_REFS_PATH + '/swaggerMissing.yaml'),
+  remoteBundleExpected = path.join(__dirname, REMOTE_REFS_PATH + '/bundleExpected.json'),
+  missingRemoteBundleExpected = path.join(__dirname, REMOTE_REFS_PATH + '/missingBundleExpected.json'),
+  customFetchOK = (url) => {
+    const url1 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+      'remoteRef/test/data/remote_refs/parameters.yaml',
+      url2 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+        'remoteRef/test/data/remote_refs/Pet.yaml',
+      url3 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+        'remoteRef/test/data/remote_refs/Error.yaml',
+      url4 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+        'remoteRef/test/data/remote_refs/NewPet.yaml',
+      path1 = path.join(__dirname, REMOTE_REFS_PATH + '/parameters.yaml'),
+      path2 = path.join(__dirname, REMOTE_REFS_PATH + '/Pet.yaml'),
+      path3 = path.join(__dirname, REMOTE_REFS_PATH + '/Error.yaml'),
+      path4 = path.join(__dirname, REMOTE_REFS_PATH + '/NewPet.yaml'),
+      urlMap = {};
+    urlMap[url1] = fs.readFileSync(path1, 'utf8');
+    urlMap[url2] = fs.readFileSync(path2, 'utf8');
+    urlMap[url3] = fs.readFileSync(path3, 'utf8');
+    urlMap[url4] = fs.readFileSync(path4, 'utf8');
+    let status = 200,
+      content = urlMap[url];
+    if (content === undefined) {
+      status = 404;
+    }
+    return Promise.resolve({
+      text: () => { return Promise.resolve(content); },
+      status: status
+    });
+  };
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -2210,6 +2243,81 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.0');
     expect(res.output.data[0].bundledContent).to.be.equal(input.data[0].content);
+  });
+
+  it('Should bundle and resolve remote references', async function() {
+    let contentRoot = fs.readFileSync(swaggerRemoteRef, 'utf8'),
+      expected = fs.readFileSync(remoteBundleExpected, 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/swagger.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/swagger.yaml',
+            content: contentRoot
+          }
+        ],
+        options: { resolveRemoteRefs: true, remoteRefsResolver: customFetchOK },
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should resolve root, then bundle and resolve remote references', async function() {
+    let contentRoot = fs.readFileSync(swaggerRemoteRef, 'utf8'),
+      expected = fs.readFileSync(remoteBundleExpected, 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+        ],
+        data: [
+          {
+            path: '/swagger.yaml',
+            content: contentRoot
+          }
+        ],
+        options: { resolveRemoteRefs: true, remoteRefsResolver: customFetchOK },
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should bundle even when the remote ref is not resolved correctly', async function() {
+    let contentRoot = fs.readFileSync(swaggerRemoteRefMissing, 'utf8'),
+      expected = fs.readFileSync(missingRemoteBundleExpected, 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+        ],
+        data: [
+          {
+            path: '/swagger.yaml',
+            content: contentRoot
+          }
+        ],
+        options: { resolveRemoteRefs: true, remoteRefsResolver: customFetchOK },
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 });
 
