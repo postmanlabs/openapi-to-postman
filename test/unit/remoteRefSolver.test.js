@@ -1,15 +1,43 @@
-let expect = require('chai').expect,
+const expect = require('chai').expect,
   fs = require('fs'),
   path = require('path'),
-  { getAdjacentAndMissing, getRemoteReferences, mapToLocalPath } = require('../../lib/remoteRefSolver'),
+  { getAdjacentAndMissing, getRemoteReferences, getRemoteReferencesArray } = require('../../lib/remoteRefSolver'),
   schemaUtils = require('../../lib//schemaUtils'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
   REMOTE_REFS_PATH = '../data/remote_refs',
   petstoreRemoteRef = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore.yaml'),
   swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/swagger.yaml'),
   swaggerRemoteRefMissing = path.join(__dirname, REMOTE_REFS_PATH + '/swaggerMissing.yaml'),
-  bundleExpected = path.join(__dirname, REMOTE_REFS_PATH + '/bundleExpected.json');
-
+  bundleExpected = path.join(__dirname, REMOTE_REFS_PATH + '/bundleExpected.json'),
+  missingBundleExpected = path.join(__dirname, REMOTE_REFS_PATH + '/missingBundleExpected.json'),
+  customFetchOK = (url) => {
+    const url1 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+      'remoteRef/test/data/remote_refs/parameters.yaml',
+      url2 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+        'remoteRef/test/data/remote_refs/Pet.yaml',
+      url3 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+        'remoteRef/test/data/remote_refs/Error.yaml',
+      url4 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+        'remoteRef/test/data/remote_refs/NewPet.yaml',
+      path1 = path.join(__dirname, REMOTE_REFS_PATH + '/parameters.yaml'),
+      path2 = path.join(__dirname, REMOTE_REFS_PATH + '/Pet.yaml'),
+      path3 = path.join(__dirname, REMOTE_REFS_PATH + '/Error.yaml'),
+      path4 = path.join(__dirname, REMOTE_REFS_PATH + '/NewPet.yaml'),
+      urlMap = {};
+    urlMap[url1] = fs.readFileSync(path1, 'utf8');
+    urlMap[url2] = fs.readFileSync(path2, 'utf8');
+    urlMap[url3] = fs.readFileSync(path3, 'utf8');
+    urlMap[url4] = fs.readFileSync(path4, 'utf8');
+    let status = 200,
+      content = urlMap[url];
+    if (content === undefined) {
+      status = 404;
+    }
+    return Promise.resolve({
+      text: () => { return Promise.resolve(content); },
+      status: status
+    });
+  };
 
 describe('getAdjacentAndMissing function ', async function () {
   it('should find the adjacent nodes with URL in $ref value', async function () {
@@ -99,47 +127,114 @@ describe('getRemoteReferences function ', function () {
       done();
     });
   });
-});
 
-describe('mapToLocalPath method', function () {
-  it('should return http://localhost:3000/projects for entry "http://localhost:3000/projects"', function () {
-    const result = mapToLocalPath('http://localhost:3000/projects');
-    expect(result).to.equal('http://localhost:3000/projects');
+  it('should throw error when specroot is undefined', async function () {
+    try { await getRemoteReferences(); }
+    catch (error) {
+      expect(error.message).to.equal('Root file must be defined');
+    }
   });
 
-  it('should return https://raw.githubusercontent.com/postmanlabs/remoteRef/test/data/remote_refs/Pet.yaml' +
-    'for entry https://raw.githubusercontent.com/postmanlabs/remoteRef/test/data/remote_refs/Pet.yaml"',
-  function () {
-    const result =
-    mapToLocalPath('https://raw.githubusercontent.com/postmanlabs/remoteRef/test/data/remote_refs/Pet.yaml');
-    expect(result).to.equal('https://raw.githubusercontent.com/postmanlabs/remoteRef/test/data/remote_refs/Pet.yaml');
+  it('should throw error when specroot is null', async function () {
+    try { await getRemoteReferences(null); }
+    catch (error) {
+      expect(error.message).to.equal('Root file must be defined');
+    }
+  });
+
+  it('should throw error when specroot is empty', async function () {
+    try { await getRemoteReferences({}); }
+    catch (error) {
+      expect(error.message).to.equal('Root file must be defined');
+    }
   });
 });
 
+describe('getRemoteReferencesArray function', function () {
+  it('should return localhost:3000 for entry "http://localhost:3000/projects"', async function () {
+    let openapi = fs.readFileSync(swaggerRemoteRef, 'utf8'),
+      openapiMissing = fs.readFileSync(swaggerRemoteRefMissing, 'utf8'),
+      res = await getRemoteReferencesArray([{
+        fileName: 'swagger.yaml',
+        content: openapi
+      },
+      {
+        fileName: 'swagger2.yaml',
+        content: openapiMissing
+      }], undefined, customFetchOK);
+    expect(res[0].remoteRefs).to.not.be.undefined;
+    expect(res[0].remoteRefs.length).to.equal(4);
+    expect(res[0].missingRemoteRefs).to.be.empty;
+    expect(res[1].remoteRefs).to.not.be.undefined;
+    expect(res[1].remoteRefs).to.be.empty;
+    expect(res[1].missingRemoteRefs.length).to.equal(4);
+
+  });
+});
 
 describe('resolveRemote and bundle', function () {
   it('Should resolve remote references and bundle using custom fetch', async function () {
     let openapi = fs.readFileSync(swaggerRemoteRef, 'utf8'),
       expected = fs.readFileSync(bundleExpected, 'utf8'),
-      customFetch = (url) => {
-        const url1 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
-          'remoteRef/test/data/remote_refs/parameters.yaml',
-          url2 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
-            'remoteRef/test/data/remote_refs/Pet.yaml',
-          url3 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
-            'remoteRef/test/data/remote_refs/Error.yaml',
-          url4 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
-            'remoteRef/test/data/remote_refs/NewPet.yaml',
-          path1 = swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/parameters.yaml'),
-          path2 = swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/Pet.yaml'),
-          path3 = swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/Error.yaml'),
-          path4 = swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/NewPet.yaml'),
-          urlMap = {};
-        urlMap[url1] = fs.readFileSync(path1, 'utf8');
-        urlMap[url2] = fs.readFileSync(path2, 'utf8');
-        urlMap[url3] = fs.readFileSync(path3, 'utf8');
-        urlMap[url4] = fs.readFileSync(path4, 'utf8');
-        let content = urlMap[url];
+      { remoteRefs, specRoot } = await getRemoteReferences({
+        fileName: 'swagger.yaml',
+        content: openapi
+      }, undefined, customFetchOK),
+      bundleRes = schemaUtils.processRelatedFiles({
+        type: 'folder',
+        specificationVersion: '3.0.0',
+        rootFiles: [
+          {
+            fileName: 'root.yaml',
+            content: openapi,
+            parsed: specRoot.parsed
+          }
+        ],
+        data: remoteRefs,
+        options: {},
+        bundleFormat: 'object'
+      }, true);
+    expect(bundleRes).to.not.be.null;
+    expect(JSON.stringify(bundleRes.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should resolve remote references and bundle using custom fetch missing references', async function () {
+    let openapi = fs.readFileSync(swaggerRemoteRefMissing, 'utf8'),
+      expected = fs.readFileSync(missingBundleExpected, 'utf8'),
+      customFetch = () => {
+        let content = '';
+        return Promise.resolve({
+          text: () => { return Promise.resolve(content); },
+          status: 404
+        });
+      },
+      { remoteRefs, specRoot } = await getRemoteReferences({
+        fileName: 'swagger.yaml',
+        content: openapi
+      }, undefined, customFetch),
+      bundleRes = schemaUtils.processRelatedFiles({
+        type: 'folder',
+        specificationVersion: '3.0.0',
+        rootFiles: [
+          {
+            fileName: 'root.yaml',
+            content: openapi,
+            parsed: specRoot.parsed
+          }
+        ],
+        data: remoteRefs,
+        options: {},
+        bundleFormat: 'object'
+      }, true);
+    expect(bundleRes).to.not.be.null;
+    expect(JSON.stringify(bundleRes.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
+  });
+
+  it('Should resolve remote references and bundle using custom fetch invalid content', async function () {
+    let openapi = fs.readFileSync(swaggerRemoteRefMissing, 'utf8'),
+      expected = fs.readFileSync(missingBundleExpected, 'utf8'),
+      customFetch = () => {
+        let content = 'invalid content';
         return Promise.resolve({
           text: () => { return Promise.resolve(content); },
           status: 200
@@ -165,6 +260,5 @@ describe('resolveRemote and bundle', function () {
       }, true);
     expect(bundleRes).to.not.be.null;
     expect(JSON.stringify(bundleRes.output.data[0].bundledContent, null, 2)).to.be.equal(expected);
-
   });
 });
