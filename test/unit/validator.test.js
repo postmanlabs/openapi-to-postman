@@ -8,7 +8,8 @@ var expect = require('chai').expect,
   VALIDATION_DATA_FOLDER_PATH = '../data/validationData',
   VALIDATION_DATA_OPTIONS_FOLDER_31_PATH = '../data/31CollectionTransactions/validateOptions',
   VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH = '../data/31CollectionTransactions/validate30Scenarios',
-  VALID_OPENAPI_FOLDER_PATH = '../data/valid_openapi';
+  VALID_OPENAPI_FOLDER_PATH = '../data/valid_openapi',
+  REMOTE_REFS_PATH = '../data/remote_refs';
 
 /**
  * Extract all transaction from collection and appends them into array
@@ -1266,6 +1267,49 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       expect(resultObj.mismatches[4].suggestedFix.suggestedValue.key).to.eql('propMissingInReq');
       expect(resultObj.mismatches[4].suggestedFix.suggestedValue.description)
         .to.eql('(Required) This property is not available in matched collection.');
+      done();
+    });
+  });
+
+  it('Should be able to validate schema with remote references', function (done) {
+    let spec = fs.readFileSync(path.join(__dirname, REMOTE_REFS_PATH +
+      '/swagger.yaml'), 'utf-8'),
+      collection = fs.readFileSync(path.join(__dirname, REMOTE_REFS_PATH +
+        '/collection.json'), 'utf-8'),
+      historyRequest = [],
+      customFetch = (url) => {
+        const url1 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+          'remoteRef/test/data/remote_refs/parameters.yaml',
+          url2 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+            'remoteRef/test/data/remote_refs/Pet.yaml',
+          url3 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+            'remoteRef/test/data/remote_refs/Error.yaml',
+          url4 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+            'remoteRef/test/data/remote_refs/NewPet.yaml',
+          path1 = path.join(__dirname, REMOTE_REFS_PATH + '/parameters.yaml'),
+          path2 = path.join(__dirname, REMOTE_REFS_PATH + '/Pet.yaml'),
+          path3 = path.join(__dirname, REMOTE_REFS_PATH + '/Error.yaml'),
+          path4 = path.join(__dirname, REMOTE_REFS_PATH + '/NewPet.yaml'),
+          urlMap = {};
+        urlMap[url1] = fs.readFileSync(path1, 'utf8');
+        urlMap[url2] = fs.readFileSync(path2, 'utf8');
+        urlMap[url3] = fs.readFileSync(path3, 'utf8');
+        urlMap[url4] = fs.readFileSync(path4, 'utf8');
+        let content = urlMap[url];
+        return Promise.resolve({
+          text: () => { return Promise.resolve(content); },
+          status: 200
+        });
+      },
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: spec },
+        { suggestAvailableFixes: true, showMissingInSchemaErrors: true, resolveRemoteRefs: true,
+          remoteRefsResolver: customFetch });
+
+    getAllTransactions(JSON.parse(collection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
       done();
     });
   });
