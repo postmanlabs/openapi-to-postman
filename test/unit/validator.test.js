@@ -1271,49 +1271,6 @@ describe('VALIDATE FUNCTION TESTS ', function () {
     });
   });
 
-  it('Should be able to validate schema with remote references', function (done) {
-    let spec = fs.readFileSync(path.join(__dirname, REMOTE_REFS_PATH +
-      '/swagger.yaml'), 'utf-8'),
-      collection = fs.readFileSync(path.join(__dirname, REMOTE_REFS_PATH +
-        '/collection.json'), 'utf-8'),
-      historyRequest = [],
-      customFetch = (url) => {
-        const url1 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
-          'remoteRef/test/data/remote_refs/parameters.yaml',
-          url2 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
-            'remoteRef/test/data/remote_refs/Pet.yaml',
-          url3 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
-            'remoteRef/test/data/remote_refs/Error.yaml',
-          url4 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
-            'remoteRef/test/data/remote_refs/NewPet.yaml',
-          path1 = path.join(__dirname, REMOTE_REFS_PATH + '/parameters.yaml'),
-          path2 = path.join(__dirname, REMOTE_REFS_PATH + '/Pet.yaml'),
-          path3 = path.join(__dirname, REMOTE_REFS_PATH + '/Error.yaml'),
-          path4 = path.join(__dirname, REMOTE_REFS_PATH + '/NewPet.yaml'),
-          urlMap = {};
-        urlMap[url1] = fs.readFileSync(path1, 'utf8');
-        urlMap[url2] = fs.readFileSync(path2, 'utf8');
-        urlMap[url3] = fs.readFileSync(path3, 'utf8');
-        urlMap[url4] = fs.readFileSync(path4, 'utf8');
-        let content = urlMap[url];
-        return Promise.resolve({
-          text: () => { return Promise.resolve(content); },
-          status: 200
-        });
-      },
-      schemaPack = new Converter.SchemaPack({ type: 'string', data: spec },
-        { suggestAvailableFixes: true, showMissingInSchemaErrors: true, resolveRemoteRefs: true,
-          remoteRefsResolver: customFetch });
-
-    getAllTransactions(JSON.parse(collection), historyRequest);
-
-    schemaPack.validateTransaction(historyRequest, (err, result) => {
-      expect(err).to.be.null;
-      expect(result).to.be.an('object');
-      done();
-    });
-  });
-
   describe('findMatchingRequestFromSchema function', function () {
     it('#GITHUB-9396 Should maintain correct order of matched endpoint', function (done) {
       let schema = {
@@ -1405,6 +1362,58 @@ describe('ValidateTransaction from remote referenced document', function() {
           responsesIds.forEach((responseId) => {
             expect(result.requests[requestId].endpoints[0].responses[responseId].matched).to.be.true;
           });
+        });
+      });
+      done();
+    });
+  });
+
+  it('Should validate a document generated from remote-refs correctly directly validate', function (done) {
+    let spec = fs.readFileSync(path.join(__dirname, REMOTE_REFS_FOLDER +
+      '/swagger.yaml'), 'utf-8'),
+      collection = fs.readFileSync(path.join(__dirname, REMOTE_REFS_FOLDER +
+        '/collection.json'), 'utf-8'),
+      historyRequest = [],
+      customFetch = (url) => {
+        const url1 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+          'remoteRef/test/data/remote_refs/parameters.yaml',
+          url2 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+            'remoteRef/test/data/remote_refs/Pet.yaml',
+          url3 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+            'remoteRef/test/data/remote_refs/Error.yaml',
+          url4 = 'https://raw.githubusercontent.com/postmanlabs/openapi-to-postman/' +
+            'remoteRef/test/data/remote_refs/NewPet.yaml',
+          path1 = path.join(__dirname, REMOTE_REFS_FOLDER + '/parameters.yaml'),
+          path2 = path.join(__dirname, REMOTE_REFS_FOLDER + '/Pet.yaml'),
+          path3 = path.join(__dirname, REMOTE_REFS_FOLDER + '/Error.yaml'),
+          path4 = path.join(__dirname, REMOTE_REFS_FOLDER + '/NewPet.yaml'),
+          urlMap = {};
+        urlMap[url1] = fs.readFileSync(path1, 'utf8');
+        urlMap[url2] = fs.readFileSync(path2, 'utf8');
+        urlMap[url3] = fs.readFileSync(path3, 'utf8');
+        urlMap[url4] = fs.readFileSync(path4, 'utf8');
+        let content = urlMap[url];
+        return Promise.resolve({
+          text: () => { return Promise.resolve(content); },
+          status: 200
+        });
+      },
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: spec },
+        { suggestAvailableFixes: true, showMissingInSchemaErrors: true, resolveRemoteRefs: true,
+          remoteRefsResolver: customFetch });
+
+    getAllTransactions(JSON.parse(collection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+      let requestIds = Object.keys(result.requests);
+      expect(err).to.be.null;
+      requestIds.forEach((requestId) => {
+        expect(result.requests[requestId].endpoints[0].matched).to.be.true;
+        const responsesIds = Object.keys(result.requests[requestId].endpoints[0].responses);
+        responsesIds.forEach((responseId) => {
+          expect(result.requests[requestId].endpoints[0].responses[responseId].matched).to.be.true;
         });
       });
       done();
