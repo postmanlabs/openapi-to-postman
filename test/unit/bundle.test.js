@@ -40,7 +40,8 @@ let expect = require('chai').expect,
   compositeAnyOf = path.join(__dirname, BUNDLES_FOLDER + '/composite_anyOf'),
   longPath = path.join(__dirname, BUNDLES_FOLDER + '/longPath'),
   schemaCollision = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_from_responses'),
-  schemaCollisionWRootComponent = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_w_root_components');
+  schemaCollisionWRootComponent = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_w_root_components'),
+  issue14 = path.join(__dirname, BUNDLES_FOLDER + '/TestSpec_from_issue_14');
 
 
 describe('bundle files method - 3.0', function () {
@@ -2220,6 +2221,98 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.0');
     expect(res.output.data[0].bundledContent).to.be.equal(input.data[0].content);
+  });
+
+  it('Should return bundled file - TestSpec_from_issue_14', async function () {
+    let contentRoot = fs.readFileSync(issue14 + '/index.yml', 'utf8'),
+      parametersIndex = fs.readFileSync(issue14 + '/parameters/_index.yml', 'utf8'),
+      arrivalTime = fs.readFileSync(issue14 + '/parameters/arrival_time.yml', 'utf8'),
+      pathsIndex = fs.readFileSync(issue14 + '/paths/_index.yml', 'utf8'),
+      geolocate = fs.readFileSync(issue14 + '/paths/geolocate.yml', 'utf8'),
+      requests = fs.readFileSync(issue14 + '/requests/maps_http_geolocation_celltowers_request.yml', 'utf8'),
+      schemasIndex = fs.readFileSync(issue14 + '/schemas/_index.yml', 'utf8'),
+      bounds = fs.readFileSync(issue14 + '/schemas/Bounds.yml', 'utf8'),
+      cellTower = fs.readFileSync(issue14 + '/schemas/CellTower.yml', 'utf8'),
+      geolocationRequest = fs.readFileSync(issue14 + '/schemas/GeolocationRequest.yml', 'utf8'),
+      latLngLiteral = fs.readFileSync(issue14 + '/schemas/LatLngLiteral.yml', 'utf8'),
+      wifiResponse = fs.readFileSync(issue14 + '/responses/maps_http_geolocation_wifi_response.yml', 'utf8'),
+      wifiRequest = fs.readFileSync(issue14 + '/requests/maps_http_geolocation_wifi_request.yml', 'utf8'),
+      geolocationResponse = fs.readFileSync(issue14 + '/schemas/GeolocationResponse.yml', 'utf8'),
+      expected = fs.readFileSync(issue14 + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/index.yml'
+          }
+        ],
+        data: [
+          {
+            path: '/index.yml',
+            content: contentRoot
+          },
+          {
+            path: '/parameters/_index.yml',
+            content: parametersIndex
+          },
+          {
+            path: '/parameters/arrival_time.yml',
+            content: arrivalTime
+          },
+          {
+            path: '/paths/_index.yml',
+            content: pathsIndex
+          },
+          {
+            path: '/paths/geolocate.yml',
+            content: geolocate
+          },
+          {
+            path: '/requests/maps_http_geolocation_celltowers_request.yml',
+            content: requests
+          },
+          {
+            path: '/schemas/_index.yml',
+            content: schemasIndex
+          },
+          {
+            path: '/schemas/Bounds.yml',
+            content: bounds
+          },
+          {
+            path: '/schemas/CellTower.yml',
+            content: cellTower
+          },
+          {
+            path: '/schemas/GeolocationRequest.yml',
+            content: geolocationRequest
+          },
+          {
+            path: '/schemas/LatLngLiteral.yml',
+            content: latLngLiteral
+          },
+          {
+            path: '/schemas/GeolocationResponse.yml',
+            content: geolocationResponse
+          },
+          {
+            path: '/requests/maps_http_geolocation_wifi_request.yml',
+            content: wifiRequest
+          },
+          {
+            path: '/responses/maps_http_geolocation_wifi_response.yml',
+            content: wifiResponse
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 });
 

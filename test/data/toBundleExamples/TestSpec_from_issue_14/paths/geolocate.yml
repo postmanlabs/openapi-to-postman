@@ -1,0 +1,81 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+servers:
+  - url: https://www.googleapis.com
+tags:
+  - Geolocation API
+description: |-
+  Geolocation API returns a location and accuracy radius based on information about cell towers and WiFi nodes that the mobile client can detect. This document describes the protocol used to send this data to the server and to return a response to the client.
+
+  Communication is done over HTTPS using POST. Both request and response are formatted as JSON, and the content type of both is `application/json`.
+
+  You must specify a key in your request, included as the value of a`key` parameter. A `key` is your application's  API key. This key identifies your application for purposes of quota management. Learn how to [get a key](https://developers.google.com/maps/documentation/geolocation/get-api-key).
+requestBody:
+  description: The request body must be formatted as JSON.
+  content:
+    "application/json":
+      schema:
+         $ref: "../schemas/GeolocationRequest.yml" 
+      examples:
+        WIFI:
+          value:
+            $ref: ../requests/maps_http_geolocation_wifi_request.yml
+        # Cell Towers:
+        #   value:
+        #     $ref: ../requests/maps_http_geolocation_celltowers_request.yml
+        # IP Only:
+        #   value:
+        #     $ref: ../requests/maps_http_geolocation_ip_request.yml
+  required: false
+responses:
+  "200":
+    description: 200 OK
+    content:
+      application/json:
+        schema:
+          $ref: "../schemas/GeolocationResponse.yml"          
+        examples:
+          WIFI:
+            value:
+              $ref: ../responses/maps_http_geolocation_wifi_response.yml
+          # Cell Towers:
+          #   value:
+          #     $ref: ../responses/maps_http_geolocation_celltowers_response.yml
+          # IP Only:
+          #   value:
+          #     $ref: ../responses/maps_http_geolocation_ip_response.yml
+  # "400":
+  #   description: 400 BAD REQUEST
+  #   content:
+  #     application/json:
+  #       schema:
+  #         $ref: "../schemas/errors/ErrorResponse.yml"
+  #       examples:
+  #         Bad Request:
+  #           value:
+  #             $ref: ../responses/maps_http_geolocation_error_400_response.yml
+  #         Invalid Key:
+  #           value:
+  #             $ref: ../responses/maps_http_geolocation_error_400_invalid_key_response.yml
+  # "404":
+  #   description: 404 NOT FOUND
+  #   content:
+  #     application/json:
+  #       schema:
+  #         $ref: "../schemas/errors/ErrorResponse.yml"
+  #       examples:
+  #         Invalid:            
+  #           value:
+  #             $ref: ../responses/maps_http_geolocation_error_404_response.yml
