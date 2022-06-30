@@ -1,0 +1,47 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Sample API",
+    "description": "Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.",
+    "version": "0.1.9"
+  },
+  "paths": {
+    "/users/{userId}": {
+      "get": {
+        "operationId": "loadBalancers_remove_droplets",
+        "summary": "Remove Droplets from a Load Balancer",
+        "description": "To remove a..\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "droplet_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "example": [
+                      3164444,
+                      3164445
+                    ],
+                    "description": "An array containing the IDs of the Droplets assigned to the load balancer."
+                  }
+                },
+                "required": [
+                  "droplet_ids"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "ok"
+          }
+        }
+      }
+    }
+  }
+}
