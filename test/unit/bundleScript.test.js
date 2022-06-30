@@ -7,12 +7,12 @@ const dir = './tmp',
     {
       path: path.join(__dirname, BUNDLES_FOLDER + '/nested_references_from_root_components'),
       folderName: 'nested_references_from_root_components',
-      root: '/v1.yaml'
+      root: path.join(__dirname, BUNDLES_FOLDER + '/nested_references_from_root_components/v1.yaml')
     },
     {
       path: path.join(__dirname, BUNDLES_FOLDER + '/local_references'),
       folderName: 'local_references',
-      root: '/root.yaml'
+      root: path.join(__dirname, BUNDLES_FOLDER + '/local_references/root.yaml')
     }
   ];
 
@@ -33,7 +33,7 @@ describe('bundle files from different folders', function () {
     return arrayOfFiles;
   };
 
-  it('Should return bundled file as json - schema_from_response', async function () {
+  it('Should return bundled file as json', async function () {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
@@ -48,10 +48,9 @@ describe('bundle files from different folders', function () {
         arrayOfFiles = [];
       getAllFiles(currentPath, arrayOfFiles);
       data = arrayOfFiles.map((file) => {
-        let fileName = '/' + file.split('/').reverse()[0],
-          content = fs.readFileSync(file, 'utf8');
+        let content = fs.readFileSync(file, 'utf8');
         return {
-          path: fileName,
+          path: file,
           content: content
         };
       });
@@ -71,11 +70,45 @@ describe('bundle files from different folders', function () {
       if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir);
       }
-      fs.writeFileSync(outputDir + '/bundled.json', res.output.data[0].bundledContent);
+      fs.writeFileSync(outputDir + '/bundled.json', JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2));
 
       Converter.convert({ type: 'string', data: res.output.data[0].bundledContent }, {}, (err, conversionResult) => {
-        fs.writeFileSync(outputDir + '/coll.json', JSON.stringify(conversionResult.output[0].data));
+        fs.writeFileSync(outputDir + '/coll.json', JSON.stringify(conversionResult.output[0].data, null, 2));
       });
+    }
+  });
+
+  it('Should return root', async function () {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+    }
+    for (let index = 0; index < folders.length; index++) {
+      const currentPath = folders[index].path,
+        folder = folders[index].folderName,
+        outputDir = path.join(dir, folder);
+      let input,
+        data,
+        res,
+        arrayOfFiles = [];
+      getAllFiles(currentPath, arrayOfFiles);
+      data = arrayOfFiles.map((file) => {
+        let fileName = '/' + file.split('/').reverse()[0],
+          content = fs.readFileSync(file, 'utf8');
+        return {
+          path: fileName,
+          content: content
+        };
+      });
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        data: data
+      };
+      res = await Converter.detectRootFiles(input);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir);
+      }
+      fs.writeFileSync(outputDir + '/root.json', JSON.stringify(res, null, 2));
     }
   });
 });
