@@ -22,23 +22,6 @@ description: |-
   Communication is done over HTTPS using POST. Both request and response are formatted as JSON, and the content type of both is `application/json`.
 
   You must specify a key in your request, included as the value of a`key` parameter. A `key` is your application's  API key. This key identifies your application for purposes of quota management. Learn how to [get a key](https://developers.google.com/maps/documentation/geolocation/get-api-key).
-requestBody:
-  description: The request body must be formatted as JSON.
-  content:
-    "application/json":
-      schema:
-         $ref: "../schemas/GeolocationRequest.yml" 
-      examples:
-        WIFI:
-          value:
-            $ref: ../requests/maps_http_geolocation_wifi_request.yml
-        # Cell Towers:
-        #   value:
-        #     $ref: ../requests/maps_http_geolocation_celltowers_request.yml
-        # IP Only:
-        #   value:
-        #     $ref: ../requests/maps_http_geolocation_ip_request.yml
-  required: false
 responses:
   "200":
     description: 200 OK
@@ -56,19 +39,18 @@ responses:
           # IP Only:
           #   value:
           #     $ref: ../responses/maps_http_geolocation_ip_response.yml
-  # "400":
-  #   description: 400 BAD REQUEST
-  #   content:
-  #     application/json:
-  #       schema:
-  #         $ref: "../schemas/errors/ErrorResponse.yml"
-  #       examples:
-  #         Bad Request:
-  #           value:
-  #             $ref: ../responses/maps_http_geolocation_error_400_response.yml
-  #         Invalid Key:
-  #           value:
-  #             $ref: ../responses/maps_http_geolocation_error_400_invalid_key_response.yml
+  "400":
+    description: 400 BAD REQUEST
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            value:
+              $ref: "../schemas/test.yml"
+            other:
+              type: string
+        
   # "404":
   #   description: 404 NOT FOUND
   #   content:
@@ -79,3 +61,20 @@ responses:
   #         Invalid:            
   #           value:
   #             $ref: ../responses/maps_http_geolocation_error_404_response.yml
+requestBody:
+  description: The request body must be formatted as JSON.
+  content:
+    "application/json":
+      schema:
+          $ref: "../schemas/GeolocationRequest.yml" 
+      examples:
+        WIFI:
+          value:
+            $ref: ../requests/maps_http_geolocation_wifi_request.yml
+        # Cell Towers:
+        #   value:
+        #     $ref: ../requests/maps_http_geolocation_celltowers_request.yml
+        # IP Only:
+        #   value:
+        #     $ref: ../requests/maps_http_geolocation_ip_request.yml
+  required: false

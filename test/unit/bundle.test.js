@@ -41,7 +41,7 @@ let expect = require('chai').expect,
   longPath = path.join(__dirname, BUNDLES_FOLDER + '/longPath'),
   schemaCollision = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_from_responses'),
   schemaCollisionWRootComponent = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_w_root_components'),
-  issue14 = path.join(__dirname, BUNDLES_FOLDER + '/TestSpec_from_issue_14');
+  nestedExamplesAsValue = path.join(__dirname, BUNDLES_FOLDER + '/nested_examples_as_value');
 
 
 describe('bundle files method - 3.0', function () {
@@ -2224,21 +2224,24 @@ describe('bundle files method - 3.0', function () {
   });
 
   it('Should return bundled file - TestSpec_from_issue_14', async function () {
-    let contentRoot = fs.readFileSync(issue14 + '/index.yml', 'utf8'),
-      parametersIndex = fs.readFileSync(issue14 + '/parameters/_index.yml', 'utf8'),
-      arrivalTime = fs.readFileSync(issue14 + '/parameters/arrival_time.yml', 'utf8'),
-      pathsIndex = fs.readFileSync(issue14 + '/paths/_index.yml', 'utf8'),
-      geolocate = fs.readFileSync(issue14 + '/paths/geolocate.yml', 'utf8'),
-      requests = fs.readFileSync(issue14 + '/requests/maps_http_geolocation_celltowers_request.yml', 'utf8'),
-      schemasIndex = fs.readFileSync(issue14 + '/schemas/_index.yml', 'utf8'),
-      bounds = fs.readFileSync(issue14 + '/schemas/Bounds.yml', 'utf8'),
-      cellTower = fs.readFileSync(issue14 + '/schemas/CellTower.yml', 'utf8'),
-      geolocationRequest = fs.readFileSync(issue14 + '/schemas/GeolocationRequest.yml', 'utf8'),
-      latLngLiteral = fs.readFileSync(issue14 + '/schemas/LatLngLiteral.yml', 'utf8'),
-      wifiResponse = fs.readFileSync(issue14 + '/responses/maps_http_geolocation_wifi_response.yml', 'utf8'),
-      wifiRequest = fs.readFileSync(issue14 + '/requests/maps_http_geolocation_wifi_request.yml', 'utf8'),
-      geolocationResponse = fs.readFileSync(issue14 + '/schemas/GeolocationResponse.yml', 'utf8'),
-      expected = fs.readFileSync(issue14 + '/expected.json', 'utf8'),
+    let contentRoot = fs.readFileSync(nestedExamplesAsValue + '/index.yml', 'utf8'),
+      parametersIndex = fs.readFileSync(nestedExamplesAsValue + '/parameters/_index.yml', 'utf8'),
+      arrivalTime = fs.readFileSync(nestedExamplesAsValue + '/parameters/arrival_time.yml', 'utf8'),
+      pathsIndex = fs.readFileSync(nestedExamplesAsValue + '/paths/_index.yml', 'utf8'),
+      geolocate = fs.readFileSync(nestedExamplesAsValue + '/paths/geolocate.yml', 'utf8'),
+      requests =
+        fs.readFileSync(nestedExamplesAsValue + '/requests/maps_http_geolocation_celltowers_request.yml', 'utf8'),
+      schemasIndex = fs.readFileSync(nestedExamplesAsValue + '/schemas/_index.yml', 'utf8'),
+      bounds = fs.readFileSync(nestedExamplesAsValue + '/schemas/Bounds.yml', 'utf8'),
+      cellTower = fs.readFileSync(nestedExamplesAsValue + '/schemas/CellTower.yml', 'utf8'),
+      geolocationRequest = fs.readFileSync(nestedExamplesAsValue + '/schemas/GeolocationRequest.yml', 'utf8'),
+      latLngLiteral = fs.readFileSync(nestedExamplesAsValue + '/schemas/LatLngLiteral.yml', 'utf8'),
+      wifiResponse =
+        fs.readFileSync(nestedExamplesAsValue + '/responses/maps_http_geolocation_wifi_response.yml', 'utf8'),
+      wifiRequest = fs.readFileSync(nestedExamplesAsValue + '/requests/maps_http_geolocation_wifi_request.yml', 'utf8'),
+      geolocationResponse = fs.readFileSync(nestedExamplesAsValue + '/schemas/GeolocationResponse.yml', 'utf8'),
+      testSchema = fs.readFileSync(nestedExamplesAsValue + '/schemas/test.yml', 'utf8'),
+      expected = fs.readFileSync(nestedExamplesAsValue + '/expected.json', 'utf8'),
       input = {
         type: 'multiFile',
         specificationVersion: '3.0',
@@ -2303,6 +2306,10 @@ describe('bundle files method - 3.0', function () {
           {
             path: '/responses/maps_http_geolocation_wifi_response.yml',
             content: wifiResponse
+          },
+          {
+            path: '/schemas/test.yml',
+            content: testSchema
           }
         ],
         options: {},
