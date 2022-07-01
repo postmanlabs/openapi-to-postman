@@ -70,10 +70,17 @@ describe('bundle files from different folders', function () {
       if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir);
       }
-      fs.writeFileSync(outputDir + '/bundled.json', JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2));
+      res.output.data.forEach((bundled) => {
+        let rootName = bundled.rootFile.path.split('/').reverse()[0];
+        fs.writeFileSync(outputDir + `/${rootName}-bundled.json`,
+          JSON.stringify(JSON.parse(bundled.bundledContent), null, 2));
 
-      Converter.convert({ type: 'string', data: res.output.data[0].bundledContent }, {}, (err, conversionResult) => {
-        fs.writeFileSync(outputDir + '/coll.json', JSON.stringify(conversionResult.output[0].data, null, 2));
+        Converter.convert({ type: 'string', data: bundled.bundledContent }, {}, (err, conversionResult) => {
+          if (conversionResult.result) {
+            fs.writeFileSync(outputDir + `/${rootName}-coll.json`,
+              JSON.stringify(conversionResult.output[0].data, null, 2));
+          }
+        });
       });
     }
   });
