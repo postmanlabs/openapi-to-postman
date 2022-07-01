@@ -1,0 +1,158 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# WARNING: This file is automatically updated as part of `npm run build`.
+
+arrival_time:
+  $ref: "./arrival_time.yml"
+# departure_time:
+#   $ref: "./departure_time.yml"
+# directions_alternatives:
+#   $ref: "./directions/alternatives.yml"
+# directions_avoid:
+#   $ref: "./directions/avoid.yml"
+# directions_departure_time:
+#   $ref: "./directions/departure_time.yml"
+# directions_destination:
+#   $ref: "./directions/destination.yml"
+# directions_origin:
+#   $ref: "./directions/origin.yml"
+# directions_units:
+#   $ref: "./directions/units.yml"
+# directions_waypoints:
+#   $ref: "./directions/waypoints.yml"
+# distancematrix_avoid:
+#   $ref: "./distanceMatrix/avoid.yml"
+# distancematrix_destinations:
+#   $ref: "./distanceMatrix/destinations.yml"
+# distancematrix_origins:
+#   $ref: "./distanceMatrix/origins.yml"
+# distancematrix_units:
+#   $ref: "./distanceMatrix/units.yml"
+# elevation_locations:
+#   $ref: "./elevation/locations.yml"
+# elevation_path:
+#   $ref: "./elevation/path.yml"
+# elevation_samples:
+#   $ref: "./elevation/samples.yml"
+# geocode_address:
+#   $ref: "./geocode/address.yml"
+# geocode_bounds:
+#   $ref: "./geocode/bounds.yml"
+# geocode_components:
+#   $ref: "./geocode/components.yml"
+# geocode_latlng:
+#   $ref: "./geocode/latlng.yml"
+# geocode_location_type:
+#   $ref: "./geocode/location_type.yml"
+# geocode_place_id:
+#   $ref: "./geocode/place_id.yml"
+# geocode_result_type:
+#   $ref: "./geocode/result_type.yml"
+# language:
+#   $ref: "./language.yml"
+# mode:
+#   $ref: "./mode.yml"
+# nearestroads_points:
+#   $ref: "./nearestRoads/points.yml"
+# places_components:
+#   $ref: "./places/components.yml"
+# places_fields:
+#   $ref: "./places/fields.yml"
+# places_inputtype:
+#   $ref: "./places/inputtype.yml"
+# places_keyword:
+#   $ref: "./places/keyword.yml"
+# places_location-required:
+#   $ref: "./places/location-required.yml"
+# places_location-weighted:
+#   $ref: "./places/location-weighted.yml"
+# places_location:
+#   $ref: "./places/location.yml"
+# places_locationbias:
+#   $ref: "./places/locationbias.yml"
+# places_maxheight:
+#   $ref: "./places/maxheight.yml"
+# places_maxprice:
+#   $ref: "./places/maxprice.yml"
+# places_maxwidth:
+#   $ref: "./places/maxwidth.yml"
+# places_minprice:
+#   $ref: "./places/minprice.yml"
+# places_name:
+#   $ref: "./places/name.yml"
+# places_offset:
+#   $ref: "./places/offset.yml"
+# places_opennow:
+#   $ref: "./places/opennow.yml"
+# places_origin:
+#   $ref: "./places/origin.yml"
+# places_pagetoken:
+#   $ref: "./places/pagetoken.yml"
+# places_photo_reference:
+#   $ref: "./places/photo_reference.yml"
+# places_place_id:
+#   $ref: "./places/place_id.yml"
+# places_query:
+#   $ref: "./places/query.yml"
+# places_radius:
+#   $ref: "./places/radius.yml"
+# places_rankby:
+#   $ref: "./places/rankby.yml"
+# places_sessiontoken:
+#   $ref: "./places/sessiontoken.yml"
+# places_strictbounds:
+#   $ref: "./places/strictbounds.yml"
+# places_type:
+#   $ref: "./places/type.yml"
+# places_types:
+#   $ref: "./places/types.yml"
+# region:
+#   $ref: "./region.yml"
+# snaptoroads_interpolate:
+#   $ref: "./snapToRoads/interpolate.yml"
+# snaptoroads_path:
+#   $ref: "./snapToRoads/path.yml"
+# streetview_fov:
+#   $ref: "./streetview/fov.yml"
+# streetview_heading:
+#   $ref: "./streetview/heading.yml"
+# streetview_location:
+#   $ref: "./streetview/location.yml"
+# streetview_pano:
+#   $ref: "./streetview/pano.yml"
+# streetview_pitch:
+#   $ref: "./streetview/pitch.yml"
+# streetview_radius:
+#   $ref: "./streetview/radius.yml"
+# streetview_return_error_code:
+#   $ref: "./streetview/return_error_code.yml"
+# streetview_signature:
+#   $ref: "./streetview/signature.yml"
+# streetview_size_optional:
+#   $ref: "./streetview/size_optional.yml"
+# streetview_size:
+#   $ref: "./streetview/size.yml"
+# streetview_source:
+#   $ref: "./streetview/source.yml"
+# timezone_location:
+#   $ref: "./timezone/location.yml"
+# timezone_timestamp:
+#   $ref: "./timezone/timestamp.yml"
+# traffic_model:
+#   $ref: "./traffic_model.yml"
+# transit_mode:
+#   $ref: "./transit_mode.yml"
+# transit_routing_preference:
+#   $ref: "./transit_routing_preference.yml"

@@ -1,0 +1,82 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+/geolocation/v1/geolocate:
+  post:
+    operationId: geolocate
+    $ref: "./geolocate.yml"
+# /maps/api/directions/json:
+#   get:
+#     operationId: directions
+#     $ref: "./directions.yml"
+# /maps/api/elevation/json:
+#   get:
+#     operationId: elevation
+#     $ref: "./elevation.yml"
+# /maps/api/geocode/json:
+#   get:
+#     operationId: geocode
+#     $ref: "./geocode.yml"
+# /maps/api/timezone/json:
+#   get:
+#     operationId: timezone
+#     $ref: "./timezone.yml"
+# /v1/snaptoroads:
+#   get:
+#     operationId: snapToRoads
+#     $ref: "./snapToRoads.yml"
+# /v1/nearestRoads:
+#   get:
+#     operationId: nearestRoads
+#     $ref: "./nearestRoads.yml"
+# /maps/api/distancematrix/json:
+#   get:
+#     operationId: distanceMatrix
+#     $ref: "./distanceMatrix.yml"
+# /maps/api/place/details/json:
+#   get:
+#     operationId: placeDetails
+#     $ref: "./places/details.yml"
+# /maps/api/place/findplacefromtext/json:
+#   get:
+#     operationId: findPlaceFromText
+#     $ref: "./places/findplacefromtext.yml"
+# /maps/api/place/nearbysearch/json:  
+#   get:
+#     operationId: nearbySearch
+#     $ref: "./places/nearbysearch.yml"
+# /maps/api/place/textsearch/json:  
+#   get:
+#     operationId: textSearch
+#     $ref: "./places/textsearch.yml"
+# /maps/api/place/photo:  
+#   get:
+#     operationId: placePhoto
+#     $ref: "./places/photo.yml"
+# /maps/api/place/queryautocomplete/json:  
+#   get:
+#     operationId: queryAutocomplete
+#     $ref: "./places/queryautocomplete.yml"
+# /maps/api/place/autocomplete/json:  
+#   get:
+#     operationId: autocomplete
+#     $ref: "./places/autocomplete.yml"
+# /maps/api/streetview:  
+#   get:
+#     operationId: streetView
+#     $ref: "./streetview/static.yml"
+# /maps/api/streetview/metadata:  
+#   get:
+#     operationId: streetViewMetadata
+#     $ref: "./streetview/metadata.yml"
