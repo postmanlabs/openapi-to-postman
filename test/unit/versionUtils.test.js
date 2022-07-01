@@ -305,6 +305,10 @@ describe('compareVersion method', function () {
     const result = compareVersion('invalid', 'invalid');
     expect(result).to.be.false;
   });
+  it('should return true when input is 3.0.2 and version is 3.0.0', function () {
+    const result = compareVersion('3.0.2', '3.0.0');
+    expect(result).to.be.true;
+  });
 });
 
 describe('getVersionRegexBySpecificationVersion method', function () {
