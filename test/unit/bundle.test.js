@@ -44,8 +44,6 @@ let expect = require('chai').expect,
   nestedExamplesAsValue = path.join(__dirname, BUNDLES_FOLDER + '/nested_examples_as_value'),
   referencedProperties = path.join(__dirname, BUNDLES_FOLDER + '/referenced_properties');
 
-
-
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
     let contentRootFile = fs.readFileSync(schemaFromResponse + '/root.yaml', 'utf8'),
@@ -2224,7 +2222,7 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.specification.version).to.equal('3.0');
     expect(res.output.data[0].bundledContent).to.be.equal(input.data[0].content);
   });
-  
+
   it('Should return bundled file as with referenced properties', async function () {
     let contentRootFile = fs.readFileSync(referencedProperties + '/root.yaml', 'utf8'),
       operation = fs.readFileSync(referencedProperties + '/operation.yaml', 'utf8'),
@@ -2361,7 +2359,7 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
-
+});
 
 describe('getReferences method when node does not have any reference', function() {
   it('Should return ' +
