@@ -40,7 +40,8 @@ let expect = require('chai').expect,
   compositeAnyOf = path.join(__dirname, BUNDLES_FOLDER + '/composite_anyOf'),
   longPath = path.join(__dirname, BUNDLES_FOLDER + '/longPath'),
   schemaCollision = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_from_responses'),
-  schemaCollisionWRootComponent = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_w_root_components');
+  schemaCollisionWRootComponent = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_w_root_components'),
+  referencedProperties = path.join(__dirname, BUNDLES_FOLDER + '/referenced_properties');
 
 
 describe('bundle files method - 3.0', function () {
@@ -2220,6 +2221,44 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.0');
     expect(res.output.data[0].bundledContent).to.be.equal(input.data[0].content);
+  });
+
+  it('Should return bundled file as with referenced properties', async function () {
+    let contentRootFile = fs.readFileSync(referencedProperties + '/root.yaml', 'utf8'),
+      operation = fs.readFileSync(referencedProperties + '/operation.yaml', 'utf8'),
+      attributes = fs.readFileSync(referencedProperties + '/attributes.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedProperties + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/operation.yaml',
+            content: operation
+          },
+          {
+            path: '/attributes.yaml',
+            content: attributes
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 });
 
