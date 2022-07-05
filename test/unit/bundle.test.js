@@ -43,7 +43,7 @@ let expect = require('chai').expect,
   schemaCollisionWRootComponent = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_w_root_components'),
   referencedProperties = path.join(__dirname, BUNDLES_FOLDER + '/referenced_properties'),
   nestedExamplesAsValue = path.join(__dirname, BUNDLES_FOLDER + '/nested_examples_as_value'),
-referencedComponents = path.join(__dirname, BUNDLES_FOLDER + '/referenced_components'),
+  referencedComponents = path.join(__dirname, BUNDLES_FOLDER + '/referenced_components'),
   referencedPath = path.join(__dirname, BUNDLES_FOLDER + '/referenced_path');
 
 describe('bundle files method - 3.0', function () {
