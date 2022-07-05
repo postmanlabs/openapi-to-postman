@@ -1,0 +1,25 @@
+"200":
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          name:
+            type: string
+          address:
+            type: string
+"responseA":
+  content:
+    application/json:
+      schema:
+        $ref: './schemaA.yaml'
+"responseB":
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          fromB:
+            type: string
+          addressFromB:
+            type: string

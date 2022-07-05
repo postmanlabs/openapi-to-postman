@@ -41,8 +41,9 @@ let expect = require('chai').expect,
   longPath = path.join(__dirname, BUNDLES_FOLDER + '/longPath'),
   schemaCollision = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_from_responses'),
   schemaCollisionWRootComponent = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_w_root_components'),
+  referencedProperties = path.join(__dirname, BUNDLES_FOLDER + '/referenced_properties'),
   nestedExamplesAsValue = path.join(__dirname, BUNDLES_FOLDER + '/nested_examples_as_value'),
-  referencedProperties = path.join(__dirname, BUNDLES_FOLDER + '/referenced_properties');
+  referencedComponents = path.join(__dirname, BUNDLES_FOLDER + '/referenced_components');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -2357,6 +2358,54 @@ describe('bundle files method - 3.0', function () {
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file - referenced-components', async function () {
+    let contentRootFile = fs.readFileSync(referencedComponents + '/root.yaml', 'utf8'),
+      components = fs.readFileSync(referencedComponents + '/components.yaml', 'utf8'),
+      responses = fs.readFileSync(referencedComponents + '/responses.yaml', 'utf8'),
+      schemas = fs.readFileSync(referencedComponents + '/schemas.yaml', 'utf8'),
+      schemaA = fs.readFileSync(referencedComponents + '/schemaA.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedComponents + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/components.yaml',
+            content: components
+          },
+          {
+            path: '/responses.yaml',
+            content: responses
+          },
+          {
+            path: '/schemas.yaml',
+            content: schemas
+          },
+          {
+            path: '/schemaA.yaml',
+            content: schemaA
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 });
