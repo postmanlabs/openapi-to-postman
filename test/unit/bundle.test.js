@@ -43,7 +43,8 @@ let expect = require('chai').expect,
   schemaCollisionWRootComponent = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_w_root_components'),
   referencedProperties = path.join(__dirname, BUNDLES_FOLDER + '/referenced_properties'),
   nestedExamplesAsValue = path.join(__dirname, BUNDLES_FOLDER + '/nested_examples_as_value'),
-  referencedComponents = path.join(__dirname, BUNDLES_FOLDER + '/referenced_components');
+referencedComponents = path.join(__dirname, BUNDLES_FOLDER + '/referenced_components'),
+  referencedPath = path.join(__dirname, BUNDLES_FOLDER + '/referenced_path');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -2359,6 +2360,57 @@ describe('bundle files method - 3.0', function () {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return correct map with inline and components resolving', async function () {
+    let contentRootFile = fs.readFileSync(referencedPath + '/root.yaml', 'utf8'),
+      path = fs.readFileSync(referencedPath + '/path.yaml', 'utf8'),
+      pet = fs.readFileSync(referencedPath + '/pet.yaml', 'utf8'),
+      cat = fs.readFileSync(referencedPath + '/cat.yaml', 'utf8'),
+      expected = {
+        '#/paths//pets/get': {
+          path: '/path.yaml',
+          type: 'inline'
+        },
+        '#/components/schemas/_cat.yaml': {
+          path: '/cat.yaml',
+          type: 'component'
+        }
+      },
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/pet.yaml',
+            content: pet
+          },
+          {
+            path: '/path.yaml',
+            content: path
+          },
+          {
+            path: '/cat.yaml',
+            content: cat
+          }
+        ],
+        options: { includeReferenceMap: true },
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].referenceMap).to.deep.equal(expected);
   });
 
   it('Should return bundled file - referenced-components', async function () {
