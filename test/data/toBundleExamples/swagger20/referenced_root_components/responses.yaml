@@ -1,0 +1,8 @@
+'200':
+  description: A simple string response
+  schema:
+    type: string
+'400':
+  description: A simple string response from 400 code
+  schema:
+    type: string
