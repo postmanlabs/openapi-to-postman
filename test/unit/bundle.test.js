@@ -2550,7 +2550,7 @@ describe('bundle files method - 3.0', function () {
 
   it('Should return bundled file - example_schema', async function () {
     let contentRootFile = fs.readFileSync(exampleValue + '/root.yml', 'utf8'),
-      example = fs.readFileSync(exampleValue + '/example.yml', 'utf8'),
+      example = fs.readFileSync(exampleValue + '/example_value.yml', 'utf8'),
       expected = fs.readFileSync(exampleValue + '/expected.json', 'utf8'),
       input = {
         type: 'multiFile',
@@ -2566,7 +2566,7 @@ describe('bundle files method - 3.0', function () {
             content: contentRootFile
           },
           {
-            path: '/example.yml',
+            path: '/example_value.yml',
             content: example
           }
         ],

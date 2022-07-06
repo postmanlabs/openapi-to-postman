@@ -42,7 +42,7 @@ paths:
               examples:
                 WIFI:
                   value:
-                    $ref: "./example.yml"
+                    $ref: "./example_value.yml"
         default:
           description: unexpected error
           content:
