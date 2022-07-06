@@ -2600,7 +2600,8 @@ describe('getReferences method when node does not have any reference', function(
         '3.0',
         {},
         '',
-        []
+        [],
+        {}
       );
     expect(result.nodeReferenceDirectory).to.be.an('object');
     expect(Object.keys(result.nodeReferenceDirectory).length).to.equal(1);
