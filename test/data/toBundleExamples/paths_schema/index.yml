@@ -1,9 +1,9 @@
 openapi: 3.0.3
 info:
-  title: Google Maps Platform
-  description: API Specification for Google Maps Platform
+  title: Maps Platform
+  description: API Specification for Maps Platform
   version: 1.17.16
 servers:
-  - url: "https://www.googleapis.com"
+  - url: "https://www.server.com"
 paths:
   $ref: "./paths.yml"
