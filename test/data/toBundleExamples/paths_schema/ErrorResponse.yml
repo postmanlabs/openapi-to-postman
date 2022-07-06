@@ -1,0 +1,20 @@
+type: object
+title: ErrorResponse
+description: In the case of an error, a standard format error r
+required: [error]
+properties:
+  error:
+    description: An error return by the server.
+    type: object
+    title: ErrorObject
+    required: [code, message, errors]
+    properties:
+      code:
+        description: This is the same as the HTTP status of the response.
+        type: number
+      message:
+        description: A short description of the error.
+        type: string
+      status:
+        description: A status code that indicates the error type.
+        type: string

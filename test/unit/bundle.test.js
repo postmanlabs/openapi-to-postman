@@ -44,7 +44,8 @@ let expect = require('chai').expect,
   referencedProperties = path.join(__dirname, BUNDLES_FOLDER + '/referenced_properties'),
   nestedExamplesAsValue = path.join(__dirname, BUNDLES_FOLDER + '/nested_examples_as_value'),
   referencedComponents = path.join(__dirname, BUNDLES_FOLDER + '/referenced_components'),
-  referencedPath = path.join(__dirname, BUNDLES_FOLDER + '/referenced_path');
+  referencedPath = path.join(__dirname, BUNDLES_FOLDER + '/referenced_path'),
+  referencedPathSchema = path.join(__dirname, BUNDLES_FOLDER + '/paths_schema');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -778,6 +779,16 @@ describe('bundle files method - 3.0', function () {
       paths = fs.readFileSync(refPaths + '/paths/paths.yaml', 'utf8'),
       path = fs.readFileSync(refPaths + '/paths/path.yaml', 'utf8'),
       expected = fs.readFileSync(refPaths + '/expected.json', 'utf8'),
+      expectedMap = {
+        '#/paths': {
+          path: '/paths/paths.yaml',
+          type: 'inline'
+        },
+        '#/paths//pets/get': {
+          path: '/paths/path.yaml',
+          type: 'inline'
+        }
+      },
       input = {
         type: 'multiFile',
         specificationVersion: '3.0',
@@ -800,13 +811,14 @@ describe('bundle files method - 3.0', function () {
             content: path
           }
         ],
-        options: {},
+        options: { includeReferenceMap: true },
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
+    expect(res.output.data[0].referenceMap).to.deep.equal(expectedMap);
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
@@ -2367,6 +2379,7 @@ describe('bundle files method - 3.0', function () {
       path = fs.readFileSync(referencedPath + '/path.yaml', 'utf8'),
       pet = fs.readFileSync(referencedPath + '/pet.yaml', 'utf8'),
       cat = fs.readFileSync(referencedPath + '/cat.yaml', 'utf8'),
+      expectedBundled = fs.readFileSync(referencedPath + '/expected.json', 'utf8'),
       expected = {
         '#/paths//pets/get': {
           path: '/path.yaml',
@@ -2374,6 +2387,10 @@ describe('bundle files method - 3.0', function () {
         },
         '#/components/schemas/_cat.yaml': {
           path: '/cat.yaml',
+          type: 'component'
+        },
+        '#/components/schemas/_pet.yaml': {
+          path: '/pet.yaml',
           type: 'component'
         }
       },
@@ -2411,6 +2428,7 @@ describe('bundle files method - 3.0', function () {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data[0].referenceMap).to.deep.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expectedBundled);
   });
 
   it('Should return bundled file - referenced-components', async function () {
@@ -2459,6 +2477,83 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.0');
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file with referenced paths from roots', async function () {
+    let contentRootFile = fs.readFileSync(referencedPathSchema + '/index.yml', 'utf8'),
+      paths = fs.readFileSync(referencedPathSchema + '/paths.yml', 'utf8'),
+      errorResponse = fs.readFileSync(referencedPathSchema + '/ErrorResponse.yml', 'utf8'),
+      geolocationResponse = fs.readFileSync(referencedPathSchema + '/GeolocationResponse.yml', 'utf8'),
+      geolocationRequest = fs.readFileSync(referencedPathSchema + '/GeolocationRequest.yml', 'utf8'),
+      geolocate = fs.readFileSync(referencedPathSchema + '/geolocate.yml', 'utf8'),
+      expectedMap = {
+        '#/paths': {
+          path: '/paths.yml',
+          type: 'inline'
+        },
+        '#/paths//geolocation/v1/geolocate/post': {
+          path: '/geolocate.yml',
+          type: 'inline'
+        },
+        '#/components/schemas/_GeolocationRequest.yml': {
+          path: '/GeolocationRequest.yml',
+          type: 'component'
+        },
+        '#/components/schemas/_GeolocationResponse.yml': {
+          path: '/GeolocationResponse.yml',
+          type: 'component'
+        },
+        '#/components/schemas/_ErrorResponse.yml': {
+          path: '/ErrorResponse.yml',
+          type: 'component'
+        },
+        '#/components/schemas/_CellTower.yml': {
+          path: '/CellTower.yml',
+          type: 'component'
+        }
+      },
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/index.yml'
+          }
+        ],
+        data: [
+          {
+            path: '/index.yml',
+            content: contentRootFile
+          },
+          {
+            path: '/paths.yml',
+            content: paths
+          },
+          {
+            path: '/ErrorResponse.yml',
+            content: errorResponse
+          },
+          {
+            path: '/GeolocationResponse.yml',
+            content: geolocationResponse
+          },
+          {
+            path: '/GeolocationRequest.yml',
+            content: geolocationRequest
+          },
+          {
+            path: '/geolocate.yml',
+            content: geolocate
+          }
+        ],
+        options: { includeReferenceMap: true },
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].referenceMap).to.deep.equal(expectedMap);
   });
 });
 
