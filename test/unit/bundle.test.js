@@ -45,7 +45,8 @@ let expect = require('chai').expect,
   nestedExamplesAsValue = path.join(__dirname, BUNDLES_FOLDER + '/nested_examples_as_value'),
   referencedComponents = path.join(__dirname, BUNDLES_FOLDER + '/referenced_components'),
   referencedPath = path.join(__dirname, BUNDLES_FOLDER + '/referenced_path'),
-  referencedPathSchema = path.join(__dirname, BUNDLES_FOLDER + '/paths_schema');
+  referencedPathSchema = path.join(__dirname, BUNDLES_FOLDER + '/paths_schema'),
+  exampleValue = path.join(__dirname, BUNDLES_FOLDER + '/example_value');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -2555,6 +2556,39 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(res.output.data[0].referenceMap).to.deep.equal(expectedMap);
   });
+
+  it('Should return bundled file - example_schema', async function () {
+    let contentRootFile = fs.readFileSync(exampleValue + '/root.yml', 'utf8'),
+      example = fs.readFileSync(exampleValue + '/example.yml', 'utf8'),
+      expected = fs.readFileSync(exampleValue + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yml',
+            content: contentRootFile
+          },
+          {
+            path: '/example.yml',
+            content: example
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
 });
 
 describe('getReferences method when node does not have any reference', function() {
@@ -2611,7 +2645,8 @@ describe('getReferences method when node does not have any reference', function(
         '3.0',
         {},
         '',
-        []
+        [],
+        {}
       );
     expect(result.nodeReferenceDirectory).to.be.an('object');
     expect(Object.keys(result.nodeReferenceDirectory).length).to.equal(1);
