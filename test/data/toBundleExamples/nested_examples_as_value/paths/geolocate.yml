@@ -71,9 +71,9 @@ requestBody:
         WIFI:
           value:
             $ref: ../requests/maps_http_geolocation_wifi_request.yml
-        # Cell Towers:
-        #   value:
-        #     $ref: ../requests/maps_http_geolocation_celltowers_request.yml
+        Cell Towers:
+          value:
+            $ref: ../requests/maps_http_geolocation_celltowers_request.yml
         # IP Only:
         #   value:
         #     $ref: ../requests/maps_http_geolocation_ip_request.yml
