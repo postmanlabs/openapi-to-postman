@@ -23,8 +23,8 @@ paths:
             type: array
             items:
               $ref: '#/definitions/Pet'
-          example:
-            $ref: "example.yaml"
+            example:
+              $ref: "example.yaml"
         default:
           description: unexpected error
           schema:

@@ -27,12 +27,12 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/Pet"
+              },
+              "example": {
+                "id": 1,
+                "name": "Puma",
+                "tag": "Test"
               }
-            },
-            "example": {
-              "id": 1,
-              "name": "Puma",
-              "tag": "Test"
             }
           },
           "default": {
