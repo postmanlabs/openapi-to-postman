@@ -29,7 +29,9 @@ let expect = require('chai').expect,
   schemaCollisionWRootComponent = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER +
       '/schema_collision_w_root_components'),
   referencedRootComponents = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER +
-    '/referenced_root_components');
+    '/referenced_root_components'),
+  referencedExampleKey = path.join(__dirname, SWAGGER_MULTIFILE_FOLDER +
+    '/referenced_example_key');
 
 describe('bundle files method - 2.0', function() {
   it('Should return bundled result from - nestedProperties20', async function() {
@@ -959,6 +961,39 @@ describe('bundle files method - 2.0', function() {
           {
             path: '/paths/path.yaml',
             content: singlePath
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('2.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file as json - referenced_example_key', async function () {
+    let contentRootFile = fs.readFileSync(referencedExampleKey + '/root.yaml', 'utf8'),
+      example = fs.readFileSync(referencedExampleKey + '/example.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedExampleKey + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '2.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/example.yaml',
+            content: example
           }
         ],
         options: {},
