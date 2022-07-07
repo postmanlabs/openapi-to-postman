@@ -32,7 +32,11 @@
                   }
                 },
                 "example": {
-                  "$ref": "#/components/examples/_examples.yaml-_foo"
+                  "summary": "sum",
+                  "value": {
+                    "code": 1,
+                    "message": "test error message"
+                  }
                 }
               }
             }
@@ -84,15 +88,6 @@
           "message": {
             "type": "string"
           }
-        }
-      }
-    },
-    "examples": {
-      "_examples.yaml-_foo": {
-        "summary": "sum",
-        "value": {
-          "code": 1,
-          "message": "test error message"
         }
       }
     }
