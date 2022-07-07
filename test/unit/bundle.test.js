@@ -46,7 +46,8 @@ let expect = require('chai').expect,
   referencedComponents = path.join(__dirname, BUNDLES_FOLDER + '/referenced_components'),
   referencedPath = path.join(__dirname, BUNDLES_FOLDER + '/referenced_path'),
   referencedPathSchema = path.join(__dirname, BUNDLES_FOLDER + '/paths_schema'),
-  exampleValue = path.join(__dirname, BUNDLES_FOLDER + '/example_value');
+  exampleValue = path.join(__dirname, BUNDLES_FOLDER + '/example_value'),
+  example2 = path.join(__dirname, BUNDLES_FOLDER + '/example2');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -2584,6 +2585,38 @@ describe('bundle files method - 3.0', function () {
       };
     const res = await Converter.bundle(input);
 
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should resolve examples correctly', async function () {
+    let contentRootFile = fs.readFileSync(example2 + '/another.yml', 'utf8'),
+      example = fs.readFileSync(example2 + '/example2.yaml', 'utf8'),
+      expected = fs.readFileSync(example2 + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/another.yml'
+          }
+        ],
+        data: [
+          {
+            path: '/another.yml',
+            content: contentRootFile
+          },
+          {
+            path: '/example2.yaml',
+            content: example
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.0');
