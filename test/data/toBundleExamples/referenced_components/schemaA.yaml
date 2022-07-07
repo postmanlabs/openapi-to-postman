@@ -1,0 +1,6 @@
+type: object
+properties:
+  fromA:
+    type: string
+  addressFromA:
+    type: string

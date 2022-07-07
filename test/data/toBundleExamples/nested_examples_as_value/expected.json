@@ -33,7 +33,11 @@
                 "examples": {
                   "WIFI": {
                     "value": {
-                      "$ref": "#/components/examples/_responses_maps_http_geolocation_wifi_response.yml"
+                      "location": {
+                        "lat": 37.421925,
+                        "lng": -122.0841293
+                      },
+                      "accuracy": 30
                     }
                   }
                 }
@@ -69,7 +73,34 @@
               "examples": {
                 "WIFI": {
                   "value": {
-                    "$ref": "#/components/examples/_requests_maps_http_geolocation_wifi_request.yml"
+                    "considerIp": "false",
+                    "wifiAccessPoints": [
+                      {
+                        "macAddress": "84:d4:7e:09:a5:f1",
+                        "signalStrength": -43,
+                        "signalToNoiseRatio": 0
+                      },
+                      {
+                        "macAddress": "44:48:c1:a6:f3:d0",
+                        "signalStrength": -55,
+                        "signalToNoiseRatio": 0
+                      }
+                    ]
+                  }
+                },
+                "Cell Towers": {
+                  "value": {
+                    "cellTowers": [
+                      {
+                        "cellId": 170402199,
+                        "locationAreaCode": 35632,
+                        "mobileCountryCode": 310,
+                        "mobileNetworkCode": 410,
+                        "age": 0,
+                        "signalStrength": -60,
+                        "timingAdvance": 15
+                      }
+                    ]
                   }
                 }
               }
@@ -121,7 +152,6 @@
         ],
         "properties": {
           "location": {
-            "description": "The user’s estimated latitude and longitude, in degrees.",
             "$ref": "#/components/schemas/_schemas_LatLngLiteral.yml"
           },
           "accuracy": {
@@ -130,7 +160,11 @@
           }
         },
         "example": {
-          "$ref": "#/components/examples/_responses_maps_http_geolocation_wifi_response.yml"
+          "location": {
+            "lat": 37.421925,
+            "lng": -122.0841293
+          },
+          "accuracy": 30
         }
       },
       "_schemas_test.yml": {
@@ -219,7 +253,17 @@
           }
         },
         "example": {
-          "$ref": "#/components/examples/_requests_maps_http_geolocation_celltowers_request.yml"
+          "cellTowers": [
+            {
+              "cellId": 170402199,
+              "locationAreaCode": 35632,
+              "mobileCountryCode": 310,
+              "mobileNetworkCode": 410,
+              "age": 0,
+              "signalStrength": -60,
+              "timingAdvance": 15
+            }
+          ]
         }
       },
       "Bounds": {
@@ -232,11 +276,9 @@
         ],
         "properties": {
           "northeast": {
-            "description": "The user’s estimated latitude and longitude, in degrees.",
             "$ref": "#/components/schemas/_schemas_LatLngLiteral.yml"
           },
           "southwest": {
-            "description": "The user’s estimated latitude and longitude, in degrees.",
             "$ref": "#/components/schemas/_schemas_LatLngLiteral.yml"
           }
         }
@@ -247,43 +289,6 @@
         "type": "apiKey",
         "in": "query",
         "name": "key"
-      }
-    },
-    "examples": {
-      "_responses_maps_http_geolocation_wifi_response.yml": {
-        "location": {
-          "lat": 37.421925,
-          "lng": -122.0841293
-        },
-        "accuracy": 30
-      },
-      "_requests_maps_http_geolocation_wifi_request.yml": {
-        "considerIp": "false",
-        "wifiAccessPoints": [
-          {
-            "macAddress": "84:d4:7e:09:a5:f1",
-            "signalStrength": -43,
-            "signalToNoiseRatio": 0
-          },
-          {
-            "macAddress": "44:48:c1:a6:f3:d0",
-            "signalStrength": -55,
-            "signalToNoiseRatio": 0
-          }
-        ]
-      },
-      "_requests_maps_http_geolocation_celltowers_request.yml": {
-        "cellTowers": [
-          {
-            "cellId": 170402199,
-            "locationAreaCode": 35632,
-            "mobileCountryCode": 310,
-            "mobileNetworkCode": 410,
-            "age": 0,
-            "signalStrength": -60,
-            "timingAdvance": 15
-          }
-        ]
       }
     }
   },
