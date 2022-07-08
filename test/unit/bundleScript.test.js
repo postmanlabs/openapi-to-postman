@@ -62,15 +62,9 @@ describe('bundle files from different folders', function () {
         type: 'multiFile',
         specificationVersion: '2.0',
         rootFiles: [
-          {
-            path: root
-          },
-          {
-            path: root2
-          },
-          {
-            path: root3
-          }
+          // {
+          //   path: root
+          // }
         ],
         data: data,
         options: {},
