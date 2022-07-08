@@ -47,7 +47,8 @@ let expect = require('chai').expect,
   referencedPath = path.join(__dirname, BUNDLES_FOLDER + '/referenced_path'),
   referencedPathSchema = path.join(__dirname, BUNDLES_FOLDER + '/paths_schema'),
   exampleValue = path.join(__dirname, BUNDLES_FOLDER + '/example_value'),
-  example2 = path.join(__dirname, BUNDLES_FOLDER + '/example2');
+  example2 = path.join(__dirname, BUNDLES_FOLDER + '/example2'),
+  schemaCircularRef = path.join(__dirname, BUNDLES_FOLDER + '/circular_reference');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -2601,6 +2602,38 @@ describe('bundle files method - 3.0', function () {
           {
             path: '/example2.yaml',
             content: example
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should resolve circular reference in schema correctly', async function () {
+    let contentRootFile = fs.readFileSync(schemaCircularRef + '/root.yaml', 'utf8'),
+      schema = fs.readFileSync(schemaCircularRef + '/schemas/schemas.yaml', 'utf8'),
+      expected = fs.readFileSync(schemaCircularRef + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/schemas/schemas.yaml',
+            content: schema
           }
         ],
         options: {},
