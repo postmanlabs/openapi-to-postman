@@ -2653,9 +2653,6 @@ describe('bundle files method - 3.0', function () {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.0');
-    fs.writeFileSync('bundled.json',
-      JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2));
-
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 });
