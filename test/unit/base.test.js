@@ -44,6 +44,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       securityTestCases = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-cases.yaml'),
       emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml'),
       rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json'),
+      multipleServerUrlsWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_servers_with_variables.json'),
       parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml'),
       issue10229 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#10229.json'),
       deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml'),
@@ -1037,6 +1038,24 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(requestUrl.host).to.eql(['{{baseUrl}}']);
         expect(_.find(collectionVars, { key: 'baseUrl' }).value).to.eql('{{BASE_URI}}/api');
         expect(_.find(collectionVars, { key: 'BASE_URI' }).value).to.eql('https://api.example.com');
+        done();
+      });
+    });
+
+    it('Should correctly define collectionVars for all servers', function (done) {
+      var openapi = fs.readFileSync(multipleServerUrlsWithVariables, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+        let requestUrl,
+          collectionVars;
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.be.true;
+
+        requestUrl = conversionResult.output[0].data.item[0].request.url;
+        collectionVars = conversionResult.output[0].data.variable;
+        expect(requestUrl.host).to.eql(['{{baseUrl}}']);
+        expect(_.find(collectionVars, { key: 'baseUrl' }).value).to.eql('{{BASE_URI}}/api');
+        expect(_.find(collectionVars, { key: 'FIRST_VAR' }).value).to.eql('https://api.example.com/v1');
+        expect(_.find(collectionVars, { key: 'SECOND_VAR' }).value).to.eql('https://api.example.com/v2');
         done();
       });
     });

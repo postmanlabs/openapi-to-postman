@@ -1,0 +1,42 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Multiple servers with different URL variables",
+    "version": "2.0.0"
+  },
+  "servers": [
+    {
+      "url": "{FIRST_VAR}/api",
+      "description": "Development server",
+      "variables": {
+        "FIRST_VAR": {
+          "default": "https://api.example.com/v1",
+          "description": "Server base URI"
+        }
+      }
+    },
+    {
+      "url": "{SECOND_VAR}/api",
+      "description": "Development server 2",
+      "variables": {
+        "SECOND_VAR": {
+          "default": "https://api.example.com/v2",
+          "description": "Server base URI"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/primary-domain/works": {
+      "get": {
+        "operationId": "get_authorize",
+        "summary": "Should keep the same domain",
+        "responses": {
+          "201": {
+            "description": "Null response"
+          }
+        }
+      }
+    }
+  }
+}
