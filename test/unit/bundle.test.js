@@ -41,8 +41,8 @@ let expect = require('chai').expect,
   longPath = path.join(__dirname, BUNDLES_FOLDER + '/longPath'),
   schemaCollision = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_from_responses'),
   schemaCollisionWRootComponent = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_w_root_components'),
-  nestedExamplesAsValue = path.join(__dirname, BUNDLES_FOLDER + '/nested_examples_as_value'),
   referencedProperties = path.join(__dirname, BUNDLES_FOLDER + '/referenced_properties'),
+  nestedExamplesAsValue = path.join(__dirname, BUNDLES_FOLDER + '/nested_examples_as_value'),
   referencedComponents = path.join(__dirname, BUNDLES_FOLDER + '/referenced_components'),
   referencedPath = path.join(__dirname, BUNDLES_FOLDER + '/referenced_path'),
   referencedPathSchema = path.join(__dirname, BUNDLES_FOLDER + '/paths_schema'),
@@ -2582,6 +2582,7 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.specification.version).to.equal('3.0');
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
+
   it('Should resolve examples correctly', async function () {
     let contentRootFile = fs.readFileSync(example2 + '/another.yml', 'utf8'),
       example = fs.readFileSync(example2 + '/example2.yaml', 'utf8'),
