@@ -340,9 +340,9 @@ describe('validateSupportedVersion method', function () {
     expect(result).to.be.true;
   });
 
-  it('should return false with version 2.0', function () {
+  it('should return true with version 2.0', function () {
     const result = validateSupportedVersion('2.0');
-    expect(result).to.be.false;
+    expect(result).to.be.true;
   });
 
   it('should return true with version 3.1', function () {
