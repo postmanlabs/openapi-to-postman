@@ -263,7 +263,6 @@ describe('detectRoot method', function() {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(res.output.data.length).to.equal(0);
-
   });
 
   it('should return error when "type" parameter is not sent', async function () {

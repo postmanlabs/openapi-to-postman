@@ -3,4 +3,4 @@ properties:
   fromA:
     type: string
   addressFromA:
-    type: string
+    type: string 

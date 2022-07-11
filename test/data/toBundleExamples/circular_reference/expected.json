@@ -22,18 +22,16 @@
         "operationId": "findPets",
         "responses": {
           "200": {
-            "description": "pet response",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref\"": "./schemas/schemas.yaml"
+            "description": "An paged array of pets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/_schemas_schemas.yaml-components_schemas_ErrorDetail"
+                  }
+                }
               }
-            }
-          },
-          "default": {
-            "description": "unexpected error",
-            "schema": {
-              "$ref": "#/components/schemas/_schemas_schemas.yaml-components_schemas_ErrorDetail"
             }
           }
         }
@@ -65,7 +63,8 @@
             "readOnly": true,
             "type": "array",
             "items": {
-              "items": "- Circular"
+              "$ref": "#/components/schemas/_schemas_schemas.yaml-components_schemas_ErrorDetail",
+              "x-circularRef": true
             },
             "description": "The error details."
           }

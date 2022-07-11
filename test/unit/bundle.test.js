@@ -250,7 +250,6 @@ describe('bundle files method - 3.0', function () {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
-
   });
 
   it('Should return bundled file - petstore separated example', async function () {
@@ -396,7 +395,6 @@ describe('bundle files method - 3.0', function () {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
-
   });
 
   it('Should return bundled file - with_ref_in_items', async function () {
@@ -434,7 +432,6 @@ describe('bundle files method - 3.0', function () {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
-
   });
 
   it('Should return error data - with_ref_in_items - wrong root', async function () {
@@ -466,7 +463,6 @@ describe('bundle files method - 3.0', function () {
           }
         ]
       };
-
     try {
       await Converter.bundle(input);
     }
@@ -862,52 +858,6 @@ describe('bundle files method - 3.0', function () {
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
-  it('Should take the root file from data array root file prop undefined', async function () {
-    let contentRootFile = fs.readFileSync(sameRefDiffSource + '/root.yaml', 'utf8'),
-      user = fs.readFileSync(sameRefDiffSource + '/schemas/user/user.yaml', 'utf8'),
-      client = fs.readFileSync(sameRefDiffSource + '/schemas/client/client.yaml', 'utf8'),
-      specialUser = fs.readFileSync(sameRefDiffSource + '/schemas/user/special.yaml', 'utf8'),
-      specialClient = fs.readFileSync(sameRefDiffSource + '/schemas/client/special.yaml', 'utf8'),
-      magic = fs.readFileSync(sameRefDiffSource + '/schemas/client/magic.yaml', 'utf8'),
-      expected = fs.readFileSync(sameRefDiffSource + '/expected.json', 'utf8'),
-      input = {
-        type: 'multiFile',
-        specificationVersion: '3.0',
-        data: [
-          {
-            path: '/root.yaml',
-            content: contentRootFile
-          },
-          {
-            path: '/schemas/user/user.yaml',
-            content: user
-          },
-          {
-            path: '/schemas/user/special.yaml',
-            content: specialUser
-          },
-          {
-            path: '/schemas/client/client.yaml',
-            content: client
-          },
-          {
-            path: '/schemas/client/special.yaml',
-            content: specialClient
-          },
-          {
-            path: '/schemas/client/magic.yaml',
-            content: magic
-          }
-        ],
-        options: {},
-        bundleFormat: 'JSON'
-      };
-    const res = await Converter.bundle(input);
-    expect(res).to.not.be.empty;
-    expect(res.result).to.be.true;
-    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
-  });
-
   it('Should throw error when root files is undefined and in data there is no root file', async function () {
     let user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
       input = {
@@ -976,7 +926,6 @@ describe('bundle files method - 3.0', function () {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
-
   });
 
   it('Should throw error when root files is empty array and in data there is no root file', async function () {
@@ -1558,6 +1507,53 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.data[1].bundledContent).to.be.equal(expectedYAML);
   });
 
+  it('Should take the root file from data array root file prop undefined', async function () {
+    let contentRootFile = fs.readFileSync(sameRefDiffSource + '/root.yaml', 'utf8'),
+      user = fs.readFileSync(sameRefDiffSource + '/schemas/user/user.yaml', 'utf8'),
+      client = fs.readFileSync(sameRefDiffSource + '/schemas/client/client.yaml', 'utf8'),
+      specialUser = fs.readFileSync(sameRefDiffSource + '/schemas/user/special.yaml', 'utf8'),
+      specialClient = fs.readFileSync(sameRefDiffSource + '/schemas/client/special.yaml', 'utf8'),
+      magic = fs.readFileSync(sameRefDiffSource + '/schemas/client/magic.yaml', 'utf8'),
+      expected = fs.readFileSync(sameRefDiffSource + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/schemas/user/user.yaml',
+            content: user
+          },
+          {
+            path: '/schemas/user/special.yaml',
+            content: specialUser
+          },
+          {
+            path: '/schemas/client/client.yaml',
+            content: client
+          },
+          {
+            path: '/schemas/client/special.yaml',
+            content: specialClient
+          },
+          {
+            path: '/schemas/client/magic.yaml',
+            content: magic
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
   it('Should return bundled file - referenced response', async function () {
     let contentRoot = fs.readFileSync(referencedResponse + '/root.yaml', 'utf8'),
       contentRef = fs.readFileSync(referencedResponse + '/response.yaml', 'utf8'),
@@ -1588,7 +1584,6 @@ describe('bundle files method - 3.0', function () {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
-
   });
 
   it('Should return bundled file - referenced Parameter', async function () {
@@ -1814,7 +1809,6 @@ describe('bundle files method - 3.0', function () {
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
-
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
@@ -1924,7 +1918,6 @@ describe('bundle files method - 3.0', function () {
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
-
   });
 
   it('Should throw error when version is not correct', async function () {
@@ -1954,7 +1947,6 @@ describe('bundle files method - 3.0', function () {
       expect(error.message).to.equal('The provided version "Anything" is not valid');
     }
   });
-
 
   it('Should return bundled file as json - schema_collision_from_responses', async function () {
     let contentRootFile = fs.readFileSync(schemaCollision + '/root.yaml', 'utf8'),
@@ -2088,7 +2080,6 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.specification.version).to.equal('3.0');
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
-
   it('should ignore reference when is empty content and no root is sent', async function () {
     let input =
     {
@@ -2658,8 +2649,7 @@ describe('bundle files method - 3.0', function () {
 });
 
 describe('getReferences method when node does not have any reference', function() {
-  it('Should return ' +
-    ' - schema_from_response', function() {
+  it('Should return reference data empty if there are not any reference', function() {
     const userData = 'type: object\n' +
         'properties:\n' +
         '  id:\n' +
@@ -2682,8 +2672,7 @@ describe('getReferences method when node does not have any reference', function(
     expect(Object.keys(result.nodeReferenceDirectory).length).to.equal(0);
   });
 
-  it('Should return ' +
-    ' - schema_from_response', function() {
+  it('Should return the reference data - schema_from_response', function() {
     const userData = 'User:\n' +
       '  $ref: \"./user.yaml\"\n' +
       '\n' +
@@ -2722,5 +2711,4 @@ describe('getReferences method when node does not have any reference', function(
     expect(result.referencesInNode[0].path).to.equal('./user.yaml');
     expect(result.referencesInNode[0].newValue.$ref).to.equal('the/parent/user.yaml');
   });
-
 });

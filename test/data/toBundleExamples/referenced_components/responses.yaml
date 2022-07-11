@@ -22,4 +22,4 @@
           fromB:
             type: string
           addressFromB:
-            type: string
+            type: string 

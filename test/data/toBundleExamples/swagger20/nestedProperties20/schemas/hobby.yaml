@@ -1,6 +1,6 @@
 type: object
 properties:
-  prop1:
+  name:
     type: string
-  prop2:
+  position:
     type: integer

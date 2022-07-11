@@ -1,0 +1,11 @@
+FavoriteFood:
+  type: object
+  properties:
+    name:
+      type:
+        string
+    brand:
+      type:
+        string
+Price:
+  type: integer
