@@ -12,22 +12,17 @@ info:
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-
-
 paths:
   /pets:
     get:
       description: Returns all pets alesuada ac...
       operationId: findPets
       responses:
-        "200":
-          description: pet response
-          schema:
-            type: array
-            items:
-                $ref": "./schemas/schemas.yaml"
-        default:
-          description: unexpected error
-          schema:
-              $ref: "./schemas/schemas.yaml#components/schemas/ErrorDetail"
-
+        '200':
+          description: An paged array of pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "./schemas/schemas.yaml#components/schemas/ErrorDetail"
