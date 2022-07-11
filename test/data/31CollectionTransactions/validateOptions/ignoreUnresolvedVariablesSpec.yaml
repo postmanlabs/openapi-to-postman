@@ -1,7 +1,7 @@
 openapi: "3.1.0"
 info:
   version: 1.0.0
-  title: 
+  title: a
   license:
     name: MIT
 servers:
@@ -19,7 +19,7 @@ paths:
           required: true
           description: The id of the pet to retrieve
           schema:
-            type: 
+            type:
               - integer
           example: '{{petIdCollectionVar}}'
         - name: sampleQueryParam
@@ -27,7 +27,7 @@ paths:
           required: true
           description: The id of the pet to retrieve
           schema:
-            type: 
+            type:
               - number
           example: '{{sampleQueryParamCollectionVar}}'
         - name: sampleHeader
@@ -35,7 +35,7 @@ paths:
           required: true
           description: The id of the pet to retrieve
           schema:
-            type: 
+            type:
               - boolean
           example: '{{sampleHeaderCollectionVar}}'
       requestBody:
@@ -53,33 +53,33 @@ paths:
 components:
   schemas:
     Pet:
-      type: 
+      type:
         - object
       properties:
         petId:
-          type: 
+          type:
             - integer
           format: int64
         name:
-          type: 
+          type:
             - string
         tag:
-          type: 
+          type:
             - string
       examples:
         - petId: '{{petIdVar}}'
           name: '{{nameVar}}'
           tag: '{{tagVar}}'
     Error:
-      type: 
+      type:
         - object
       properties:
         code:
-          type: 
+          type:
             - integer
           format: int32
         message:
-          type: 
+          type:
             - string
       examples:
         - code: '{{codeVar}}'
