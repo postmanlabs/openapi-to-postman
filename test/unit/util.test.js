@@ -1675,7 +1675,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             exampleParametersResolution: 'example'
           });
           resultBody = (result.body.raw);
-          expect(resultBody).to.equal('"text/plain description"');
+          expect(resultBody).to.equal('text/plain description');
           expect(result.contentHeader).to.deep.include(
             { key: 'Content-Type', value: 'text/xml' });
           expect(result.body.options.raw.language).to.equal('xml');
@@ -1697,7 +1697,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           });
           resultBody = result.body.raw;
           expect(resultBody)
-            .to.equal('"text/plain description"');
+            .to.equal('text/plain description');
           expect(result.contentHeader).to.deep.include(
             { key: 'Content-Type', value: 'text/plain' });
           done();
@@ -1717,7 +1717,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             exampleParametersResolution: 'example'
           });
           resultBody = (result.body.raw);
-          expect(resultBody).to.equal('"<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>"');
+          expect(resultBody).to.equal('<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>');
           expect(result.contentHeader).to.deep.include(
             { key: 'Content-Type', value: 'text/html' });
           done();
@@ -1850,7 +1850,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           requestParametersResolution: 'example'
         });
         resultBody = (result.body.raw);
-        expect(resultBody).to.equal('"text/plain description"');
+        expect(resultBody).to.equal('text/plain description');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/xml' });
         expect(result.body.options.raw.language).to.equal('xml');
@@ -1868,7 +1868,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           result, resultBody;
         result = SchemaUtils.convertToPmBody(requestBody);
         resultBody = result.body.raw;
-        expect(resultBody).to.equal('"text/plain description"');
+        expect(resultBody).to.equal('text/plain description');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/plain' });
         done();
@@ -1885,7 +1885,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           result, resultBody;
         result = SchemaUtils.convertToPmBody(requestBody);
         resultBody = (result.body.raw);
-        expect(resultBody).to.equal('"<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>"');
+        expect(resultBody).to.equal('<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/html' });
         done();
