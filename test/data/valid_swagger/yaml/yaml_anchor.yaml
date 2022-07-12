@@ -1,0 +1,67 @@
+swagger: '2.0'
+info:
+  title: YAML anchor issue
+  version: '1.0'
+schemes:
+  - https
+securityDefinitions:
+  Bearer:
+    description: Authorization 'Bearer' token
+    in: header
+    name: Authorization
+    type: apiKey
+tags:
+  - name: client
+    description: Client resources
+paths:
+  /client:
+    get:
+      deprecated: false
+      summary: Query Client
+      produces: &ref_0
+        - application/json
+      security: &ref_1
+        - Bearer: []
+      tags: &ref_2
+        - client
+      parameters:
+        - &ref_5
+          in: query
+          name: page
+          type: integer
+        - &ref_6
+          in: query
+          name: pageSize
+          type: integer
+          default: 25
+      responses:
+        '200':
+          description: Search results
+          schema:
+            properties:
+              pagination: &ref_7
+                type: object
+                properties:
+                  page:
+                    type: integer
+                  pageSize:
+                    type: integer
+                  total:
+                    type: integer
+                  count:
+                    type: integer
+            type: object
+    post:
+      deprecated: false
+      summary: Create a new Client
+      produces: *ref_0
+      security: *ref_1
+      tags: *ref_2
+      responses:
+        '201': &ref_9
+          description: Created
+          schema:
+            type: object
+            properties:
+              _id:
+                type: string
