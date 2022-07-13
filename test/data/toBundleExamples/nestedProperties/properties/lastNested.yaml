@@ -1,0 +1,10 @@
+type: object
+properties:
+  this: 
+    type: string
+  is:
+    type: string
+  the:
+    type: string
+  last: 
+    type: integer

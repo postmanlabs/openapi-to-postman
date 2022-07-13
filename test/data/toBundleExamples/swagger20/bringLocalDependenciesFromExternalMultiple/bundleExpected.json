@@ -1,0 +1,136 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Sample API",
+    "description": "API description in Markdown.",
+    "version": "1.0.0"
+  },
+  "host": "api.example.com",
+  "basePath": "/v1",
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/users": {
+      "get": {
+        "summary": "Returns a list of users.",
+        "description": "Optional extended description in Markdown.",
+        "parameters": [
+          {
+            "$ref": "#/parameters/_parameters_parameters.yaml-_Parameter1"
+          },
+          {
+            "$ref": "#/parameters/_parameters_parameters.yaml-_Parameter2"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/_pet.yaml-_Pet"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "parameters": {
+    "_parameters_parameters.yaml-_Parameter1": {
+      "name": "tags",
+      "in": "query",
+      "description": "tags to filter by",
+      "required": false,
+      "type": "array",
+      "collectionFormat": "csv",
+      "items": {
+        "type": "string"
+      }
+    },
+    "_parameters_parameters.yaml-_Parameter2": {
+      "name": "limit",
+      "in": "query",
+      "description": "maximum number of results to return",
+      "required": false,
+      "type": "integer",
+      "format": "int32"
+    }
+  },
+  "definitions": {
+    "_pet.yaml-_Pet": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "Color": {
+          "$ref": "#/definitions/_pet.yaml-_Color"
+        },
+        "FavoriteFood": {
+          "$ref": "#/definitions/_food.yaml-_Food"
+        }
+      }
+    },
+    "_pet.yaml-_Color": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "uses": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        }
+      }
+    },
+    "_food.yaml-_Food": {
+      "type": "object",
+      "properties": {
+        "brand": {
+          "$ref": "#/definitions/_food.yaml-_Brand"
+        },
+        "benefits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/_food.yaml-_Benefit"
+          }
+        },
+        "cost": {
+          "type": "string"
+        }
+      }
+    },
+    "_food.yaml-_Brand": {
+      "type": "string"
+    },
+    "_food.yaml-_Benefit": {
+      "type": "object",
+      "properties": {
+        "benefit": {
+          "type": "string"
+        },
+        "detail": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

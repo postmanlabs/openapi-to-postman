@@ -1,0 +1,6 @@
+- name: Authorization
+  x-bx-tag: authorization
+  x-bx-priority: true
+
+- name: Bx Sign
+  x-bx-tag: sign_requests

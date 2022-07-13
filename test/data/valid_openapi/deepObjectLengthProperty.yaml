@@ -1,0 +1,33 @@
+openapi: 3.0.1
+info:
+  title: Demo
+  version: "1.0"
+paths:
+  /get:
+    get:
+      operationId: someRequest
+      parameters:
+        - $ref: '#/components/parameters/DeepObjectLengthParameter'
+      responses:
+        '200':
+          description: Response on success.
+components:
+  parameters:
+    DeepObjectLengthParameter:
+      name: deepObjectLengthParameter
+      in: query
+      required: false
+      style: deepObject
+      schema:
+        $ref: '#/components/schemas/DeepObjectLengthParameter'
+      explode: true
+  schemas:
+    DeepObjectLengthParameter:
+      type: object
+      properties:
+        length:
+          nullable: true
+          type: integer
+          format: int32
+          minimum: 1
+          example: 20

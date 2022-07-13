@@ -1,0 +1,169 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+Bounds:
+  $ref: "./Bounds.yml"
+# LatLngArrayString:
+#   $ref: "./LatLngArrayString.yml"
+# LatLngLiteral:
+#   $ref: "./LatLngLiteral.yml"
+# LatitudeLongitudeLiteral:
+#   $ref: "./LatitudeLongitudeLiteral.yml"
+# AddressComponent:
+#   $ref: "./AddressComponent.yml"
+# Fare:
+#   $ref: "./Fare.yml"
+# Geometry:
+#   $ref: "./Geometry.yml"
+# PlusCode:
+#   $ref: "./PlusCode.yml"
+# TravelMode:
+#   $ref: "./TravelMode.yml"
+# TextValueObject:
+#   $ref: "./TextValueObject.yml"
+# TimeZoneTextValueObject:
+#   $ref: "./TimeZoneTextValueObject.yml"
+# # Distance Matrix
+# DistanceMatrixElementStatus:
+#   $ref: "./DistanceMatrixElementStatus.yml"
+# DistanceMatrixResponse:
+#   $ref: "./DistanceMatrixResponse.yml"
+# DistanceMatrixRow:
+#   $ref: "./DistanceMatrixRow.yml"
+# DistanceMatrixElement:
+#   $ref: "./DistanceMatrixElement.yml"
+# DistanceMatrixStatus:
+#   $ref: "./DistanceMatrixStatus.yml"
+# # Directions
+# DirectionsResponse:
+#   $ref: "./DirectionsResponse.yml"
+# DirectionsStep:
+#   $ref: "./DirectionsStep.yml"
+# DirectionsLeg:
+#   $ref: "./DirectionsLeg.yml"
+# DirectionsRoute:
+#   $ref: "./DirectionsRoute.yml"
+# DirectionsStatus:
+#   $ref: "./DirectionsStatus.yml"
+# DirectionsGeocodedWaypoint:
+#   $ref: "./DirectionsGeocodedWaypoint.yml"
+# DirectionsPolyline:
+#   $ref: "./DirectionsPolyline.yml"
+# DirectionsTrafficSpeedEntry:
+#   $ref: "./DirectionsTrafficSpeedEntry.yml"
+# DirectionsTransitAgency:
+#   $ref: "./DirectionsTransitAgency.yml"
+# DirectionsTransitDetails:
+#   $ref: "./DirectionsTransitDetails.yml"
+# DirectionsTransitLine:
+#   $ref: "./DirectionsTransitLine.yml"
+# DirectionsTransitStop:
+#   $ref: "./DirectionsTransitStop.yml"
+# DirectionsTransitVehicle:
+#   $ref: "./DirectionsTransitVehicle.yml"
+# DirectionsViaWaypoint:
+#   $ref: "./DirectionsViaWaypoint.yml"
+# # Elevation
+# ElevationResult:
+#   $ref: "./ElevationResult.yml"
+# ElevationResponse:
+#   $ref: "./ElevationResponse.yml"
+# ElevationStatus:
+#   $ref: "./ElevationStatus.yml"
+# # Geocoding
+# GeocodingResult:
+#   $ref: "./GeocodingResult.yml"
+# GeocodingResponse:
+#   $ref: "./GeocodingResponse.yml"
+# GeocodingStatus:
+#   $ref: "./GeocodingStatus.yml"
+# GeocodingGeometry:
+#   $ref: "./GeocodingGeometry.yml"
+# # Geolocation
+# GeolocationRequest:
+#   $ref: "./GeolocationRequest.yml"
+# GeolocationResponse:
+#   $ref: "./GeolocationResponse.yml"
+# CellTower:
+#   $ref: "./CellTower.yml"
+# WiFiAccessPoint:
+#   $ref: "./WiFiAccessPoint.yml"
+# # Roads
+# NearestRoadsError:
+#   $ref: "./NearestRoadsError.yml"
+# NearestRoadsErrorResponse:
+#   $ref: "./NearestRoadsErrorResponse.yml"
+# NearestRoadsResponse:
+#   $ref: "./NearestRoadsResponse.yml"
+# SnappedPoint:
+#   $ref: "./SnappedPoint.yml"
+# SnapToRoadsResponse:
+#   $ref: "./SnapToRoadsResponse.yml"
+# # Time Zone
+# TimeZoneResponse:
+#   $ref: "./TimeZoneResponse.yml"
+# TimeZoneStatus:
+#   $ref: "./TimeZoneStatus.yml"
+# # Errors
+# ErrorResponse:
+#   $ref: "./errors/ErrorResponse.yml"
+# ErrorObject:
+#   $ref: "./errors/ErrorObject.yml"
+# ErrorDetail:
+#   $ref: "./errors/ErrorDetail.yml"
+# FieldViolation:
+#   $ref: "./errors/FieldViolation.yml"
+# # Places
+# Place:
+#   $ref: "./Place.yml"
+# PlaceAutocompleteMatchedSubstring:
+#   $ref: "./PlaceAutocompleteMatchedSubstring.yml"
+# PlaceAutocompletePrediction:
+#   $ref: "./PlaceAutocompletePrediction.yml"
+# PlaceAutocompleteStructuredFormat:
+#   $ref: "./PlaceAutocompleteStructuredFormat.yml"
+# PlaceAutocompleteTerm:
+#   $ref: "./PlaceAutocompleteTerm.yml"
+# PlacePhoto:
+#   $ref: "./PlacePhoto.yml"
+# PlaceOpeningHours:
+#   $ref: "./PlaceOpeningHours.yml"
+# PlaceOpeningHoursPeriod:
+#   $ref: "./PlaceOpeningHoursPeriod.yml"
+# PlaceOpeningHoursPeriodDetail:
+#   $ref: "./PlaceOpeningHoursPeriodDetail.yml"
+# PlaceReview:
+#   $ref: "./PlaceReview.yml"
+# PlacesAutocompleteResponse:
+#   $ref: "./PlacesAutocompleteResponse.yml"
+# PlacesAutocompleteStatus:
+#   $ref: "./PlacesAutocompleteStatus.yml"
+# PlacesDetailsResponse:
+#   $ref: "./PlacesDetailsResponse.yml"
+# PlacesDetailsStatus:
+#   $ref: "./PlacesDetailsStatus.yml"
+# PlacesFindPlaceFromTextResponse:
+#   $ref: "./PlacesFindPlaceFromTextResponse.yml"
+# PlacesNearbySearchResponse:
+#   $ref: "./PlacesNearbySearchResponse.yml"
+# PlacesQueryAutocompleteResponse:
+#   $ref: "./PlacesQueryAutocompleteResponse.yml"
+# PlacesSearchStatus:
+#   $ref: "./PlacesSearchStatus.yml"
+# PlacesTextSearchResponse:
+#   $ref: "./PlacesTextSearchResponse.yml"
+# StreetViewStatus:
+#   $ref: "./StreetViewStatus.yml"
+# StreetViewResponse:
+#   $ref: "./StreetViewResponse.yml"
