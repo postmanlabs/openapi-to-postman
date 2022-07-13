@@ -313,6 +313,83 @@
           }
         }
       }
+    },
+    "/oauth2/token#refresh": {
+      "get": {
+        "operationId": "get_authorize",
+        "summary": "Part url",
+        "description": "Authorize a user.",
+        "tags": [
+          "Authorization"
+        ],
+        "security": [],
+        "servers": [
+          {
+            "url": "https://server/api/oauth2",
+            "description": "Server for client-side authentication"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "response_type",
+            "description": "The type of response we'd like to receive.",
+            "in": "query",
+            "example": "code",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "token",
+              "enum": [
+                "code"
+              ]
+            }
+          },
+          {
+            "name": "client_id",
+            "description": "The Client ID.",
+            "in": "query",
+            "example": "ly1nj6n11vionaie65emwzk575hnnmrk",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "description": "A comma-separated",
+            "in": "query",
+            "example": "admin_readwrite",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Does not return any data, but rather should be used in the browser.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "format": "html"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Does not return any data, but rather should be used in the browser.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "format": "html"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
