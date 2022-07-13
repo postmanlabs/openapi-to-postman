@@ -1,0 +1,6 @@
+type: object
+properties:
+  first:
+    type: string
+  second:
+    type: integer

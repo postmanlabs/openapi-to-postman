@@ -1,0 +1,117 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Sample API",
+    "description": "Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.",
+    "version": "0.1.9"
+  },
+  "servers": [
+    {
+      "url": "http://api.example.com/v1",
+      "description": "Optional server description, e.g. Main (production) server"
+    },
+    {
+      "url": "http://staging-api.example.com",
+      "description": "Optional server description, e.g. Internal staging server for testing"
+    }
+  ],
+  "paths": {
+    "/users/{userId}": {
+      "get": {
+        "summary": "Get a user by ID",
+        "responses": {
+          "200": {
+            "description": "A single user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/_schemas_user.yaml-_User"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "_schemas_user.yaml-_User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "userName": {
+            "type": "string"
+          },
+          "pet": {
+            "type": "object",
+            "properties": {
+              "favoriteFood": {
+                "$ref": "#/components/schemas/_schemas_food.yaml-Food"
+              },
+              "theUsersPet": {
+                "$ref": "#/components/schemas/_schemas_user.yaml-_Pet"
+              }
+            }
+          }
+        }
+      },
+      "_schemas_food.yaml-Food": {
+        "type": "object",
+        "properties": {
+          "brand": {
+            "$ref": "#/components/schemas/_schemas_food.yaml-_Brand"
+          },
+          "benefits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/_schemas_food.yaml-_Benefit"
+            }
+          },
+          "cost": {
+            "type": "string"
+          }
+        }
+      },
+      "_schemas_user.yaml-_Pet": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "breed": {
+            "type": "string"
+          },
+          "color": {
+            "$ref": "#/components/schemas/_schemas_user.yaml-_Colors"
+          }
+        }
+      },
+      "_schemas_user.yaml-_Colors": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/_schemas_user.yaml-_Color"
+        }
+      },
+      "_schemas_user.yaml-_Color": {
+        "type": "string"
+      },
+      "_schemas_food.yaml-_Brand": {
+        "type": "string"
+      },
+      "_schemas_food.yaml-_Benefit": {
+        "type": "object",
+        "properties": {
+          "benefit": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+type: object
+properties:
+  firstName:
+    type: string
+  secondName:
+    type: string
+  age:
+    type: integer

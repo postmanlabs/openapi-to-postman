@@ -1,0 +1,21 @@
+User:
+  type: object
+  properties:
+    id:
+      type: integer
+    userName:
+      type: string
+Monster:
+  type: object
+  properties:
+    id:
+      type: integer
+    clientName:
+      type: string
+Dog:
+  type: object
+  properties:
+    id:
+      type: integer
+    clientName:
+      type: string

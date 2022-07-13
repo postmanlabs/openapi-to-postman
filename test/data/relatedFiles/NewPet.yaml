@@ -1,0 +1,9 @@
+type: object
+allOf:
+  - $ref: 'refToRoot.yaml'
+  - required:
+      - name
+    properties:
+      description:
+        type: integer
+        format: int64

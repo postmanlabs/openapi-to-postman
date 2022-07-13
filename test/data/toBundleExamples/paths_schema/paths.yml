@@ -1,0 +1,4 @@
+/geolocation/v1/geolocate:
+  post:
+    operationId: geolocate
+    $ref: "./geolocate.yml"
