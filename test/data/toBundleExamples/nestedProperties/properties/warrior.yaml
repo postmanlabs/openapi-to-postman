@@ -1,0 +1,6 @@
+type: object
+properties:
+  power:
+    type: string
+  weapon:
+    type: string

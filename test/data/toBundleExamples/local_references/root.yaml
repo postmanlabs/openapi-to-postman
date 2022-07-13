@@ -1,0 +1,50 @@
+openapi: 3.0.0
+info:
+  title: Sample API
+  description: Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.
+  version: 0.1.9
+
+servers:
+  - url: http://api.example.com/v1
+    description: Optional server description, e.g. Main (production) server
+  - url: http://staging-api.example.com
+    description: Optional server description, e.g. Internal staging server for testing
+
+paths:
+  /users/{userId}:
+    get:
+      summary: Get a user by ID
+      parameters: ...
+      responses:
+        200:
+          description: A single user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        404:
+          $ref: "#/components/responses/NotFound"
+  /users:
+    get:
+      summary: Get all users
+      responses:
+        200:
+          description: A list of users.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+components:
+  responses:
+    $ref: "./responses.yaml"
+
+  schemas:
+    Monster:  
+      $ref: "./schemas/index.yaml#/Monster"
+    User:
+      $ref: "./schemas/index.yaml#/User"
+    Toy:
+      $ref: "./otherSchemas/toy.yaml"

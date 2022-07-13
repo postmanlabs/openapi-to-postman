@@ -1,0 +1,3 @@
+/pets:
+  get:
+    "$ref": "./path.yaml"

@@ -1,0 +1,6 @@
+type: object
+properties:
+  specialClientId:
+    type: string
+  magic:
+    $ref: ./magic.yaml

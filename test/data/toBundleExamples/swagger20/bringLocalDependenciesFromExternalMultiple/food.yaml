@@ -1,0 +1,22 @@
+Food:
+  type: object
+  properties:
+    brand:
+      $ref: "#/Brand"
+    benefits:
+      type: array
+      items:
+        $ref: "#/Benefit"
+    cost:
+      type: string
+
+Brand:
+  type: string
+
+Benefit:
+  type: object
+  properties:
+    benefit:
+      type: string
+    detail:
+      type: string
