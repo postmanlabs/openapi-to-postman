@@ -50,7 +50,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       issue10229 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#10229.json'),
       deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml'),
       valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml'),
-      petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml');
+      petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml'),
+      allHTTPMethodsSpec = path.join(__dirname, VALID_OPENAPI_PATH, '/all-http-methods.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1138,6 +1139,23 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.result).to.equal(true);
           expect(conversionResult.output[0].data.item[0].request.url.variable[0].value).to.equal('value,1');
           expect(conversionResult.output[0].data.item[0].request.url.query[1].key).to.equal('user[value]');
+          done();
+        });
+    });
+
+    it('Should have disableBodyPruning option for protocolProfileBehavior set to true for all types of request' +
+      allHTTPMethodsSpec, function (done) {
+      var openapi = fs.readFileSync(allHTTPMethodsSpec, 'utf8');
+
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+
+          _.forEach(conversionResult.output[0].data.item[0].item, (request) => {
+            expect(request.protocolProfileBehavior.disableBodyPruning).to.eql(true);
+          });
+
           done();
         });
     });
