@@ -1,0 +1,1006 @@
+---
+swagger: '2.0'
+
+################################################################################
+#                              API Information                                 #
+################################################################################
+info:
+  version: v1
+  title: API
+  description: |
+  termsOfService: http://xyz.in/about/legal/terms/api
+
+################################################################################
+#                  Host, Base Path, Schemes and Content Types                  #
+################################################################################
+
+host: localhost:8080
+basePath: /api/v1
+schemes:
+  - http
+produces:
+  - application/json
+consumes:
+  - appication/x-www-form-urlencoded
+
+################################################################################
+#                                   Tags                                       #
+################################################################################
+tags:
+  - name: Source
+  - name: Users
+  - name: Roles
+  - name: Capabilities
+  - name: Mapping
+    description: |
+      Mapping can be performed in one of the two ways
+
+      * Users and Roles alotted to the users.
+      * Roles and capabilities alloted to the roles.
+  - name: Transaction
+
+################################################################################
+#                                  Security                                    #
+################################################################################
+securityDefinitions:
+  key:
+    type: apiKey
+    in: query
+    name: api_key
+    
+################################################################################
+#                                   Parameters                                 #
+################################################################################
+parameters:
+  source-id:
+    name: source-id
+    in: path
+    description: The source identifier number
+    type: integer
+    required: true
+  user-id:
+    name: user-id
+    in: path
+    description: The user identifier number
+    type: integer
+    required: true
+  tag-name:
+    name: tag-name
+    in: path
+    description: Tag name
+    type: string
+    required: true
+    
+################################################################################
+#                                           Paths                              #
+################################################################################
+paths:
+
+  /source/:
+    get:
+      tags:
+        - Source
+      description: Get information about all sources.
+      responses:
+        200:
+          description: The source object
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Source'
+    post:
+      tags:
+        - Source
+      description: Add a source.
+      consumes:
+      - application/x-www-form-urlencoded
+      parameters:
+        - name: source_name
+          in: formData
+          description: New source name
+          required: true
+          type: string
+        - name: parent_source_id
+          in: formData
+          description: Parent Source ID
+          required: true
+          type: integer
+      responses:
+        201:
+          description: Created
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+        
+  /source/{source-id}:
+    get:
+      parameters:
+      - $ref: '#/parameters/source-id'
+      tags:
+        - Source
+      description: Get basic information about a source.
+      responses:
+        200:
+          description: The source object
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Source'
+    delete:
+      parameters:
+      - $ref: '#/parameters/source-id'
+      tags:
+        - Source
+      description: Deletes source based on its ID.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                
+  /users/:
+    get:
+      tags:
+        - Users
+      description: Get information about all users.
+      responses:
+        200:
+          description: The user object
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/User'
+    post:
+      tags:
+        - Users
+      description: Add a user.
+      consumes:
+      - application/x-www-form-urlencoded
+      parameters:
+        - name: name
+          in: formData
+          description: New user name
+          required: true
+          type: string
+        - name: client_id
+          in: formData
+          description: Client ID
+          required: true
+          type: integer
+        - name: user_source_id
+          in: formData
+          description: Source ID for user
+          required: true
+          type: integer
+        - name: address
+          in: formData
+          description: User address
+          required: false
+          type: string
+        - name: address_type
+          in: formData
+          description: User address type
+          required: false
+          type: string
+        - name: locality_id
+          in: formData
+          description: Locality ID
+          required: false
+          type: integer
+        - name: phone
+          in: formData
+          description: User's phone number
+          required: false
+          type: integer
+        - name: email
+          in: formData
+          description: User's email address
+          required: false
+          type: string
+      responses:
+        201:
+          description: Created
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+        
+  /users/{user-id}:
+    get:
+      parameters:
+      - $ref: '#/parameters/user-id'
+      tags:
+        - Users
+      description: Get basic information about a user.
+      responses:
+        200:
+          description: The user object
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/User'
+    put:
+      parameters:
+      - $ref: '#/parameters/user-id'
+      - name: name
+        in: formData
+        description: New user name
+        type: string
+        required: true
+      tags:
+        - Users
+      description: Update user name based on his ID.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+    delete:
+      parameters:
+      - $ref: '#/parameters/user-id'
+      tags:
+        - Users
+      description: Delete user based on his ID.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+          
+  /users/lookup:
+    get:
+      tags:
+        - Users
+      description: Get user id using user's mobile number or email. Atleast one parameter must be passed.
+      parameters:
+        - name: phone
+          in: formData
+          description: User's phone number.
+          type: integer
+        - name: email
+          in: formData
+          description: User's email.
+          type: string
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              user_id:
+                type: integer
+                
+  /users/merge:
+    put:
+      parameters:
+        - name: email
+          in: formData
+          required: true
+          description: User's email address
+          type: string
+        - name: phone
+          in: formData
+          required: true
+          description: User's phone number
+          type: integer
+      tags:
+        - Users
+      description: Merge users together based on email and phone number.
+      responses:
+        200:
+          description: Merged
+                
+  /users/restaurant/{restaurant-id}:
+    get:
+      tags:
+        - Users
+      description: |
+        See the list of users belonging to a restaurant based on `restaurant-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/User'
+      parameters:
+        - name: restaurant-id
+          in: path
+          description: Restaurant ID.
+          type: integer
+          required: true
+
+  /users/source/{source-id}:
+    get:
+      tags:
+        - Users
+      description: |
+        See the list of users belonging to a restaurant based on `source-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/User'
+      parameters:
+        - name: source-id
+          in: path
+          description: Source ID.
+          type: integer
+          required: true
+
+  /address/{address-id}:
+    get:
+      parameters:
+        - name: address-id
+          in: path
+          description: User's address ID
+          type: integer
+          required: true
+      description: |
+            Get address details of the user based on his address ID.    
+      tags:
+        - Users
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Address'
+    put:
+      parameters:
+        - name: address-id
+          in: path
+          description: User's address ID
+          type: integer
+          required: true
+      tags:
+        - Users
+      responses:
+        200:
+          description: |
+            OK
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+
+    delete:
+      parameters:
+        - name: address-id
+          in: path
+          description: User's address ID
+          type: integer
+          required: true
+      tags:
+        - Users
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+
+          
+  /users/restaurant/{restaurant-id}/transactions:
+    get:
+      tags:
+        - Transaction
+      description: List of Transactions made by users for a specific restaurant.
+      parameters:
+        - name: restaurant-id
+          in: path
+          description: Restaurant's ID for which transactions need to be returned.
+          type: integer
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Transaction'
+                
+  /users/{user-id}/transactions:
+    parameters:
+      - name: user-id
+        in: path
+        description: User's ID
+        type: integer
+        required: true
+    get:
+      tags:
+        - Transaction
+      description: List of Transactions made by User across LT platform based on phone number or email. Atleast one parameter is required.
+      parameters:
+        - name: phone
+          in: formData
+          description: User's phone number.
+          type: integer
+        - name: email
+          in: formData
+          description: User's email address
+          type: string
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Transaction'
+    post:
+      tags:
+        - Transaction
+      description: Add a new transaction to the user based on `user-id` and return a `transaction-id`.
+      parameters:
+        - name: transaction-date
+          in: formData
+          description: Date of transaction.
+          type: string
+        - name: outlet-id
+          in: formData
+          description: Outlet's ID
+          type: integer
+      responses:
+        201:
+          description: Created
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+
+  /capabilities:
+    get:
+      tags:
+        - Capabilities
+      description: |
+        List all the available capabilities.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Capabilities'
+    post:
+      tags:
+        - Capabilities
+      description: |
+        Generate a new capability
+      parameters:
+        - name: name
+          in: formData
+          required: true
+          description: Name of capability
+          type: string
+      responses:
+        201:
+          description: Created
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+
+  /capabilities/{capability-id}:
+    parameters:
+      - name: capability-id
+        in: path
+        required: true
+        description: Capability ID
+        type: integer
+    get:
+      tags:
+        - Capabilities
+      description: |
+        Get a specific Capability.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Capabilities'
+    put:
+      parameters:
+        - name: name
+          in: formData
+          required: true
+          description: New name for capability
+          type: string
+      tags:
+        - Capabilities
+      description: |
+        Update a capability based on its `capability-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+    delete:
+      tags:
+        - Capabilities
+      description: |
+        Delete a capability based on its `capability-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+
+  /roles:
+  
+    get:
+      tags:
+        - Roles
+      description: |
+        List all the available roles.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Roles'
+    post:
+      tags:
+        - Roles
+      description: Generate a new role
+      parameters:
+        - name: name
+          in: formData
+          description: Name of the new role.
+          type: string
+      responses:
+        201:
+          description: Created
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+
+  /roles/{role-id}:
+    parameters:
+      - name: role-id
+        in: path
+        required: true
+        description: Role ID
+        type: integer
+    get:
+      tags:
+        - Roles
+      description: |
+        Get a specific Role based on its `role-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Roles'
+    put:
+      parameters:
+        - name: name
+          in: formData
+          required: true
+          description: New name for role
+          type: string
+      tags:
+        - Roles
+      description: |
+        Update a role based on its `role-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+    delete:
+      tags:
+        - Roles
+      description: |
+        Delete a role based on its `role-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                
+  /users/{user-id}/roles:
+    parameters:
+      - name: user-id
+        description: user identifier number
+        in: path
+        type: integer
+        required: true
+    get:
+      tags:
+        - Mapping
+      description: |
+        List all the available roles for the user identified by `user-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Roles'
+    post:
+      parameters:
+        - name: role-name
+          in: formData
+          type: string
+          description: Name of the role
+        - name: role-id
+          in: formData
+          type: integer
+          description: Role ID
+      tags:
+        - Mapping
+      description: |
+        Assign roles to a user based on `role-id` or `role-name`. Atleast one parameter needs to be provided.
+      responses:
+        201:
+          description: Created
+    delete:
+      tags:
+        - Mapping
+      description: |
+        Delete all roles assigned to a user based on `user-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+
+    
+  /users/{user-id}/roles/{role-id}:
+    get:
+      parameters:
+        - name: user-id
+          description: user identifier number
+          in: path
+          type: integer
+          required: true
+        - name: role-id
+          in: path
+          type: integer
+          description: role identifier number
+          required: true
+      tags:
+        - Mapping
+      description: |
+        Show a role assigned to a user based on `role-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Roles'
+
+    delete:
+      parameters:
+        - name: user-id
+          description: user identifier number
+          in: path
+          type: integer
+          required: true
+        - name: role-id
+          in: path
+          type: integer
+          description: role identifier number
+          required: true
+      tags:
+        - Mapping
+      description: |
+        Delete a role assigned to a user based on `role-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+
+    
+                
+  /roles/{role-id}/capabilities:
+    parameters:
+      - name: role-id
+        description: role identifier number
+        in: path
+        type: integer
+        required: true
+    get:
+      tags:
+        - Mapping
+      description: |
+        List all the available capabilities for the role identified by `role-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Capabilities'
+    post:
+      parameters:
+        - name: capability-name
+          in: formData
+          type: string
+          description: Name of the capability
+        - name: capability-id
+          in: formData
+          type: integer
+          description: Capability ID
+      tags:
+        - Mapping
+      description: |
+        Assign capabilities to a role based on `capability-id` or `capability-name`. Atleast one parameter needs to be provided.
+      responses:
+        201:
+          description: Created
+    delete:
+      tags:
+        - Mapping
+      description: |
+        Delete all capabilities assigned to the role based on `role-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+
+    
+  /roles/{role-id}/capabilities/{capability-id}:
+    get:
+      parameters:
+        - name: role-id
+          description: role identifier number
+          in: path
+          type: integer
+          required: true
+        - name: capability-id
+          in: path
+          type: integer
+          description: capability identifier number
+          required: true
+      tags:
+        - Mapping
+      description: |
+        Show a capability assigned to a role based on `capability-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Capabilities'
+    delete:
+      parameters:
+        - name: role-id
+          description: role identifier number
+          in: path
+          type: integer
+          required: true
+        - name: capability-id
+          in: path
+          type: integer
+          description: Capability ID
+          required: true
+      tags:
+        - Mapping
+      description: |
+        Delete a capability assigned to a role based on `capability-id`.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+
+  
+
+
+################################################################################
+#                                 Definitions                                  #
+################################################################################
+definitions:
+
+  Source:
+    type: object
+    properties:
+      id:
+        type: integer
+      source_name:
+        type: string
+      parent_source_id:
+        type: integer
+      created_at:
+        format: date-time
+      updated_at:
+        format: date-time
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+      client_id:
+        type: integer
+      user_source_id:
+        type: integer
+      name:
+        type: string
+      status:
+        type: string
+      user_account_id:
+        type: integer
+      user_account_type:
+        type: string
+      created_at:
+        format: date-time
+      updated_at:
+        format: date-time
+      deleted_at:
+        format: date-time
+    
+  Address:
+    type: object
+    properties:
+      id:
+        type: integer
+      user_id:
+        type: integer
+      address:
+        type: string
+      address_type:
+        type: string
+      locality_id:
+        type: integer
+      status:
+        type: string
+      created_at:
+        format: date-time
+      updated_at:
+        format: date-time
+      deleted_at:
+        format: date-time
+        
+  Email:
+    type: object
+    properties:
+      id:
+        type: string
+      user_id:
+        type: integer
+      user_email:
+        type: string
+      status:
+        type: string
+      created_at:
+        format: date-time
+      deleted_at:
+        format: date-time
+        
+  Phone:
+    type: object
+    properties:
+      id:
+        type: integer
+      user_id:
+        type: integer
+      user_phone_number:
+        type: integer
+      status:
+        type: string
+      created_at:
+        format: date-time
+      deleted_at:
+        format: date-time
+  Transaction:
+    type: object
+    properties:
+      id:
+        type: integer
+      user_id:
+        type: integer
+      user_address_id:
+        type: integer
+      source_id:
+        type: integer
+      user_phone_number_id:
+        type: integer
+      user_email_id:
+        type: integer
+      outlet_id:
+        type: integer
+      transaction_date:
+        format: date
+      created_at:
+        format: date-time
+      updated_at:
+        format: date-time
+  
+  Roles:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      created_at:
+        format: date-time
+      updated_at:
+        format: date-time
+      deleted_at:
+        format: date-time
+        
+  Capabilities:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      created_at:
+        format: date-time
+      updated_at:
+        format: date-time
+      deleted_at:
+        format: date-time
+  
+  User_Role_Mappings:
+    type: object
+    properties:
+      user_id:
+        type: integer
+      role_id:
+        type: integer
+  
+  Role_Capability_Mappings:
+    type: object
+    properties:
+      role_id:
+        type: integer
+      capability_id:
+        type: integer

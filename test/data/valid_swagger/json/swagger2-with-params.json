@@ -1,0 +1,48 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "My API",
+    "version": "1.0.0",
+    "title": "Awesome Pets API",
+    "termsOfService": "http://www.domain.com",
+    "contact": {
+      "name": "support@domain.com"
+    }
+  },
+  "basePath": "/",
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/owner/{ownerId}/pet/{petId}": {
+      "post": {
+        "summary": "Find pets belonging to a owner",
+        "description": "",
+        "operationId": "findPetsOfOwners",
+        "parameters": [{
+          "in": "path",
+          "name": "ownerId",
+          "description": "Owner Id",
+          "required": true,
+          "type": "integer",
+          "default": "42"
+        }, {
+          "in": "path",
+          "name": "petId",
+          "description": "Pet Id",
+          "required": true,
+          "type": "integer"
+
+        }],
+        "responses": {
+          "200": {
+            "description": "Pet found successfully.",
+            "schema": {
+              "$ref": "#/definitions/Pet"
+            }
+          }
+        }
+      }
+    }
+  }
+}

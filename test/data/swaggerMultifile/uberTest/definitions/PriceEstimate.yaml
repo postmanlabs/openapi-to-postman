@@ -1,0 +1,22 @@
+properties:
+  product_id:
+    type: string
+    description: Unique identifier representing a specific product for a given latitude & longitude. For example, uberX in San Francisco will have a different product_id than uberX in Los Angeles
+  currency_code:
+    type: string
+    description: "[ISO 4217](http://en.wikipedia.org/wiki/ISO_4217) currency code."
+  display_name:
+    type: string
+    description: Display name of product.
+  estimate: 
+    type: string
+    description: Formatted string of estimate in local currency of the start location. Estimate could be a range, a single number (flat rate) or "Metered" for TAXI.
+  low_estimate:
+    type: number
+    description: Lower bound of the estimated price.
+  high_estimate:
+    type: number
+    description: Upper bound of the estimated price.
+  surge_multiplier:
+    type: number
+    description: Expected surge multiplier. Surge is active if surge_multiplier is greater than 1. Price estimate already factors in the surge multiplier.

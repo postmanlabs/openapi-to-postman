@@ -1,0 +1,3 @@
+description: A link to the next page of responses
+schema:
+  type: string

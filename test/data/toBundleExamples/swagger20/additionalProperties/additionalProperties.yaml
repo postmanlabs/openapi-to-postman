@@ -1,0 +1,9 @@
+type:
+  object
+properties:
+  color:
+    type: string
+  weight:
+    type: integer
+  height:
+    type: integer
