@@ -25,4 +25,4 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "./schemas/schemas.yaml#/components/schemas/ErrorDetail"
+                  $ref: "./schemas/schemas.yaml#/components/schemas/ErrorResponse"
