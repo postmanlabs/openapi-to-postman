@@ -1,4 +1,3 @@
-
 openapi: "3.0.2"
 info:
   version: 1.0.0
@@ -25,4 +24,4 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "./schemas/schemas.yaml#/components/schemas/ErrorDetail"
+                  $ref: "./schemas/schemas.yaml#/components/schemas/ErrorResponse"
