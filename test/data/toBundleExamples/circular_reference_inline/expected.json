@@ -68,8 +68,7 @@
                 "readOnly": true,
                 "type": "array",
                 "items": {
-                  "$ref": "/schemas/schemas.yaml#components/schemas/ErrorDetail",
-                  "x-circularRef": true
+                  "$ref": "/schemas/schemas.yaml#components/schemas/ErrorDetail"
                 },
                 "description": "The error details."
               }
