@@ -51,7 +51,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml'),
       valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml'),
       petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml'),
-      xmlrequestBody = path.join(__dirname, VALID_OPENAPI_PATH, '/xmlExample.yaml');
+      xmlrequestBody = path.join(__dirname, VALID_OPENAPI_PATH, '/xmlExample.yaml'),
+      allHTTPMethodsSpec = path.join(__dirname, VALID_OPENAPI_PATH, '/all-http-methods.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1154,6 +1155,22 @@ describe('CONVERT FUNCTION TESTS ', function() {
               '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope">' +
               ' <soap:Body> <NumberToWords xmlns="http://www.dataaccess.com/webservicesserver">' +
               ' <ubiNum>500</ubiNum> </NumberToWords> </soap:Body> </soap:Envelope>');
+          done();
+        });
+    });
+
+    it('Should have disableBodyPruning option for protocolProfileBehavior set to true for all types of request' +
+      allHTTPMethodsSpec, function (done) {
+      var openapi = fs.readFileSync(allHTTPMethodsSpec, 'utf8');
+
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+
+          _.forEach(conversionResult.output[0].data.item[0].item, (request) => {
+            expect(request.protocolProfileBehavior.disableBodyPruning).to.eql(true);
+          });
           done();
         });
     });

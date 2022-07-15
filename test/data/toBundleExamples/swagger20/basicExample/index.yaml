@@ -1,0 +1,9 @@
+swagger: "2.0"
+info:
+  $ref: ./info.yaml
+host: api.example.com
+basePath: /v1
+schemes:
+  - https
+paths:
+  $ref: ./paths.yaml

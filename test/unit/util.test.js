@@ -2925,3 +2925,31 @@ describe('getPostmanUrlSchemaMatchScore function', function() {
     expect(endpointMatchScore.pathVars[0]).to.eql({ key: 'spaceId', value: ':spaceId' });
   });
 });
+
+describe('findCommonSubpath method', function () {
+  it('should return aabb with input ["aa/bb/cc/dd", "aa/bb"]', function () {
+    const result = Utils.findCommonSubpath(['aa/bb/cc/dd', 'aa/bb']);
+    expect(result).to.equal('aa/bb');
+  });
+
+  it('should return empty string with undefined input', function () {
+    const result = Utils.findCommonSubpath();
+    expect(result).to.equal('');
+  });
+
+  it('should return empty string with empty array input', function () {
+    const result = Utils.findCommonSubpath([]);
+    expect(result).to.equal('');
+  });
+
+  it('should return aabb with input ["aa/bb/cc/dd", "aa/bb", undefined]', function () {
+    const result = Utils.findCommonSubpath(['aa/bb/cc/dd', 'aa/bb', undefined]);
+    expect(result).to.equal('aa/bb');
+  });
+
+  it('should return "" with input ["aabbccdd", "aabb", "ccddee"]', function () {
+    const result = Utils.findCommonSubpath(['aa/bb/cc/dd', 'aa/bb', 'ccddee']);
+    expect(result).to.equal('');
+  });
+
+});

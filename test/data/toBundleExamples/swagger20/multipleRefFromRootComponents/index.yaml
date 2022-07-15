@@ -1,0 +1,28 @@
+swagger: "2.0"
+info:
+  $ref: ./info.yaml
+host: api.example.com
+basePath: /v1
+schemes:
+  - https
+paths:
+  /pets:
+  get:
+    description: Returns all pets from the system that the user has access to
+    operationId: findPets
+    parameters:
+      - $ref: "#/parameters/Parameter1"
+      - $ref: "#/parameters/Parameter2"
+    responses:
+      200:
+        description: pet response
+        schema:
+          $ref: "#/definitions/Pet"
+definitions:
+  Pet:
+    $ref: "./pet.yaml#/Pet"
+parameters:
+  Parameter1:
+    $ref: "./parameters/parameters.yaml#/Parameter1"
+  Parameter2:
+    $ref: "./parameters/parameters.yaml#/Parameter2"

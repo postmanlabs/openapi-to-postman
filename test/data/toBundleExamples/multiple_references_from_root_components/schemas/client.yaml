@@ -1,0 +1,7 @@
+Client:
+  type: object
+  properties:
+    id:
+      type: integer
+    clientName:
+      type: string

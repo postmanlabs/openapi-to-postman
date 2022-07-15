@@ -1,0 +1,8 @@
+type: object
+properties:
+  idClient:
+    type: integer
+  clientName:
+    type: string
+  special:
+    $ref: ../user/special.yaml
