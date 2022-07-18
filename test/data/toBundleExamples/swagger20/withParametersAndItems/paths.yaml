@@ -1,0 +1,14 @@
+/pets:
+  get:
+    description: Returns all pets from the system that the user has access to
+    operationId: findPets
+    parameters:
+      - $ref: "./parameters/parameters.yaml#/Parameter1"
+      - $ref: "./parameters/parameters.yaml#/Parameter2"
+    responses:
+      200:
+        description: pet response
+        schema:
+          type: array
+          items:
+            $ref: "./pet.yaml"

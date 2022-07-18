@@ -1,0 +1,8 @@
+type: object
+properties:
+  id:
+    type: integer
+  userName:
+    type: string
+  complexProp:
+    $ref: "../properties/prop.yaml"

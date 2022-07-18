@@ -1,0 +1,22 @@
+operationId: loadBalancers_remove_droplets
+
+summary: Remove Droplets from a Load Balancer
+
+description: |
+  To remove a..
+
+requestBody:
+  required: true
+
+  content:
+    application/json:
+      schema:
+        properties:
+          $ref: '/attributes.yaml#/load_balancer_droplet_ids'
+        required:
+         - droplet_ids
+
+responses:
+  default:
+    description: ok
+

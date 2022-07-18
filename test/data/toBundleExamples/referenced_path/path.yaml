@@ -1,0 +1,9 @@
+description: Returns all pets alesuada ac...
+operationId: findPets
+responses:
+  "200":
+    description: pet response
+    content:
+      application/json:
+        schema:
+          $ref: "./pet.yaml"

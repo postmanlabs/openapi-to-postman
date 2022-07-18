@@ -1,0 +1,29 @@
+{
+    "swagger": "2.0",
+    "info": {
+      "title": "Simple API overview",
+      "version": "v2"
+    },
+    "paths": {
+      "/": {
+        "get": {
+          "operationId": "listVersionsv2",
+          "summary": "List API versions",
+          "produces": [
+            "application/json"
+          ],
+          "responses": {
+            "200": {
+              "description": "200 300 response"
+            },
+            "300": {
+              "description": "200 300 response"
+            }
+          }
+        }
+      }
+    },
+    "consumes": [
+      "application/json"
+    ]
+  }

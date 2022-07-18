@@ -1,0 +1,106 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.10
+  title: Petstore 224
+  description: A sample API that uses a petstore as an example to demonstrate features in the OpenAPI 3.0 specification
+  termsOfService: http://swagger.io/terms/
+  contact:
+    name: Postman
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  x-postman-projectname: PostmanPetstore
+
+paths:
+  /pets:
+    parameters:
+      - name: GlobalParam
+        in: query
+        schema:
+          type: string
+      - name: GlobalCookie
+        in: cookie
+        schema:
+          type: string
+    post:
+      description: Creates a new pet in the store. Duplicates are allowed
+      operationId: addPet
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+      responses:
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                Single Droplet Create Request:
+                  $ref: "./example2.yaml#/droplet_create_request"
+components:
+  schemas:
+    Pet:
+      type: object
+      description: A pet
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        typeOf:
+          type: string
+          enum: [Cat, Dog, Bird, Reptile]
+        tag:
+          type: string
+
+    Pets:
+      type: object
+      properties:
+        id:
+            type: integer
+
+    StoreItem:
+      description: Single store item
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        typeOf:
+          type: string
+          enum: [ Cat, Dog, Bird, Reptile ]
+        tag:
+          type: string
+        value:
+          type: number
+          format: float
+          description: price
+        saleValue:
+          type: number
+          format: float
+          description: price if on sale
+        onSale:
+          type: boolean
+          default: false
+          description: True if item is on sale, false if not.
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string

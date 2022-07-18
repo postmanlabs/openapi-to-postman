@@ -691,13 +691,22 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
     it('should work for example', function() {
       var bodyWithExample = {
+          example: 'This is a sample value'
+        },
+        retValExample = SchemaUtils.convertToPmBodyData(bodyWithExample, 'application/json');
+
+      expect(retValExample).to.equal('This is a sample value');
+    });
+
+    it('should work for example with value property', function() {
+      var bodyWithExample = {
           example: {
             value: 'This is a sample value'
           }
         },
         retValExample = SchemaUtils.convertToPmBodyData(bodyWithExample, 'application/json');
 
-      expect(retValExample).to.equal('This is a sample value');
+      expect(retValExample.value).to.equal('This is a sample value');
     });
 
     it('should work for examples', function() {
@@ -1678,10 +1687,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
               description: 'body description',
               content: {
                 'text/plain': {
-                  example: {
-                    summary: 'A list containing two items',
-                    value: 'text/plain description'
-                  }
+                  example: 'text/plain description'
                 }
               }
             },
@@ -1690,7 +1696,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             exampleParametersResolution: 'example'
           });
           resultBody = result.body.raw;
-          expect(resultBody).to.equal('"text/plain description"');
+          expect(resultBody)
+            .to.equal('"text/plain description"');
           expect(result.contentHeader).to.deep.include(
             { key: 'Content-Type', value: 'text/plain' });
           done();
@@ -1701,10 +1708,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
               description: 'body description',
               content: {
                 'text/html': {
-                  example: {
-                    summary: 'A list containing two items',
-                    value: '<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>'
-                  }
+                  example: '<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>'
                 }
               }
             },
@@ -1857,10 +1861,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             description: 'body description',
             content: {
               'text/plain': {
-                example: {
-                  summary: 'A list containing two items',
-                  value: 'text/plain description'
-                }
+                example: 'text/plain description'
               }
             }
           },
@@ -1877,10 +1878,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             description: 'body description',
             content: {
               'text/html': {
-                example: {
-                  summary: 'A list containing two items',
-                  value: '<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>'
-                }
+                example: '<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>'
               }
             }
           },
@@ -2926,4 +2924,32 @@ describe('getPostmanUrlSchemaMatchScore function', function() {
     expect(endpointMatchScore.pathVars).to.have.lengthOf(1);
     expect(endpointMatchScore.pathVars[0]).to.eql({ key: 'spaceId', value: ':spaceId' });
   });
+});
+
+describe('findCommonSubpath method', function () {
+  it('should return aabb with input ["aa/bb/cc/dd", "aa/bb"]', function () {
+    const result = Utils.findCommonSubpath(['aa/bb/cc/dd', 'aa/bb']);
+    expect(result).to.equal('aa/bb');
+  });
+
+  it('should return empty string with undefined input', function () {
+    const result = Utils.findCommonSubpath();
+    expect(result).to.equal('');
+  });
+
+  it('should return empty string with empty array input', function () {
+    const result = Utils.findCommonSubpath([]);
+    expect(result).to.equal('');
+  });
+
+  it('should return aabb with input ["aa/bb/cc/dd", "aa/bb", undefined]', function () {
+    const result = Utils.findCommonSubpath(['aa/bb/cc/dd', 'aa/bb', undefined]);
+    expect(result).to.equal('aa/bb');
+  });
+
+  it('should return "" with input ["aabbccdd", "aabb", "ccddee"]', function () {
+    const result = Utils.findCommonSubpath(['aa/bb/cc/dd', 'aa/bb', 'ccddee']);
+    expect(result).to.equal('');
+  });
+
 });

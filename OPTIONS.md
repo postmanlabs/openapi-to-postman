@@ -22,3 +22,4 @@ allowUrlPathVarMatching|boolean|-|false|Whether to allow matching path variables
 disableOptionalParameters|boolean|-|false|Whether to set optional parameters as disabled|CONVERSION
 keepImplicitHeaders|boolean|-|false|Whether to keep implicit headers from the OpenAPI specification, which are removed by default.|CONVERSION
 includeWebhooks|boolean|-|false|Select whether to include Webhooks in the generated collection|CONVERSION
+includeReferenceMap|boolean|-|false|Whether or not to include reference map or not as part of output|BUNDLE

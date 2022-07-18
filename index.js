@@ -1,6 +1,7 @@
 'use strict';
 
-const SchemaPack = require('./lib/schemapack.js').SchemaPack;
+const _ = require('lodash'),
+  SchemaPack = require('./lib/schemapack.js').SchemaPack;
 
 module.exports = {
   // Old API wrapping the new API
@@ -30,6 +31,21 @@ module.exports = {
 
   getOptions: function(mode, criteria) {
     return SchemaPack.getOptions(mode, criteria);
+  },
+
+  detectRootFiles: async function(input) {
+    var schema = new SchemaPack(input);
+    return schema.detectRootFiles();
+  },
+
+  detectRelatedFiles: async function(input) {
+    var schema = new SchemaPack(input);
+    return schema.detectRelatedFiles();
+  },
+
+  bundle: async function(input) {
+    var schema = new SchemaPack(input, _.has(input, 'options') ? input.options : {});
+    return schema.bundle();
   },
 
   // new API

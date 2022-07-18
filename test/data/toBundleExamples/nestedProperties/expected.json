@@ -1,0 +1,126 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Sample API",
+    "description": "Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.",
+    "version": "0.1.9"
+  },
+  "servers": [
+    {
+      "url": "http://api.example.com/v1",
+      "description": "Optional server description, e.g. Main (production) server"
+    },
+    {
+      "url": "http://staging-api.example.com",
+      "description": "Optional server description, e.g. Internal staging server for testing"
+    }
+  ],
+  "paths": {
+    "/users/{userId}": {
+      "get": {
+        "summary": "Get a user by ID",
+        "responses": {
+          "200": {
+            "description": "A single user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/_schemas_user.yaml"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "_schemas_user.yaml": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "userName": {
+            "type": "string"
+          },
+          "complexProp": {
+            "$ref": "#/components/schemas/_properties_prop.yaml"
+          }
+        }
+      },
+      "_properties_prop.yaml": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "secondName": {
+            "type": "string"
+          },
+          "age": {
+            "type": "integer"
+          },
+          "nestedProp": {
+            "$ref": "#/components/schemas/_properties_nestedProp.yaml"
+          },
+          "country": {
+            "$ref": "#/components/schemas/_properties_country.yaml"
+          },
+          "warrior": {
+            "$ref": "#/components/schemas/_properties_warrior.yaml"
+          }
+        }
+      },
+      "_properties_nestedProp.yaml": {
+        "type": "object",
+        "rock": {
+          "type": "boolean"
+        },
+        "friendly": {
+          "type": "string"
+        },
+        "lastNested": {
+          "type": "object",
+          "properties": {
+            "this": {
+              "type": "string"
+            },
+            "is": {
+              "type": "string"
+            },
+            "the": {
+              "type": "string"
+            },
+            "last": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "_properties_country.yaml": {
+        "type": "object",
+        "properties": {
+          "region": {
+            "type": "string"
+          },
+          "flag": {
+            "type": "string"
+          }
+        }
+      },
+      "_properties_warrior.yaml": {
+        "type": "object",
+        "properties": {
+          "power": {
+            "type": "string"
+          },
+          "weapon": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
