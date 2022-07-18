@@ -64,7 +64,7 @@ function getFoldersByVersion(folder30Path, folder31Path) {
 }
 
 describe('Validate with servers', function () {
-  it('Fix for GITHUB#497: Should identify url with fragment', function () {
+  it('Fix for GITHUB#496: Should identify url with fragment', function () {
     const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/explicit_server_in_path.json'),
       openAPIData = fs.readFileSync(openAPI, 'utf8'),
       options = {

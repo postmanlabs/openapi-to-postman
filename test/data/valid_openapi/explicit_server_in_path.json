@@ -317,7 +317,7 @@
     "/oauth2/token#refresh": {
       "get": {
         "operationId": "get_authorize",
-        "summary": "Part url",
+        "summary": "Fragment url server",
         "description": "Authorize a user.",
         "tags": [
           "Authorization"
@@ -360,6 +360,67 @@
             "in": "query",
             "example": "admin_readwrite",
             "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Does not return any data, but rather should be used in the browser.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "format": "html"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Does not return any data, but rather should be used in the browser.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "format": "html"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/schema#add": {
+      "put": {
+        "operationId": "put_schema",
+        "summary": "Fragment url no servers",
+        "description": "Authorize a user.",
+        "tags": [
+          "Authorization"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "response_type",
+            "description": "The type of response we'd like to receive.",
+            "in": "query",
+            "example": "code",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "token",
+              "enum": [
+                "code"
+              ]
+            }
+          },
+          {
+            "name": "client_id",
+            "description": "The Client ID.",
+            "in": "query",
+            "example": "ly1nj6n11vionaie65emwzk575hnnmrk",
+            "required": true,
             "schema": {
               "type": "string"
             }
