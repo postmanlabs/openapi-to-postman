@@ -1,0 +1,19 @@
+User:
+  type: object
+  properties:
+    id:
+      type: integer
+    userName:
+      type: string
+    pet:
+      type: object
+      properties:
+        theUsersPet:
+          $ref: "#/Pet"
+Pet:
+  type: object
+  properties:
+    name:
+      type: string
+    breed:
+      type: string

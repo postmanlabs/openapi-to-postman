@@ -1,0 +1,82 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Sample API",
+    "description": "Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.",
+    "version": "0.1.9"
+  },
+  "paths": {
+    "/hello": {
+      "get": {
+        "description": "Returns all pets alesuada ac...",
+        "operationId": "findPets",
+        "responses": {
+          "$ref": "#/components/responses/responseA"
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "address": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responseA": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/_schemaA.yaml"
+            }
+          }
+        }
+      },
+      "responseB": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "fromB": {
+                  "type": "string"
+                },
+                "addressFromB": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "_schemaA.yaml": {
+        "type": "object",
+        "properties": {
+          "fromA": {
+            "type": "string"
+          },
+          "addressFromA": {
+            "type": "string"
+          }
+        }
+      },
+      "schemaB": {
+        "type": "integer"
+      }
+    }
+  }
+}

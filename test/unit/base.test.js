@@ -51,7 +51,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml'),
       valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml'),
       petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml'),
-      formDataParamDescription = path.join(__dirname, VALID_OPENAPI_PATH, '/form_data_param_description.yaml');
+      formDataParamDescription = path.join(__dirname, VALID_OPENAPI_PATH, '/form_data_param_description.yaml'),
+      allHTTPMethodsSpec = path.join(__dirname, VALID_OPENAPI_PATH, '/all-http-methods.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1157,7 +1158,24 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         });
     });
+
+    it('Should have disableBodyPruning option for protocolProfileBehavior set to true for all types of request' +
+      allHTTPMethodsSpec, function (done) {
+      var openapi = fs.readFileSync(allHTTPMethodsSpec, 'utf8');
+
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+
+          _.forEach(conversionResult.output[0].data.item[0].item, (request) => {
+            expect(request.protocolProfileBehavior.disableBodyPruning).to.eql(true);
+          });
+          done();
+        });
+    });
   });
+
   describe('Converting swagger 2.0 files', function() {
     it('should convert path paramters to postman-compatible paramters', function (done) {
       const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger2-with-params.json'),

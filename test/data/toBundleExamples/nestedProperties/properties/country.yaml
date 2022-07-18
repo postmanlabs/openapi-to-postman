@@ -1,0 +1,6 @@
+type: object
+properties:
+  region:
+    type: string
+  flag:
+    type: string

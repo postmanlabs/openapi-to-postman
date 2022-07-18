@@ -1,0 +1,28 @@
+
+openapi: "3.0.2"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  description: A sample API that uses a petstore as an example to demonstrate features in the swagger-2.0 specification
+  termsOfService: http://swagger.io/terms/
+  contact:
+    name: Swagger API Team
+    email: apiteam@swagger.io
+    url: http://swagger.io
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+paths:
+  /pets:
+    get:
+      description: Returns all pets alesuada ac...
+      operationId: findPets
+      responses:
+        '200':
+          description: An paged array of pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "./schemas/schemas.yaml#/components/schemas/ErrorDetail"

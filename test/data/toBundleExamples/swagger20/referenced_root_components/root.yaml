@@ -1,0 +1,13 @@
+swagger: '2.0'
+info:
+  $ref: './info.yaml'
+paths:
+  "$ref": "./paths/paths.yaml"
+definitions:
+  $ref: './definitions.yaml'
+securityDefinitions:
+  $ref: './securitySchemes.yaml'
+tags:
+  $ref: './tags.yaml'
+responses:
+  $ref: './responses.yaml'
