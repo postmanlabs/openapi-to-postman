@@ -55,7 +55,10 @@ describe('CONVERT FUNCTION TESTS ', function() {
       queryParamWithEnumResolveAsExample =
         path.join(__dirname, VALID_OPENAPI_PATH, '/query_param_with_enum_resolve_as_example.json'),
       formDataParamDescription = path.join(__dirname, VALID_OPENAPI_PATH, '/form_data_param_description.yaml'),
-      allHTTPMethodsSpec = path.join(__dirname, VALID_OPENAPI_PATH, '/all-http-methods.yaml');
+      allHTTPMethodsSpec = path.join(__dirname, VALID_OPENAPI_PATH, '/all-http-methods.yaml'),
+      invalidNullInfo = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-null-info.json'),
+      invalidNullInfoTitle = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-title.json'),
+      invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1210,6 +1213,41 @@ describe('CONVERT FUNCTION TESTS ', function() {
           _.forEach(conversionResult.output[0].data.item[0].item, (request) => {
             expect(request.protocolProfileBehavior.disableBodyPruning).to.eql(true);
           });
+          done();
+        });
+    });
+    it('The converter must throw an error for invalid null info', function (done) {
+      var openapi = fs.readFileSync(invalidNullInfo, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(false);
+          expect(conversionResult.reason)
+            .to.equal('Specification must contain an Info Object for the meta-data of the API');
+          done();
+        });
+    });
+
+    it('The converter must throw an error for invalid null info title', function (done) {
+      var openapi = fs.readFileSync(invalidNullInfoTitle, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(false);
+          expect(conversionResult.reason)
+            .to.equal('Specification must contain a title in order to generate a collection');
+          done();
+        });
+    });
+
+    it('The converter must throw an error for invalid null info version', function (done) {
+      var openapi = fs.readFileSync(invalidNullInfoVersion, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(false);
+          expect(conversionResult.reason)
+            .to.equal('Specification must contain a semantic version number of the API in the Info Object');
           done();
         });
     });
