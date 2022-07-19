@@ -51,8 +51,14 @@ describe('CONVERT FUNCTION TESTS ', function() {
       deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml'),
       valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml'),
       petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml'),
+      xmlrequestBody = path.join(__dirname, VALID_OPENAPI_PATH, '/xmlExample.yaml'),
+      queryParamWithEnumResolveAsExample =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/query_param_with_enum_resolve_as_example.json'),
       formDataParamDescription = path.join(__dirname, VALID_OPENAPI_PATH, '/form_data_param_description.yaml'),
-      allHTTPMethodsSpec = path.join(__dirname, VALID_OPENAPI_PATH, '/all-http-methods.yaml');
+      allHTTPMethodsSpec = path.join(__dirname, VALID_OPENAPI_PATH, '/all-http-methods.yaml'),
+      invalidNullInfo = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-null-info.json'),
+      invalidNullInfoTitle = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-title.json'),
+      invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1144,6 +1150,42 @@ describe('CONVERT FUNCTION TESTS ', function() {
         });
     });
 
+    it('Should convert xml request body correctly', function(done) {
+      const openapi = fs.readFileSync(xmlrequestBody, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        { schemaFaker: true }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output[0].data.item[0].request.body.raw)
+            .to.equal(
+              '<?xml version="1.0" encoding="UTF-8"?>\n' +
+              '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope">' +
+              ' <soap:Body> <NumberToWords ' +
+              'xmlns="http://www.dataaccess.com/webservicesserver"> ' +
+              '<ubiNum>500</ubiNum> </NumberToWords> </soap:Body> ' +
+              '</soap:Envelope>'
+            );
+          done();
+        });
+    });
+
+    it('[Github #518]- integer query params with enum values get default value of NaN' +
+    descriptionInBodyParams, function(done) {
+      var openapi = fs.readFileSync(queryParamWithEnumResolveAsExample, 'utf8');
+      Converter.convert({
+        type: 'string',
+        data: openapi
+      }, {
+        schemaFaker: true,
+        requestParametersResolution: 'Example'
+      }, (err, conversionResult) => {
+        let fakedParam = conversionResult.output[0].data.item[0].request.url.query[0].value;
+        expect(err).to.be.null;
+        expect(fakedParam).to.be.equal('120');
+        done();
+      });
+    });
+
     it('[Github #559]Should convert description in form data parameters' +
     petstoreParamExample, function(done) {
       var openapi = fs.readFileSync(formDataParamDescription, 'utf8');
@@ -1187,6 +1229,42 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(err).to.be.null;
         expect(result.result).to.be.true;
       });
+    });
+
+    it('The converter must throw an error for invalid null info', function (done) {
+      var openapi = fs.readFileSync(invalidNullInfo, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(false);
+          expect(conversionResult.reason)
+            .to.equal('Specification must contain an Info Object for the meta-data of the API');
+          done();
+        });
+    });
+
+    it('The converter must throw an error for invalid null info title', function (done) {
+      var openapi = fs.readFileSync(invalidNullInfoTitle, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(false);
+          expect(conversionResult.reason)
+            .to.equal('Specification must contain a title in order to generate a collection');
+          done();
+        });
+    });
+
+    it('The converter must throw an error for invalid null info version', function (done) {
+      var openapi = fs.readFileSync(invalidNullInfoVersion, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(false);
+          expect(conversionResult.reason)
+            .to.equal('Specification must contain a semantic version number of the API in the Info Object');
+          done();
+        });
     });
   });
 

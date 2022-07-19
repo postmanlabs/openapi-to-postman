@@ -23782,7 +23782,7 @@ function extend() {
                   var min = Math.max(params.minimum || 0, 0);
                   var max = Math.min(params.maximum || Infinity, Infinity);
                   min = handleExclusiveMinimum(schema, min);
-                  max = handleExclusiveMaximum(schema, min);
+                  max = handleExclusiveMaximum(schema, max);
                   // discard out-of-bounds enumerations
                   schema.enum = schema.enum.filter(function (x) {
                       if (x >= min && x <= max) {
