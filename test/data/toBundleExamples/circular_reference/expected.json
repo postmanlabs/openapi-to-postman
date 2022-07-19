@@ -28,7 +28,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/_schemas_schemas.yaml-components_schemas_ErrorDetail"
+                    "$ref": "#/components/schemas/_schemas_schemas.yaml-_components_schemas_ErrorDetail"
                   }
                 }
               }
@@ -40,7 +40,7 @@
   },
   "components": {
     "schemas": {
-      "_schemas_schemas.yaml-components_schemas_ErrorDetail": {
+      "_schemas_schemas.yaml-_components_schemas_ErrorDetail": {
         "type": "object",
         "description": "The error detail.",
         "properties": {
@@ -63,8 +63,7 @@
             "readOnly": true,
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/_schemas_schemas.yaml-components_schemas_ErrorDetail",
-              "x-circularRef": true
+              "$ref": "#/components/schemas/_schemas_schemas.yaml-_components_schemas_ErrorDetail"
             },
             "description": "The error details."
           }
