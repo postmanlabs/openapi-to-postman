@@ -1,0 +1,14 @@
+type: object
+properties:
+  firstName:
+    type: string
+  secondName:
+    type: string
+  age:
+    type: integer
+  nestedProp:
+    $ref: "./nestedProp.yaml"
+  country:
+    $ref: "./country.yaml"
+  warrior:
+    $ref: "./warrior.yaml"

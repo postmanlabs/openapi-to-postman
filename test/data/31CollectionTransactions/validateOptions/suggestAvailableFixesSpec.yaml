@@ -1,7 +1,7 @@
 openapi: "3.1.0"
 info:
   version: 1.0.0
-  title: 
+  title: a
   license:
     name: MIT
 servers:
@@ -19,26 +19,26 @@ paths:
           required: true
           description: The id of the pet to retrieve
           schema:
-            type: 
+            type:
               - integer
-            examples: 
+            examples:
               - 'Not an Integer'
         - name: limit
           in: query
           required: true
           schema:
-            type: 
+            type:
               - number
-            examples: 
+            examples:
               - 'Not a Number'
         - name: pet-quantity
           in: header
           description: Quantity of pets available
           required: true
           schema:
-            type: 
+            type:
               - boolean
-            examples: 
+            examples:
               - 'Not a Boolean'
       requestBody:
         content:
@@ -52,9 +52,9 @@ paths:
             X-Rate-Limit-Limit:
               description: The number of allowed requests in the current period
               schema:
-                type: 
+                type:
                   - integer
-                examples: 
+                examples:
                   - '<string>'
           content:
             application/json:
@@ -63,7 +63,7 @@ paths:
 components:
   schemas:
     Pet:
-      type: 
+      type:
         - object
       required:
       - petId
@@ -72,36 +72,36 @@ components:
       - breeds
       properties:
         petId:
-          type: 
+          type:
             - integer
           format: int64
         name:
-          type: 
+          type:
             - string
           minLength: 30
         tag:
-          type: 
+          type:
             - string
         breeds:
-          type: 
+          type:
             - array
           minItems: 3
           maxItems: 3
           items:
-            type: 
+            type:
               - string
             enum: ["Bulldog", "Retriever", "Timberwolf", "Grizzly", "Husky"]
     Error:
-      type: 
+      type:
         - object
       properties:
         code:
-          type: 
+          type:
             - integer
           format: int32
           multipleOf: 7
         message:
-          type: 
+          type:
             - string
       examples:
         - code: '{{codeVar}}'
