@@ -1226,8 +1226,17 @@ describe('CONVERT FUNCTION TESTS ', function() {
         };
 
       Converter.convert(input, { optimizeConversion: false, stackLimit: 50 }, (err, result) => {
+        let responseBody = JSON.parse(result.output[0].data.item[0].response[0].body);
         expect(err).to.be.null;
         expect(result.result).to.be.true;
+        expect(responseBody)
+          .to.have.all.keys('grandParentTypeData', 'specificType');
+        expect(responseBody.specificType)
+          .to.have.all.keys(
+            'grandParentTypeData',
+            'parentTypeData',
+            'specificTypeData'
+          );
       });
     });
 
