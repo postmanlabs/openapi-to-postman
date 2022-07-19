@@ -1270,6 +1270,32 @@ describe('VALIDATE FUNCTION TESTS ', function () {
     });
   });
 
+  it('Should report a mismatch when the response body is not valid', function (done) {
+    let allOfExample = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+      '/invalid_response_body_all_of_properties_spec.json'), 'utf-8'),
+      allOfCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+        '/invalid_response_body_all_of_properties_collection.json'), 'utf-8'),
+      historyRequest = [],
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: allOfExample },
+        { suggestAvailableFixes: true, showMissingInSchemaErrors: true });
+
+    getAllTransactions(JSON.parse(allOfCollection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      const requestId = historyRequest[0].id,
+        request = result.requests[requestId],
+        responseId = historyRequest[0].response[0].id,
+        response = request.endpoints[0].responses[responseId];
+      expect(err).to.be.null;
+      expect(request.endpoints[0].matched).to.equal(false);
+      expect(response.matched).to.equal(false);
+      expect(response.mismatches).to.have.length(1);
+      expect(response.mismatches[0].reason)
+        .to.equal('The response body didn\'t match the specified schema');
+      done();
+    });
+  });
+
   describe('findMatchingRequestFromSchema function', function () {
     it('#GITHUB-9396 Should maintain correct order of matched endpoint', function (done) {
       let schema = {
