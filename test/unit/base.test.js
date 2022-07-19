@@ -1174,6 +1174,20 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         });
     });
+
+    it('[GITHUB #597] - should convert file with all of merging properties', function() {
+      const fileSource = path.join(__dirname, VALID_OPENAPI_PATH, 'all_of_properties.json'),
+        fileData = fs.readFileSync(fileSource, 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+
+      Converter.convert(input, { optimizeConversion: false, stackLimit: 50 }, (err, result) => {
+        expect(err).to.be.null;
+        expect(result.result).to.be.true;
+      });
+    });
   });
 
   describe('Converting swagger 2.0 files', function() {

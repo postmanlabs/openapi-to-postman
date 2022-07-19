@@ -242,6 +242,90 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       done();
 
     });
+
+    it('should resolve nested allOf properties', function(done) {
+      let schema = {
+          '$ref': '#/components/schemas/Page'
+        },
+        expectedResolved = {
+          grandParentTypeData: '<string>',
+          specificType: {
+            grandParentTypeData: '<string>',
+            parentTypeData: '<string>',
+            specificTypeData: '<string>'
+          }
+        },
+        components = {
+          schemas: {
+            'SpecificType': {
+              'allOf': [
+                {
+                  '$ref': '#/components/schemas/ParentType'
+                },
+                {
+                  'properties': {
+                    'specificTypeData': {
+                      'type': 'string'
+                    }
+                  },
+                  'required': ['specificTypeData']
+                }
+              ]
+            },
+            'ParentType': {
+              'allOf': [
+                {
+                  '$ref': '#/components/schemas/GrandParentType'
+                },
+                {
+                  'properties': {
+                    'parentTypeData': {
+                      'type': 'string'
+                    }
+                  },
+                  'required': ['parentTypeData']
+                }
+              ]
+            },
+            'GrandParentType': {
+              'properties': {
+                'grandParentTypeData': {
+                  'type': 'string'
+                }
+              },
+              'required': ['grandParentTypeData']
+            },
+            'Page': {
+              'allOf': [
+                {
+                  '$ref': '#/components/schemas/GrandParentType'
+                },
+                {
+                  'properties': {
+                    'specificType': {
+                      '$ref': '#/components/schemas/SpecificType'
+                    }
+                  },
+                  'required': ['specificType']
+                }
+              ]
+            }
+          }
+        },
+        parameterSource = 'REQUEST',
+        resolveTo = 'schema',
+        resolveFor = 'CONVERSION',
+
+        result = SchemaUtils.safeSchemaFaker(
+          schema,
+          resolveTo,
+          resolveFor,
+          parameterSource,
+          { components, concreteUtils }
+        );
+      expect(result).to.deep.equal(expectedResolved);
+      done();
+    });
   });
 
   describe('convertToPmCollectionVariables function', function() {
