@@ -1,5 +1,10 @@
 # OpenAPI-Postman Changelog
 
+#### v4.0.0 (July 12, 2022)
+* Added support for new multi-file API detectRootFiles() for OpenAPI 3 and Swagger 2 formats to support detection of root files among multiple files.
+* Added support for new multi-file API detectRelatedFiles() for OpenAPI 3 and Swagger 2 formats to support detection of related files for a provided root file amongst multiple files.
+* Added support for new multi-file API bundle() for OpenAPI 3 and Swagger 2 formats to support bundling of root files from provided multiple files.
+
 #### v3.2.0 (May 02, 2022)
 * Fixed some of critical and high level severity vulnerabilities.
 * Fixed issue [#10752](https://github.com/postmanlabs/postman-app-support/issues/10752) where deepObject style parameters were not generated correctly.

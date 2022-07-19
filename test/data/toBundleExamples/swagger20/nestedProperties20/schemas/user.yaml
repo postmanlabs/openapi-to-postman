@@ -1,0 +1,6 @@
+type: object
+properties:
+  age:
+    $ref: "./age.yaml"
+  hobbies:
+    $ref: "./hobbies.yaml"

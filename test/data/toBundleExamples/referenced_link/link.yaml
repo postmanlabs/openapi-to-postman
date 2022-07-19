@@ -1,0 +1,4 @@
+operationId: getRepository
+parameters:
+  username: $response.body#/owner/username
+  slug: $response.body#/slug
