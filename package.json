@@ -125,7 +125,7 @@
     "lodash": "4.17.21",
     "oas-resolver-browser": "2.5.6",
     "path-browserify": "1.0.1",
-    "postman-collection": "4.0.0",
+    "postman-collection": "4.1.4",
     "swagger2openapi": "7.0.8",
     "traverse": "0.6.6",
     "yaml": "1.10.2"
