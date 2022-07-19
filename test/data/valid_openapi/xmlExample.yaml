@@ -1,0 +1,34 @@
+openapi: 3.0.3
+info:
+  title: My API
+  version: 1.0.0
+  contact: {}
+servers:
+  - url: "https://api.server.test/v1"
+paths:
+  /test:
+    post:
+      summary: /test
+      description: /test
+      operationId: test
+      requestBody:
+        content:
+          text/xml:
+            example: 
+              <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope">  
+                <soap:Body>
+                  <NumberToWords xmlns="http://www.dataaccess.com/webservicesserver">
+                    <ubiNum>500</ubiNum>
+                  </NumberToWords>
+                </soap:Body> 
+              </soap:Envelope>
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              examples:
+                OK:
+                  value: 
+                    Data: Postman
+tags: []

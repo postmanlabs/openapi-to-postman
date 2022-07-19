@@ -51,6 +51,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml'),
       valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml'),
       petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml'),
+      xmlrequestBody = path.join(__dirname, VALID_OPENAPI_PATH, '/xmlExample.yaml'),
       queryParamWithEnumResolveAsExample =
         path.join(__dirname, VALID_OPENAPI_PATH, '/query_param_with_enum_resolve_as_example.json'),
       formDataParamDescription = path.join(__dirname, VALID_OPENAPI_PATH, '/form_data_param_description.yaml'),
@@ -1142,6 +1143,25 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.result).to.equal(true);
           expect(conversionResult.output[0].data.item[0].request.url.variable[0].value).to.equal('value,1');
           expect(conversionResult.output[0].data.item[0].request.url.query[1].key).to.equal('user[value]');
+          done();
+        });
+    });
+
+    it('Should convert xml request body correctly', function(done) {
+      const openapi = fs.readFileSync(xmlrequestBody, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        { schemaFaker: true }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output[0].data.item[0].request.body.raw)
+            .to.equal(
+              '<?xml version="1.0" encoding="UTF-8"?>\n' +
+              '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope">' +
+              ' <soap:Body> <NumberToWords ' +
+              'xmlns="http://www.dataaccess.com/webservicesserver"> ' +
+              '<ubiNum>500</ubiNum> </NumberToWords> </soap:Body> ' +
+              '</soap:Envelope>'
+            );
           done();
         });
     });
