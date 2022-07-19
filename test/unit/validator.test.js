@@ -63,8 +63,47 @@ function getFoldersByVersion(folder30Path, folder31Path) {
   }];
 }
 
+describe('Validate with servers', function () {
+  it('Fix for GITHUB#496: Should identify url with fragment', function () {
+    const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/explicit_server_in_path.json'),
+      openAPIData = fs.readFileSync(openAPI, 'utf8'),
+      options = {
+        requestParametersResolution: 'Example',
+        exampleParametersResolution: 'Example',
+        showMissingInSchemaErrors: true,
+        strictRequestMatching: true,
+        ignoreUnresolvedVariables: true,
+        validateMetadata: true,
+        suggestAvailableFixes: true,
+        detailedBlobValidation: false
+      },
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
+    schemaPack.convert((err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      let historyRequest = [];
+
+      getAllTransactions(conversionResult.output[0].data, historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        let requestIds = Object.keys(result.requests);
+        expect(err).to.be.null;
+        expect(result.missingEndpoints.length).to.eq(0);
+        requestIds.forEach((requestId) => {
+          expect(result.requests[requestId].endpoints[0]).to.not.be.undefined;
+          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
+        });
+      });
+    });
+  });
+});
 
 describe('Validation with different resolution parameters options', function () {
+
   it('Should validate correctly with request and example parameters as Schema', function () {
     let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
         '/issue#479_2.yaml'), 'utf8'),
