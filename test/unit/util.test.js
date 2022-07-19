@@ -1676,7 +1676,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           });
           resultBody = (result.body.raw);
           expect(resultBody).to.equal(
-            '<?xml version="1.0" encoding="utf-8"?><AnXMLObject>test</AnXMLObject>'
+            '<?xml version="1.0" encoding="UTF-8"?>\n<AnXMLObject>test</AnXMLObject>'
           );
           expect(result.contentHeader).to.deep.include(
             { key: 'Content-Type', value: 'text/xml' });
@@ -1853,7 +1853,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         });
         resultBody = (result.body.raw);
         expect(resultBody).to.equal(
-          '<?xml version="1.0" encoding="utf-8"?><AnXMLObject>test</AnXMLObject>'
+          '<?xml version="1.0" encoding="UTF-8"?>\n<AnXMLObject>test</AnXMLObject>'
         );
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/xml' });
