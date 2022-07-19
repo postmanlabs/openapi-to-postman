@@ -1152,9 +1152,13 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.result).to.equal(true);
           expect(conversionResult.output[0].data.item[0].request.body.raw)
             .to.equal(
+              '<?xml version="1.0" encoding="utf-8"?>' +
               '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope">' +
-              ' <soap:Body> <NumberToWords xmlns="http://www.dataaccess.com/webservicesserver">' +
-              ' <ubiNum>500</ubiNum> </NumberToWords> </soap:Body> </soap:Envelope>');
+              ' <soap:Body> <NumberToWords ' +
+              'xmlns="http://www.dataaccess.com/webservicesserver"> ' +
+              '<ubiNum>500</ubiNum> </NumberToWords> </soap:Body> ' +
+              '</soap:Envelope>'
+            );
           done();
         });
     });

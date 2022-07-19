@@ -1664,7 +1664,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
                   examples: {
                     xml: {
                       summary: 'A list containing two items',
-                      value: 'text/plain description'
+                      value: '<AnXMLObject>test</AnXMLObject>'
                     }
                   }
                 }
@@ -1675,7 +1675,9 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             exampleParametersResolution: 'example'
           });
           resultBody = (result.body.raw);
-          expect(resultBody).to.equal('text/plain description');
+          expect(resultBody).to.equal(
+            '<?xml version="1.0" encoding="utf-8"?><AnXMLObject>test</AnXMLObject>'
+          );
           expect(result.contentHeader).to.deep.include(
             { key: 'Content-Type', value: 'text/xml' });
           expect(result.body.options.raw.language).to.equal('xml');
@@ -1839,7 +1841,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
                 examples: {
                   xml: {
                     summary: 'A list containing two items',
-                    value: 'text/plain description'
+                    value: '<AnXMLObject>test</AnXMLObject>'
                   }
                 }
               }
@@ -1850,7 +1852,9 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           requestParametersResolution: 'example'
         });
         resultBody = (result.body.raw);
-        expect(resultBody).to.equal('text/plain description');
+        expect(resultBody).to.equal(
+          '<?xml version="1.0" encoding="utf-8"?><AnXMLObject>test</AnXMLObject>'
+        );
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/xml' });
         expect(result.body.options.raw.language).to.equal('xml');
