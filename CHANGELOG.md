@@ -1,5 +1,16 @@
 # OpenAPI-Postman Changelog
 
+#### v4.1.0 (July 20, 2022)
+* Fixed issue where conversion was failing for definitions with info object as null.
+* Fixed issue where generated collection did not have correct examples value from XML type of content.
+* Fixed issue [#518](https://github.com/postmanlabs/openapi-to-postman/issues/518) where generated collection were having NaN as value for integer query params with enum values.
+* Fixed issue [#496](https://github.com/postmanlabs/openapi-to-postman/issues/496) where validateTransactions() was returning missing endpoints even though corresponding requests are present in collection.
+* Fixed issue [#478](https://github.com/postmanlabs/openapi-to-postman/issues/478) where updation of path parameter in collection resulted in MISSING_IN_REQUEST error.
+* Fixed issue [#559](https://github.com/postmanlabs/openapi-to-postman/issues/559) where parameter description was undefined for formdata type of content even if defined.
+* Fixed issue where bundle() API didn't handle circular references correctly.
+* Added non-required files to be published as npm module in .npmignore
+* Fixed issue where disableBodyPruning option was not set for requests with no request body.
+
 #### v4.0.0 (July 12, 2022)
 * Added support for new multi-file API detectRootFiles() for OpenAPI 3 and Swagger 2 formats to support detection of root files among multiple files.
 * Added support for new multi-file API detectRelatedFiles() for OpenAPI 3 and Swagger 2 formats to support detection of related files for a provided root file amongst multiple files.
