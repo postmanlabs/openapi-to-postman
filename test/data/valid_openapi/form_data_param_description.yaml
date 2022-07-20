@@ -1,0 +1,33 @@
+openapi: 3.0.1
+info:
+  title: My REST API
+  version: 1.0.0
+paths:
+  /description-test:
+    post:
+      description: Endpoint description
+      operationId: description-test
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RequestSchema'
+      responses:
+        "201":
+          description: Response description
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                type: object
+                properties:
+                  responseParam:
+                    type: string
+                    description: Response param description
+components:
+  schemas:
+    RequestSchema:
+      type: object
+      properties:
+        requestParam:
+          type: string
+          description: Request param description
