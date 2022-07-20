@@ -138,7 +138,7 @@
     "eslint": "5.16.0",
     "eslint-plugin-jsdoc": "3.8.0",
     "eslint-plugin-mocha": "5.3.0",
-    "eslint-plugin-security": "1.4.0",
+    "eslint-plugin-security": "1.5.0",
     "expect.js": "0.3.1",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
