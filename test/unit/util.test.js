@@ -2957,3 +2957,72 @@ describe('findCommonSubpath method', function () {
   });
 
 });
+
+describe('getAuthHelper method - OAuth2 Flows', function() {
+  it('Should parse OAuth2 configuration to collection', function() {
+    const openAPISpec = {
+        'components': {
+          'responses': {},
+          'schemas': {},
+          'securitySchemes': {
+            'oauth2': {
+              'flows': {
+                'clientCredentials': {
+                  'scopes': {},
+                  'tokenUrl': 'https://example.com/oauth2/token'
+                }
+              },
+              'type': 'oauth2'
+            }
+          }
+        },
+        'info': {
+          'title': 'API',
+          'version': '0.2'
+        },
+        'openapi': '3.0.0',
+        'paths': {},
+        'security': [
+          {
+            'oauth2': []
+          }
+        ],
+        'servers': [
+          {
+            'url': 'https://example.com',
+            'variables': {}
+          }
+        ],
+        'tags': [],
+        'securityDefs': {
+          'oauth2': {
+            'flows': {
+              'clientCredentials': {
+                'scopes': {},
+                'tokenUrl': 'https://example.com/oauth2/token'
+              }
+            },
+            'type': 'oauth2'
+          }
+        },
+        'baseUrl': 'https://example.com',
+        'baseUrlVariables': {}
+      },
+      securitySet = [{ oauth2: [] }],
+      helperData = SchemaUtils.getAuthHelper(openAPISpec, securitySet);
+
+    expect(helperData.type).to.be.equal('oauth2');
+    expect(helperData).to.have.property('oauth2').with.lengthOf(2);
+    expect(helperData.oauth2[0]).to.be.an('object');
+    expect(helperData).to.deep.equal({
+      type: 'oauth2',
+      oauth2: [
+        {
+          key: 'accessTokenUrl',
+          value: 'https://example.com/oauth2/token'
+        },
+        { key: 'grant_type', value: 'client_credentials' }
+      ]
+    });
+  });
+});
