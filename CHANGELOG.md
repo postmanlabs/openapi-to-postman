@@ -1,5 +1,8 @@
 # OpenAPI-Postman Changelog
 
+#### v4.1.1 (July 29, 2022)
+* Replaced Object.hasOwnProperty usages with loadsh _.has for safe access.
+
 #### v4.1.0 (July 20, 2022)
 * Fixed issue where conversion was failing for definitions with info object as null.
 * Fixed issue where generated collection did not have correct examples value from XML type of content.
