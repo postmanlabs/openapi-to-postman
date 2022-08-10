@@ -1391,6 +1391,30 @@ describe('CONVERT FUNCTION TESTS ', function() {
         done();
       });
     });
+
+    it('[GITHUB #10710] - should convert file with all of merging properties. ' +
+      'One ocurrence is an empty object and the other is a boolean type', function() {
+      const fileSource = path.join(__dirname, SWAGGER_20_FOLDER_YAML, 'allOfConflicted.yaml'),
+        fileData = fs.readFileSync(fileSource, 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+
+      Converter.convert(input, { optimizeConversion: false, stackLimit: 50 }, (err, result) => {
+        const expectedResponseBody1 = JSON.parse(
+            result.output[0].data.item[0].item[0].response[0].body
+          ),
+          expectedResponseBody2 = JSON.parse(
+            result.output[0].data.item[0].item[1].response[0].body
+          );
+        expect(err).to.be.null;
+        expect(result.result).to.be.true;
+        expect(expectedResponseBody1.payload).to.be.a('boolean');
+        expect(expectedResponseBody2.payload).to.be.an('object')
+          .and.to.have.all.keys('content', 'paging');
+      });
+    });
   });
 
   describe('requestNameSource option', function() {
