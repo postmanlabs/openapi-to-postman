@@ -1216,6 +1216,30 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         });
     });
+
+    it('[GITHUB #597] - should convert file with all of merging properties', function() {
+      const fileSource = path.join(__dirname, VALID_OPENAPI_PATH, 'all_of_properties.json'),
+        fileData = fs.readFileSync(fileSource, 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+
+      Converter.convert(input, { optimizeConversion: false, stackLimit: 50 }, (err, result) => {
+        let responseBody = JSON.parse(result.output[0].data.item[0].response[0].body);
+        expect(err).to.be.null;
+        expect(result.result).to.be.true;
+        expect(responseBody)
+          .to.have.all.keys('grandParentTypeData', 'specificType');
+        expect(responseBody.specificType)
+          .to.have.all.keys(
+            'grandParentTypeData',
+            'parentTypeData',
+            'specificTypeData'
+          );
+      });
+    });
+
     it('The converter must throw an error for invalid null info', function (done) {
       var openapi = fs.readFileSync(invalidNullInfo, 'utf8');
       Converter.convert({ type: 'string', data: openapi },
