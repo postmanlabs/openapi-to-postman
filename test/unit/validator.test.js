@@ -64,6 +64,7 @@ function getFoldersByVersion(folder30Path, folder31Path) {
 }
 
 describe('Validate with servers', function () {
+
   it('Fix for GITHUB#496: Should identify url with fragment', function () {
     const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/explicit_server_in_path.json'),
       openAPIData = fs.readFileSync(openAPI, 'utf8'),
@@ -1309,6 +1310,32 @@ describe('VALIDATE FUNCTION TESTS ', function () {
     });
   });
 
+  it('Should report a mismatch when the response body is not valid', function (done) {
+    let allOfExample = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+      '/invalid_response_body_all_of_properties_spec.json'), 'utf-8'),
+      allOfCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+        '/invalid_response_body_all_of_properties_collection.json'), 'utf-8'),
+      historyRequest = [],
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: allOfExample },
+        { suggestAvailableFixes: true, showMissingInSchemaErrors: true });
+
+    getAllTransactions(JSON.parse(allOfCollection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      const requestId = historyRequest[0].id,
+        request = result.requests[requestId],
+        responseId = historyRequest[0].response[0].id,
+        response = request.endpoints[0].responses[responseId];
+      expect(err).to.be.null;
+      expect(request.endpoints[0].matched).to.equal(false);
+      expect(response.matched).to.equal(false);
+      expect(response.mismatches).to.have.length(1);
+      expect(response.mismatches[0].reason)
+        .to.equal('The response body didn\'t match the specified schema');
+      done();
+    });
+  });
+
   describe('findMatchingRequestFromSchema function', function () {
     it('#GITHUB-9396 Should maintain correct order of matched endpoint', function (done) {
       let schema = {
@@ -1613,3 +1640,45 @@ describe('validateTransaction method. Path variables matching validation (issue 
     });
   });
 });
+
+describe('validateTransaction convert and validate schemas with allOf', function () {
+  it('Should convert and validate allOf properties for string schema', function () {
+    const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/all_of_property.json'),
+      openAPIData = fs.readFileSync(openAPI, 'utf8'),
+      expectedRequestBody = '{\n  "id": "3",\n  "name": "Contract.pdf"\n}',
+      options = {
+        requestParametersResolution: 'Example',
+        exampleParametersResolution: 'Example',
+        showMissingInSchemaErrors: true,
+        strictRequestMatching: true,
+        ignoreUnresolvedVariables: true,
+        validateMetadata: true,
+        suggestAvailableFixes: true,
+        detailedBlobValidation: false
+      },
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
+    schemaPack.convert((err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(conversionResult.output[0].data.item[0].response[0].body).to.equal(expectedRequestBody);
+
+      let historyRequest = [];
+
+      getAllTransactions(conversionResult.output[0].data, historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        let requestIds = Object.keys(result.requests);
+        expect(err).to.be.null;
+        expect(result.missingEndpoints.length).to.eq(0);
+        requestIds.forEach((requestId) => {
+          expect(result.requests[requestId].endpoints[0]).to.not.be.undefined;
+          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
+        });
+      });
+    });
+  });
+});
+

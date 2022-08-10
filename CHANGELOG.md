@@ -1,5 +1,13 @@
 # OpenAPI-Postman Changelog
 
+#### v4.2.0 (August 10, 2022)
+* Improved the way to detect a circular reference by adding a new condition
+* A schema that comes from an allOf parent then we now return the same schema instead of defaulting to a schema with type as object, and no other properties
+* The method resolveAllOf is executed when the current node is an allOf element.
+* Avoiding to set type as object when property's schema is an empty object.
+* Added OAuth2 flows and configuration support.
+* OAuth2 values now default to variables instead of hardcoded strings.
+
 #### v4.1.1 (July 29, 2022)
 * Replaced Object.hasOwnProperty usages with loadsh _.has for safe access.
 
