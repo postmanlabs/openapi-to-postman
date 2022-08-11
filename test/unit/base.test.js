@@ -50,6 +50,16 @@ describe('CONVERT FUNCTION TESTS ', function() {
       parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml'),
       issue10229 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#10229.json'),
       deepObjectLengthProperty = path.join(__dirname, VALID_OPENAPI_PATH, '/deepObjectLengthProperty.yaml'),
+      valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml'),
+      petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml'),
+      xmlrequestBody = path.join(__dirname, VALID_OPENAPI_PATH, '/xmlExample.yaml'),
+      queryParamWithEnumResolveAsExample =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/query_param_with_enum_resolve_as_example.json'),
+      formDataParamDescription = path.join(__dirname, VALID_OPENAPI_PATH, '/form_data_param_description.yaml'),
+      allHTTPMethodsSpec = path.join(__dirname, VALID_OPENAPI_PATH, '/all-http-methods.yaml'),
+      invalidNullInfo = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-null-info.json'),
+      invalidNullInfoTitle = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-title.json'),
+      invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json'),
       swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/swagger.yaml');
 
 
@@ -471,7 +481,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
             expect(rootRequest.body.raw).to
               .equal('{\n  "a": "<string>",\n  "b": "<string>"\n}');
             expect(exampleRequest.body.raw).to
-              .equal('{\n  "a": "example-b",\n  "b": "example-c"\n}');
+              .equal('{\n  "value": {\n    "a": "example-b",\n    "b": "example-c"\n  }\n}');
             done();
           });
       });
@@ -1114,6 +1124,160 @@ describe('CONVERT FUNCTION TESTS ', function() {
         });
     });
 
+    it('Should convert value property in example' +
+    valuePropInExample, function(done) {
+      var openapi = fs.readFileSync(valuePropInExample, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        { schemaFaker: true, requestParametersResolution: 'Example' }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output[0].data.item[0].response[0]
+            .body).to.include('"value": "QA"');
+          expect(conversionResult.output[0].data.item[1].response[0]
+            .body).to.include('"value": "QA"');
+          done();
+        });
+    });
+
+    it('Should convert example in parameters' +
+    petstoreParamExample, function(done) {
+      var openapi = fs.readFileSync(petstoreParamExample, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        { schemaFaker: true, requestParametersResolution: 'Example' }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output[0].data.item[0].request.url.variable[0].value).to.equal('value,1');
+          expect(conversionResult.output[0].data.item[0].request.url.query[1].key).to.equal('user[value]');
+          done();
+        });
+    });
+
+    it('Should convert xml request body correctly', function(done) {
+      const openapi = fs.readFileSync(xmlrequestBody, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        { schemaFaker: true }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output[0].data.item[0].request.body.raw)
+            .to.equal(
+              '<?xml version="1.0" encoding="UTF-8"?>\n' +
+              '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope">' +
+              ' <soap:Body> <NumberToWords ' +
+              'xmlns="http://www.dataaccess.com/webservicesserver"> ' +
+              '<ubiNum>500</ubiNum> </NumberToWords> </soap:Body> ' +
+              '</soap:Envelope>'
+            );
+          done();
+        });
+    });
+
+    it('[Github #518]- integer query params with enum values get default value of NaN' +
+    descriptionInBodyParams, function(done) {
+      var openapi = fs.readFileSync(queryParamWithEnumResolveAsExample, 'utf8');
+      Converter.convert({
+        type: 'string',
+        data: openapi
+      }, {
+        schemaFaker: true,
+        requestParametersResolution: 'Example'
+      }, (err, conversionResult) => {
+        let fakedParam = conversionResult.output[0].data.item[0].request.url.query[0].value;
+        expect(err).to.be.null;
+        expect(fakedParam).to.be.equal('120');
+        done();
+      });
+    });
+
+    it('[Github #559]Should convert description in form data parameters' +
+    petstoreParamExample, function(done) {
+      var openapi = fs.readFileSync(formDataParamDescription, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        { }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output[0].data.item[0].request.body.formdata[0].description)
+            .to.equal('Request param description');
+          expect(conversionResult.output[0].data.item[0].request.body.formdata[0].key).to.equal('requestParam');
+          expect(conversionResult.output[0].data.item[0].request.body.formdata[0].value).to.equal('<string>');
+          done();
+        });
+    });
+
+    it('Should have disableBodyPruning option for protocolProfileBehavior set to true for all types of request' +
+      allHTTPMethodsSpec, function (done) {
+      var openapi = fs.readFileSync(allHTTPMethodsSpec, 'utf8');
+
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+
+          _.forEach(conversionResult.output[0].data.item[0].item, (request) => {
+            expect(request.protocolProfileBehavior.disableBodyPruning).to.eql(true);
+          });
+          done();
+        });
+    });
+
+    it('[GITHUB #597] - should convert file with all of merging properties', function() {
+      const fileSource = path.join(__dirname, VALID_OPENAPI_PATH, 'all_of_properties.json'),
+        fileData = fs.readFileSync(fileSource, 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+
+      Converter.convert(input, { optimizeConversion: false, stackLimit: 50 }, (err, result) => {
+        let responseBody = JSON.parse(result.output[0].data.item[0].response[0].body);
+        expect(err).to.be.null;
+        expect(result.result).to.be.true;
+        expect(responseBody)
+          .to.have.all.keys('grandParentTypeData', 'specificType');
+        expect(responseBody.specificType)
+          .to.have.all.keys(
+            'grandParentTypeData',
+            'parentTypeData',
+            'specificTypeData'
+          );
+      });
+    });
+
+    it('The converter must throw an error for invalid null info', function (done) {
+      var openapi = fs.readFileSync(invalidNullInfo, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(false);
+          expect(conversionResult.reason)
+            .to.equal('Specification must contain an Info Object for the meta-data of the API');
+          done();
+        });
+    });
+
+    it('The converter must throw an error for invalid null info title', function (done) {
+      var openapi = fs.readFileSync(invalidNullInfoTitle, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(false);
+          expect(conversionResult.reason)
+            .to.equal('Specification must contain a title in order to generate a collection');
+          done();
+        });
+    });
+
+    it('The converter must throw an error for invalid null info version', function (done) {
+      var openapi = fs.readFileSync(invalidNullInfoVersion, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(false);
+          expect(conversionResult.reason)
+            .to.equal('Specification must contain a semantic version number of the API in the Info Object');
+          done();
+        });
+    });
+
     it('Should convert collection and resolve remote references', function(done) {
       let openapi = fs.readFileSync(swaggerRemoteRef, 'utf8');
       Converter.convert({ type: 'string', data: openapi }, { resolveRemoteRefs: true }, (err, conversionResult) => {
@@ -1164,7 +1328,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         });
     });
+
   });
+
   describe('Converting swagger 2.0 files', function() {
     it('should convert path paramters to postman-compatible paramters', function (done) {
       const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger2-with-params.json'),
@@ -1277,6 +1443,30 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(err).to.be.null;
         expect(request.name).to.equal('List API versions');
         done();
+      });
+    });
+
+    it('[GITHUB #10710] - should convert file with all of merging properties. ' +
+      'One ocurrence is an empty object and the other is a boolean type', function() {
+      const fileSource = path.join(__dirname, SWAGGER_20_FOLDER_YAML, 'allOfConflicted.yaml'),
+        fileData = fs.readFileSync(fileSource, 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+
+      Converter.convert(input, { optimizeConversion: false, stackLimit: 50 }, (err, result) => {
+        const expectedResponseBody1 = JSON.parse(
+            result.output[0].data.item[0].item[0].response[0].body
+          ),
+          expectedResponseBody2 = JSON.parse(
+            result.output[0].data.item[0].item[1].response[0].body
+          );
+        expect(err).to.be.null;
+        expect(result.result).to.be.true;
+        expect(expectedResponseBody1.payload).to.be.a('boolean');
+        expect(expectedResponseBody2.payload).to.be.an('object')
+          .and.to.have.all.keys('content', 'paging');
       });
     });
   });

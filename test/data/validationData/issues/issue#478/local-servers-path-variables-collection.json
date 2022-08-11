@@ -1,0 +1,195 @@
+{
+  "item": [
+    {
+      "id": "37bb14ea-6f8b-4aed-ba84-65dba00f2866",
+      "name": "Info for a specific pet",
+      "request": {
+        "name": "Info for a specific pet",
+        "description": {},
+        "url": {
+          "protocol": "https",
+          "port": "{{port}}",
+          "path": [
+            ":basePath",
+            "pets",
+            ":petId"
+          ],
+          "host": [
+            "{{username}}",
+            "myTestServer",
+            "com"
+          ],
+          "query": [],
+          "variable": [
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "type": "any",
+              "value": "v2",
+              "key": "basePath"
+            },
+            {
+              "disabled": false,
+              "type": "any",
+              "value": "<string>",
+              "key": "petId",
+              "description": "(Required) The id of the pet to retrieve"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "method": "GET",
+        "auth": null
+      },
+      "response": [
+        {
+          "id": "788af746-16c3-45aa-a06e-e438c72199ba",
+          "name": "Expected response to a valid request",
+          "originalRequest": {
+            "url": {
+              "protocol": "https",
+              "port": "{{port}}",
+              "path": [
+                ":basePath",
+                "pets",
+                ":petId"
+              ],
+              "host": [
+                "{{username}}",
+                "myTestServer",
+                "com"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "type": "any",
+                  "value": "v2",
+                  "key": "basePath"
+                },
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "<string>",
+                  "key": "petId",
+                  "description": "(Required) The id of the pet to retrieve"
+                }
+              ]
+            },
+            "method": "GET",
+            "body": {}
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"id\": -3764386,\n  \"name\": \"minim nulla aliqua fugiat\",\n  \"tag\": \"ex commodo irure\"\n}",
+          "cookie": [],
+          "_postman_previewlanguage": "json"
+        },
+        {
+          "id": "39776355-ccef-4e5b-921c-98ef03af5b71",
+          "name": "unexpected error",
+          "originalRequest": {
+            "url": {
+              "protocol": "https",
+              "port": "{{port}}",
+              "path": [
+                ":basePath",
+                "pets",
+                ":petId"
+              ],
+              "host": [
+                "{{username}}",
+                "myTestServer",
+                "com"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "type": "any",
+                  "value": "v2",
+                  "key": "basePath"
+                },
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "<string>",
+                  "key": "petId",
+                  "description": "(Required) The id of the pet to retrieve"
+                }
+              ]
+            },
+            "method": "GET",
+            "body": {}
+          },
+          "status": "Internal Server Error",
+          "code": 500,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"code\": 77941721,\n  \"message\": \"deserunt eu quis\"\n}",
+          "cookie": [],
+          "_postman_previewlanguage": "json"
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "type": "string",
+      "value": "http://petstore.swagger.io/v1",
+      "key": "baseUrl"
+    },
+    {
+      "description": {
+        "content": "Assigned by the service provider",
+        "type": "text/plain"
+      },
+      "type": "any",
+      "value": "demo",
+      "key": "username"
+    },
+    {
+      "description": {
+        "content": " (This can only be one of 8843,443)",
+        "type": "text/plain"
+      },
+      "type": "any",
+      "value": "8843",
+      "key": "port"
+    }
+  ],
+  "info": {
+    "_postman_id": "e1ba04ca-04d6-4993-bfd5-47b17c7e5f29",
+    "name": "Swagger Petstore",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "",
+      "type": "text/plain"
+    }
+  }
+}

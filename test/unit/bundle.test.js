@@ -42,6 +42,15 @@ let expect = require('chai').expect,
   longPath = path.join(__dirname, BUNDLES_FOLDER + '/longPath'),
   schemaCollision = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_from_responses'),
   schemaCollisionWRootComponent = path.join(__dirname, BUNDLES_FOLDER + '/schema_collision_w_root_components'),
+  referencedProperties = path.join(__dirname, BUNDLES_FOLDER + '/referenced_properties'),
+  nestedExamplesAsValue = path.join(__dirname, BUNDLES_FOLDER + '/nested_examples_as_value'),
+  referencedComponents = path.join(__dirname, BUNDLES_FOLDER + '/referenced_components'),
+  referencedPath = path.join(__dirname, BUNDLES_FOLDER + '/referenced_path'),
+  referencedPathSchema = path.join(__dirname, BUNDLES_FOLDER + '/paths_schema'),
+  exampleValue = path.join(__dirname, BUNDLES_FOLDER + '/example_value'),
+  example2 = path.join(__dirname, BUNDLES_FOLDER + '/example2'),
+  schemaCircularRef = path.join(__dirname, BUNDLES_FOLDER + '/circular_reference'),
+  schemaCircularRefInline = path.join(__dirname, BUNDLES_FOLDER + '/circular_reference_inline'),
   swaggerRemoteRef = path.join(__dirname, REMOTE_REFS_PATH + '/swagger.yaml'),
   swaggerRemoteRefMissing = path.join(__dirname, REMOTE_REFS_PATH + '/swaggerMissing.yaml'),
   remoteBundleExpected = path.join(__dirname, REMOTE_REFS_PATH + '/bundleExpected.json'),
@@ -803,6 +812,16 @@ describe('bundle files method - 3.0', function () {
       paths = fs.readFileSync(refPaths + '/paths/paths.yaml', 'utf8'),
       path = fs.readFileSync(refPaths + '/paths/path.yaml', 'utf8'),
       expected = fs.readFileSync(refPaths + '/expected.json', 'utf8'),
+      expectedMap = {
+        '#/paths': {
+          path: '/paths/paths.yaml',
+          type: 'inline'
+        },
+        '#/paths//pets/get': {
+          path: '/paths/path.yaml',
+          type: 'inline'
+        }
+      },
       input = {
         type: 'multiFile',
         specificationVersion: '3.0',
@@ -825,13 +844,14 @@ describe('bundle files method - 3.0', function () {
             content: path
           }
         ],
-        options: {},
+        options: { includeReferenceMap: true },
         bundleFormat: 'JSON'
       };
     const res = await Converter.bundle(input);
 
     expect(res).to.not.be.empty;
     expect(res.result).to.be.true;
+    expect(res.output.data[0].referenceMap).to.deep.equal(expectedMap);
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
@@ -2245,6 +2265,454 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.data[0].bundledContent).to.be.equal(input.data[0].content);
   });
 
+  it('Should return bundled file as with referenced properties', async function () {
+    let contentRootFile = fs.readFileSync(referencedProperties + '/root.yaml', 'utf8'),
+      operation = fs.readFileSync(referencedProperties + '/operation.yaml', 'utf8'),
+      attributes = fs.readFileSync(referencedProperties + '/attributes.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedProperties + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/operation.yaml',
+            content: operation
+          },
+          {
+            path: '/attributes.yaml',
+            content: attributes
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file - TestSpec_from_issue_14', async function () {
+    let contentRoot = fs.readFileSync(nestedExamplesAsValue + '/index.yml', 'utf8'),
+      parametersIndex = fs.readFileSync(nestedExamplesAsValue + '/parameters/_index.yml', 'utf8'),
+      arrivalTime = fs.readFileSync(nestedExamplesAsValue + '/parameters/arrival_time.yml', 'utf8'),
+      pathsIndex = fs.readFileSync(nestedExamplesAsValue + '/paths/_index.yml', 'utf8'),
+      geolocate = fs.readFileSync(nestedExamplesAsValue + '/paths/geolocate.yml', 'utf8'),
+      requests =
+        fs.readFileSync(nestedExamplesAsValue + '/requests/maps_http_geolocation_celltowers_request.yml', 'utf8'),
+      schemasIndex = fs.readFileSync(nestedExamplesAsValue + '/schemas/_index.yml', 'utf8'),
+      bounds = fs.readFileSync(nestedExamplesAsValue + '/schemas/Bounds.yml', 'utf8'),
+      cellTower = fs.readFileSync(nestedExamplesAsValue + '/schemas/CellTower.yml', 'utf8'),
+      geolocationRequest = fs.readFileSync(nestedExamplesAsValue + '/schemas/GeolocationRequest.yml', 'utf8'),
+      latLngLiteral = fs.readFileSync(nestedExamplesAsValue + '/schemas/LatLngLiteral.yml', 'utf8'),
+      wifiResponse =
+        fs.readFileSync(nestedExamplesAsValue + '/responses/maps_http_geolocation_wifi_response.yml', 'utf8'),
+      wifiRequest = fs.readFileSync(nestedExamplesAsValue + '/requests/maps_http_geolocation_wifi_request.yml', 'utf8'),
+      geolocationResponse = fs.readFileSync(nestedExamplesAsValue + '/schemas/GeolocationResponse.yml', 'utf8'),
+      testSchema = fs.readFileSync(nestedExamplesAsValue + '/schemas/test.yml', 'utf8'),
+      expected = fs.readFileSync(nestedExamplesAsValue + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/index.yml'
+          }
+        ],
+        data: [
+          {
+            path: '/index.yml',
+            content: contentRoot
+          },
+          {
+            path: '/parameters/_index.yml',
+            content: parametersIndex
+          },
+          {
+            path: '/parameters/arrival_time.yml',
+            content: arrivalTime
+          },
+          {
+            path: '/paths/_index.yml',
+            content: pathsIndex
+          },
+          {
+            path: '/paths/geolocate.yml',
+            content: geolocate
+          },
+          {
+            path: '/requests/maps_http_geolocation_celltowers_request.yml',
+            content: requests
+          },
+          {
+            path: '/schemas/_index.yml',
+            content: schemasIndex
+          },
+          {
+            path: '/schemas/Bounds.yml',
+            content: bounds
+          },
+          {
+            path: '/schemas/CellTower.yml',
+            content: cellTower
+          },
+          {
+            path: '/schemas/GeolocationRequest.yml',
+            content: geolocationRequest
+          },
+          {
+            path: '/schemas/LatLngLiteral.yml',
+            content: latLngLiteral
+          },
+          {
+            path: '/schemas/GeolocationResponse.yml',
+            content: geolocationResponse
+          },
+          {
+            path: '/requests/maps_http_geolocation_wifi_request.yml',
+            content: wifiRequest
+          },
+          {
+            path: '/responses/maps_http_geolocation_wifi_response.yml',
+            content: wifiResponse
+          },
+          {
+            path: '/schemas/test.yml',
+            content: testSchema
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return correct map with inline and components resolving', async function () {
+    let contentRootFile = fs.readFileSync(referencedPath + '/root.yaml', 'utf8'),
+      path = fs.readFileSync(referencedPath + '/path.yaml', 'utf8'),
+      pet = fs.readFileSync(referencedPath + '/pet.yaml', 'utf8'),
+      cat = fs.readFileSync(referencedPath + '/cat.yaml', 'utf8'),
+      expectedBundled = fs.readFileSync(referencedPath + '/expected.json', 'utf8'),
+      expected = {
+        '#/paths//pets/get': {
+          path: '/path.yaml',
+          type: 'inline'
+        },
+        '#/components/schemas/_cat.yaml': {
+          path: '/cat.yaml',
+          type: 'component'
+        },
+        '#/components/schemas/_pet.yaml': {
+          path: '/pet.yaml',
+          type: 'component'
+        }
+      },
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/pet.yaml',
+            content: pet
+          },
+          {
+            path: '/path.yaml',
+            content: path
+          },
+          {
+            path: '/cat.yaml',
+            content: cat
+          }
+        ],
+        options: { includeReferenceMap: true },
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].referenceMap).to.deep.equal(expected);
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expectedBundled);
+  });
+
+  it('Should return bundled file - referenced-components', async function () {
+    let contentRootFile = fs.readFileSync(referencedComponents + '/root.yaml', 'utf8'),
+      components = fs.readFileSync(referencedComponents + '/components.yaml', 'utf8'),
+      responses = fs.readFileSync(referencedComponents + '/responses.yaml', 'utf8'),
+      schemas = fs.readFileSync(referencedComponents + '/schemas.yaml', 'utf8'),
+      schemaA = fs.readFileSync(referencedComponents + '/schemaA.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedComponents + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/components.yaml',
+            content: components
+          },
+          {
+            path: '/responses.yaml',
+            content: responses
+          },
+          {
+            path: '/schemas.yaml',
+            content: schemas
+          },
+          {
+            path: '/schemaA.yaml',
+            content: schemaA
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file with referenced paths from roots', async function () {
+    let contentRootFile = fs.readFileSync(referencedPathSchema + '/index.yml', 'utf8'),
+      paths = fs.readFileSync(referencedPathSchema + '/paths.yml', 'utf8'),
+      errorResponse = fs.readFileSync(referencedPathSchema + '/ErrorResponse.yml', 'utf8'),
+      geolocationResponse = fs.readFileSync(referencedPathSchema + '/GeolocationResponse.yml', 'utf8'),
+      geolocationRequest = fs.readFileSync(referencedPathSchema + '/GeolocationRequest.yml', 'utf8'),
+      geolocate = fs.readFileSync(referencedPathSchema + '/geolocate.yml', 'utf8'),
+      expectedMap = {
+        '#/paths': {
+          path: '/paths.yml',
+          type: 'inline'
+        },
+        '#/paths//geolocation/v1/geolocate/post': {
+          path: '/geolocate.yml',
+          type: 'inline'
+        },
+        '#/components/schemas/_GeolocationRequest.yml': {
+          path: '/GeolocationRequest.yml',
+          type: 'component'
+        },
+        '#/components/schemas/_GeolocationResponse.yml': {
+          path: '/GeolocationResponse.yml',
+          type: 'component'
+        },
+        '#/components/schemas/_ErrorResponse.yml': {
+          path: '/ErrorResponse.yml',
+          type: 'component'
+        },
+        '#/components/schemas/_CellTower.yml': {
+          path: '/CellTower.yml',
+          type: 'component'
+        }
+      },
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/index.yml'
+          }
+        ],
+        data: [
+          {
+            path: '/index.yml',
+            content: contentRootFile
+          },
+          {
+            path: '/paths.yml',
+            content: paths
+          },
+          {
+            path: '/ErrorResponse.yml',
+            content: errorResponse
+          },
+          {
+            path: '/GeolocationResponse.yml',
+            content: geolocationResponse
+          },
+          {
+            path: '/GeolocationRequest.yml',
+            content: geolocationRequest
+          },
+          {
+            path: '/geolocate.yml',
+            content: geolocate
+          }
+        ],
+        options: { includeReferenceMap: true },
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.data[0].referenceMap).to.deep.equal(expectedMap);
+  });
+
+  it('Should return bundled file - example_schema', async function () {
+    let contentRootFile = fs.readFileSync(exampleValue + '/root.yml', 'utf8'),
+      example = fs.readFileSync(exampleValue + '/example_value.yml', 'utf8'),
+      expected = fs.readFileSync(exampleValue + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yml',
+            content: contentRootFile
+          },
+          {
+            path: '/example_value.yml',
+            content: example
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should resolve examples correctly', async function () {
+    let contentRootFile = fs.readFileSync(example2 + '/another.yml', 'utf8'),
+      example = fs.readFileSync(example2 + '/example2.yaml', 'utf8'),
+      expected = fs.readFileSync(example2 + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/another.yml'
+          }
+        ],
+        data: [
+          {
+            path: '/another.yml',
+            content: contentRootFile
+          },
+          {
+            path: '/example2.yaml',
+            content: example
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should resolve circular reference in schema correctly', async function () {
+    let contentRootFile = fs.readFileSync(schemaCircularRef + '/root.yaml', 'utf8'),
+      schema = fs.readFileSync(schemaCircularRef + '/schemas/schemas.yaml', 'utf8'),
+      expected = fs.readFileSync(schemaCircularRef + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/schemas/schemas.yaml',
+            content: schema
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should resolve circular reference in schema correctly resolved inline', async function () {
+    let contentRootFile = fs.readFileSync(schemaCircularRefInline + '/root.yaml', 'utf8'),
+      schema = fs.readFileSync(schemaCircularRefInline + '/schemas/schemas.yaml', 'utf8'),
+      expected = fs.readFileSync(schemaCircularRefInline + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/schemas/schemas.yaml',
+            content: schema
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
   it('Should bundle and resolve remote references', async function() {
     let contentRoot = fs.readFileSync(swaggerRemoteRef, 'utf8'),
       expected = fs.readFileSync(remoteBundleExpected, 'utf8'),
@@ -2373,7 +2841,8 @@ describe('getReferences method when node does not have any reference', function(
         '3.0',
         {},
         '',
-        []
+        [],
+        {}
       );
     expect(result.nodeReferenceDirectory).to.be.an('object');
     expect(Object.keys(result.nodeReferenceDirectory).length).to.equal(1);

@@ -1,0 +1,96 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Platform API",
+    "description": "[ Platform](https://server.dev) provides functionality to provide access to content stored within. It provides endpoints for basic manipulation of files and folder.",
+    "termsOfService": "https://server.com/s",
+    "contact": {
+      "name": "nc",
+      "url": "https://server.dev",
+      "email": "dev@server.com"
+    },
+    "license": {
+      "name": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "version": "2.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://server.com/2.0",
+      "description": "Platform API server"
+    }
+  ],
+  "paths": {
+    "/files": {
+      "get": {
+        "operationId": "get_Files",
+        "summary": "List files ",
+        "tags": [
+          "Skills"
+        ],
+        "description": "List the files.",
+        "parameters": [
+          {
+            "name": "file_id",
+            "description": "The unique identifier",
+            "example": "12345",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns all the data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/File"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "File": {
+        "title": "File",
+        "type": "object",
+        "description": "A mini representation of a file",
+        "required": [
+          "id"
+        ],
+        "allOf": [
+          {
+            "properties": {
+              "id": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "example": "3",
+                    "nullable": false,
+                    "description": "A numeric identifier"
+                  },
+                  {
+                    "nullable": false
+                  }
+                ]
+              },
+              "name": {
+                "type": "string",
+                "description": "The name of the file",
+                "example": "Contract.pdf"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

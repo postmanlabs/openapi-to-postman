@@ -691,13 +691,22 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
     it('should work for example', function() {
       var bodyWithExample = {
+          example: 'This is a sample value'
+        },
+        retValExample = SchemaUtils.convertToPmBodyData(bodyWithExample, 'application/json');
+
+      expect(retValExample).to.equal('This is a sample value');
+    });
+
+    it('should work for example with value property', function() {
+      var bodyWithExample = {
           example: {
             value: 'This is a sample value'
           }
         },
         retValExample = SchemaUtils.convertToPmBodyData(bodyWithExample, 'application/json');
 
-      expect(retValExample).to.equal('This is a sample value');
+      expect(retValExample.value).to.equal('This is a sample value');
     });
 
     it('should work for examples', function() {
@@ -1655,7 +1664,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
                   examples: {
                     xml: {
                       summary: 'A list containing two items',
-                      value: 'text/plain description'
+                      value: '<AnXMLObject>test</AnXMLObject>'
                     }
                   }
                 }
@@ -1666,7 +1675,9 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             exampleParametersResolution: 'example'
           });
           resultBody = (result.body.raw);
-          expect(resultBody).to.equal('"text/plain description"');
+          expect(resultBody).to.equal(
+            '<?xml version="1.0" encoding="UTF-8"?>\n<AnXMLObject>test</AnXMLObject>'
+          );
           expect(result.contentHeader).to.deep.include(
             { key: 'Content-Type', value: 'text/xml' });
           expect(result.body.options.raw.language).to.equal('xml');
@@ -1678,10 +1689,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
               description: 'body description',
               content: {
                 'text/plain': {
-                  example: {
-                    summary: 'A list containing two items',
-                    value: 'text/plain description'
-                  }
+                  example: 'text/plain description'
                 }
               }
             },
@@ -1690,7 +1698,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             exampleParametersResolution: 'example'
           });
           resultBody = result.body.raw;
-          expect(resultBody).to.equal('"text/plain description"');
+          expect(resultBody)
+            .to.equal('text/plain description');
           expect(result.contentHeader).to.deep.include(
             { key: 'Content-Type', value: 'text/plain' });
           done();
@@ -1701,10 +1710,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
               description: 'body description',
               content: {
                 'text/html': {
-                  example: {
-                    summary: 'A list containing two items',
-                    value: '<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>'
-                  }
+                  example: '<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>'
                 }
               }
             },
@@ -1713,7 +1719,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             exampleParametersResolution: 'example'
           });
           resultBody = (result.body.raw);
-          expect(resultBody).to.equal('"<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>"');
+          expect(resultBody).to.equal('<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>');
           expect(result.contentHeader).to.deep.include(
             { key: 'Content-Type', value: 'text/html' });
           done();
@@ -1835,7 +1841,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
                 examples: {
                   xml: {
                     summary: 'A list containing two items',
-                    value: 'text/plain description'
+                    value: '<AnXMLObject>test</AnXMLObject>'
                   }
                 }
               }
@@ -1846,7 +1852,9 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           requestParametersResolution: 'example'
         });
         resultBody = (result.body.raw);
-        expect(resultBody).to.equal('"text/plain description"');
+        expect(resultBody).to.equal(
+          '<?xml version="1.0" encoding="UTF-8"?>\n<AnXMLObject>test</AnXMLObject>'
+        );
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/xml' });
         expect(result.body.options.raw.language).to.equal('xml');
@@ -1857,17 +1865,14 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             description: 'body description',
             content: {
               'text/plain': {
-                example: {
-                  summary: 'A list containing two items',
-                  value: 'text/plain description'
-                }
+                example: 'text/plain description'
               }
             }
           },
           result, resultBody;
         result = SchemaUtils.convertToPmBody(requestBody);
         resultBody = result.body.raw;
-        expect(resultBody).to.equal('"text/plain description"');
+        expect(resultBody).to.equal('text/plain description');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/plain' });
         done();
@@ -1877,17 +1882,14 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             description: 'body description',
             content: {
               'text/html': {
-                example: {
-                  summary: 'A list containing two items',
-                  value: '<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>'
-                }
+                example: '<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>'
               }
             }
           },
           result, resultBody;
         result = SchemaUtils.convertToPmBody(requestBody);
         resultBody = (result.body.raw);
-        expect(resultBody).to.equal('"<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>"');
+        expect(resultBody).to.equal('<html><body><ul><li>item 1</li><li>item 2</li></ul></body></html>');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'text/html' });
         done();
@@ -2954,4 +2956,210 @@ describe('findCommonSubpath method', function () {
     expect(result).to.equal('');
   });
 
+});
+
+describe('getAuthHelper method - OAuth2 Flows', function() {
+  it('Should parse OAuth2 configuration to collection (Single Flow) - Type 1', function() {
+    const openAPISpec = {
+        'components': {
+          'responses': {},
+          'schemas': {},
+          'securitySchemes': {
+            'oauth2': {
+              'flows': {
+                'clientCredentials': {
+                  'scopes': {},
+                  'tokenUrl': 'https://example.com/oauth2/token'
+                }
+              },
+              'type': 'oauth2'
+            }
+          }
+        },
+        'info': {
+          'title': 'API',
+          'version': '0.2'
+        },
+        'openapi': '3.0.0',
+        'paths': {},
+        'security': [
+          {
+            'oauth2': []
+          }
+        ],
+        'servers': [
+          {
+            'url': 'https://example.com',
+            'variables': {}
+          }
+        ],
+        'tags': [],
+        'securityDefs': {
+          'oauth2': {
+            'flows': {
+              'clientCredentials': {
+                'scopes': {},
+                'tokenUrl': 'https://example.com/oauth2/token'
+              }
+            },
+            'type': 'oauth2'
+          }
+        },
+        'baseUrl': 'https://example.com',
+        'baseUrlVariables': {}
+      },
+      securitySet = [{ oauth2: [] }],
+      helperData = SchemaUtils.getAuthHelper(openAPISpec, securitySet);
+
+    expect(helperData.type).to.be.equal('oauth2');
+    expect(helperData).to.have.property('oauth2').with.lengthOf(2);
+    expect(helperData.oauth2[0]).to.be.an('object');
+    expect(helperData).to.deep.equal({
+      type: 'oauth2',
+      oauth2: [
+        {
+          key: 'accessTokenUrl',
+          value: 'https://example.com/oauth2/token'
+        },
+        { key: 'grant_type', value: 'client_credentials' }
+      ]
+    });
+  });
+
+  it('Should parse OAuth2 configuration to collection (Multiple Flow types)- Type 2', function() {
+    const openAPISpec = {
+        components: {
+          responses: {},
+          schemas: {},
+          securitySchemes: {
+            oauth2: {
+              type: 'oauth2',
+              flows: {
+                implicit: {
+                  authorizationUrl: 'https://example.com/api/oauth/dialog',
+                  scopes: {
+                    'write:pets': 'modify pets in your account',
+                    'read:pets': 'read your pets'
+                  }
+                },
+                authorizationCode: {
+                  authorizationUrl: 'https://example.com/api/oauth/dialog',
+                  tokenUrl: 'https://example.com/api/oauth/token',
+                  scopes: {
+                    'write:pets': 'modify pets in your account',
+                    'read:pets': 'read your pets'
+                  }
+                }
+              }
+            }
+          }
+        },
+        info: { title: 'API', version: '0.2' },
+        openapi: '3.0.0',
+        paths: {},
+        security: [{ oauth2: [] }],
+        servers: [{ url: 'https://myserver.com', variables: {} }],
+        tags: [],
+        securityDefs: {
+          oauth2: {
+            type: 'oauth2',
+            flows: {
+              implicit: {
+                authorizationUrl: 'https://example.com/api/oauth/dialog',
+                scopes: {
+                  'write:pets': 'modify pets in your account',
+                  'read:pets': 'read your pets'
+                }
+              },
+              authorizationCode: {
+                authorizationUrl: 'https://example.com/api/oauth/dialog',
+                tokenUrl: 'https://example.com/api/oauth/token',
+                scopes: {
+                  'write:pets': 'modify pets in your account',
+                  'read:pets': 'read your pets'
+                }
+              }
+            }
+          }
+        },
+        baseUrl: 'https://myserver.com',
+        baseUrlVariables: {}
+      },
+      securitySet = [{ oauth2: [] }],
+      helperData = SchemaUtils.getAuthHelper(openAPISpec, securitySet);
+
+    expect(helperData.type).to.be.equal('oauth2');
+    expect(helperData).to.have.property('oauth2').with.lengthOf(3);
+    expect(helperData.oauth2[0]).to.be.an('object');
+    expect(helperData).to.deep.equal({
+      'type': 'oauth2',
+      'oauth2': [
+        {
+          'key': 'scope',
+          'value': 'write:pets read:pets'
+        },
+        {
+          'key': 'authUrl',
+          'value': 'https://example.com/api/oauth/dialog'
+        },
+        {
+          'key': 'grant_type',
+          'value': 'implicit'
+        }
+      ]
+    });
+  });
+
+  it('Scopes are parsed as sequence of strings', function() {
+    const openAPISpec = {
+        components: {
+          responses: {},
+          schemas: {},
+          securitySchemes: {
+            oauth2: {
+              type: 'oauth2',
+              flows: {
+                implicit: {
+                  authorizationUrl: 'https://example.com/api/oauth/dialog',
+                  scopes: {
+                    'write:pets': 'modify pets in your account',
+                    'read:pets': 'read your pets'
+                  }
+                }
+              }
+            }
+          }
+        },
+        info: { title: 'API', version: '0.2' },
+        openapi: '3.0.0',
+        paths: {},
+        security: [{ oauth2: [] }],
+        servers: [{ url: 'https://myserver.com', variables: {} }],
+        tags: [],
+        securityDefs: {
+          oauth2: {
+            type: 'oauth2',
+            flows: {
+              implicit: {
+                authorizationUrl: 'https://example.com/api/oauth/dialog',
+                scopes: {
+                  'write:pets': 'modify pets in your account',
+                  'read:pets': 'read your pets'
+                }
+              }
+            }
+          }
+        },
+        baseUrl: 'https://myserver.com',
+        baseUrlVariables: {}
+      },
+      securitySet = [{ oauth2: [] }],
+      helperData = SchemaUtils.getAuthHelper(openAPISpec, securitySet);
+
+    expect(helperData.type).to.be.equal('oauth2');
+    expect(helperData).to.have.property('oauth2').with.lengthOf(3);
+    expect(helperData.oauth2[0]).to.be.an('object');
+    expect(helperData.oauth2[0].key).to.be.equal('scope');
+    expect(helperData.oauth2[0].value).to.be.equal('write:pets read:pets');
+  });
 });

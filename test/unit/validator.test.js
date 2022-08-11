@@ -64,8 +64,48 @@ function getFoldersByVersion(folder30Path, folder31Path) {
   }];
 }
 
+describe('Validate with servers', function () {
+
+  it('Fix for GITHUB#496: Should identify url with fragment', function () {
+    const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/explicit_server_in_path.json'),
+      openAPIData = fs.readFileSync(openAPI, 'utf8'),
+      options = {
+        requestParametersResolution: 'Example',
+        exampleParametersResolution: 'Example',
+        showMissingInSchemaErrors: true,
+        strictRequestMatching: true,
+        ignoreUnresolvedVariables: true,
+        validateMetadata: true,
+        suggestAvailableFixes: true,
+        detailedBlobValidation: false
+      },
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
+    schemaPack.convert((err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      let historyRequest = [];
+
+      getAllTransactions(conversionResult.output[0].data, historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        let requestIds = Object.keys(result.requests);
+        expect(err).to.be.null;
+        expect(result.missingEndpoints.length).to.eq(0);
+        requestIds.forEach((requestId) => {
+          expect(result.requests[requestId].endpoints[0]).to.not.be.undefined;
+          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
+        });
+      });
+    });
+  });
+});
 
 describe('Validation with different resolution parameters options', function () {
+
   it('Should validate correctly with request and example parameters as Schema', function () {
     let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
         '/issue#479_2.yaml'), 'utf8'),
@@ -1271,6 +1311,32 @@ describe('VALIDATE FUNCTION TESTS ', function () {
     });
   });
 
+  it('Should report a mismatch when the response body is not valid', function (done) {
+    let allOfExample = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+      '/invalid_response_body_all_of_properties_spec.json'), 'utf-8'),
+      allOfCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+        '/invalid_response_body_all_of_properties_collection.json'), 'utf-8'),
+      historyRequest = [],
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: allOfExample },
+        { suggestAvailableFixes: true, showMissingInSchemaErrors: true });
+
+    getAllTransactions(JSON.parse(allOfCollection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      const requestId = historyRequest[0].id,
+        request = result.requests[requestId],
+        responseId = historyRequest[0].response[0].id,
+        response = request.endpoints[0].responses[responseId];
+      expect(err).to.be.null;
+      expect(request.endpoints[0].matched).to.equal(false);
+      expect(response.matched).to.equal(false);
+      expect(response.mismatches).to.have.length(1);
+      expect(response.mismatches[0].reason)
+        .to.equal('The response body didn\'t match the specified schema');
+      done();
+    });
+  });
+
   describe('findMatchingRequestFromSchema function', function () {
     it('#GITHUB-9396 Should maintain correct order of matched endpoint', function (done) {
       let schema = {
@@ -1306,6 +1372,313 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       expect(result[0].name).to.eql('GET /{jobid}');
       expect(result[1].name).to.eql('GET /lookups');
       done();
+    });
+  });
+});
+
+describe('validateTransaction method. Path variables matching validation (issue #478)', function() {
+  it('Should validate correctly while a path param in spec does not matches with collection' +
+  ' (issue#478)', function(done) {
+    let issueFolder = path.join(__dirname, VALIDATION_DATA_FOLDER_PATH + '/issues/issue#478'),
+      issueSpec = fs.readFileSync(issueFolder + '/path-variable-does-not-match-spec.yaml', 'utf-8'),
+      issueCollection = fs.readFileSync(issueFolder + '/path-variable-does-not-match-collection.json', 'utf-8'),
+      resultObj,
+      historyRequest = [],
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: issueSpec }, { allowUrlPathVarMatching: false });
+
+    getAllTransactions(JSON.parse(issueCollection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+      resultObj = result.requests[historyRequest[0].id].endpoints[0];
+      expect(resultObj.mismatches).to.have.length(1);
+      expect(resultObj.mismatches[0].reasonCode).to.be.equal('MISSING_IN_REQUEST');
+      expect(resultObj.mismatches[0].reason).to.be.equal(
+        'The petId path variable does not match with path variable expected (peterId)' +
+        ' in the schema at this position'
+      );
+      done();
+    });
+  });
+
+  it('Should validate correctly while a path param in spec does not matches with collection' +
+  ' (issue#478), allowUrlPathVarMatching: true', function(done) {
+    let issueFolder = path.join(__dirname, VALIDATION_DATA_FOLDER_PATH + '/issues/issue#478'),
+      issueSpec = fs.readFileSync(issueFolder + '/path-variable-does-not-match-spec.yaml', 'utf-8'),
+      issueCollection = fs.readFileSync(issueFolder + '/path-variable-does-not-match-collection.json', 'utf-8'),
+      resultObj,
+      historyRequest = [],
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: issueSpec }, { allowUrlPathVarMatching: true });
+
+    getAllTransactions(JSON.parse(issueCollection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+      resultObj = result.requests[historyRequest[0].id].endpoints[0];
+      expect(resultObj.mismatches).to.have.length(0);
+      done();
+    });
+  });
+
+  it('Should validate correctly when a path param in spec does not matches with collection ' +
+    'and there are path variables in local servers object (issue#478)', function(done) {
+    let issueFolder = path.join(__dirname, VALIDATION_DATA_FOLDER_PATH + '/issues/issue#478'),
+      issueSpec = fs.readFileSync(issueFolder + '/local-servers-path-variables-spec.yaml', 'utf-8'),
+      issueCollection = fs.readFileSync(issueFolder + '/local-servers-path-variables-collection.json', 'utf-8'),
+      resultObj,
+      historyRequest = [],
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: issueSpec }, { allowUrlPathVarMatching: false });
+
+    getAllTransactions(JSON.parse(issueCollection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+      resultObj = result.requests[historyRequest[0].id].endpoints[0];
+      expect(resultObj.mismatches).to.have.length(1);
+      expect(resultObj.mismatches[0].reason).to.equal(
+        'The petId path variable does not match with path variable expected (peterId)' +
+        ' in the schema at this position'
+      );
+      expect(resultObj.mismatches[0].reasonCode).to.equal('MISSING_IN_REQUEST');
+      done();
+    });
+  });
+
+  it('Should validate correctly when a path param in spec does not matches with collection ' +
+    'and there are path variables in global servers object (issue#478)', function(done) {
+    let issueFolder = path.join(__dirname, VALIDATION_DATA_FOLDER_PATH + '/issues/issue#478'),
+      issueSpec = fs.readFileSync(issueFolder + '/global-servers-path-variables-spec.yaml', 'utf-8'),
+      issueCollection = fs.readFileSync(issueFolder + '/global-servers-path-variables-collection.json', 'utf-8'),
+      resultObj,
+      historyRequest = [],
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: issueSpec }, { allowUrlPathVarMatching: false });
+
+    getAllTransactions(JSON.parse(issueCollection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+      resultObj = result.requests[historyRequest[0].id].endpoints[0];
+      expect(resultObj.mismatches).to.have.length(1);
+      expect(resultObj.mismatches[0].reason).to.equal(
+        'The petId path variable does not match with path variable expected (peterId)' +
+        ' in the schema at this position'
+      );
+      expect(resultObj.mismatches[0].reasonCode).to.equal('MISSING_IN_REQUEST');
+      done();
+    });
+  });
+
+  it('Should validate correctly when a path param in spec does not matches with collection ' +
+    'and there are path variables in global servers object (issue#478), suggestAvailableFixes: true', function(done) {
+    let issueFolder = path.join(__dirname, VALIDATION_DATA_FOLDER_PATH + '/issues/issue#478'),
+      issueSpec = fs.readFileSync(issueFolder + '/global-servers-path-variables-spec.yaml', 'utf-8'),
+      issueCollection = fs.readFileSync(issueFolder + '/global-servers-path-variables-collection.json', 'utf-8'),
+      resultObj,
+      historyRequest = [],
+      schemaPack = new Converter.SchemaPack(
+        { type: 'string', data: issueSpec },
+        { allowUrlPathVarMatching: false, suggestAvailableFixes: true });
+
+    getAllTransactions(JSON.parse(issueCollection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+      resultObj = result.requests[historyRequest[0].id].endpoints[0];
+      expect(resultObj.mismatches).to.have.length(1);
+      expect(resultObj.mismatches[0].reason).to.equal(
+        'The petId path variable does not match with path variable expected (peterId)' +
+        ' in the schema at this position'
+      );
+      expect(resultObj.mismatches[0].reasonCode).to.equal('MISSING_IN_REQUEST');
+      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
+      expect(resultObj.mismatches[0].suggestedFix.actualValue.key).to.be.equal('petId');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue.key).to.be.equal('peterId');
+      expect(resultObj.mismatches[0].suggestedFix.key).to.be.equal('peterId');
+      done();
+    });
+  });
+
+  it('Should validate correctly when two path params in spec does not matches with collection ' +
+    'and there are path variables in global servers object (issue#478), suggestAvailableFixes: true', function(done) {
+    let issueFolder = path.join(__dirname, VALIDATION_DATA_FOLDER_PATH + '/issues/issue#478'),
+      issueSpec = fs.readFileSync(
+        issueFolder + '/global-servers-path-variables-two-vars-wrong-spec.yaml', 'utf-8'
+      ),
+      issueCollection = fs.readFileSync(
+        issueFolder + '/global-servers-path-variables-two-vars-wrong-collection.json', 'utf-8'
+      ),
+      resultObj,
+      historyRequest = [],
+      schemaPack = new Converter.SchemaPack(
+        { type: 'string', data: issueSpec },
+        { allowUrlPathVarMatching: false, suggestAvailableFixes: true });
+
+    getAllTransactions(JSON.parse(issueCollection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+      resultObj = result.requests[historyRequest[0].id].endpoints[0];
+      expect(resultObj.mismatches).to.have.length(2);
+      expect(resultObj.mismatches[0].reason).to.equal(
+        'The petId path variable does not match with path variable expected (peterId)' +
+        ' in the schema at this position'
+      );
+      expect(resultObj.mismatches[0].reasonCode).to.equal('MISSING_IN_REQUEST');
+      expect(resultObj.mismatches[1].reason).to.equal(
+        'The wrongNamedId path variable does not match with path variable expected (correctName)' +
+        ' in the schema at this position'
+      );
+      expect(resultObj.mismatches[1].reasonCode).to.equal('MISSING_IN_REQUEST');
+
+      expect(resultObj.mismatches[0].suggestedFix.actualValue.key).to.be.equal('petId');
+      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue.key).to.be.equal('peterId');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
+      expect(resultObj.mismatches[0].suggestedFix.key).to.be.equal('peterId');
+
+      expect(resultObj.mismatches[1].suggestedFix.actualValue.key).to.be.equal('wrongNamedId');
+      expect(resultObj.mismatches[1].suggestedFix.actualValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
+      expect(resultObj.mismatches[1].suggestedFix.suggestedValue.key).to.be.equal('correctName');
+      expect(resultObj.mismatches[1].suggestedFix.suggestedValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
+      expect(resultObj.mismatches[1].suggestedFix.key).to.be.equal('correctName');
+      done();
+    });
+  });
+
+  it('Should validate correctly when one path param in spec does not matches with collection ' +
+    ', global servers and one path var is not provided (issue#478), suggestAvailableFixes: true', function(done) {
+    let issueFolder = path.join(__dirname, VALIDATION_DATA_FOLDER_PATH + '/issues/issue#478'),
+      issueSpec = fs.readFileSync(
+        issueFolder + '/global-servers-path-variables-two-vars-missing-one-spec.yaml', 'utf-8'
+      ),
+      issueCollection = fs.readFileSync(
+        issueFolder + '/global-servers-path-variables-two-vars-missing-one-collection.json', 'utf-8'
+      ),
+      resultObj,
+      historyRequest = [],
+      schemaPack = new Converter.SchemaPack(
+        { type: 'string', data: issueSpec },
+        { allowUrlPathVarMatching: false, suggestAvailableFixes: true });
+
+    getAllTransactions(JSON.parse(issueCollection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+      resultObj = result.requests[historyRequest[0].id].endpoints[0];
+      expect(resultObj.mismatches).to.have.length(2);
+      expect(resultObj.mismatches[0].reason).to.equal(
+        'The petId path variable does not match with path variable expected (peterId)' +
+        ' in the schema at this position'
+      );
+      expect(resultObj.mismatches[0].reasonCode).to.equal('MISSING_IN_REQUEST');
+      expect(resultObj.mismatches[1].reason).to.equal(
+        'The required path variable "correctName" was not found in the transaction'
+      );
+      expect(resultObj.mismatches[1].reasonCode).to.equal('MISSING_IN_REQUEST');
+
+      expect(resultObj.mismatches[0].suggestedFix.actualValue.key).to.be.equal('petId');
+      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue.key).to.be.equal('peterId');
+      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.be.an('object')
+        .to.have.all.keys('key', 'value', 'description');
+      expect(resultObj.mismatches[0].suggestedFix.key).to.be.equal('peterId');
+
+      expect(resultObj.mismatches[1].suggestedFix.actualValue).to.be.equal(null);
+      expect(resultObj.mismatches[1].suggestedFix.suggestedValue).to.be.an('object')
+        .to.include.keys(['description', 'key', 'value']);
+      expect(resultObj.mismatches[1].suggestedFix.key).to.be.equal('correctName');
+      done();
+    });
+  });
+
+  it('Should validate correctly when one path param in spec does not matches with collection ' +
+    ', global servers and one path var is not provided (issue#478), ' +
+    'suggestAvailableFixes: true, allowUrlPathVarMatching: true', function(done) {
+    let issueFolder = path.join(__dirname, VALIDATION_DATA_FOLDER_PATH + '/issues/issue#478'),
+      issueSpec = fs.readFileSync(
+        issueFolder + '/global-servers-path-variables-two-vars-missing-one-spec.yaml', 'utf-8'
+      ),
+      issueCollection = fs.readFileSync(
+        issueFolder + '/global-servers-path-variables-two-vars-missing-one-collection.json', 'utf-8'
+      ),
+      resultObj,
+      historyRequest = [],
+      schemaPack = new Converter.SchemaPack(
+        { type: 'string', data: issueSpec },
+        { allowUrlPathVarMatching: true, suggestAvailableFixes: true });
+
+    getAllTransactions(JSON.parse(issueCollection), historyRequest);
+
+    schemaPack.validateTransaction(historyRequest, (err, result) => {
+      // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+      resultObj = result.requests[historyRequest[0].id].endpoints[0];
+      expect(resultObj.mismatches).to.have.length(0);
+      done();
+    });
+  });
+});
+
+describe('validateTransaction convert and validate schemas with allOf', function () {
+  it('Should convert and validate allOf properties for string schema', function () {
+    const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/all_of_property.json'),
+      openAPIData = fs.readFileSync(openAPI, 'utf8'),
+      expectedRequestBody = '{\n  "id": "3",\n  "name": "Contract.pdf"\n}',
+      options = {
+        requestParametersResolution: 'Example',
+        exampleParametersResolution: 'Example',
+        showMissingInSchemaErrors: true,
+        strictRequestMatching: true,
+        ignoreUnresolvedVariables: true,
+        validateMetadata: true,
+        suggestAvailableFixes: true,
+        detailedBlobValidation: false
+      },
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
+    schemaPack.convert((err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(conversionResult.output[0].data.item[0].response[0].body).to.equal(expectedRequestBody);
+
+      let historyRequest = [];
+
+      getAllTransactions(conversionResult.output[0].data, historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        let requestIds = Object.keys(result.requests);
+        expect(err).to.be.null;
+        expect(result.missingEndpoints.length).to.eq(0);
+        requestIds.forEach((requestId) => {
+          expect(result.requests[requestId].endpoints[0]).to.not.be.undefined;
+          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
+        });
+      });
     });
   });
 });

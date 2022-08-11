@@ -1,5 +1,38 @@
 # OpenAPI-Postman Changelog
 
+#### v4.2.0 (August 10, 2022)
+* Improved the way to detect a circular reference by adding a new condition
+* A schema that comes from an allOf parent then we now return the same schema instead of defaulting to a schema with type as object, and no other properties
+* The method resolveAllOf is executed when the current node is an allOf element.
+* Avoiding to set type as object when property's schema is an empty object.
+* Added OAuth2 flows and configuration support.
+* OAuth2 values now default to variables instead of hardcoded strings.
+
+#### v4.1.1 (July 29, 2022)
+* Replaced Object.hasOwnProperty usages with loadsh _.has for safe access.
+
+#### v4.1.0 (July 20, 2022)
+* Fixed issue where conversion was failing for definitions with info object as null.
+* Fixed issue where generated collection did not have correct examples value from XML type of content.
+* Fixed issue [#518](https://github.com/postmanlabs/openapi-to-postman/issues/518) where generated collection were having NaN as value for integer query params with enum values.
+* Fixed issue [#496](https://github.com/postmanlabs/openapi-to-postman/issues/496) where validateTransactions() was returning missing endpoints even though corresponding requests are present in collection.
+* Fixed issue [#478](https://github.com/postmanlabs/openapi-to-postman/issues/478) where updation of path parameter in collection resulted in MISSING_IN_REQUEST error.
+* Fixed issue [#559](https://github.com/postmanlabs/openapi-to-postman/issues/559) where parameter description was undefined for formdata type of content even if defined.
+* Fixed issue where bundle() API didn't handle circular references correctly.
+* Added non-required files to be published as npm module in .npmignore
+* Fixed issue where disableBodyPruning option was not set for requests with no request body.
+
+#### v4.0.0 (July 12, 2022)
+* Added support for new multi-file API detectRootFiles() for OpenAPI 3 and Swagger 2 formats to support detection of root files among multiple files.
+* Added support for new multi-file API detectRelatedFiles() for OpenAPI 3 and Swagger 2 formats to support detection of related files for a provided root file amongst multiple files.
+* Added support for new multi-file API bundle() for OpenAPI 3 and Swagger 2 formats to support bundling of root files from provided multiple files.
+
+#### v3.2.0 (May 02, 2022)
+* Fixed some of critical and high level severity vulnerabilities.
+* Fixed issue [#10752](https://github.com/postmanlabs/postman-app-support/issues/10752) where deepObject style parameters were not generated correctly.
+* Fixed issue [#485](https://github.com/postmanlabs/openapi-to-postman/issues/485) where validateTransaction() returns result where mismatch path for transaction are incorrect.
+* Fixed issue [#485](https://github.com/postmanlabs/openapi-to-postman/issues/485) where validateTransaction() returns result where mismatch path for transaction are incorrect.
+
 #### v3.1.0 (March 04, 2022)
 * Removed usage of schema resolution cache to avoid incorrect resolution.
 * Fixed issue where newly converted collection had mismatches from validateTransaction() API.
