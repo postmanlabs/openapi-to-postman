@@ -2957,3 +2957,209 @@ describe('findCommonSubpath method', function () {
   });
 
 });
+
+describe('getAuthHelper method - OAuth2 Flows', function() {
+  it('Should parse OAuth2 configuration to collection (Single Flow) - Type 1', function() {
+    const openAPISpec = {
+        'components': {
+          'responses': {},
+          'schemas': {},
+          'securitySchemes': {
+            'oauth2': {
+              'flows': {
+                'clientCredentials': {
+                  'scopes': {},
+                  'tokenUrl': 'https://example.com/oauth2/token'
+                }
+              },
+              'type': 'oauth2'
+            }
+          }
+        },
+        'info': {
+          'title': 'API',
+          'version': '0.2'
+        },
+        'openapi': '3.0.0',
+        'paths': {},
+        'security': [
+          {
+            'oauth2': []
+          }
+        ],
+        'servers': [
+          {
+            'url': 'https://example.com',
+            'variables': {}
+          }
+        ],
+        'tags': [],
+        'securityDefs': {
+          'oauth2': {
+            'flows': {
+              'clientCredentials': {
+                'scopes': {},
+                'tokenUrl': 'https://example.com/oauth2/token'
+              }
+            },
+            'type': 'oauth2'
+          }
+        },
+        'baseUrl': 'https://example.com',
+        'baseUrlVariables': {}
+      },
+      securitySet = [{ oauth2: [] }],
+      helperData = SchemaUtils.getAuthHelper(openAPISpec, securitySet);
+
+    expect(helperData.type).to.be.equal('oauth2');
+    expect(helperData).to.have.property('oauth2').with.lengthOf(2);
+    expect(helperData.oauth2[0]).to.be.an('object');
+    expect(helperData).to.deep.equal({
+      type: 'oauth2',
+      oauth2: [
+        {
+          key: 'accessTokenUrl',
+          value: 'https://example.com/oauth2/token'
+        },
+        { key: 'grant_type', value: 'client_credentials' }
+      ]
+    });
+  });
+
+  it('Should parse OAuth2 configuration to collection (Multiple Flow types)- Type 2', function() {
+    const openAPISpec = {
+        components: {
+          responses: {},
+          schemas: {},
+          securitySchemes: {
+            oauth2: {
+              type: 'oauth2',
+              flows: {
+                implicit: {
+                  authorizationUrl: 'https://example.com/api/oauth/dialog',
+                  scopes: {
+                    'write:pets': 'modify pets in your account',
+                    'read:pets': 'read your pets'
+                  }
+                },
+                authorizationCode: {
+                  authorizationUrl: 'https://example.com/api/oauth/dialog',
+                  tokenUrl: 'https://example.com/api/oauth/token',
+                  scopes: {
+                    'write:pets': 'modify pets in your account',
+                    'read:pets': 'read your pets'
+                  }
+                }
+              }
+            }
+          }
+        },
+        info: { title: 'API', version: '0.2' },
+        openapi: '3.0.0',
+        paths: {},
+        security: [{ oauth2: [] }],
+        servers: [{ url: 'https://myserver.com', variables: {} }],
+        tags: [],
+        securityDefs: {
+          oauth2: {
+            type: 'oauth2',
+            flows: {
+              implicit: {
+                authorizationUrl: 'https://example.com/api/oauth/dialog',
+                scopes: {
+                  'write:pets': 'modify pets in your account',
+                  'read:pets': 'read your pets'
+                }
+              },
+              authorizationCode: {
+                authorizationUrl: 'https://example.com/api/oauth/dialog',
+                tokenUrl: 'https://example.com/api/oauth/token',
+                scopes: {
+                  'write:pets': 'modify pets in your account',
+                  'read:pets': 'read your pets'
+                }
+              }
+            }
+          }
+        },
+        baseUrl: 'https://myserver.com',
+        baseUrlVariables: {}
+      },
+      securitySet = [{ oauth2: [] }],
+      helperData = SchemaUtils.getAuthHelper(openAPISpec, securitySet);
+
+    expect(helperData.type).to.be.equal('oauth2');
+    expect(helperData).to.have.property('oauth2').with.lengthOf(3);
+    expect(helperData.oauth2[0]).to.be.an('object');
+    expect(helperData).to.deep.equal({
+      'type': 'oauth2',
+      'oauth2': [
+        {
+          'key': 'scope',
+          'value': 'write:pets read:pets'
+        },
+        {
+          'key': 'authUrl',
+          'value': 'https://example.com/api/oauth/dialog'
+        },
+        {
+          'key': 'grant_type',
+          'value': 'implicit'
+        }
+      ]
+    });
+  });
+
+  it('Scopes are parsed as sequence of strings', function() {
+    const openAPISpec = {
+        components: {
+          responses: {},
+          schemas: {},
+          securitySchemes: {
+            oauth2: {
+              type: 'oauth2',
+              flows: {
+                implicit: {
+                  authorizationUrl: 'https://example.com/api/oauth/dialog',
+                  scopes: {
+                    'write:pets': 'modify pets in your account',
+                    'read:pets': 'read your pets'
+                  }
+                }
+              }
+            }
+          }
+        },
+        info: { title: 'API', version: '0.2' },
+        openapi: '3.0.0',
+        paths: {},
+        security: [{ oauth2: [] }],
+        servers: [{ url: 'https://myserver.com', variables: {} }],
+        tags: [],
+        securityDefs: {
+          oauth2: {
+            type: 'oauth2',
+            flows: {
+              implicit: {
+                authorizationUrl: 'https://example.com/api/oauth/dialog',
+                scopes: {
+                  'write:pets': 'modify pets in your account',
+                  'read:pets': 'read your pets'
+                }
+              }
+            }
+          }
+        },
+        baseUrl: 'https://myserver.com',
+        baseUrlVariables: {}
+      },
+      securitySet = [{ oauth2: [] }],
+      helperData = SchemaUtils.getAuthHelper(openAPISpec, securitySet);
+
+    expect(helperData.type).to.be.equal('oauth2');
+    expect(helperData).to.have.property('oauth2').with.lengthOf(3);
+    expect(helperData.oauth2[0]).to.be.an('object');
+    expect(helperData.oauth2[0].key).to.be.equal('scope');
+    expect(helperData.oauth2[0].value).to.be.equal('write:pets read:pets');
+  });
+});

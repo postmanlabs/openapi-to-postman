@@ -1,0 +1,160 @@
+basePath: /api/v1
+definitions:
+  comm.TestGroupRequest:
+    properties:
+      groupNm:
+        type: string
+      user:
+        $ref: '#/definitions/user.User'
+    type: object
+  comm.TestGroupResponse:
+    properties:
+      groupCode:
+        type: integer
+    type: object
+  comm.TestRequest:
+    properties:
+      codeNm:
+        type: string
+      user:
+        $ref: '#/definitions/user.User'
+    type: object
+  comm.TestResponse:
+    properties:
+      testCode:
+        type: string
+      creDate:
+        type: string
+      creId:
+        type: string
+    type: object
+  comm.Request:
+    properties:
+      user:
+        $ref: '#/definitions/user.User'
+    type: object
+  pagination.Page:
+    properties:
+      limit:
+        type: integer
+      next_page:
+        type: integer
+      offset:
+        type: integer
+      page:
+        type: integer
+      prev_page:
+        type: integer
+      total_page:
+        type: integer
+      total_record:
+        type: integer
+    type: object
+  pagination.Paginator:
+    properties:
+      content: {}
+      paging:
+        $ref: '#/definitions/pagination.Page'
+    type: object
+  response.Header:
+    properties:
+      resultCode:
+        type: string
+      resultMessage:
+        type: string
+      success:
+        type: boolean
+    type: object
+  response.Response:
+    properties:
+      header:
+        $ref: '#/definitions/response.Header'
+      payload: {}
+    type: object
+  user.User:
+    properties:
+      userId:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: test
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: TEST API
+  version: "1.0"
+paths:
+  /comm/test/duplicate/{id}:
+    get:
+      consumes:
+      - application/json
+      description: duplicate check
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                payload:
+                  type: boolean
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: duplicate check
+      tags:
+      - test1
+  /comm/test/page:
+    get:
+      consumes:
+      - application/json
+      description: list (paging)
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: integer
+      - description: limit
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                payload:
+                  allOf:
+                  - $ref: '#/definitions/pagination.Paginator'
+                  - properties:
+                      content:
+                        items:
+                          $ref: '#/definitions/comm.TestResponse'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: list
+      tags:
+      - test2
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

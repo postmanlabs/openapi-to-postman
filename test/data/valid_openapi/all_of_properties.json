@@ -1,0 +1,89 @@
+{
+  "info": {
+    "title": "Inheritance test API",
+    "version": "v1.0"
+  },
+  "openapi": "3.0.1",
+  "paths": {
+    "/api/inheritancetest": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            },
+            "description": "The page data including metadata and content"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SpecificType": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ParentType"
+          },
+          {
+            "properties": {
+              "specificTypeData": {
+                "type": "string"
+              }
+            },
+            "required": ["specificTypeData"]
+          }
+        ]
+      },
+      "ParentType": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GrandParentType"
+          },
+          {
+            "properties": {
+              "parentTypeData": {
+                "type": "string"
+              }
+            },
+            "required": ["parentTypeData"]
+          }
+        ]
+      },
+      "GrandParentType": {
+        "properties": {
+          "grandParentTypeData": {
+            "type": "string"
+          }
+        },
+        "required": ["grandParentTypeData"]
+      },
+      "Page": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GrandParentType"
+          },
+          {
+            "properties": {
+              "specificType": {
+                "$ref": "#/components/schemas/SpecificType"
+              }
+            },
+            "required": ["specificType"]
+          }
+        ]
+      }
+    },
+    "securitySchemes": {
+      "basic": {
+        "description": "Basic HTTP Authentication",
+        "scheme": "basic",
+        "type": "http"
+      }
+    }
+  }
+}
