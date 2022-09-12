@@ -1,32 +1,19 @@
-const { validateSchema } = require('../../lib/ajValidation/ajvValidation.js');
-
 const _ = require('lodash'),
   expect = require('chai').expect,
-  schemaFaker = require('../../assets/json-schema-faker2.js'),
-  jsf = schemaFaker.default;
+  { validateSchema } = require('../../lib/ajValidation/ajvValidation.js'),
+  schemaFaker = require('../../assets/json-schema-faker-bundle.js');
 
-// define options used similar while faking in schemaUtils.safeSchemFaker()
-// jsf.option({
-//   requiredOnly: false,
-//   optionalsProbability: 1.0,
-//   minLength: 4,
-//   maxLength: 4,
-//   minItems: 1,
-//   maxItems: 20,
-//   useDefaultValue: true,
-//   useExamplesValue: true,
-//   ignoreMissingRefs: true,
-//   avoidExampleItemsLength: false
-// });
-
-jsf.option({
+schemaFaker.option({
   requiredOnly: false,
-  optionalsProbability: 1.0, // always add optional fields
+  optionalsProbability: 1.0,
+  minLength: 4,
   maxLength: 256,
+  minItems: 1,
+  maxItems: 20,
   useDefaultValue: true,
   useExamplesValue: true,
   ignoreMissingRefs: true,
-  avoidExampleItemsLength: false // option to avoid validating type array schema example's minItems and maxItems props.
+  avoidExampleItemsLength: false
 });
 
 describe('JSON SCHEMA FAKER TESTS', function () {
@@ -49,9 +36,9 @@ describe('JSON SCHEMA FAKER TESTS', function () {
     };
 
     it('Should use example with more than two elements for type array schema in faking. GitHub#9344', function () {
-      var fakedData = jsf.generate(schema);
+      var fakedData = schemaFaker.generate(schema);
 
-      jsf.option({ avoidExampleItemsLength: true });
+      schemaFaker.option({ avoidExampleItemsLength: true });
       expect(fakedData).to.deep.equal(schema.example);
     });
   });
@@ -67,7 +54,7 @@ describe('JSON SCHEMA FAKER TESTS', function () {
       }
     };
 
-    var fakedData = jsf.generate(schema, undefined, validateSchema);
+    var fakedData = schemaFaker.generate(schema, undefined, validateSchema);
     expect(fakedData).to.deep.equal({
       default: 'This is actual property and not JSON schema defined "default" keyword'
     });
@@ -84,9 +71,9 @@ describe('JSON SCHEMA FAKER TESTS', function () {
         }
       }
     };
-    jsf.option('validationOptions', { ignoreUnresolvedVariables: true });
-    jsf.option('useExamplesValue', true);
-    var fakedData = jsf.generate(schema, undefined, validateSchema);
+    schemaFaker.option('validationOptions', { ignoreUnresolvedVariables: true });
+    schemaFaker.option('useExamplesValue', true);
+    var fakedData = schemaFaker.generate(schema, undefined, validateSchema);
     expect(fakedData).to.deep.equal({
       id: '{{orderId}}'
     });
@@ -106,7 +93,7 @@ describe('JSON SCHEMA FAKER TESTS', function () {
       }
     };
 
-    var fakedData = jsf.generate(schema);
+    var fakedData = schemaFaker.generate(schema);
     expect(fakedData).to.be.an('object');
     expect(fakedData).to.be.not.empty;
     _.forEach(fakedData, (value) => {
