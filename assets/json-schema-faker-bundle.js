@@ -5560,6 +5560,7 @@ var JSONSchemaFaker = (() => {
       defaults.renderDescription = true;
       defaults.renderComment = false;
       defaults.validationOptions = {};
+      defaults.pickFirstFromExamples = false;
       module.exports = defaults_default;
     }
   });
@@ -7580,8 +7581,13 @@ laborum`.split(/\W/);
         });
         if (path[path.length - 1] !== "properties") {
           if (optionAPI("useExamplesValue") && Array.isArray(schema.examples)) {
+            let randomExample;
             const fixedExamples = schema.examples.concat("default" in schema ? [schema.default] : []);
-            const randomExample = random.pick(fixedExamples);
+            if (optionAPI("pickFirstFromExamples")) {
+              randomExample = fixedExamples[0];
+            } else {
+              randomExample = random.pick(fixedExamples);
+            }
             if (validateSchema) {
               let result;
               let clonedSchema;
