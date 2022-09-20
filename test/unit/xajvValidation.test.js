@@ -408,6 +408,98 @@ describe('validateSchema', function () {
       result = validateSchema(schema, valueToUse);
     expect(result).to.be.empty;
   });
+
+  it('Should return 0 errors with oneOf string nullable and correct values', function () {
+    const schema = {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: [
+            'id'
+          ],
+          properties: {
+            id: {
+              type: 'integer',
+              format: 'int64'
+            },
+            actualDelivery: {
+              oneOf: [
+                {
+                  enum: [
+                    ''
+                  ],
+                  type: 'string',
+                  nullable: true
+                },
+                {
+                  type: 'string',
+                  pattern: '^\\d{4}-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12]\\d)(T| )(2[0-3]|[01][0-9]):' +
+                  '[0-5]\\d(|(:[0-5]\\dZ?)|(:[0-5]\\d\\.\\d{3})|(:[0-5]\\d\\.\\d{3}[+-]\\d{2}:\\d{2}))$',
+                  nullable: true
+                }
+              ]
+            }
+          }
+        }
+      },
+      valueToUse = [{
+        id: 122,
+        actualDelivery: null
+      },
+      {
+        id: 122,
+        actualDelivery: ''
+      },
+      {
+        id: 122,
+        actualDelivery: '1988-12-23 15:15:15'
+      }],
+      result = validateSchema(schema, valueToUse);
+    expect(result).to.be.empty;
+  });
+
+  it('Should return 1 error with oneOf string nullable and incorrect value', function() {
+    const schema = {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: [
+            'id'
+          ],
+          properties: {
+            id: {
+              type: 'integer',
+              format: 'int64'
+            },
+            actualDelivery: {
+              oneOf: [
+                {
+                  enum: [
+                    ''
+                  ],
+                  type: 'string',
+                  nullable: true
+                },
+                {
+                  type: 'string',
+                  pattern: '^\\d{4}-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12]\\d)(T| )(2[0-3]|[01][0-9]):' +
+                  '[0-5]\\d(|(:[0-5]\\dZ?)|(:[0-5]\\d\\.\\d{3})|(:[0-5]\\d\\.\\d{3}[+-]\\d{2}:\\d{2}))$',
+                  nullable: true
+                }
+              ]
+            }
+          }
+        }
+      },
+      valueToUse = [
+        {
+          id: 122,
+          actualDelivery: 'not valid'
+        }],
+      result = validateSchema(schema, valueToUse);
+    expect(result[0].keyword).to.equal('enum');
+    expect(result[1].keyword).to.equal('pattern');
+  });
 });
 
 describe('getDraftToUse', function() {
