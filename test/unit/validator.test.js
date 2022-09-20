@@ -1242,7 +1242,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
     });
 
     oneOfChildPropertyNoType.forEach((specData) => {
-      it('Should correctly   ' +
+      it('Should correctly resolve and validate for oneOfChild scenarios ' +
         specData.version, function (done) {
         let invalidTypePropertySpec = fs.readFileSync(specData.path, 'utf-8'),
           invalidTypePropertyCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
