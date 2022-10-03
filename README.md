@@ -175,10 +175,9 @@ Check out complete list of options and their usage at [OPTIONS.md](/OPTIONS.md)
 
 ### Sample Usage
 ```javascript
-var fs = require('fs'),
-
-Converter = require('openapi-to-postmanv2'),
-openapiData = fs.readFileSync('sample-spec.yaml', {encoding: 'UTF8'});
+const fs = require('fs'),
+  Converter = require('openapi-to-postmanv2'),
+  openapiData = fs.readFileSync('sample-spec.yaml', {encoding: 'UTF8'});
 
 Converter.convert({ type: 'string', data: openapiData },
   {}, (err, conversionResult) => {
