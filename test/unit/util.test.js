@@ -1928,7 +1928,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(result.body.mode).to.equal('file');
         done();
       });
-      it(' application/vnd.api+json (headers with different structure but still of JSON family)', function(done) {
+      it(' application/vnd.api+json (headers with different structure but still of JSON type/family)', function(done) {
         var requestBody = {
             description: 'body description',
             content: {
@@ -1965,7 +1965,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(result.body.options.raw.language).to.equal('json');
         done();
       });
-      it(' application/vnd.api+xml (headers with different structure but still of XML family)', function(done) {
+      it(' application/vnd.api+xml (headers with different structure but still of XML type/family)', function(done) {
         var requestBody = {
             description: 'body description',
             content: {
