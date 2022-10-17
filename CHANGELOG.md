@@ -1,5 +1,8 @@
 # OpenAPI-Postman Changelog
 
+#### v4.3.0 (October 17, 2022)
+* Fixed issue with nullable keywords getting validated incorrectly.
+
 #### v4.2.0 (August 10, 2022)
 * Improved the way to detect a circular reference by adding a new condition
 * A schema that comes from an allOf parent then we now return the same schema instead of defaulting to a schema with type as object, and no other properties
