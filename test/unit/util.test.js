@@ -1928,6 +1928,70 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(result.body.mode).to.equal('file');
         done();
       });
+      it(' application/vnd.api+json (headers with different structure but still of JSON type/family)', function(done) {
+        var requestBody = {
+            description: 'body description',
+            content: {
+              'application/vnd.api+json': {
+                'schema': {
+                  type: 'object',
+                  required: [
+                    'id',
+                    'name'
+                  ],
+                  properties: {
+                    id: {
+                      type: 'integer',
+                      format: 'int64'
+                    },
+                    name: {
+                      type: 'string'
+                    },
+                    neglect: { // this will be neglected since schemaFaker does not process
+                      type: 'string',
+                      format: 'binary'
+                    }
+                  }
+                }
+              }
+            }
+          },
+          result, resultBody;
+        result = SchemaUtils.convertToPmBody(requestBody);
+        resultBody = JSON.parse(result.body.raw);
+        expect(resultBody.id).to.equal('<long>');
+        expect(resultBody.name).to.equal('<string>');
+        expect(result.contentHeader).to.deep.include({ key: 'Content-Type', value: 'application/vnd.api+json' });
+        expect(result.body.options.raw.language).to.equal('json');
+        done();
+      });
+      it(' application/vnd.api+xml (headers with different structure but still of XML type/family)', function(done) {
+        var requestBody = {
+            description: 'body description',
+            content: {
+              'application/vnd.api+xml': {
+                examples: {
+                  xml: {
+                    summary: 'A list containing two items',
+                    value: '<AnXMLObject>test</AnXMLObject>'
+                  }
+                }
+              }
+            }
+          },
+          result, resultBody;
+        result = SchemaUtils.convertToPmBody(requestBody, 'ROOT', {}, {
+          requestParametersResolution: 'example'
+        });
+        resultBody = (result.body.raw);
+        expect(resultBody).to.equal(
+          '<?xml version="1.0" encoding="UTF-8"?>\n<AnXMLObject>test</AnXMLObject>'
+        );
+        expect(result.contentHeader).to.deep.include(
+          { key: 'Content-Type', value: 'application/vnd.api+xml' });
+        expect(result.body.options.raw.language).to.equal('xml');
+        done();
+      });
       // things remaining : application/xml
     });
   });
