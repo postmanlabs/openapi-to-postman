@@ -127,7 +127,7 @@
     "path-browserify": "1.0.1",
     "postman-collection": "4.1.4",
     "swagger2openapi": "7.0.8",
-    "traverse": "0.6.6",
+    "traverse": "0.6.7",
     "yaml": "1.10.2"
   },
   "author": "Postman Labs <help@getpostman.com>",
