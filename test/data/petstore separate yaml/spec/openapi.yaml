@@ -20,7 +20,7 @@ paths:
     $ref: "./resources/pet.yaml"
 components:
   parameters:
-    $ref: "./parameters/_index.yaml"
+    $ref: ".~1parameters~1_index.yaml"
   schemas:
     $ref: "./schemas/_index.yaml"
   responses:
