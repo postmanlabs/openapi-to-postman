@@ -82,7 +82,7 @@ const optionIds = [
       name: 'Naming requests',
       type: 'enum',
       default: 'Fallback',
-      availableOptions: ['Url', 'Fallback'],
+      availableOptions: ['Url', 'Fallback', 'OperationId'],
       description: 'Determines how the requests inside the generated collection will be named.' +
       ' If “Fallback” is selected, the request will be named after one of the following schema' +
       ' values: `description`, `operationid`, `url`.'
