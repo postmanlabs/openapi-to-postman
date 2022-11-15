@@ -62,32 +62,6 @@ describe('compareTypes method', function() {
   });
 });
 
-describe('fixExamplesByVersion method', function() {
-  it('Should return the same schema than the provided', function() {
-    const providedSchema = {
-        required: [
-          'id',
-          'name'
-        ],
-        type: 'object',
-        properties: {
-          id: {
-            type: 'integer'
-          },
-          name: {
-            type: 'string',
-            example: 'this is my fisrt example name in pet'
-          },
-          tag: {
-            type: 'string'
-          }
-        }
-      },
-      fixedSchemaWithExample = concreteUtils.fixExamplesByVersion(providedSchema);
-    expect(JSON.stringify(fixedSchemaWithExample)).to.be.equal(JSON.stringify(providedSchema));
-  });
-});
-
 describe('isBinaryContentType method', function() {
   it('Should be true if content type is binary type without schema', function() {
     const bodyType = 'application/octet-stream',
