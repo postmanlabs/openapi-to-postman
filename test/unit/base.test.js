@@ -58,7 +58,11 @@ describe('CONVERT FUNCTION TESTS ', function() {
       allHTTPMethodsSpec = path.join(__dirname, VALID_OPENAPI_PATH, '/all-http-methods.yaml'),
       invalidNullInfo = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-null-info.json'),
       invalidNullInfoTitle = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-title.json'),
-      invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json');
+      invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json'),
+      onlyOneOperationDeprecated = path.join(__dirname, VALID_OPENAPI_PATH, '/has_one_op_dep.json'),
+      someOperationOneDeprecated = path.join(__dirname, VALID_OPENAPI_PATH, '/has_some_op_dep.json'),
+      someOperationDeprecatedUsingTags =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/has_some_op_dep_use_tags.json');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1275,6 +1279,55 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         });
     });
+
+    it('Should convert and exclude deprecated operations - has only one op and is deprecated', function () {
+      const fileData = fs.readFileSync(onlyOneOperationDeprecated, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecatedProperties: false },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+          expect(result.output[0].data.item).to.be.empty;
+        });
+    });
+
+    it('Should convert and exclude deprecated operations -- has some deprecated', function () {
+      const fileData = fs.readFileSync(someOperationOneDeprecated, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecatedProperties: false },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+          expect(result.output[0].data.item.length).to.equal(1);
+        });
+    });
+
+    it('Should convert and exclude deprecated operations - has only one op and is deprecated' +
+      'using tags as folder strategy operation has not tag', function () {
+      const fileData = fs.readFileSync(onlyOneOperationDeprecated, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecatedProperties: false, folderStrategy: 'tags' },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+          expect(result.output[0].data.item).to.be.empty;
+        });
+    });
+
+    it('Should convert and exclude deprecated operations - has some deprecated' +
+      'using tags as folder strategy', function () {
+      const fileData = fs.readFileSync(someOperationDeprecatedUsingTags, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecatedProperties: false, folderStrategy: 'tags' },
+
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+          expect(result.output[0].data.item.length).to.equal(1);
+          expect(result.output[0].data.item[0].name).to.equal('pets');
+        });
+    });
+
   });
 
   describe('Converting swagger 2.0 files', function() {
