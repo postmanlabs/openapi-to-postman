@@ -62,6 +62,76 @@ describe('Convert method', function() {
     });
     done();
   });
+
+  it('Should convert and exclude deprecated operations - has only one op and is deprecated', function() {
+    const fileSource = path.join(__dirname, SWAGGER_20_FOLDER_JSON + 'has_one_op_dep.json'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      schemapack = new SchemaPack(input, { includeDeprecatedProperties: false });
+
+    schemapack.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item).to.be.empty;
+    });
+  });
+
+  it('Should convert and exclude deprecated operations -- has some deprecated', function() {
+    const fileSource = path.join(__dirname, SWAGGER_20_FOLDER_JSON + 'has_some_op_dep.json'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      schemapack = new SchemaPack(input, { includeDeprecatedProperties: false });
+
+    schemapack.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item[0].item.length).to.equal(2);
+      expect(result.output[0].data.item[0].item[0].name).to.equal('Create a pet');
+      expect(result.output[0].data.item[0].item[1].name).to.equal('Info for a specific pet');
+    });
+  });
+
+  it('Should convert and exclude deprecated operations - has only one op and is deprecated' +
+    'using tags as folder strategy operation has not tag', function() {
+    const fileSource = path.join(__dirname, SWAGGER_20_FOLDER_JSON + 'has_one_op_dep.json'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      schemapack = new SchemaPack(input, { includeDeprecatedProperties: false, folderStrategy: 'tags' });
+
+    schemapack.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item).to.be.empty;
+    });
+  });
+
+  it('Should convert and exclude deprecated operations - has some deprecated' +
+  'using tags as folder strategy', function() {
+    const fileSource = path.join(__dirname, SWAGGER_20_FOLDER_JSON + 'has_some_op_dep_use_tags.json'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      schemapack = new SchemaPack(input, { includeDeprecatedProperties: false, folderStrategy: 'tags' });
+
+    schemapack.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item.length).to.equal(1);
+      expect(result.output[0].data.item[0].name).to.equal('pets');
+      expect(result.output[0].data.item[0].item.length).to.equal(2);
+    });
+  });
 });
 
 describe('Swagger 2.0  schemapack mergeAndValidate method', function() {
