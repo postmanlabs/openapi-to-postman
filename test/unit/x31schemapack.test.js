@@ -7,6 +7,74 @@ const SchemaPack = require('../..').SchemaPack,
   VALIDATION_DATA_ISSUES_FOLDER_31_PATH = '../data/31CollectionTransactions/issues',
   _ = require('lodash');
 describe('Testing openapi 3.1 schema pack convert', function() {
+
+  it('Should convert from openapi 3.1, exclude deprecated operations - has only one op and is deprecated', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/json/has_one_op_dep.json'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(input, { includeDeprecatedProperties: false });
+
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item).to.be.empty;
+    });
+  });
+
+  it('Should convert from openapi 3.1, exclude deprecated operations -- has some deprecated', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/json/has_some_op_dep.json'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(input, { includeDeprecatedProperties: false });
+
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item.length).to.equal(1);
+    });
+  });
+
+  it('Should convert from openapi 3.1, exclude deprecated operations - has only one op and is deprecated' +
+    'using tags as folder strategy operation has not tag', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/json/has_one_op_dep.json'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(input, { includeDeprecatedProperties: false, folderStrategy: 'tags' });
+
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item).to.be.empty;
+    });
+  });
+
+  it('Should convert from openapi 3.1, exclude deprecated operations - has some deprecated' +
+  'using tags as folder strategy', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/json/has_some_op_dep_use_tags.json'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(input, { includeDeprecatedProperties: false, folderStrategy: 'tags' });
+
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+      expect(result.output[0].data.item.length).to.equal(1);
+      expect(result.output[0].data.item[0].name).to.equal('pets');
+    });
+  });
+
   it('Should convert from openapi 3.1 spec to postman collection -- multiple refs', function() {
     const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/json/multiple_refs.json'),
       fileData = fs.readFileSync(fileSource, 'utf8'),
