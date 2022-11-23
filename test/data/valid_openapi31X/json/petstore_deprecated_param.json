@@ -16,7 +16,7 @@
 		"/pets": {
 			"get": {
 				"summary": "List all pets",
-				"decription": "This should not be in the request body",
+				"description": "This should not be in the request body",
 				"operationId": "listPets",
 				"tags": [
 					"pets"
