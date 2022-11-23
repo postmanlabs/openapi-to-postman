@@ -1,8 +1,8 @@
-const { getParametersForPathItem } = require('../../lib/schemaUtils'),
+const { getParametersForPathItem, verifyDeprecatedProperties } = require('../../lib/schemaUtils'),
   expect = require('chai').expect;
 
 
-describe('getParametersForPathItem method', function () {
+describe('getParametersForPathItem function', function () {
   const params = [
     {
       name: 'limit',
@@ -118,5 +118,146 @@ describe('getParametersForPathItem method', function () {
     expect(result.query.length).to.equal(2);
     expect(result.header.length).to.equal(2);
     expect(result.path.length).to.equal(2);
+  });
+});
+
+describe('verifyDeprecatedProperties function', function () {
+  it('should remove the deprecated properties when the option is false', function () {
+    let schema = {
+      type: 'object',
+      properties: {
+        a: {
+          type: 'string',
+          deprecated: true,
+          default: '<string>'
+        },
+        b: {
+          type: 'string',
+          example: 'example-b',
+          default: '<string>'
+        }
+      }
+    };
+    verifyDeprecatedProperties(schema, false);
+    expect(schema.properties.a).to.be.undefined;
+  });
+
+  it('should leave the deprecated properties when the option is true', function () {
+    let schema = {
+      type: 'object',
+      properties: {
+        a: {
+          type: 'string',
+          deprecated: true,
+          default: '<string>'
+        },
+        b: {
+          type: 'string',
+          example: 'example-b',
+          default: '<string>'
+        }
+      }
+    };
+    verifyDeprecatedProperties(schema, true);
+    expect(schema.properties.a).to.not.be.undefined;
+  });
+
+  it('should remove the deprecated properties when the option is false nested property', function () {
+    let schema = {
+      type: 'object',
+      properties: {
+        a: {
+          type: 'string',
+          deprecated: true,
+          default: '<string>'
+        },
+        b: {
+          type: 'object',
+          properties: {
+            c: {
+              type: 'string',
+              deprecated: true,
+              default: '<string>'
+            },
+            d: {
+              type: 'string',
+              default: '<string>'
+            }
+          }
+        }
+      }
+    };
+    verifyDeprecatedProperties(schema, false);
+    expect(schema.properties.a).to.be.undefined;
+    expect(schema.properties.b).to.not.be.undefined;
+    expect(schema.properties.b.properties.c).to.be.undefined;
+    expect(schema.properties.b.properties.d).to.not.be.undefined;
+  });
+
+  it('should leave the deprecated properties when the option is true nested property', function () {
+    let schema = {
+      type: 'object',
+      properties: {
+        a: {
+          type: 'string',
+          deprecated: true,
+          default: '<string>'
+        },
+        b: {
+          type: 'object',
+          properties: {
+            c: {
+              type: 'string',
+              deprecated: true,
+              default: '<string>'
+            },
+            d: {
+              type: 'string',
+              default: '<string>'
+            }
+          }
+        }
+      }
+    };
+    verifyDeprecatedProperties(schema, true);
+    expect(schema.properties.a).to.not.be.undefined;
+    expect(schema.properties.b).to.not.be.undefined;
+    expect(schema.properties.b.properties.c).to.not.be.undefined;
+    expect(schema.properties.b.properties.d).to.not.be.undefined;
+  });
+
+  it('should leave the deprecated properties when the option is true nested property' +
+  'property has a name of deprecated', function () {
+    let schema = {
+      type: 'object',
+      properties: {
+        deprecated: {
+          type: 'boolean'
+        },
+        b: {
+          type: 'object',
+          properties: {
+            c: {
+              type: 'string',
+              deprecated: true,
+              default: '<string>'
+            },
+            d: {
+              type: 'string',
+              default: '<string>'
+            },
+            deprecated: {
+              type: 'string',
+              default: '<string>'
+            }
+          }
+        }
+      }
+    };
+    verifyDeprecatedProperties(schema, false);
+    expect(schema.properties.deprecated).to.not.be.undefined;
+    expect(schema.properties.b).to.not.be.undefined;
+    expect(schema.properties.b.properties.c).to.be.undefined;
+    expect(schema.properties.b.properties.d).to.not.be.undefined;
   });
 });

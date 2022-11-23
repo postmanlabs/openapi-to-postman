@@ -228,6 +228,38 @@ describe('Testing openapi 3.1 schema pack convert', function() {
       expect(result.output[0].data.item[0].item[0].request.header[2].key).to.equal('limit_Dep');
     });
   });
+
+  it('Should convert and exclude deprecated property when option is set to false', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/json/deprecated_property.json'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(input, { includeDeprecatedProperties: false });
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.output[0].data.item[0].request.body.raw)
+        .to.equal('{\n  "b": "<string>"\n}');
+      expect(result.output[0].data.item[0].response[1].body.includes('errorCode')).to.be.false;
+    });
+  });
+
+  it('Should convert and include deprecated property when option is set to true', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/json/deprecated_property.json'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(input, { includeDeprecatedProperties: true });
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.output[0].data.item[0].request.body.raw)
+        .to.equal('{\n  "a": "<string>",\n  "b": "<string>"\n}');
+      expect(result.output[0].data.item[0].response[1].body.includes('errorCode')).to.be.true;
+    });
+  });
 });
 
 

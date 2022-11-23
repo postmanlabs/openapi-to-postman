@@ -64,7 +64,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
       someOperationDeprecatedUsingTags =
         path.join(__dirname, VALID_OPENAPI_PATH, '/has_some_op_dep_use_tags.json'),
       deprecatedParams =
-        path.join(__dirname, VALID_OPENAPI_PATH, '/petstore_deprecated_param.json');
+        path.join(__dirname, VALID_OPENAPI_PATH, '/petstore_deprecated_param.json'),
+      deprecatedProperty =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/deprecated_property.json');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1344,7 +1346,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         });
     });
 
-    it('Should convert and exclude deprecated params when option is set to true', function() {
+    it('Should convert and include deprecated params when option is set to true', function() {
       const fileData = fs.readFileSync(deprecatedParams, 'utf8');
       Converter.convert({ type: 'string', data: fileData },
         { includeDeprecatedProperties: true },
@@ -1357,6 +1359,30 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(result.output[0].data.item[0].item[0].request.header[0].key).to.equal('limit');
           expect(result.output[0].data.item[0].item[0].request.header[1].key).to.equal('limit_2');
           expect(result.output[0].data.item[0].item[0].request.header[2].key).to.equal('limit_Dep');
+        });
+    });
+
+    it('Should convert and exclude deprecated property when option is set to false', function() {
+      const fileData = fs.readFileSync(deprecatedProperty, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecatedProperties: false },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.output[0].data.item[0].request.body.raw)
+            .to.equal('{\n  "b": "<string>"\n}');
+          expect(result.output[0].data.item[0].response[1].body.includes('errorCode')).to.be.false;
+        });
+    });
+
+    it('Should convert and include deprecated property when option is set to true', function() {
+      const fileData = fs.readFileSync(deprecatedProperty, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecatedProperties: true },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.output[0].data.item[0].request.body.raw)
+            .to.equal('{\n  "a": "<string>",\n  "b": "<string>"\n}');
+          expect(result.output[0].data.item[0].response[1].body.includes('errorCode')).to.be.true;
         });
     });
 
