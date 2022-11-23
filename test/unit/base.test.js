@@ -62,7 +62,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
       onlyOneOperationDeprecated = path.join(__dirname, VALID_OPENAPI_PATH, '/has_one_op_dep.json'),
       someOperationOneDeprecated = path.join(__dirname, VALID_OPENAPI_PATH, '/has_some_op_dep.json'),
       someOperationDeprecatedUsingTags =
-        path.join(__dirname, VALID_OPENAPI_PATH, '/has_some_op_dep_use_tags.json');
+        path.join(__dirname, VALID_OPENAPI_PATH, '/has_some_op_dep_use_tags.json'),
+      deprecatedParams =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/petstore_deprecated_param.json');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1319,12 +1321,42 @@ describe('CONVERT FUNCTION TESTS ', function() {
       const fileData = fs.readFileSync(someOperationDeprecatedUsingTags, 'utf8');
       Converter.convert({ type: 'string', data: fileData },
         { includeDeprecatedProperties: false, folderStrategy: 'tags' },
-
         (err, result) => {
           expect(err).to.be.null;
           expect(result.result).to.be.true;
           expect(result.output[0].data.item.length).to.equal(1);
           expect(result.output[0].data.item[0].name).to.equal('pets');
+        });
+    });
+
+    it('Should convert and exclude deprecated params when option is set to false', function() {
+      const fileData = fs.readFileSync(deprecatedParams, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecatedProperties: false },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.output[0].data.item[0].item[0].request.url.query.length).to.equal(1);
+          expect(result.output[0].data.item[0].item[0].request.url.query[0].key).to.equal('variable');
+          expect(result.output[0].data.item[0].item[0].request.header.length).to.equal(3);
+          expect(result.output[0].data.item[0].item[0].request.header[0].key).to.equal('limit');
+          expect(result.output[0].data.item[0].item[0].request.header[1].key).to.equal('limit_2');
+          expect(result.output[0].data.item[0].item[1].request.header[0].key).to.equal('limit_2');
+        });
+    });
+
+    it('Should convert and exclude deprecated params when option is set to true', function() {
+      const fileData = fs.readFileSync(deprecatedParams, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecatedProperties: true },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.output[0].data.item[0].item[0].request.url.query.length).to.equal(2);
+          expect(result.output[0].data.item[0].item[0].request.url.query[0].key).to.equal('variable');
+          expect(result.output[0].data.item[0].item[0].request.url.query[1].key).to.equal('variable2');
+          expect(result.output[0].data.item[0].item[0].request.header.length).to.equal(4);
+          expect(result.output[0].data.item[0].item[0].request.header[0].key).to.equal('limit');
+          expect(result.output[0].data.item[0].item[0].request.header[1].key).to.equal('limit_2');
+          expect(result.output[0].data.item[0].item[0].request.header[2].key).to.equal('limit_Dep');
         });
     });
 
