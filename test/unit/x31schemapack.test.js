@@ -236,11 +236,13 @@ describe('Testing openapi 3.1 schema pack convert', function() {
         type: 'string',
         data: fileData
       },
-      converter = new SchemaPack(input, { includeDeprecatedProperties: false });
+      converter = new SchemaPack(input, { includeDeprecatedProperties: false, exampleParametersResolution: 'schema' });
     converter.convert((err, result) => {
       expect(err).to.be.null;
-      expect(result.output[0].data.item[0].request.body.raw)
-        .to.equal('{\n  "b": "<string>"\n}');
+      expect(result.output[0].data.item[0].request.body.raw.includes('{\n  "b"'))
+        .to.equal(true);
+      expect(result.output[0].data.item[0].request.body.raw.includes('{\n  "a"'))
+        .to.equal(false);
       expect(result.output[0].data.item[0].response[1].body.includes('errorCode')).to.be.false;
     });
   });
@@ -255,8 +257,10 @@ describe('Testing openapi 3.1 schema pack convert', function() {
       converter = new SchemaPack(input, { includeDeprecatedProperties: true });
     converter.convert((err, result) => {
       expect(err).to.be.null;
-      expect(result.output[0].data.item[0].request.body.raw)
-        .to.equal('{\n  "a": "<string>",\n  "b": "<string>"\n}');
+      expect(result.output[0].data.item[0].request.body.raw.includes('{\n  "a"'))
+        .to.equal(true);
+      expect(result.output[0].data.item[0].request.body.raw.includes('"b":'))
+        .to.equal(true);
       expect(result.output[0].data.item[0].response[1].body.includes('errorCode')).to.be.true;
     });
   });
