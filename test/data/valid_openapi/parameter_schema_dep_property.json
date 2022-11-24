@@ -1,0 +1,148 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Swagger Petstore",
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [{
+    "url": "http://petstore.swagger.io/v1"
+  }],
+  "paths": {
+    "/pets": {
+      "get": {
+        "summary": "List all pets",
+        "operationId": "listPets",
+        "parameters": [
+          {
+          "name": "limit",
+          "in": "query",
+          "description": "How many items to return at one time (max 100)",
+          "required": false,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "deprecated": {
+                "type": "boolean"
+              },
+              "b": {
+                "type": "object",
+                "properties": {
+                  "c": {
+                    "type": "string",
+                    "deprecated": true,
+                    "default": "<string>"
+                  },
+                  "d": {
+                    "type": "string",
+                    "default": "<string>"
+                  },
+                  "deprecated": {
+                    "type": "string",
+                    "default": "<string>"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "limitPath",
+          "in": "path",
+          "description": "How many items to return at one time (max 100)",
+          "required": false,
+          "style": "matrix",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "deprecated": {
+                "type": "boolean",
+                "deprecated":true
+              },
+              "b": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "name": "limitHeader",
+          "in": "header",
+          "description": "How many items to return at one time (max 100)",
+          "required": false,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "deprecated": {
+                "type": "boolean",
+                "deprecated":true
+              },
+              "b": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ],
+        "responses": {
+          "200": {
+            "description": "An paged array of pets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "key1": {
+                      "$ref": "#/components/schemas/ResponseBody"
+                    },
+                    "key2": {
+                      "$ref": "#/components/schemas/ResponseBody"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RequestBody": {
+        "required": [
+          "requestId",
+          "requestName"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "integer",
+            "format": "int64",
+            "examples": [123456]
+          },
+          "requestName": {
+            "type": "string"
+          }
+        }
+      },
+      "ResponseBody": {
+        "required": [
+          "responseId",
+          "responseName"
+        ],
+        "properties": {
+          "responseId": {
+            "type": "integer",
+            "format": "int64",
+            "examples": [234]
+          },
+          "responseName": {
+            "type": "string",
+            "examples": ["200 OK Response"]
+          }
+        }
+      }
+    }
+  }
+}
