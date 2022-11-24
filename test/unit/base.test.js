@@ -58,7 +58,11 @@ describe('CONVERT FUNCTION TESTS ', function() {
       allHTTPMethodsSpec = path.join(__dirname, VALID_OPENAPI_PATH, '/all-http-methods.yaml'),
       invalidNullInfo = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-null-info.json'),
       invalidNullInfoTitle = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-title.json'),
-      invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json');
+      invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json'),
+      referencedPathFromOutOfComponents =
+        path.join(__dirname, VALID_OPENAPI_PATH + '/referencedPathFromOutOfComponents.yaml'),
+      referencedPathFromOutOfComponentsTagsStrategy =
+        path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed-referenced-path.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1274,6 +1278,50 @@ describe('CONVERT FUNCTION TESTS ', function() {
             .to.equal('Specification must contain a semantic version number of the API in the Info Object');
           done();
         });
+    });
+
+    describe('[Github #309 - Should convert a path when is referenced ' +
+      'from a different place than components]', function() {
+
+      it('Should convert and include the referenced paths' +
+      referencedPathFromOutOfComponents, function(done) {
+        Converter.convert({ type: 'file', data:
+        referencedPathFromOutOfComponents }, {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item[0].item.length)
+            .to.equal(3);
+          done();
+        });
+      });
+
+      it('Should convert and include the referenced paths using tags as folder strategy' +
+      referencedPathFromOutOfComponentsTagsStrategy, function(done) {
+        Converter.convert(
+          {
+            type: 'file',
+            data: referencedPathFromOutOfComponentsTagsStrategy
+          },
+          {
+            folderStrategy: 'Tags'
+          },
+          (err, conversionResult) => {
+            expect(err).to.be.null;
+            expect(conversionResult.result).to.equal(true);
+            expect(conversionResult.output.length).to.equal(1);
+            expect(conversionResult.output[0].type).to.equal('collection');
+            expect(conversionResult.output[0].data).to.have.property('info');
+            expect(conversionResult.output[0].data).to.have.property('item');
+            expect(conversionResult.output[0].data.item[0].item.length)
+              .to.equal(7);
+            done();
+          }
+        );
+      });
     });
   });
 
