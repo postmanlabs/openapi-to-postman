@@ -1287,8 +1287,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
         expect(conversionResult.output[0].data.item.length).to.equal(2);
-        expect(_.map(conversionResult.output[0].data.item, 'name')).to.include('pets');
-        expect(_.map(conversionResult.output[0].data.item, 'name')).to.include('pet/{petId}');
+        expect(_.map(conversionResult.output[0].data.item, 'name')).to.include.members(['pets', 'pet/{petId}']);
         done();
       });
     });
