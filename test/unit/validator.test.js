@@ -1893,4 +1893,81 @@ describe('validateTransaction convert and validate schemas with deprecated eleme
       });
     });
   });
+
+  it('Should convert and validate without error excluding deprecated query param when ' +
+  'includeDeprecated is false', function() {
+    const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/petstore_deprecated_param.json'),
+      openAPIData = fs.readFileSync(openAPI, 'utf8'),
+      options = {
+        showMissingInSchemaErrors: true,
+        strictRequestMatching: true,
+        ignoreUnresolvedVariables: true,
+        includeDeprecated: false
+      },
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
+    schemaPack.convert((err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(conversionResult.output[0].data.item.length).to.equal(1);
+
+      let historyRequest = [];
+
+      getAllTransactions(conversionResult.output[0].data, historyRequest);
+
+      schemaPack.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        expect(err).to.be.null;
+        expect(result.missingEndpoints.length).to.eq(0);
+        let requestIds = Object.keys(result.requests);
+        requestIds.forEach((requestId) => {
+          expect(result.requests[requestId].endpoints[0]).to.not.be.undefined;
+          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
+        });
+      });
+    });
+
+  });
+
+  it('Should convert and validate without error excluding deprecated query param when ' +
+  'includeDeprecated is true', function() {
+    const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/petstore_deprecated_param.json'),
+      openAPIData = fs.readFileSync(openAPI, 'utf8'),
+      options = {
+        showMissingInSchemaErrors: true,
+        strictRequestMatching: true,
+        ignoreUnresolvedVariables: true,
+        includeDeprecated: false
+      },
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
+    schemaPack.convert((err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(conversionResult.output[0].data.item.length).to.equal(1);
+
+      let historyRequest = [],
+        newOptions = {
+          showMissingInSchemaErrors: true,
+          strictRequestMatching: true,
+          ignoreUnresolvedVariables: true,
+          includeDeprecated: true
+        },
+        schemaPack2 = new Converter.SchemaPack({ type: 'string', data: openAPIData }, newOptions);
+
+      getAllTransactions(conversionResult.output[0].data, historyRequest);
+
+      schemaPack2.validateTransaction(historyRequest, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        expect(err).to.be.null;
+        expect(result.missingEndpoints.length).to.eq(0);
+        let requestIds = Object.keys(result.requests);
+        expect(result.requests[requestIds[0]].endpoints[0].matched).to.be.false;
+        expect(result.requests[requestIds[0]].endpoints[0].mismatches[0].reason.includes('variable2')).to.be.true;
+      });
+    });
+
+  });
 });

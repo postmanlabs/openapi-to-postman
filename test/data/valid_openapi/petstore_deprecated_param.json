@@ -40,11 +40,7 @@
 						"style": "form",
 						"explode": false,
 						"schema": {
-							"type": ["array"],
-							"items": {
-								"type": ["string"],
-								"examples": ["Hola Mundo"]
-							}
+							"type": "string"
 						}
 					},
 					{
@@ -53,12 +49,9 @@
 						"description": "another random variable",
 						"style": "spaceDelimited",
             "deprecated": true,
+            "required": true,
 						"schema": {
-							"type": ["array"],
-							"items": {
-								"type": ["integer"],
-								"format": "int64"
-							}
+							"type": "string"
 						}
 					}
 				],
