@@ -59,7 +59,11 @@ describe('CONVERT FUNCTION TESTS ', function() {
       invalidNullInfo = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-null-info.json'),
       invalidNullInfoTitle = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-title.json'),
       invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json'),
-      specWithAuth = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuth.yaml');
+      specWithAuthBearer = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthBearer.yaml'),
+      specWithAuthApiKey = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthApiKey.yaml'),
+      specWithAuthDigest = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthDigest.yaml'),
+      specWithAuthOauth1 = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthOauth1.yaml'),
+      specWithAuthBasic = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthBasic.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1294,9 +1298,10 @@ describe('CONVERT FUNCTION TESTS ', function() {
     });
 
     describe('[Github #643] - Generated value for corresponding' +
-      ' authorization should be as environment variable format', function(done) {
-      it('Should convert a collection and set auth placeholder as variable', function() {
-        var openapi = fs.readFileSync(specWithAuth, 'utf8');
+      ' authorization should be as environment variable format', function() {
+
+      it('Should convert a collection and set bearer auth placeholder as variable', function(done) {
+        var openapi = fs.readFileSync(specWithAuthBearer, 'utf8');
         Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
           expect(err).to.be.null;
           expect(conversionResult.result).to.equal(true);
@@ -1306,6 +1311,71 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data).to.have.property('item');
           expect(conversionResult.output[0].data.item.length).to.equal(1);
           expect(conversionResult.output[0].data.auth.bearer[0].value).to.equal('{{bearer_token}}');
+          done();
+        });
+      });
+
+      it('Should convert a collection and set basic auth placeholder as variable', function(done) {
+        var openapi = fs.readFileSync(specWithAuthBasic, 'utf8');
+        Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item.length).to.equal(1);
+          expect(conversionResult.output[0].data.auth.basic[0].value).to.equal('{{basic_auth_username}}');
+          expect(conversionResult.output[0].data.auth.basic[1].value).to.equal('{{basic_auth_password}}');
+          done();
+        });
+      });
+
+      it('Should convert a collection and set digest auth placeholder as variable', function(done) {
+        var openapi = fs.readFileSync(specWithAuthDigest, 'utf8');
+        Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item.length).to.equal(1);
+          expect(conversionResult.output[0].data.auth.digest[0].value).to.equal('{{digest_auth_username}}');
+          expect(conversionResult.output[0].data.auth.digest[1].value).to.equal('{{digest_auth_password}}');
+          expect(conversionResult.output[0].data.auth.digest[2].value).to.equal('{{realm}}');
+          done();
+        });
+      });
+
+      it('Should convert a collection and set oauth1 auth placeholder as variable', function(done) {
+        var openapi = fs.readFileSync(specWithAuthOauth1, 'utf8');
+        Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item.length).to.equal(1);
+          expect(conversionResult.output[0].data.auth.oauth1[0].value).to.equal('{{oauth_10_consumer_key}}');
+          expect(conversionResult.output[0].data.auth.oauth1[1].value).to.equal('{{oauth_10_consumer_secret}}');
+          done();
+        });
+      });
+
+      it('Should convert a collection and set apiKey auth placeholder as variable', function(done) {
+        var openapi = fs.readFileSync(specWithAuthApiKey, 'utf8');
+        Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item.length).to.equal(1);
+          expect(conversionResult.output[0].data.auth.apiKey[0].value).to.equal('{{api_key_name}}');
+          expect(conversionResult.output[0].data.auth.apiKey[1].value).to.equal('{{api_key}}');
           done();
         });
       });
