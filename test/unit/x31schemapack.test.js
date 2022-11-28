@@ -128,7 +128,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
         type: 'string',
         data: fileData
       },
-      converter = new SchemaPack(input, { includeDeprecatedProperties: false });
+      converter = new SchemaPack(input, { includeDeprecated: false });
 
     converter.convert((err, result) => {
       expect(err).to.be.null;
@@ -144,7 +144,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
         type: 'string',
         data: fileData
       },
-      converter = new SchemaPack(input, { includeDeprecatedProperties: false });
+      converter = new SchemaPack(input, { includeDeprecated: false });
 
     converter.convert((err, result) => {
       expect(err).to.be.null;
@@ -161,7 +161,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
         type: 'string',
         data: fileData
       },
-      converter = new SchemaPack(input, { includeDeprecatedProperties: false, folderStrategy: 'tags' });
+      converter = new SchemaPack(input, { includeDeprecated: false, folderStrategy: 'tags' });
 
     converter.convert((err, result) => {
       expect(err).to.be.null;
@@ -178,7 +178,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
         type: 'string',
         data: fileData
       },
-      converter = new SchemaPack(input, { includeDeprecatedProperties: false, folderStrategy: 'tags' });
+      converter = new SchemaPack(input, { includeDeprecated: false, folderStrategy: 'tags' });
 
     converter.convert((err, result) => {
       expect(err).to.be.null;
@@ -195,7 +195,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
         type: 'string',
         data: fileData
       },
-      converter = new SchemaPack(input, { includeDeprecatedProperties: false });
+      converter = new SchemaPack(input, { includeDeprecated: false });
 
     converter.convert((err, result) => {
       expect(err).to.be.null;
@@ -215,7 +215,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
         type: 'string',
         data: fileData
       },
-      converter = new SchemaPack(input, { includeDeprecatedProperties: true });
+      converter = new SchemaPack(input, { includeDeprecated: true });
 
     converter.convert((err, result) => {
       expect(err).to.be.null;
@@ -236,7 +236,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
         type: 'string',
         data: fileData
       },
-      converter = new SchemaPack(input, { includeDeprecatedProperties: false, exampleParametersResolution: 'schema' });
+      converter = new SchemaPack(input, { includeDeprecated: false, exampleParametersResolution: 'schema' });
     converter.convert((err, result) => {
       expect(err).to.be.null;
       expect(result.output[0].data.item[0].request.body.raw.includes('{\n  "b"'))
@@ -254,7 +254,7 @@ describe('Testing openapi 3.1 schema pack convert', function() {
         type: 'string',
         data: fileData
       },
-      converter = new SchemaPack(input, { includeDeprecatedProperties: true });
+      converter = new SchemaPack(input, { includeDeprecated: true });
     converter.convert((err, result) => {
       expect(err).to.be.null;
       expect(result.output[0].data.item[0].request.body.raw.includes('{\n  "a"'))

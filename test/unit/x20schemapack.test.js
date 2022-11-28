@@ -70,7 +70,7 @@ describe('Convert method', function() {
         type: 'string',
         data: fileData
       },
-      schemapack = new SchemaPack(input, { includeDeprecatedProperties: false });
+      schemapack = new SchemaPack(input, { includeDeprecated: false });
 
     schemapack.convert((err, result) => {
       expect(err).to.be.null;
@@ -86,7 +86,7 @@ describe('Convert method', function() {
         type: 'string',
         data: fileData
       },
-      schemapack = new SchemaPack(input, { includeDeprecatedProperties: false });
+      schemapack = new SchemaPack(input, { includeDeprecated: false });
 
     schemapack.convert((err, result) => {
       expect(err).to.be.null;
@@ -105,7 +105,7 @@ describe('Convert method', function() {
         type: 'string',
         data: fileData
       },
-      schemapack = new SchemaPack(input, { includeDeprecatedProperties: false, folderStrategy: 'tags' });
+      schemapack = new SchemaPack(input, { includeDeprecated: false, folderStrategy: 'tags' });
 
     schemapack.convert((err, result) => {
       expect(err).to.be.null;
@@ -122,7 +122,7 @@ describe('Convert method', function() {
         type: 'string',
         data: fileData
       },
-      schemapack = new SchemaPack(input, { includeDeprecatedProperties: false, folderStrategy: 'tags' });
+      schemapack = new SchemaPack(input, { includeDeprecated: false, folderStrategy: 'tags' });
 
     schemapack.convert((err, result) => {
       expect(err).to.be.null;

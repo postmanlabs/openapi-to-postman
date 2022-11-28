@@ -98,7 +98,7 @@ describe('getParametersForPathItem function', function () {
   ];
 
   it('should categorize and exclude deprecated', function () {
-    const options = { includeDeprecatedProperties: false },
+    const options = { includeDeprecated: false },
       result = getParametersForPathItem(params, options);
     expect(result.header.length).to.equal(1);
     expect(result.query.length).to.equal(1);
@@ -106,7 +106,7 @@ describe('getParametersForPathItem function', function () {
   });
 
   it('should categorize and include deprecated', function () {
-    const options = { includeDeprecatedProperties: true },
+    const options = { includeDeprecated: true },
       result = getParametersForPathItem(params, options);
     expect(result.query.length).to.equal(2);
     expect(result.header.length).to.equal(2);

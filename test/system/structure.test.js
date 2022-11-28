@@ -27,7 +27,7 @@ const optionIds = [
     'includeWebhooks',
     'allowUrlPathVarMatching',
     'includeReferenceMap',
-    'includeDeprecatedProperties'
+    'includeDeprecated'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -191,8 +191,8 @@ const optionIds = [
       external: false,
       usage: ['BUNDLE']
     },
-    includeDeprecatedProperties: {
-      name: 'Remote references resolver',
+    includeDeprecated: {
+      name: 'Include deprecated properties',
       type: 'boolean',
       default: true,
       description: 'Select whether to include deprecated properties or not',

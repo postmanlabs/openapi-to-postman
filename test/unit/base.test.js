@@ -1300,7 +1300,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it('Should convert and exclude deprecated operations - has only one op and is deprecated', function () {
       const fileData = fs.readFileSync(onlyOneOperationDeprecated, 'utf8');
       Converter.convert({ type: 'string', data: fileData },
-        { includeDeprecatedProperties: false },
+        { includeDeprecated: false },
         (err, result) => {
           expect(err).to.be.null;
           expect(result.result).to.be.true;
@@ -1311,7 +1311,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it('Should convert and exclude deprecated operations -- has some deprecated', function () {
       const fileData = fs.readFileSync(someOperationOneDeprecated, 'utf8');
       Converter.convert({ type: 'string', data: fileData },
-        { includeDeprecatedProperties: false },
+        { includeDeprecated: false },
         (err, result) => {
           expect(err).to.be.null;
           expect(result.result).to.be.true;
@@ -1323,7 +1323,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       'using tags as folder strategy operation has not tag', function () {
       const fileData = fs.readFileSync(onlyOneOperationDeprecated, 'utf8');
       Converter.convert({ type: 'string', data: fileData },
-        { includeDeprecatedProperties: false, folderStrategy: 'tags' },
+        { includeDeprecated: false, folderStrategy: 'tags' },
         (err, result) => {
           expect(err).to.be.null;
           expect(result.result).to.be.true;
@@ -1335,7 +1335,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       'using tags as folder strategy', function () {
       const fileData = fs.readFileSync(someOperationDeprecatedUsingTags, 'utf8');
       Converter.convert({ type: 'string', data: fileData },
-        { includeDeprecatedProperties: false, folderStrategy: 'tags' },
+        { includeDeprecated: false, folderStrategy: 'tags' },
         (err, result) => {
           expect(err).to.be.null;
           expect(result.result).to.be.true;
@@ -1347,7 +1347,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it('Should convert and exclude deprecated params when option is set to false', function() {
       const fileData = fs.readFileSync(deprecatedParams, 'utf8');
       Converter.convert({ type: 'string', data: fileData },
-        { includeDeprecatedProperties: false },
+        { includeDeprecated: false },
         (err, result) => {
           expect(err).to.be.null;
           expect(result.output[0].data.item[0].item[0].request.url.query.length).to.equal(1);
@@ -1362,7 +1362,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it('Should convert and include deprecated params when option is set to true', function() {
       const fileData = fs.readFileSync(deprecatedParams, 'utf8');
       Converter.convert({ type: 'string', data: fileData },
-        { includeDeprecatedProperties: true },
+        { includeDeprecated: true },
         (err, result) => {
           expect(err).to.be.null;
           expect(result.output[0].data.item[0].item[0].request.url.query.length).to.equal(2);
@@ -1393,7 +1393,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it('Should convert and exclude deprecated property when option is set to false', function() {
       const fileData = fs.readFileSync(deprecatedProperty, 'utf8');
       Converter.convert({ type: 'string', data: fileData },
-        { includeDeprecatedProperties: false },
+        { includeDeprecated: false },
         (err, result) => {
           expect(err).to.be.null;
           expect(result.output[0].data.item[0].request.body.raw)
@@ -1405,7 +1405,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it('Should convert and include deprecated property when option is set to true', function() {
       const fileData = fs.readFileSync(deprecatedProperty, 'utf8');
       Converter.convert({ type: 'string', data: fileData },
-        { includeDeprecatedProperties: true },
+        { includeDeprecated: true },
         (err, result) => {
           expect(err).to.be.null;
           expect(result.output[0].data.item[0].request.body.raw)
@@ -1417,7 +1417,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it('Should convert and include deprecated property when option is set to true in query and path', function() {
       const fileData = fs.readFileSync(schemaParamDeprecated, 'utf8');
       Converter.convert({ type: 'string', data: fileData },
-        { includeDeprecatedProperties: true },
+        { includeDeprecated: true },
         (err, result) => {
           expect(err).to.be.null;
           expect(result.output[0].data.item[0].request.url.query[0].key)
@@ -1436,7 +1436,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it('Should convert and include deprecated property when option is set to false in query and path', function() {
       const fileData = fs.readFileSync(schemaParamDeprecated, 'utf8');
       Converter.convert({ type: 'string', data: fileData },
-        { includeDeprecatedProperties: false },
+        { includeDeprecated: false },
         (err, result) => {
           expect(err).to.be.null;
           expect(result.output[0].data.item[0].request.url.query[0].key)
