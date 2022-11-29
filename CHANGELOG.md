@@ -1,5 +1,9 @@
 # OpenAPI-Postman Changelog
 
+#### v4.4.0 (November 29, 2022)
+* Fixed issue where collection folder name for paths were having extra spaces.
+* Fixed issue where pipelines were failing for certain node version.
+
 #### v4.3.0 (October 17, 2022)
 * Fixed issue with nullable keywords getting validated incorrectly.
 
