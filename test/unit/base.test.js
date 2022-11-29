@@ -1374,8 +1374,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data).to.have.property('info');
           expect(conversionResult.output[0].data).to.have.property('item');
           expect(conversionResult.output[0].data.item.length).to.equal(1);
-          expect(conversionResult.output[0].data.auth.apiKey[0].value).to.equal('{{api_key_name}}');
-          expect(conversionResult.output[0].data.auth.apiKey[1].value).to.equal('{{api_key}}');
+          expect(conversionResult.output[0].data.auth.apikey[0].value).to.equal('{{api_key_name}}');
+          expect(conversionResult.output[0].data.auth.apikey[1].value).to.equal('{{api_key}}');
           done();
         });
       });
