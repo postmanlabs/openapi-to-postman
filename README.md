@@ -1,5 +1,5 @@
 
-![postman icon](https://raw.githubusercontent.com/postmanlabs/postmanlabs.github.io/develop/global-artefacts/postman-logo%2Btext-320x132.png) 
+<img src="https://voyager.postman.com/logo/postman-logo-orange.svg" width="320" alt="The Postman Logo">
 
 *Supercharge your API workflow.*  
 *Modern software is built on APIs. Postman helps you develop APIs faster.*
