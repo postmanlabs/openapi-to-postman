@@ -59,8 +59,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
       invalidNullInfo = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-null-info.json'),
       invalidNullInfoTitle = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-title.json'),
       invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json'),
-      referencedPathFromOutOfComponents =
-        path.join(__dirname, VALID_OPENAPI_PATH + '/referencedPathFromOutOfComponents.yaml'),
+      referencedFromOutOfComponents =
+        path.join(__dirname, VALID_OPENAPI_PATH + '/referencedFromOutOfComponents.yaml'),
       referencedPathFromOutOfComponentsTagsStrategy =
         path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed-referenced-path.yaml');
 
@@ -1284,9 +1284,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
       'from a different place than components]', function() {
 
       it('Should convert and include the referenced paths' +
-      referencedPathFromOutOfComponents, function(done) {
+      referencedFromOutOfComponents, function(done) {
         Converter.convert({ type: 'file', data:
-        referencedPathFromOutOfComponents }, {}, (err, conversionResult) => {
+        referencedFromOutOfComponents }, {}, (err, conversionResult) => {
           expect(err).to.be.null;
           expect(conversionResult.result).to.equal(true);
           expect(conversionResult.output.length).to.equal(1);
@@ -1294,7 +1294,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data).to.have.property('info');
           expect(conversionResult.output[0].data).to.have.property('item');
           expect(conversionResult.output[0].data.item[0].item.length)
-            .to.equal(3);
+            .to.equal(4);
           done();
         });
       });

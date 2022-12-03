@@ -22,6 +22,21 @@ describe('Testing openapi 3.1 schema pack convert', function() {
     });
   });
 
+  it('Should convert from openapi 3.1 spec to postman collection -- multiple refs_and_paths', function() {
+    const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/json/multiple_refs_and_paths.json'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      converter = new SchemaPack(input);
+
+    converter.convert((err, result) => {
+      expect(err).to.be.null;
+      expect(result.result).to.be.true;
+    });
+  });
+
   it('Should interpret binary types correctly and set mode as file in body -- petstore', function() {
     const fileSource = path.join(__dirname, OPENAPI_31_FOLDER + '/json/petstore.json'),
       fileData = fs.readFileSync(fileSource, 'utf8'),

@@ -53,6 +53,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+    put:
+      summary: Create a pet put
+      operationId: createPets
+      tags:
+        - pets
+      responses:
+        '201':
+          description: Null response
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/other"
   /pets/{petId}:
     $ref: "#/x-operations/getAPet"
 components:
@@ -85,6 +99,8 @@ components:
           format: int32
         message:
           type: string
+    other:
+      $ref: "#/placeOut/theSchema"
 x-operations:
   getAPet:
     get:
@@ -112,3 +128,7 @@ x-operations:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+
+placeOut:
+  theSchema:
+    type: string
