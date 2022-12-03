@@ -1358,8 +1358,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data).to.have.property('info');
           expect(conversionResult.output[0].data).to.have.property('item');
           expect(conversionResult.output[0].data.item.length).to.equal(1);
-          expect(conversionResult.output[0].data.auth.oauth1[0].value).to.equal('{{oauth_10_consumer_key}}');
-          expect(conversionResult.output[0].data.auth.oauth1[1].value).to.equal('{{oauth_10_consumer_secret}}');
+          expect(conversionResult.output[0].data.auth.oauth1[0].value).to.equal('{{consumer_secret}}');
+          expect(conversionResult.output[0].data.auth.oauth1[1].value).to.equal('{{consumer_key}}');
           done();
         });
       });
