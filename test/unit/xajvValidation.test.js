@@ -580,7 +580,7 @@ describe('validateSchema', function () {
     expect(result[0].keyword).to.equal('type');
   });
 
-  it('Should not report error with deprecated property when is not present and' +
+  it('Should report error with deprecated property when is not present and it is required' +
    ' includeDeprecated is false', function () {
     const schema = {
         type: 'object',
@@ -616,7 +616,8 @@ describe('validateSchema', function () {
         }
       },
       result = validateSchema(schema, valueToUse, { includeDeprecated: false });
-    expect(result).to.be.empty;
+    expect(result).to.not.be.empty;
+    expect(result[0].params.missingProperty).to.equal('id');
   });
 
   it('Should report error with deprecated property when is not present and' +
@@ -656,6 +657,7 @@ describe('validateSchema', function () {
       },
       result = validateSchema(schema, valueToUse, { includeDeprecated: true });
     expect(result).to.not.be.empty;
+    expect(result[0].params.missingProperty).to.equal('id');
   });
 });
 

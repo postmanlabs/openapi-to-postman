@@ -1894,7 +1894,7 @@ describe('validateTransaction convert and validate schemas with deprecated eleme
     });
   });
 
-  it('Should convert and validate without error excluding deprecated query param when ' +
+  it('Should convert and validate required parameter even if it is deprecated' +
   'includeDeprecated is false', function() {
     const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/petstore_deprecated_param.json'),
       openAPIData = fs.readFileSync(openAPI, 'utf8'),
@@ -1921,16 +1921,14 @@ describe('validateTransaction convert and validate schemas with deprecated eleme
         expect(err).to.be.null;
         expect(result.missingEndpoints.length).to.eq(0);
         let requestIds = Object.keys(result.requests);
-        requestIds.forEach((requestId) => {
-          expect(result.requests[requestId].endpoints[0]).to.not.be.undefined;
-          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
-        });
+        expect(result.requests[requestIds[0]].endpoints[0].matched).to.be.false;
+        expect(result.requests[requestIds[0]].endpoints[0].mismatches[0].reason.includes('variable2')).to.be.true;
       });
     });
 
   });
 
-  it('Should convert and validate without error excluding deprecated query param when ' +
+  it('Should convert and validate required parameter even if it is deprecated' +
   'includeDeprecated is true', function() {
     const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/petstore_deprecated_param.json'),
       openAPIData = fs.readFileSync(openAPI, 'utf8'),
