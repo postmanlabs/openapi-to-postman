@@ -1286,6 +1286,22 @@ describe('CONVERT FUNCTION TESTS ', function() {
         });
     });
 
+    it('Should generate collection where folder name doesn\'t contain spaces when ' +
+      'not present in operation path', function (done) {
+      var openapi = fs.readFileSync(testSpec, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item.length).to.equal(2);
+        expect(_.map(conversionResult.output[0].data.item, 'name')).to.include.members(['pets', 'pet/{petId}']);
+        done();
+      });
+    });
+
     it('Should convert and include deprecated operations when option is not present' +
     '- has only one op and is deprecated', function () {
       const fileData = fs.readFileSync(onlyOneOperationDeprecated, 'utf8');
