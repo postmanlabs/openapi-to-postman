@@ -1342,7 +1342,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
     });
   });
 
-  it.only('Should report a mismatch when the response body is not valid', function (done) {
+  it('Should report a mismatch when the response body is not valid', function (done) {
     let allOfExample = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
       '/invalid_response_body_all_of_properties_spec.json'), 'utf-8'),
       allOfCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
