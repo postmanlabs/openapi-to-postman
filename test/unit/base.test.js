@@ -59,10 +59,18 @@ describe('CONVERT FUNCTION TESTS ', function() {
       invalidNullInfo = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-null-info.json'),
       invalidNullInfoTitle = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-title.json'),
       invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json'),
-      referencedFromOutOfComponents =
-        path.join(__dirname, VALID_OPENAPI_PATH + '/referencedFromOutOfComponents.yaml'),
+      referencedAllFromOutOfComponents =
+        path.join(__dirname, VALID_OPENAPI_PATH + '/referencedAllFromOutOfComponents.yaml'),
+      referencedAllPathsFromOutOfComponents =
+        path.join(__dirname, VALID_OPENAPI_PATH + '/referencedAllPathsFromOutOfComponents.yaml'),
       referencedPathFromOutOfComponentsTagsStrategy =
-        path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed-referenced-path.yaml');
+        path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed-referenced-path.yaml'),
+      referencedAllFromComponents =
+        path.join(__dirname, VALID_OPENAPI_PATH + '/referencedAllFromComponents.yaml'),
+      referencedAllFromOutOfComponentsCircular =
+        path.join(__dirname, VALID_OPENAPI_PATH + '/referencedAllFromOutOfComponentsCircular.yaml'),
+      referencedSchemas2DependOnSameOutOfComponents =
+        path.join(__dirname, VALID_OPENAPI_PATH + '/referencedSchemas2DependOnSameOutOfComponents.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1298,44 +1306,281 @@ describe('CONVERT FUNCTION TESTS ', function() {
     describe('[Github #309 - Should convert a path when is referenced ' +
       'from a different place than components]', function() {
 
-      it('Should convert and include the referenced paths' +
-      referencedFromOutOfComponents, function(done) {
-        Converter.convert({ type: 'file', data:
-        referencedFromOutOfComponents }, {}, (err, conversionResult) => {
-          expect(err).to.be.null;
-          expect(conversionResult.result).to.equal(true);
-          expect(conversionResult.output.length).to.equal(1);
-          expect(conversionResult.output[0].type).to.equal('collection');
-          expect(conversionResult.output[0].data).to.have.property('info');
-          expect(conversionResult.output[0].data).to.have.property('item');
-          expect(conversionResult.output[0].data.item[0].item.length)
-            .to.equal(4);
-          done();
+      describe('Validate that all references from out of components are resolved correctly', function() {
+        it('Should convert and include the referenced responses by referencing individual', function(done) {
+          Converter.convert({ type: 'file', data:
+          referencedAllFromOutOfComponents }, {}, (err, conversionResult) => {
+            const individualResponseReferencedContainer = conversionResult.output[0]
+              .data.item[0].item[0].response;
+            expect(err).to.be.null;
+            expect(conversionResult.result).to.equal(true);
+            expect(conversionResult.output[0].data.item[0].item.length)
+              .to.equal(4);
+            expect(individualResponseReferencedContainer.length)
+              .to.equal(2);
+            done();
+          });
+        });
+
+        it('Should convert and include the referenced parameters by referencing' +
+          ' individual', function(done) {
+          Converter.convert({ type: 'file', data:
+          referencedAllFromOutOfComponents }, {}, (err, conversionResult) => {
+            const referencedParameterContainer = conversionResult.output[0]
+              .data.item[0].item[0].request.url.query;
+            expect(err).to.be.null;
+            expect(conversionResult.result).to.equal(true);
+            expect(conversionResult.output[0].data.item[0].item.length)
+              .to.equal(4);
+            expect(referencedParameterContainer.length)
+              .to.equal(1);
+            expect(referencedParameterContainer[0].key)
+              .to.equal('limit');
+            done();
+          });
+        });
+
+        it('Should convert and include the referenced examples by referencing individual', function(done) {
+          Converter.convert(
+            { type: 'file', data: referencedAllFromOutOfComponents },
+            { requestParametersResolution: 'Example' },
+            (err, conversionResult) => {
+              const referencedRequestExample = conversionResult.output[0]
+                  .data.item[0].item[2].request.body.raw,
+                referencedResponseExample = conversionResult.output[0]
+                  .data.item[0].item[0].response[0].body;
+              expect(err).to.be.null;
+              expect(conversionResult.result).to.equal(true);
+              expect(conversionResult.output[0].data.item[0].item.length)
+                .to.equal(4);
+              expect(referencedRequestExample)
+                .to.equal('{\n  \"id\": 1,\n  \"name\": \"bob\"\n}');
+              expect(referencedResponseExample)
+                .to.equal('[\n  {\n    \"id\": 1,\n    \"name\": \"bob\"\n  }\n]');
+              done();
+            }
+          );
+        });
+
+        it('Should convert and include the referenced requestBody by referencing individual', function(done) {
+          Converter.convert(
+            { type: 'file', data: referencedAllFromOutOfComponents },
+            {},
+            (err, conversionResult) => {
+              const referencedRequestBody = conversionResult.output[0]
+                .data.item[0].item[2].request.body.raw;
+              expect(err).to.be.null;
+              expect(conversionResult.result).to.equal(true);
+              expect(conversionResult.output[0].data.item[0].item.length)
+                .to.equal(4);
+              expect(referencedRequestBody)
+                .to.equal('{\n  \"id\": \"<long>\",\n  \"name\": \"<string>\",\n  \"tag\": \"<string>\"\n}');
+              done();
+            }
+          );
+        });
+
+        it('Should convert and include the referenced headers by referencing individual', function(done) {
+          Converter.convert(
+            { type: 'file', data: referencedAllFromOutOfComponents },
+            {},
+            (err, conversionResult) => {
+              const referencedHeader = conversionResult.output[0]
+                .data.item[0].item[0].response[0].header[0];
+              expect(err).to.be.null;
+              expect(conversionResult.result).to.equal(true);
+              expect(conversionResult.output[0].data.item[0].item.length)
+                .to.equal(4);
+              expect(referencedHeader.description)
+                .to.equal('the header');
+              expect(referencedHeader.key)
+                .to.equal('theHeader');
+              done();
+            }
+          );
+        });
+
+        it('Should convert and include the paths by referencing all from out of components', function(done) {
+          Converter.convert(
+            { type: 'file', data: referencedAllPathsFromOutOfComponents },
+            {},
+            (err, conversionResult) => {
+              const referencedHeader = conversionResult.output[0]
+                .data.item[0].item[0].response[0].header[0];
+              expect(err).to.be.null;
+              expect(conversionResult.result).to.equal(true);
+              expect(conversionResult.output[0].data.item[0].item.length)
+                .to.equal(4);
+              expect(referencedHeader.description)
+                .to.equal('the header');
+              expect(referencedHeader.key)
+                .to.equal('theHeader');
+              done();
+            }
+          );
+        });
+
+        it('Should convert and include the referenced paths using tags as folder strategy', function(done) {
+          Converter.convert(
+            {
+              type: 'file',
+              data: referencedPathFromOutOfComponentsTagsStrategy
+            },
+            {
+              folderStrategy: 'Tags'
+            },
+            (err, conversionResult) => {
+              expect(err).to.be.null;
+              expect(conversionResult.result).to.equal(true);
+              expect(conversionResult.output.length).to.equal(1);
+              expect(conversionResult.output[0].type).to.equal('collection');
+              expect(conversionResult.output[0].data).to.have.property('info');
+              expect(conversionResult.output[0].data).to.have.property('item');
+              expect(conversionResult.output[0].data.item[0].item.length)
+                .to.equal(7);
+              done();
+            }
+          );
+        });
+
+        it('Should avoid circular references', function(done) {
+          Converter.convert(
+            {
+              type: 'file',
+              data: referencedAllFromOutOfComponentsCircular
+            },
+            {},
+            (err, conversionResult) => {
+              const responseBody = JSON.parse(conversionResult.output[0].data.item[0].response[0].body);
+              expect(err).to.be.null;
+              expect(conversionResult.result).to.equal(true);
+              expect(conversionResult.output.length).to.equal(1);
+              expect(conversionResult.output[0].type).to.equal('collection');
+              expect(conversionResult.output[0].data).to.have.property('info');
+              expect(conversionResult.output[0].data).to.have.property('item');
+              expect(responseBody[0]).to.include.all.keys('id', 'name', 'tag', 'petData');
+              expect(responseBody[0].petData.petData.$circularRef)
+                .to.equal('<Circular reference to #/componentsFromOut/schemas/Pet detected>');
+              done();
+            }
+          );
+        });
+
+        it('Should resolve two schemas that depend on the same branch from out of components', function(done) {
+          Converter.convert(
+            {
+              type: 'file',
+              data: referencedSchemas2DependOnSameOutOfComponents
+            },
+            {},
+            (err, conversionResult) => {
+              const responseBody = conversionResult.output[0].data.item[0].response[0].body;
+              expect(err).to.be.null;
+              expect(conversionResult.result).to.equal(true);
+              expect(conversionResult.output.length).to.equal(1);
+              expect(conversionResult.output[0].type).to.equal('collection');
+              expect(conversionResult.output[0].data).to.have.property('info');
+              expect(conversionResult.output[0].data).to.have.property('item');
+              expect(responseBody.includes('$circularRef')).to.false;
+              expect(JSON.parse(responseBody)).to.include.all.keys('dog', 'cat');
+              done();
+            }
+          );
         });
       });
 
-      it('Should convert and include the referenced paths using tags as folder strategy' +
-      referencedPathFromOutOfComponentsTagsStrategy, function(done) {
-        Converter.convert(
-          {
-            type: 'file',
-            data: referencedPathFromOutOfComponentsTagsStrategy
-          },
-          {
-            folderStrategy: 'Tags'
-          },
-          (err, conversionResult) => {
+      describe('Validate that all references from components are resolved correctly', function () {
+        it('Should convert and include the referenced responses by referencing individual', function(done) {
+          Converter.convert({ type: 'file', data:
+          referencedAllFromComponents }, {}, (err, conversionResult) => {
+            const individualResponseReferencedContainer = conversionResult.output[0]
+              .data.item[0].item[0].response;
             expect(err).to.be.null;
             expect(conversionResult.result).to.equal(true);
-            expect(conversionResult.output.length).to.equal(1);
-            expect(conversionResult.output[0].type).to.equal('collection');
-            expect(conversionResult.output[0].data).to.have.property('info');
-            expect(conversionResult.output[0].data).to.have.property('item');
             expect(conversionResult.output[0].data.item[0].item.length)
-              .to.equal(7);
+              .to.equal(4);
+            expect(individualResponseReferencedContainer.length)
+              .to.equal(2);
             done();
-          }
-        );
+          });
+        });
+
+        it('Should convert and include the referenced parameters by referencing individual', function(done) {
+          Converter.convert({ type: 'file', data:
+          referencedAllFromComponents }, {}, (err, conversionResult) => {
+            const referencedParameterContainer = conversionResult.output[0]
+              .data.item[0].item[0].request.url.query;
+            expect(err).to.be.null;
+            expect(conversionResult.result).to.equal(true);
+            expect(conversionResult.output[0].data.item[0].item.length)
+              .to.equal(4);
+            expect(referencedParameterContainer.length)
+              .to.equal(1);
+            expect(referencedParameterContainer[0].key)
+              .to.equal('limit');
+            done();
+          });
+        });
+
+        it('Should convert and include the referenced examples by referencing individual', function(done) {
+          Converter.convert(
+            { type: 'file', data: referencedAllFromComponents },
+            { requestParametersResolution: 'Example' },
+            (err, conversionResult) => {
+              const referencedRequestExample = conversionResult.output[0]
+                  .data.item[0].item[2].request.body.raw,
+                referencedResponseExample = conversionResult.output[0]
+                  .data.item[0].item[0].response[0].body;
+              expect(err).to.be.null;
+              expect(conversionResult.result).to.equal(true);
+              expect(conversionResult.output[0].data.item[0].item.length)
+                .to.equal(4);
+              expect(referencedRequestExample)
+                .to.equal('{\n  \"id\": 1,\n  \"name\": \"bob\"\n}');
+              expect(referencedResponseExample)
+                .to.equal('[\n  {\n    \"id\": 1,\n    \"name\": \"bob\"\n  }\n]');
+              done();
+            }
+          );
+        });
+
+        it('Should convert and include the referenced requestBody by referencing individual', function(done) {
+          Converter.convert(
+            { type: 'file', data: referencedAllFromComponents },
+            {},
+            (err, conversionResult) => {
+              const referencedRequestBody = conversionResult.output[0]
+                .data.item[0].item[2].request.body.raw;
+              expect(err).to.be.null;
+              expect(conversionResult.result).to.equal(true);
+              expect(conversionResult.output[0].data.item[0].item.length)
+                .to.equal(4);
+              expect(referencedRequestBody)
+                .to.equal('{\n  \"id\": \"<long>\",\n  \"name\": \"<string>\",\n  \"tag\": \"<string>\"\n}');
+              done();
+            }
+          );
+        });
+
+        it('Should convert and include the referenced headers by referencing individual', function(done) {
+          Converter.convert(
+            { type: 'file', data: referencedAllFromComponents },
+            {},
+            (err, conversionResult) => {
+              const referencedHeader = conversionResult.output[0]
+                .data.item[0].item[0].response[0].header[0];
+              expect(err).to.be.null;
+              expect(conversionResult.result).to.equal(true);
+              expect(conversionResult.output[0].data.item[0].item.length)
+                .to.equal(4);
+              expect(referencedHeader.description)
+                .to.equal('the header');
+              expect(referencedHeader.key)
+                .to.equal('theHeader');
+              done();
+            }
+          );
+        });
       });
     });
   });

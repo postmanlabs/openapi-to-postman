@@ -1,7 +1,12 @@
 var expect = require('chai').expect,
   _ = require('lodash'),
   deref = require('../../lib/deref.js'),
-  schemaUtils30X = require('./../../lib/30XUtils/schemaUtils30X');
+  schemaUtils30X = require('./../../lib/30XUtils/schemaUtils30X'),
+  { getNegativeRegexp } = require('../../lib/utils'),
+  fs = require('fs'),
+  path = require('path'),
+  VALID_OPENAPI_PATH = '../data/valid_openapi',
+  { getConcreteSchemaUtils } = require('./../../lib/common/versionUtils');
 
 describe('DEREF FUNCTION TESTS ', function() {
   describe('resolveRefs Function', function () {
@@ -412,5 +417,25 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(deref._getEscaped(2, { randomObject: 1 })).to.equal(null);
       expect(deref._getEscaped(null, { randomObject: 1 })).to.equal(null);
     });
+  });
+});
+
+describe('dereferenceByConstraint method', function() {
+
+  it('Should dereference ONLY all out of components in root file', function() {
+    let referencedAllFromComponentsAndOut =
+        path.join(__dirname, VALID_OPENAPI_PATH + '/referencedAllFromComponentsAndFromOut.yaml'),
+      fileData = fs.readFileSync(referencedAllFromComponentsAndOut, 'utf-8'),
+      concreteUtils = getConcreteSchemaUtils(fileData),
+      parsedContent = concreteUtils.parseSpec(fileData, {});
+    const dereferencedSpec = deref.dereferenceByConstraint(
+        parsedContent.openapi,
+        getNegativeRegexp('#/components/')
+      ),
+      referencedPathContent = JSON.stringify(parsedContent.openapi['x-operations'].getAPet),
+      referencedSchemaContent = JSON.stringify(parsedContent.openapi.placeOut.theSchema);
+
+    expect(JSON.stringify(dereferencedSpec.paths['/pets/{petId}'])).to.equal(referencedPathContent);
+    expect(JSON.stringify(dereferencedSpec.components.schemas.other)).to.equal(referencedSchemaContent);
   });
 });
