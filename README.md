@@ -1,16 +1,17 @@
 
-![postman icon](https://raw.githubusercontent.com/postmanlabs/postmanlabs.github.io/develop/global-artefacts/postman-logo%2Btext-320x132.png) 
+![postman icon](https://raw.githubusercontent.com/postmanlabs/postmanlabs.github.io/develop/global-artefacts/postman-logo%2Btext-320x132.png)
 
-*Supercharge your API workflow.*  
+*Supercharge your API workflow.*
 *Modern software is built on APIs. Postman helps you develop APIs faster.*
 
 # OpenAPI 3.0 to Postman Collection v2.1.0 Converter
 
-[![Build Status](https://travis-ci.org/postmanlabs/openapi-to-postman.svg?branch=master)](https://travis-ci.org/postmanlabs/openapi-to-postman)
-<a href="https://www.npmjs.com/package/openapi-to-postmanv2" alt="Latest Stable Version">![npm](https://img.shields.io/npm/v/openapi-to-postmanv2.svg)</a> 
+![Build Status](https://github.com/postmanlabs/openapi-to-postman/actions/workflows/integration.yml/badge.svg)
+
+<a href="https://www.npmjs.com/package/openapi-to-postmanv2" alt="Latest Stable Version">![npm](https://img.shields.io/npm/v/openapi-to-postmanv2.svg)</a>
 <a href="https://www.npmjs.com/package/openapi-to-postmanv2" alt="Total Downloads">![npm](https://img.shields.io/npm/dw/openapi-to-postmanv2.svg)</a>
 
-#### Contents 
+#### Contents
 
 1. [Getting Started](#getting-started)
 2. [Using the converter as a NodeJS module](#using-the-converter-as-a-nodejs-module)
@@ -101,7 +102,7 @@ Check out complete list of options and their usage at [OPTIONS.md](/OPTIONS.md)
 
 ### ConversionResult
 
-- `result` - Flag responsible for providing a status whether the conversion was successful or not 
+- `result` - Flag responsible for providing a status whether the conversion was successful or not
 
 - `reason` - Provides the reason for an unsuccessful conversion, defined only if result: false
 
@@ -160,28 +161,28 @@ The converter can be used as a CLI tool as well. The following [command line opt
 `openapi2postmanv2 [options]`
 
 ### Options
-- `-v`, `--version`  
+- `-v`, `--version`
   Specifies the version of the converter
 
-- `-s <source>`, `--spec <source>`  
+- `-s <source>`, `--spec <source>`
   Used to specify the OpenAPI specification (file path) which is to be converted
 
-- `-o <destination>`, `--output <destination>`  
+- `-o <destination>`, `--output <destination>`
   Used to specify the destination file in which the collection is to be written
 
-- `-t`, `--test`  
+- `-t`, `--test`
   Used to test the collection with an in-built sample specification
 
-- `-p`, `--pretty`  
+- `-p`, `--pretty`
   Used to pretty print the collection object while writing to a file
 
 - `-O`, `--options`
   Used to supply options to the converter, for complete options details see [here](/OPTIONS.md)
 
-- `-c`, `--options-config`  
+- `-c`, `--options-config`
   Used to supply options to the converter through config file, for complete options details see [here](/OPTIONS.md)
 
-- `-h`, `--help`  
+- `-h`, `--help`
   Specifies all the options along with a few usage examples on the terminal
 
 
