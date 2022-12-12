@@ -189,7 +189,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         },
         key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema)),
         fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource,
-          { components, concreteUtils }, 'default', '  ', schemaCache);
+          { components, concreteUtils }, 'default', schemaCache);
 
       expect(schemaCache.schemaFakerCache).to.have.property(key);
       expect(schemaCache.schemaFakerCache[key]).to.equal(fakedSchema);
@@ -232,7 +232,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         ),
         key = hash('resolveToExample ' + JSON.stringify(resolvedSchema)),
         fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource,
-          { components, concreteUtils }, 'default', '  ', schemaCache);
+          { components, concreteUtils }, 'default', schemaCache);
 
       expect(schemaCache.schemaFakerCache).to.have.property(key);
       expect(schemaCache.schemaFakerCache[key]).to.equal(fakedSchema);
