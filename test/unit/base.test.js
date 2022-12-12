@@ -1310,7 +1310,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data).to.have.property('info');
           expect(conversionResult.output[0].data).to.have.property('item');
           expect(conversionResult.output[0].data.item.length).to.equal(1);
-          expect(conversionResult.output[0].data.auth.bearer[0].value).to.equal('{{bearer_token}}');
+          expect(conversionResult.output[0].data.auth.bearer[0].value).to.equal('{{bearerToken}}');
           done();
         });
       });
@@ -1325,8 +1325,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data).to.have.property('info');
           expect(conversionResult.output[0].data).to.have.property('item');
           expect(conversionResult.output[0].data.item.length).to.equal(1);
-          expect(conversionResult.output[0].data.auth.basic[0].value).to.equal('{{basic_auth_username}}');
-          expect(conversionResult.output[0].data.auth.basic[1].value).to.equal('{{basic_auth_password}}');
+          expect(conversionResult.output[0].data.auth.basic[0].value).to.equal('{{basicAuthUsername}}');
+          expect(conversionResult.output[0].data.auth.basic[1].value).to.equal('{{basicAuthPassword}}');
           done();
         });
       });
@@ -1341,8 +1341,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data).to.have.property('info');
           expect(conversionResult.output[0].data).to.have.property('item');
           expect(conversionResult.output[0].data.item.length).to.equal(1);
-          expect(conversionResult.output[0].data.auth.digest[0].value).to.equal('{{digest_auth_username}}');
-          expect(conversionResult.output[0].data.auth.digest[1].value).to.equal('{{digest_auth_password}}');
+          expect(conversionResult.output[0].data.auth.digest[0].value).to.equal('{{digestAuthUsername}}');
+          expect(conversionResult.output[0].data.auth.digest[1].value).to.equal('{{digestAuthPassword}}');
           expect(conversionResult.output[0].data.auth.digest[2].value).to.equal('{{realm}}');
           done();
         });
@@ -1358,8 +1358,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data).to.have.property('info');
           expect(conversionResult.output[0].data).to.have.property('item');
           expect(conversionResult.output[0].data.item.length).to.equal(1);
-          expect(conversionResult.output[0].data.auth.oauth1[0].value).to.equal('{{consumer_secret}}');
-          expect(conversionResult.output[0].data.auth.oauth1[1].value).to.equal('{{consumer_key}}');
+          expect(conversionResult.output[0].data.auth.oauth1[0].value).to.equal('{{consumerSecret}}');
+          expect(conversionResult.output[0].data.auth.oauth1[1].value).to.equal('{{consumerKey}}');
           done();
         });
       });
@@ -1374,8 +1374,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data).to.have.property('info');
           expect(conversionResult.output[0].data).to.have.property('item');
           expect(conversionResult.output[0].data.item.length).to.equal(1);
-          expect(conversionResult.output[0].data.auth.apikey[0].value).to.equal('{{api_key_name}}');
-          expect(conversionResult.output[0].data.auth.apikey[1].value).to.equal('{{api_key}}');
+          expect(conversionResult.output[0].data.auth.apikey[0].value).to.equal('{{apiKeyName}}');
+          expect(conversionResult.output[0].data.auth.apikey[1].value).to.equal('{{apiKey}}');
           done();
         });
       });
