@@ -8,7 +8,7 @@ requestParametersResolution|enum|Example, Schema|Schema|Select whether to genera
 exampleParametersResolution|enum|Example, Schema|Example|Select whether to generate the response parameters based on the [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject) in the schema.|CONVERSION
 folderStrategy|enum|Paths, Tags|Paths|Select whether to create folders according to the spec’s paths or tags.|CONVERSION
 schemaFaker|boolean|-|true|Whether or not schemas should be faked.|CONVERSION
-stackLimit|integer|-|10|Number of nesting limit till which schema resolution will happen. Increasing this limit may result in more time to convert collection depending on complexity of specification. (To make sure this option works correctly "optimizeConversion" option needs to be disabled)|CONVERSION
+stackLimit|integer|-|8|Number of nesting limit till which schema resolution will happen. Increasing this limit may result in more time to convert collection depending on complexity of specification. (To make sure this option works correctly "optimizeConversion" option needs to be disabled)|CONVERSION
 includeAuthInfoInExample|boolean|-|true|Select whether to include authentication parameters in the example request|CONVERSION
 shortValidationErrors|boolean|-|false|Whether detailed error messages are required for request <> schema validation operations.|VALIDATION
 validationPropertiesToIgnore|array|-|[]|Specific properties (parts of a request/response pair) to ignore during validation. Must be sent as an array of strings. Valid inputs in the array: PATHVARIABLE, QUERYPARAM, HEADER, BODY, RESPONSE_HEADER, RESPONSE_BODY|VALIDATION
