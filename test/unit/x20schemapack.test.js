@@ -47,7 +47,7 @@ describe('getMetaData method', function() {
 });
 
 describe('Convert method', function() {
-  it('Should convert an example file from: ', function(done) {
+  it('Should convert an example file from: sampleswagger.json', function(done) {
     const fileSource = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'sampleswagger.json'),
       fileData = fs.readFileSync(fileSource, 'utf8'),
       input = {
@@ -59,6 +59,23 @@ describe('Convert method', function() {
     schemapack.convert((error, result) => {
       expect(error).to.be.null;
       expect(result.result).to.be.true;
+    });
+    done();
+  });
+
+  it('Should convert an example file from: rangeMediaType.json', function(done) {
+    const fileSource = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'rangeMediaType.json'),
+      fileData = fs.readFileSync(fileSource, 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      },
+      schemapack = new SchemaPack(input);
+
+    schemapack.convert((error, result) => {
+      expect(error).to.be.null;
+      expect(result.output[0].data.item[0].response[0]._postman_previewlanguage).to.equal('json');
+      expect(result.output[0].data.item[0].response[0].body).to.not.be.empty;
     });
     done();
   });
