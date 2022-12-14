@@ -66,7 +66,13 @@ describe('CONVERT FUNCTION TESTS ', function() {
       specWithAuthBasic = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthBasic.yaml'),
       xmlRequestAndResponseBody = path.join(__dirname, VALID_OPENAPI_PATH, '/xmlRequestAndResponseBody.json'),
       xmlRequestAndResponseBodyNoPrefix =
-        path.join(__dirname, VALID_OPENAPI_PATH, '/xmlRequestAndResponseBodyNoPrefix.json');
+        path.join(__dirname, VALID_OPENAPI_PATH, '/xmlRequestAndResponseBodyNoPrefix.json'),
+      xmlRequestAndResponseBodyArrayType =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/xmlRequestAndResponseBodyArrayType.json'),
+      xmlRequestAndResponseBodyArrayTypeNoPrefix =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/xmlRequestAndResponseBodyArrayTypeNoPrefix.json'),
+      xmlRequestAndResponseBodyArrayTypeWrapped =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/xmlRequestAndResponseBodyArrayTypeWrapped.json');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1432,6 +1438,127 @@ describe('CONVERT FUNCTION TESTS ', function() {
               '  <responseString>(string)</responseString>\n' +
               '  <responseBoolean>(boolean)</responseBoolean>\n' +
               '</ExampleXMLResponse>';
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(resultantRequestBody).to.equal(expectedRequestBody);
+          expect(resultantResponseBody).to.equal(expectedResponseBody);
+          done();
+        }
+      );
+    });
+
+    it('Should convert and resolve xml bodies correctly when type is array', function(done) {
+      var openapi = fs.readFileSync(xmlRequestAndResponseBodyArrayType, 'utf8');
+      Converter.convert(
+        { type: 'string', data: openapi },
+        { schemaFaker: true },
+        (err, conversionResult) => {
+          const resultantRequestBody = conversionResult.output[0].data.item[0].request.body.raw,
+            resultantResponseBody = conversionResult.output[0].data.item[0].response[0].body,
+            expectedRequestBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
+              '<ex:ExampleXMLRequest xmlns:ex=\"urn:ExampleXML\">\n' +
+              '  <requestInteger>(integer)</requestInteger>\n' +
+              '  <requestString>(string)</requestString>\n' +
+              '  <requestBoolean>(boolean)</requestBoolean>\n' +
+              '</ex:ExampleXMLRequest>\n' +
+              '<ex:ExampleXMLRequest xmlns:ex=\"urn:ExampleXML\">\n' +
+              '  <requestInteger>(integer)</requestInteger>\n' +
+              '  <requestString>(string)</requestString>\n' +
+              '  <requestBoolean>(boolean)</requestBoolean>\n' +
+              '</ex:ExampleXMLRequest>',
+            expectedResponseBody = '<ex:ExampleXMLResponse xmlns:ex=\"urn:ExampleXML\">\n' +
+              '  <requestInteger>(integer)</requestInteger>\n' +
+              '  <requestString>(string)</requestString>\n' +
+              '  <requestBoolean>(boolean)</requestBoolean>\n' +
+              '</ex:ExampleXMLResponse>\n' +
+              '<ex:ExampleXMLResponse xmlns:ex=\"urn:ExampleXML\">\n' +
+              '  <requestInteger>(integer)</requestInteger>\n' +
+              '  <requestString>(string)</requestString>\n' +
+              '  <requestBoolean>(boolean)</requestBoolean>\n' +
+              '</ex:ExampleXMLResponse>';
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(resultantRequestBody).to.equal(expectedRequestBody);
+          expect(resultantResponseBody).to.equal(expectedResponseBody);
+          done();
+        }
+      );
+    });
+
+    it('Should convert and resolve xml bodies correctly when type is array and prefix is not provided', function(done) {
+      var openapi = fs.readFileSync(xmlRequestAndResponseBodyArrayTypeNoPrefix, 'utf8');
+      Converter.convert(
+        { type: 'string', data: openapi },
+        { schemaFaker: true },
+        (err, conversionResult) => {
+          const resultantRequestBody = conversionResult.output[0].data.item[0].request.body.raw,
+            resultantResponseBody = conversionResult.output[0].data.item[0].response[0].body,
+            expectedRequestBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
+              '<ExampleXMLRequest xmlns=\"urn:ExampleXML\">\n' +
+              '  <requestInteger>(integer)</requestInteger>\n' +
+              '  <requestString>(string)</requestString>\n' +
+              '  <requestBoolean>(boolean)</requestBoolean>\n' +
+              '</ExampleXMLRequest>\n' +
+              '<ExampleXMLRequest xmlns=\"urn:ExampleXML\">\n' +
+              '  <requestInteger>(integer)</requestInteger>\n' +
+              '  <requestString>(string)</requestString>\n' +
+              '  <requestBoolean>(boolean)</requestBoolean>\n' +
+              '</ExampleXMLRequest>',
+            expectedResponseBody = '<ExampleXMLResponse xmlns=\"urn:ExampleXML\">\n' +
+              '  <requestInteger>(integer)</requestInteger>\n' +
+              '  <requestString>(string)</requestString>\n' +
+              '  <requestBoolean>(boolean)</requestBoolean>\n' +
+              '</ExampleXMLResponse>\n' +
+              '<ExampleXMLResponse xmlns=\"urn:ExampleXML\">\n' +
+              '  <requestInteger>(integer)</requestInteger>\n' +
+              '  <requestString>(string)</requestString>\n' +
+              '  <requestBoolean>(boolean)</requestBoolean>\n' +
+              '</ExampleXMLResponse>';
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(resultantRequestBody).to.equal(expectedRequestBody);
+          expect(resultantResponseBody).to.equal(expectedResponseBody);
+          done();
+        }
+      );
+    });
+
+    it('Should convert and resolve xml bodies correctly when type is array and xml has wrapped', function(done) {
+      var openapi = fs.readFileSync(xmlRequestAndResponseBodyArrayTypeWrapped, 'utf8');
+      Converter.convert(
+        { type: 'string', data: openapi },
+        { schemaFaker: true },
+        (err, conversionResult) => {
+          const resultantRequestBody = conversionResult.output[0].data.item[0].request.body.raw,
+            resultantResponseBody = conversionResult.output[0].data.item[0].response[0].body,
+            expectedRequestBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
+              '<ex:ExampleXMLRequest>\n' +
+              '  <ex:ExampleXMLRequest xmlns:ex=\"urn:ExampleXML\">\n' +
+              '    <requestInteger>(integer)</requestInteger>\n' +
+              '    <requestString>(string)</requestString>\n' +
+              '    <requestBoolean>(boolean)</requestBoolean>\n' +
+              '  </ex:ExampleXMLRequest>\n' +
+              '  <ex:ExampleXMLRequest xmlns:ex=\"urn:ExampleXML\">\n' +
+              '    <requestInteger>(integer)</requestInteger>\n' +
+              '    <requestString>(string)</requestString>\n' +
+              '    <requestBoolean>(boolean)</requestBoolean>\n' +
+              '  </ex:ExampleXMLRequest>\n' +
+              '</ex:ExampleXMLRequest>',
+            expectedResponseBody = '<ex:ExampleXMLResponse>\n' +
+            '  <ex:ExampleXMLResponse xmlns:ex=\"urn:ExampleXML\">\n' +
+            '    <requestInteger>(integer)</requestInteger>\n' +
+            '    <requestString>(string)</requestString>\n' +
+            '    <requestBoolean>(boolean)</requestBoolean>\n' +
+            '  </ex:ExampleXMLResponse>\n' +
+            '  <ex:ExampleXMLResponse xmlns:ex=\"urn:ExampleXML\">\n' +
+            '    <requestInteger>(integer)</requestInteger>\n' +
+            '    <requestString>(string)</requestString>\n' +
+            '    <requestBoolean>(boolean)</requestBoolean>\n' +
+            '  </ex:ExampleXMLResponse>\n' +
+            '</ex:ExampleXMLResponse>';
           expect(err).to.be.null;
           expect(conversionResult.result).to.equal(true);
           expect(conversionResult.output.length).to.equal(1);
