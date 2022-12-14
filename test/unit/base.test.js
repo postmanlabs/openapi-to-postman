@@ -63,7 +63,10 @@ describe('CONVERT FUNCTION TESTS ', function() {
       specWithAuthApiKey = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthApiKey.yaml'),
       specWithAuthDigest = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthDigest.yaml'),
       specWithAuthOauth1 = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthOauth1.yaml'),
-      specWithAuthBasic = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthBasic.yaml');
+      specWithAuthBasic = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthBasic.yaml'),
+      xmlRequestAndResponseBody = path.join(__dirname, VALID_OPENAPI_PATH, '/xmlRequestAndResponseBody.json'),
+      xmlRequestAndResponseBodyNoPrefix =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/xmlRequestAndResponseBodyNoPrefix.json');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1379,6 +1382,64 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         });
       });
+    });
+
+    it('Should convert and resolve xml bodies correctly when prefix is provided', function(done) {
+      var openapi = fs.readFileSync(xmlRequestAndResponseBody, 'utf8');
+      Converter.convert(
+        { type: 'string', data: openapi },
+        { schemaFaker: true },
+        (err, conversionResult) => {
+          const resultantRequestBody = conversionResult.output[0].data.item[0].request.body.raw,
+            resultantResponseBody = conversionResult.output[0].data.item[0].response[0].body,
+            expectedRequestBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
+              '<ex:ExampleXMLRequest xmlns:ex=\"urn:ExampleXML\">\n' +
+              '  <requestInteger>(integer)</requestInteger>\n' +
+              '  <requestString>(string)</requestString>\n' +
+              '  <requestBoolean>(boolean)</requestBoolean>\n' +
+              '</ex:ExampleXMLRequest>',
+            expectedResponseBody = '<ex:ExampleXMLResponse xmlns:ex=\"urn:ExampleXML\">\n' +
+              '  <responseInteger>(integer)</responseInteger>\n' +
+              '  <responseString>(string)</responseString>\n' +
+              '  <responseBoolean>(boolean)</responseBoolean>\n' +
+              '</ex:ExampleXMLResponse>';
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(resultantRequestBody).to.equal(expectedRequestBody);
+          expect(resultantResponseBody).to.equal(expectedResponseBody);
+          done();
+        }
+      );
+    });
+
+    it('Should convert and resolve xml bodies correctly when prefix is not provided', function(done) {
+      var openapi = fs.readFileSync(xmlRequestAndResponseBodyNoPrefix, 'utf8');
+      Converter.convert(
+        { type: 'string', data: openapi },
+        { schemaFaker: true },
+        (err, conversionResult) => {
+          const resultantRequestBody = conversionResult.output[0].data.item[0].request.body.raw,
+            resultantResponseBody = conversionResult.output[0].data.item[0].response[0].body,
+            expectedRequestBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
+              '<ExampleXMLRequest xmlns=\"urn:ExampleXML\">\n' +
+              '  <requestInteger>(integer)</requestInteger>\n' +
+              '  <requestString>(string)</requestString>\n' +
+              '  <requestBoolean>(boolean)</requestBoolean>\n' +
+              '</ExampleXMLRequest>',
+            expectedResponseBody = '<ExampleXMLResponse xmlns=\"urn:ExampleXML\">\n' +
+              '  <responseInteger>(integer)</responseInteger>\n' +
+              '  <responseString>(string)</responseString>\n' +
+              '  <responseBoolean>(boolean)</responseBoolean>\n' +
+              '</ExampleXMLResponse>';
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(resultantRequestBody).to.equal(expectedRequestBody);
+          expect(resultantResponseBody).to.equal(expectedResponseBody);
+          done();
+        }
+      );
     });
   });
 
