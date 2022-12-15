@@ -76,6 +76,9 @@ describe('Convert method', function() {
       expect(error).to.be.null;
       expect(result.output[0].data.item[0].response[0]._postman_previewlanguage).to.equal('json');
       expect(result.output[0].data.item[0].response[0].body).to.not.be.empty;
+      expect(result.output[0].data.item[0].response[0].header.find((header) => {
+        return header.key === 'Content-Type';
+      }).value).to.equal('*/*');
     });
     done();
   });
