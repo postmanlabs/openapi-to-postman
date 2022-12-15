@@ -195,7 +195,8 @@ const optionIds = [
       name: 'Include deprecated properties',
       type: 'boolean',
       default: true,
-      description: 'Select whether to include deprecated properties or not',
+      description: 'Select whether to include deprecated operations, parameters, and properties' +
+        ' in generated collection or not',
       external: true,
       usage: ['CONVERSION']
     }
