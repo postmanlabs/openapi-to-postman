@@ -1349,7 +1349,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         '/invalid_response_body_all_of_properties_collection.json'), 'utf-8'),
       historyRequest = [],
       schemaPack = new Converter.SchemaPack({ type: 'string', data: allOfExample },
-        { suggestAvailableFixes: true, showMissingInSchemaErrors: true });
+        { suggestAvailableFixes: true, showMissingInSchemaErrors: true, optimizeConversion: false, stackLimit: 10 });
 
     getAllTransactions(JSON.parse(allOfCollection), historyRequest);
 
