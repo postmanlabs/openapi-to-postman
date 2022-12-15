@@ -55,6 +55,9 @@
                   },
                   "requestBoolean": {
                       "type": "boolean"
+                  },
+                  "requestNumber": {
+                      "type": "number"
                   }
               },
               "xml": {
@@ -79,6 +82,9 @@
                   },
                   "responseBoolean": {
                       "type": "boolean"
+                  },
+                  "responseNumber": {
+                      "type": "number"
                   }
               },
               "xml": {

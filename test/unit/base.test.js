@@ -1403,11 +1403,13 @@ describe('CONVERT FUNCTION TESTS ', function() {
               '  <requestInteger>(integer)</requestInteger>\n' +
               '  <requestString>(string)</requestString>\n' +
               '  <requestBoolean>(boolean)</requestBoolean>\n' +
+              '  <requestNumber>(number)</requestNumber>\n' +
               '</ex:ExampleXMLRequest>',
             expectedResponseBody = '<ex:ExampleXMLResponse xmlns:ex=\"urn:ExampleXML\">\n' +
               '  <responseInteger>(integer)</responseInteger>\n' +
               '  <responseString>(string)</responseString>\n' +
               '  <responseBoolean>(boolean)</responseBoolean>\n' +
+              '  <responseNumber>(number)</responseNumber>\n' +
               '</ex:ExampleXMLResponse>';
           expect(err).to.be.null;
           expect(conversionResult.result).to.equal(true);
