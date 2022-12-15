@@ -746,6 +746,13 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH
         ),
         '/invalidTypeProperty.yaml'
+      ),
+      oneOfChildPropertyNoType = getSpecsPathByVersion(
+        getFoldersByVersion(
+          VALIDATION_DATA_FOLDER_PATH,
+          VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH
+        ),
+        '/oneOfChildNoTypeSpec.json'
       );
 
     emptyParameterSpecs.forEach((specData) => {
@@ -1233,6 +1240,31 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         });
       });
     });
+
+    oneOfChildPropertyNoType.forEach((specData) => {
+      it('Should correctly resolve and validate for oneOfChild scenarios ' +
+        specData.version, function (done) {
+        let invalidTypePropertySpec = fs.readFileSync(specData.path, 'utf-8'),
+          invalidTypePropertyCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+            '/oneOfChildNoTypeColl.json'), 'utf-8'),
+          options = { allowUrlPathVarMatching: true, detailedBlobValidation: true },
+          resultObj,
+          historyRequest = [],
+          schemaPack = new Converter.SchemaPack({ type: 'string', data: invalidTypePropertySpec }, options);
+
+        getAllTransactions(JSON.parse(invalidTypePropertyCollection), historyRequest);
+
+        schemaPack.validateTransaction(historyRequest, (err, result) => {
+          expect(err).to.be.null;
+          expect(result).to.be.an('object');
+          resultObj = result.requests[historyRequest[0].id].endpoints[0];
+          const responseId = _.keys(resultObj.responses)[0],
+            responseMissmatches = resultObj.responses[responseId].mismatches;
+          expect(responseMissmatches).to.have.lengthOf(0);
+          done();
+        });
+      });
+    });
   });
 
   describe('getPostmanUrlSuffixSchemaScore function', function () {
@@ -1317,7 +1349,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         '/invalid_response_body_all_of_properties_collection.json'), 'utf-8'),
       historyRequest = [],
       schemaPack = new Converter.SchemaPack({ type: 'string', data: allOfExample },
-        { suggestAvailableFixes: true, showMissingInSchemaErrors: true });
+        { suggestAvailableFixes: true, showMissingInSchemaErrors: true, optimizeConversion: false, stackLimit: 10 });
 
     getAllTransactions(JSON.parse(allOfCollection), historyRequest);
 

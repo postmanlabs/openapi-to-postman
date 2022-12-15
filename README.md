@@ -1,16 +1,17 @@
 
-![postman icon](https://raw.githubusercontent.com/postmanlabs/postmanlabs.github.io/develop/global-artefacts/postman-logo%2Btext-320x132.png) 
+<img src="https://voyager.postman.com/logo/postman-logo-orange.svg" width="320" alt="The Postman Logo">
 
-*Supercharge your API workflow.*  
+*Supercharge your API workflow.*
 *Modern software is built on APIs. Postman helps you develop APIs faster.*
 
 # OpenAPI 3.0, 3.1 and Swagger 2.0 to Postman Collection
 
-[![Build Status](https://travis-ci.org/postmanlabs/openapi-to-postman.svg?branch=master)](https://travis-ci.org/postmanlabs/openapi-to-postman)
-<a href="https://www.npmjs.com/package/openapi-to-postmanv2" alt="Latest Stable Version">![npm](https://img.shields.io/npm/v/openapi-to-postmanv2.svg)</a> 
+![Build Status](https://github.com/postmanlabs/openapi-to-postman/actions/workflows/integration.yml/badge.svg)
+
+<a href="https://www.npmjs.com/package/openapi-to-postmanv2" alt="Latest Stable Version">![npm](https://img.shields.io/npm/v/openapi-to-postmanv2.svg)</a>
 <a href="https://www.npmjs.com/package/openapi-to-postmanv2" alt="Total Downloads">![npm](https://img.shields.io/npm/dw/openapi-to-postmanv2.svg)</a>
 
-#### Contents 
+#### Contents
 
 1. [Getting Started](#getting-started)
 2. [Command Line Interface](#command-line-interface)
