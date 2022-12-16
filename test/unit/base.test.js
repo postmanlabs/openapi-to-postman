@@ -63,7 +63,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
       specWithAuthApiKey = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthApiKey.yaml'),
       specWithAuthDigest = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthDigest.yaml'),
       specWithAuthOauth1 = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthOauth1.yaml'),
-      specWithAuthBasic = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthBasic.yaml');
+      specWithAuthBasic = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthBasic.yaml'),
+      schemaWithArrayTypeAndAdditionalProperties =
+        path.join(__dirname, VALID_OPENAPI_PATH + '/schemaWithArrayTypeAndAdditionalProperties.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1378,6 +1380,29 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data.auth.apikey[1].value).to.equal('{{apiKey}}');
           done();
         });
+      });
+    });
+
+    it('Should fake correctly the body when schema has array type and additionalProperties', function(done) {
+      var openapi = fs.readFileSync(schemaWithArrayTypeAndAdditionalProperties, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+        const resultantResponseBody = JSON.parse(
+            conversionResult.output[0].data.item[0].response[0].body
+          ),
+          resultantRequestBody = JSON.parse(
+            conversionResult.output[0].data.item[0].request.body.raw
+          );
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(resultantResponseBody.result).to.be.an('array')
+          .with.length(2);
+        expect(resultantRequestBody.result).to.be.an('array')
+          .with.length(2);
+        done();
       });
     });
   });
