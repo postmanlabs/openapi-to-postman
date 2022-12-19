@@ -58,7 +58,22 @@ describe('CONVERT FUNCTION TESTS ', function() {
       allHTTPMethodsSpec = path.join(__dirname, VALID_OPENAPI_PATH, '/all-http-methods.yaml'),
       invalidNullInfo = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-null-info.json'),
       invalidNullInfoTitle = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-title.json'),
-      invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json');
+      invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json'),
+      onlyOneOperationDeprecated = path.join(__dirname, VALID_OPENAPI_PATH, '/has_one_op_dep.json'),
+      someOperationOneDeprecated = path.join(__dirname, VALID_OPENAPI_PATH, '/has_some_op_dep.json'),
+      someOperationDeprecatedUsingTags =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/has_some_op_dep_use_tags.json'),
+      deprecatedParams =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/petstore_deprecated_param.json'),
+      deprecatedProperty =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/deprecated_property.json'),
+      schemaParamDeprecated =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/parameter_schema_dep_property.json'),
+      specWithAuthBearer = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthBearer.yaml'),
+      specWithAuthApiKey = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthApiKey.yaml'),
+      specWithAuthDigest = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthDigest.yaml'),
+      specWithAuthOauth1 = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthOauth1.yaml'),
+      specWithAuthBasic = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthBasic.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1289,6 +1304,256 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data.item.length).to.equal(2);
         expect(_.map(conversionResult.output[0].data.item, 'name')).to.include.members(['pets', 'pet/{petId}']);
         done();
+      });
+    });
+
+    it('Should convert and include deprecated operations when option is not present' +
+    '- has only one op and is deprecated', function () {
+      const fileData = fs.readFileSync(onlyOneOperationDeprecated, 'utf8');
+      Converter.convert({ type: 'string', data: fileData }, undefined,
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+          expect(result.output[0].data.item.length).to.equal(1);
+        });
+    });
+
+    it('Should convert and exclude deprecated operations - has only one op and is deprecated', function () {
+      const fileData = fs.readFileSync(onlyOneOperationDeprecated, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecated: false },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+          expect(result.output[0].data.item).to.be.empty;
+        });
+    });
+
+    it('Should convert and exclude deprecated operations -- has some deprecated', function () {
+      const fileData = fs.readFileSync(someOperationOneDeprecated, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecated: false },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+          expect(result.output[0].data.item.length).to.equal(1);
+        });
+    });
+
+    it('Should convert and exclude deprecated operations - has only one op and is deprecated' +
+      'using tags as folder strategy operation has not tag', function () {
+      const fileData = fs.readFileSync(onlyOneOperationDeprecated, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecated: false, folderStrategy: 'tags' },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+          expect(result.output[0].data.item).to.be.empty;
+        });
+    });
+
+    it('Should convert and exclude deprecated operations - has some deprecated' +
+      'using tags as folder strategy', function () {
+      const fileData = fs.readFileSync(someOperationDeprecatedUsingTags, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecated: false, folderStrategy: 'tags' },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+          expect(result.output[0].data.item.length).to.equal(1);
+          expect(result.output[0].data.item[0].name).to.equal('pets');
+        });
+    });
+
+    it('Should convert and exclude deprecated params when option is set to false', function() {
+      const fileData = fs.readFileSync(deprecatedParams, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecated: false },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.output[0].data.item[0].item[0].request.url.query.length).to.equal(1);
+          expect(result.output[0].data.item[0].item[0].request.url.query[0].key).to.equal('variable');
+          expect(result.output[0].data.item[0].item[0].request.header.length).to.equal(3);
+          expect(result.output[0].data.item[0].item[0].request.header[0].key).to.equal('limit');
+          expect(result.output[0].data.item[0].item[0].request.header[1].key).to.equal('limit_2');
+          expect(result.output[0].data.item[0].item[1].request.header[0].key).to.equal('limit_2');
+        });
+    });
+
+    it('Should convert and include deprecated params when option is set to true', function() {
+      const fileData = fs.readFileSync(deprecatedParams, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecated: true },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.output[0].data.item[0].item[0].request.url.query.length).to.equal(2);
+          expect(result.output[0].data.item[0].item[0].request.url.query[0].key).to.equal('variable');
+          expect(result.output[0].data.item[0].item[0].request.url.query[1].key).to.equal('variable2');
+          expect(result.output[0].data.item[0].item[0].request.header.length).to.equal(4);
+          expect(result.output[0].data.item[0].item[0].request.header[0].key).to.equal('limit');
+          expect(result.output[0].data.item[0].item[0].request.header[1].key).to.equal('limit_2');
+          expect(result.output[0].data.item[0].item[0].request.header[2].key).to.equal('limit_Dep');
+        });
+    });
+
+    it('Should convert and include deprecated params when option is not present', function() {
+      const fileData = fs.readFileSync(deprecatedParams, 'utf8');
+      Converter.convert({ type: 'string', data: fileData }, {},
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.output[0].data.item[0].item[0].request.url.query.length).to.equal(2);
+          expect(result.output[0].data.item[0].item[0].request.url.query[0].key).to.equal('variable');
+          expect(result.output[0].data.item[0].item[0].request.url.query[1].key).to.equal('variable2');
+          expect(result.output[0].data.item[0].item[0].request.header.length).to.equal(4);
+          expect(result.output[0].data.item[0].item[0].request.header[0].key).to.equal('limit');
+          expect(result.output[0].data.item[0].item[0].request.header[1].key).to.equal('limit_2');
+          expect(result.output[0].data.item[0].item[0].request.header[2].key).to.equal('limit_Dep');
+        });
+    });
+
+    it('Should convert and exclude deprecated property when option is set to false', function() {
+      const fileData = fs.readFileSync(deprecatedProperty, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecated: false },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.output[0].data.item[0].request.body.raw)
+            .to.equal('{\n  "b": "<string>"\n}');
+          expect(result.output[0].data.item[0].response[1].body.includes('errorCode')).to.be.false;
+        });
+    });
+
+    it('Should convert and include deprecated property when option is set to true', function() {
+      const fileData = fs.readFileSync(deprecatedProperty, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecated: true },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.output[0].data.item[0].request.body.raw)
+            .to.equal('{\n  "a": "<string>",\n  "b": "<string>"\n}');
+          expect(result.output[0].data.item[0].response[1].body.includes('errorCode')).to.be.true;
+        });
+    });
+
+    it('Should convert and include deprecated property when option is set to true in query and path', function() {
+      const fileData = fs.readFileSync(schemaParamDeprecated, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecated: true },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.output[0].data.item[0].request.url.query[0].key)
+            .to.equal('deprecated');
+          expect(result.output[0].data.item[0].request.url.query[1].key)
+            .to.equal('b');
+          expect(result.output[0].data.item[0].request.url.query[1].value)
+            .to.equal('{"c":"<string>","d":"<string>","deprecated":"<string>"}');
+          expect(result.output[0].data.item[0].request.url.variable[0].value)
+            .to.equal(';limitPath=deprecated,<boolean>,b,<string>');
+          expect(result.output[0].data.item[0].request.header[0].value)
+            .to.equal('deprecated,<boolean>,b,<string>');
+        });
+    });
+
+    it('Should convert and include deprecated property when option is set to false in query and path', function() {
+      const fileData = fs.readFileSync(schemaParamDeprecated, 'utf8');
+      Converter.convert({ type: 'string', data: fileData },
+        { includeDeprecated: false },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.output[0].data.item[0].request.url.query[0].key)
+            .to.equal('deprecated');
+          expect(result.output[0].data.item[0].request.url.query[1].key)
+            .to.equal('b');
+          expect(result.output[0].data.item[0].request.url.query[1].value)
+            .to.equal('{"d":"<string>","deprecated":"<string>"}');
+          expect(result.output[0].data.item[0].request.url.variable[0].value)
+            .to.equal(';limitPath=b,<string>');
+          expect(result.output[0].data.item[0].request.header[0].value)
+            .to.equal('b,<string>');
+        });
+    });
+
+    describe('[Github #643] - Generated value for corresponding' +
+      ' authorization should be as environment variable format', function() {
+
+      it('Should convert a collection and set bearer auth placeholder as variable', function(done) {
+        var openapi = fs.readFileSync(specWithAuthBearer, 'utf8');
+        Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item.length).to.equal(1);
+          expect(conversionResult.output[0].data.auth.bearer[0].value).to.equal('{{bearerToken}}');
+          done();
+        });
+      });
+
+      it('Should convert a collection and set basic auth placeholder as variable', function(done) {
+        var openapi = fs.readFileSync(specWithAuthBasic, 'utf8');
+        Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item.length).to.equal(1);
+          expect(conversionResult.output[0].data.auth.basic[0].value).to.equal('{{basicAuthUsername}}');
+          expect(conversionResult.output[0].data.auth.basic[1].value).to.equal('{{basicAuthPassword}}');
+          done();
+        });
+      });
+
+      it('Should convert a collection and set digest auth placeholder as variable', function(done) {
+        var openapi = fs.readFileSync(specWithAuthDigest, 'utf8');
+        Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item.length).to.equal(1);
+          expect(conversionResult.output[0].data.auth.digest[0].value).to.equal('{{digestAuthUsername}}');
+          expect(conversionResult.output[0].data.auth.digest[1].value).to.equal('{{digestAuthPassword}}');
+          expect(conversionResult.output[0].data.auth.digest[2].value).to.equal('{{realm}}');
+          done();
+        });
+      });
+
+      it('Should convert a collection and set oauth1 auth placeholder as variable', function(done) {
+        var openapi = fs.readFileSync(specWithAuthOauth1, 'utf8');
+        Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item.length).to.equal(1);
+          expect(conversionResult.output[0].data.auth.oauth1[0].value).to.equal('{{consumerSecret}}');
+          expect(conversionResult.output[0].data.auth.oauth1[1].value).to.equal('{{consumerKey}}');
+          done();
+        });
+      });
+
+      it('Should convert a collection and set apiKey auth placeholder as variable', function(done) {
+        var openapi = fs.readFileSync(specWithAuthApiKey, 'utf8');
+        Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item.length).to.equal(1);
+          expect(conversionResult.output[0].data.auth.apikey[0].value).to.equal('{{apiKeyName}}');
+          expect(conversionResult.output[0].data.auth.apikey[1].value).to.equal('{{apiKey}}');
+          done();
+        });
       });
     });
   });
