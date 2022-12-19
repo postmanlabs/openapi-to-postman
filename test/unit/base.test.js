@@ -1400,8 +1400,12 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(conversionResult.output[0].data).to.have.property('item');
         expect(resultantResponseBody.result).to.be.an('array')
           .with.length(2);
+        expect(resultantResponseBody.result[0]).to.include.all.keys('id', 'name');
+        expect(resultantResponseBody.result[1]).to.include.all.keys('id', 'name');
         expect(resultantRequestBody.result).to.be.an('array')
           .with.length(2);
+        expect(resultantRequestBody.result[0]).to.include.all.keys('id', 'name');
+        expect(resultantRequestBody.result[1]).to.include.all.keys('id', 'name');
         done();
       });
     });
