@@ -16,7 +16,7 @@
 		"/pets": {
 			"get": {
 				"summary": "List all pets",
-				"decription": "This should not be in the request body",
+				"description": "This should not be in the request body",
 				"operationId": "listPets",
 				"tags": [
 					"pets"
@@ -52,6 +52,7 @@
 						"in": "query",
 						"description": "another random variable",
 						"style": "spaceDelimited",
+            "deprecated": true,
 						"schema": {
 							"type": ["array"],
 							"items": {
@@ -124,91 +125,20 @@
 							"type": ["integer"],
 							"format": "int32"
 						}
+					},
+          {
+						"name": "limit_Dep",
+						"in": "header",
+						"description": "How many items to return at one time (max 100)",
+						"required": false,
+            "deprecated": true,
+						"schema": {
+							"type": ["integer"],
+							"format": "int32"
+						}
 					}
 				]
-		},
-		"/pets/{petId}": {
-			"get": {
-				"summary": "Info for a specific pet",
-				"operationId": "showPetById",
-				"tags": [
-					"pets"
-				],
-				"parameters": [
-					{
-						"name": "petId",
-						"in": "path",
-						"required": true,
-						"description": "The id of the pet to retrieve",
-						"schema": {
-							"type": ["string"]
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Expected response to a valid request",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Pet"
-								}
-							}
-						}
-					},
-					"default": {
-						"description": "unexpected error",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/Error"
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-    "/pet/{petId}/uploadImage": {
-      "post": {
-        "tags": [
-          "pet",
-          "cat"
-        ],
-        "summary": "uploads an image",
-        "description": "This should not be in the request body",
-        "operationId": "uploadFile",
-        "parameters": [
-          {
-            "name": "petId",
-            "in": "path",
-            "description": "ID of pet to update",
-            "required": true,
-            "schema": {
-              "type": ["integer"],
-              "format": "int64"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/octet-stream": {}
-          }
-        },
-				"responses": {
-					"200": {
-						"description": "successful operation",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiResponse"
-								}
-							}
-						}
-					}
-				}
-      }
-    }
+		}
 	},
 	"components": {
 		"schemas": {
