@@ -59,8 +59,8 @@ describe('Convert method', function() {
     schemapack.convert((error, result) => {
       expect(error).to.be.null;
       expect(result.result).to.be.true;
+      done();
     });
-    done();
   });
 
   it('Should convert an example file from: rangeMediaType.json', function(done) {
@@ -79,8 +79,8 @@ describe('Convert method', function() {
       expect(result.output[0].data.item[0].response[0].header.find((header) => {
         return header.key === 'Content-Type';
       }).value).to.equal('*/*');
+      done();
     });
-    done();
   });
 });
 
