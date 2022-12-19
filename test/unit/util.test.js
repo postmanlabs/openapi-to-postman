@@ -68,9 +68,15 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         },
         parameterSource = 'REQUEST',
         resolveTo = 'schema',
-        resolveFor = 'CONVERSION';
+        resolveFor = 'CONVERSION',
+        options = {
+          indentCharacter: '  ',
+          stackLimit: 10,
+          includeDeprecated: true
+        };
 
-      expect(SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource, { components, concreteUtils }))
+      expect(SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource, { components, concreteUtils },
+        '', undefined, options))
         .to.equal('<string>');
       done();
     });
@@ -100,13 +106,21 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         parameterSource = 'REQUEST',
         resolveTo = 'schema',
         resolveFor = 'CONVERSION',
+        options = {
+          indentCharacter: '  ',
+          stackLimit: 10,
+          includeDeprecated: true
+        },
 
         result = SchemaUtils.safeSchemaFaker(
           schema,
           resolveTo,
           resolveFor,
           parameterSource,
-          { components, concreteUtils }
+          { components, concreteUtils },
+          '',
+          undefined,
+          options
         ),
         tooManyLevelsString = result[0].c.value;
 
@@ -146,12 +160,20 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         parameterSource = 'REQUEST',
         resolveTo = 'schema',
         resolveFor = 'CONVERSION',
+        options = {
+          indentCharacter: '  ',
+          stackLimit: 10,
+          includeDeprecated: true
+        },
         fakedSchema = SchemaUtils.safeSchemaFaker(
           schema,
           resolveTo,
           resolveFor,
           parameterSource,
-          { components, concreteUtils }
+          { components, concreteUtils },
+          '',
+          undefined,
+          options
         );
 
       expect(fakedSchema.value).to.equal('reference #/components/schem2 not found in the OpenAPI spec');
@@ -188,8 +210,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           schemaResolutionCache: {}
         },
         key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema)),
+        options = {
+          indentCharacter: '  ',
+          stackLimit: 10,
+          includeDeprecated: true
+        },
         fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource,
-          { components, concreteUtils }, 'default', '  ', schemaCache);
+          { components, concreteUtils }, 'default', schemaCache, options);
 
       expect(schemaCache.schemaFakerCache).to.have.property(key);
       expect(schemaCache.schemaFakerCache[key]).to.equal(fakedSchema);
@@ -231,8 +258,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           resolveTo
         ),
         key = hash('resolveToExample ' + JSON.stringify(resolvedSchema)),
+        options = {
+          indentCharacter: '  ',
+          stackLimit: 10,
+          includeDeprecated: true
+        },
         fakedSchema = SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource,
-          { components, concreteUtils }, 'default', '  ', schemaCache);
+          { components, concreteUtils }, 'default', schemaCache, options);
 
       expect(schemaCache.schemaFakerCache).to.have.property(key);
       expect(schemaCache.schemaFakerCache[key]).to.equal(fakedSchema);
