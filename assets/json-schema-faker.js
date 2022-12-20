@@ -24694,11 +24694,12 @@ function extend() {
             // avoid validation of values that are in pm variable format (i.e. '{{userId}}')
             result = validateSchema(schema, schema.example, { ignoreUnresolvedVariables: true });
           }
+
+          // Store the final result that needs to be used in the seen map
+          finalResult = result && result.length === 0;
+          seenSchemaMap.set(hashSchema, finalResult);
         }
 
-        finalResult = result && result.length === 0;
-
-        seenSchemaMap.set(hashSchema, finalResult);
         // Use example only if valid
         if (finalResult) {
           return schema.example;

@@ -96,7 +96,7 @@ const optionIds = [
     stackLimit: {
       name: 'Schema resolution nesting limit',
       type: 'integer',
-      default: 8,
+      default: 10,
       description: 'Number of nesting limit till which schema resolution will happen. Increasing this limit may' +
         ' result in more time to convert collection depending on complexity of specification. (To make sure this' +
         ' option works correctly "optimizeConversion" option needs to be disabled)'
