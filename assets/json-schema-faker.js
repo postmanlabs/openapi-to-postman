@@ -15,7 +15,9 @@ var _ = require('lodash'),
   {
     handleExclusiveMaximum,
     handleExclusiveMinimum
-  } = require('./../lib/common/schemaUtilsCommon');
+  } = require('./../lib/common/schemaUtilsCommon'),
+  hash = require('object-hash'),
+  seenSchemaMap = new Map();
 
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
@@ -24667,28 +24669,38 @@ function extend() {
   function traverse(schema, path, resolve, rootSchema) {
       schema = resolve(schema);
       if (!schema) {
-          return;
+        return;
       }
       if (optionAPI('useExamplesValue') && 'example' in schema) {
         var clonedSchema,
-          result;
+          result,
+          finalResult,
+          hashSchema = hash(schema);
 
-        // avoid minItems and maxItems while checking for valid examples
-        if (optionAPI('avoidExampleItemsLength') && _.get(schema, 'type') === 'array') {
-          clonedSchema = _.clone(schema);
-          _.unset(clonedSchema, 'minItems');
-          _.unset(clonedSchema, 'maxItems');
-
-          // avoid validation of values that are in pm variable format (i.e. '{{userId}}')
-          result = validateSchema(clonedSchema, schema.example, { ignoreUnresolvedVariables: true });
+        if(seenSchemaMap.has(hashSchema)) {
+          finalResult = seenSchemaMap.get(hashSchema);
         }
         else {
-          // avoid validation of values that are in pm variable format (i.e. '{{userId}}')
-          result = validateSchema(schema, schema.example, { ignoreUnresolvedVariables: true });
+          // avoid minItems and maxItems while checking for valid examples
+          if (optionAPI('avoidExampleItemsLength') && _.get(schema, 'type') === 'array') {
+            clonedSchema = _.clone(schema);
+            _.unset(clonedSchema, 'minItems');
+            _.unset(clonedSchema, 'maxItems');
+
+            // avoid validation of values that are in pm variable format (i.e. '{{userId}}')
+            result = validateSchema(clonedSchema, schema.example, { ignoreUnresolvedVariables: true });
+          }
+          else {
+            // avoid validation of values that are in pm variable format (i.e. '{{userId}}')
+            result = validateSchema(schema, schema.example, { ignoreUnresolvedVariables: true });
+          }
         }
 
+        finalResult = result && result.length === 0;
+
+        seenSchemaMap.set(hashSchema, finalResult);
         // Use example only if valid
-        if (result && result.length === 0) {
+        if (finalResult) {
           return schema.example;
         }
       }
