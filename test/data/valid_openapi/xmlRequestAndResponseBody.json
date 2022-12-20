@@ -1,0 +1,109 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+      "version": "1.0.0",
+      "title": "Example REST Service with XML Payloads"
+  },
+  "servers": [
+      {
+          "url": "localhost:3000"
+      }
+  ],
+  "paths": {
+      "/example": {
+          "post": {
+              "responses": {
+                  "200": {
+                      "content": {
+                          "application/xml": {
+                              "schema": {
+                                  "$ref": "#/components/schemas/ExampleResponse"
+                              }
+                          }
+                      },
+                      "description": "An example REST service with XML payloads response"
+                  }
+              },
+              "description": "An example REST service with XML payloads",
+              "requestBody": {
+                  "content": {
+                      "application/xml": {
+                          "schema": {
+                              "$ref": "#/components/schemas/ExampleRequest"
+                          }
+                      }
+                  }
+              }
+          }
+      }
+  },
+  "components": {
+      "schemas": {
+          "ExampleRequest": {
+              "type": "object",
+              "required": [
+                  "requestInteger",
+                  "requestString",
+                  "requestBoolean"
+              ],
+              "properties": {
+                  "requestInteger": {
+                      "type": "integer"
+                  },
+                  "requestString": {
+                      "type": "string"
+                  },
+                  "requestBoolean": {
+                      "type": "boolean"
+                  },
+                  "requestNumber": {
+                      "type": "number"
+                  }
+              },
+              "xml": {
+                  "name": "ExampleXMLRequest",
+                  "prefix": "ex",
+                  "namespace": "urn:ExampleXML"
+              }
+          },
+          "ExampleResponse": {
+              "type": "object",
+              "required": [
+                  "responseInteger",
+                  "responseString",
+                  "responseBoolean"
+              ],
+              "properties": {
+                  "responseInteger": {
+                      "type": "integer"
+                  },
+                  "responseString": {
+                      "type": "string"
+                  },
+                  "responseBoolean": {
+                      "type": "boolean"
+                  },
+                  "responseNumber": {
+                      "type": "number"
+                  }
+              },
+              "xml": {
+                  "name": "ExampleXMLResponse",
+                  "prefix": "ex",
+                  "namespace": "urn:ExampleXML"
+              }
+          }
+      },
+      "securitySchemes": {
+          "BasicAuth": {
+              "type": "http",
+              "scheme": "basic"
+          }
+      }
+  },
+  "security": [
+      {
+          "BasicAuth": []
+      }
+  ]
+}
