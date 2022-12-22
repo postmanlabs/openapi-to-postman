@@ -1,6 +1,6 @@
 id|type|available options|default|description|usage
 |---|---|---|---|---|---|
-requestNameSource|enum|URL, Fallback|Fallback|Determines how the requests inside the generated collection will be named. If “Fallback” is selected, the request will be named after one of the following schema values: `description`, `operationid`, `url`.|CONVERSION, VALIDATION
+requestNameSource|enum|URL, Fallback, OperationId|Fallback|Determines how the requests inside the generated collection will be named. If “Fallback” is selected, the request will be named after one of the following schema values: `description`, `operationid`, `url`.|CONVERSION, VALIDATION
 indentCharacter|enum|Space, Tab|Space|Option for setting indentation character|CONVERSION
 collapseFolders|boolean|-|true|Importing will collapse all folders that have only one child element and lack persistent folder-level data.|CONVERSION
 optimizeConversion|boolean|-|true|Optimizes conversion for large specification, disabling this option might affect the performance of conversion.|CONVERSION
