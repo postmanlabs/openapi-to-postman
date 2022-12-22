@@ -49,7 +49,8 @@ let expect = require('chai').expect,
   exampleValue = path.join(__dirname, BUNDLES_FOLDER + '/example_value'),
   example2 = path.join(__dirname, BUNDLES_FOLDER + '/example2'),
   schemaCircularRef = path.join(__dirname, BUNDLES_FOLDER + '/circular_reference'),
-  schemaCircularRefInline = path.join(__dirname, BUNDLES_FOLDER + '/circular_reference_inline');
+  schemaCircularRefInline = path.join(__dirname, BUNDLES_FOLDER + '/circular_reference_inline'),
+  issue = path.join(__dirname, BUNDLES_FOLDER + '/issue');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -2678,6 +2679,48 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.0');
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should resolve ', async function () {
+    let contentRootFile = fs.readFileSync(issue + '/api.yaml', 'utf8'),
+      parameterIdContent = fs.readFileSync(issue + '/parameters/path/Id.yaml', 'utf8'),
+      parameterCFContent = fs.readFileSync(issue + '/parameters/query/qparam.yaml', 'utf8'),
+      schemaCFContent = fs.readFileSync(issue + '/schemas/properties/def.yaml', 'utf8'),
+      // expected = fs.readFileSync(schemaCircularRefInline + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/api.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/api.yaml',
+            content: contentRootFile
+          },
+          {
+            path: '/parameters/path/Id.yaml',
+            content: parameterIdContent
+          },
+          {
+            path: '/parameters/query/qparam.yaml',
+            content: parameterCFContent
+          },
+          {
+            path: '/schemas/properties/def.yaml',
+            content: schemaCFContent
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    // expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 });
 

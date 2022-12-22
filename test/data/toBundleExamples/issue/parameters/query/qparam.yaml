@@ -1,0 +1,7 @@
+name: conversion_flows
+in: query
+description: Enum for Offers's conversion flow
+schema:
+  type: array
+  items:
+    $ref: '../../api.yaml#/components/schemas/def'

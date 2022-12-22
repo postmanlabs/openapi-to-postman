@@ -1,0 +1,6 @@
+type: string
+enum: [ sale, free_trial, cc_submit, cash_on_delivery, 1_click, 2_click, pin_submit, click_2_sms, mo_flow, click_2_call, ussd, otp, single_opt_in, double_opt_in, install, engagement, other ]
+x-validate:
+  go: 'required'
+x-enum:
+  go: enum
