@@ -84,7 +84,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
       xmlRequestAndResponseBodyArrayTypeNoPrefix =
         path.join(__dirname, VALID_OPENAPI_PATH, '/xmlRequestAndResponseBodyArrayTypeNoPrefix.json'),
       xmlRequestAndResponseBodyArrayTypeWrapped =
-        path.join(__dirname, VALID_OPENAPI_PATH, '/xmlRequestAndResponseBodyArrayTypeWrapped.json');
+        path.join(__dirname, VALID_OPENAPI_PATH, '/xmlRequestAndResponseBodyArrayTypeWrapped.json'),
+      schemaWithAdditionalProperties =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/schemaWithAdditionalProperties.yaml');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1568,33 +1570,6 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
 
-    it('Should fake correctly the body when schema has array type and additionalProperties', function(done) {
-      var openapi = fs.readFileSync(schemaWithArrayTypeAndAdditionalProperties, 'utf8');
-      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
-        const resultantResponseBody = JSON.parse(
-            conversionResult.output[0].data.item[0].response[0].body
-          ),
-          resultantRequestBody = JSON.parse(
-            conversionResult.output[0].data.item[0].request.body.raw
-          );
-        expect(err).to.be.null;
-        expect(conversionResult.result).to.equal(true);
-        expect(conversionResult.output.length).to.equal(1);
-        expect(conversionResult.output[0].type).to.equal('collection');
-        expect(conversionResult.output[0].data).to.have.property('info');
-        expect(conversionResult.output[0].data).to.have.property('item');
-        expect(resultantResponseBody.result).to.be.an('array')
-          .with.length(2);
-        expect(resultantResponseBody.result[0]).to.include.all.keys('id', 'name');
-        expect(resultantResponseBody.result[1]).to.include.all.keys('id', 'name');
-        expect(resultantRequestBody.result).to.be.an('array')
-          .with.length(2);
-        expect(resultantRequestBody.result[0]).to.include.all.keys('id', 'name');
-        expect(resultantRequestBody.result[1]).to.include.all.keys('id', 'name');
-        done();
-      });
-    });
-
     it('Should convert and resolve xml bodies correctly when prefix is provided', function(done) {
       var openapi = fs.readFileSync(xmlRequestAndResponseBody, 'utf8');
       Converter.convert(
@@ -1774,6 +1749,74 @@ describe('CONVERT FUNCTION TESTS ', function() {
           done();
         }
       );
+    });
+
+    it('Should fake correctly the body when schema has array type and additionalProperties', function(done) {
+      var openapi = fs.readFileSync(schemaWithArrayTypeAndAdditionalProperties, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+        const resultantResponseBody = JSON.parse(
+            conversionResult.output[0].data.item[0].response[0].body
+          ),
+          resultantRequestBody = JSON.parse(
+            conversionResult.output[0].data.item[0].request.body.raw
+          );
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(resultantResponseBody.result).to.be.an('array')
+          .with.length(2);
+        expect(resultantResponseBody.result[0]).to.include.all.keys('id', 'name');
+        expect(resultantResponseBody.result[1]).to.include.all.keys('id', 'name');
+        expect(resultantRequestBody.result).to.be.an('array')
+          .with.length(2);
+        expect(resultantRequestBody.result[0]).to.include.all.keys('id', 'name');
+        expect(resultantRequestBody.result[1]).to.include.all.keys('id', 'name');
+        done();
+      });
+    });
+
+    it('Should resolve correctly schemas with additionalProperties as false', function(done) {
+      var openapi = fs.readFileSync(schemaWithAdditionalProperties, 'utf8');
+      Converter.convert(
+        { type: 'string', data: openapi },
+        { schemaFaker: true },
+        (err, conversionResult) => {
+          const requestBodyWithAdditionalPropertiesAsFalse =
+            JSON.parse(conversionResult.output[0].data.item[0].request.body.raw);
+          expect(requestBodyWithAdditionalPropertiesAsFalse).to.include.keys('test');
+          expect(Object.keys(requestBodyWithAdditionalPropertiesAsFalse)).to.have.length(1);
+          done();
+        });
+    });
+
+    it('Should resolve correctly schemas with ONLY additionalProperties', function(done) {
+      var openapi = fs.readFileSync(schemaWithAdditionalProperties, 'utf8');
+      Converter.convert(
+        { type: 'string', data: openapi },
+        { schemaFaker: true },
+        (err, conversionResult) => {
+          const responseBodyWithOnlyAdditionalProperties =
+            JSON.parse(conversionResult.output[0].data.item[0].response[0].body);
+          expect(Object.keys(responseBodyWithOnlyAdditionalProperties).length).to.be.greaterThan(0);
+          done();
+        });
+    });
+
+    it('Should resolve correctly schemas with additionalProperties', function(done) {
+      var openapi = fs.readFileSync(schemaWithAdditionalProperties, 'utf8');
+      Converter.convert(
+        { type: 'string', data: openapi },
+        { schemaFaker: true },
+        (err, conversionResult) => {
+          const responseBodyWithAdditionalProperties =
+            JSON.parse(conversionResult.output[0].data.item[0].response[1].body);
+          expect(responseBodyWithAdditionalProperties).to.include.keys('test1');
+          expect(Object.keys(responseBodyWithAdditionalProperties).length).to.be.greaterThan(1);
+          done();
+        });
     });
   });
 
