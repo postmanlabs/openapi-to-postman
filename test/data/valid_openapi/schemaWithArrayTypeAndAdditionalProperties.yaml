@@ -1,0 +1,71 @@
+openapi: "3.0.0"
+info:
+  version: "1.0.0"
+  title: Pet Service
+servers:
+  - url: "http://localhost:3006"
+
+paths:
+  /v1/listPets:
+    post:
+      summary: Get Pets
+      description: Retrieve the list of Pets
+      operationId: listPets
+      x-rpc-controller: pets
+      tags:
+        - Pets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/JsonRpcResponse"
+                - type: object
+                  properties:
+                    result:
+                      $ref: "#/components/schemas/ListPetResponse"
+      responses:
+        "200":
+          description: A list of Pets
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/JsonRpcResponse"
+                  - type: object
+                    properties:
+                      result:
+                        $ref: "#/components/schemas/ListPetResponse"
+
+components:
+  schemas:
+
+    JsonRpcResponse:
+      required:
+        - jsonrpc
+      additionalProperties: true
+      properties:
+        jsonrpc:
+          type: string
+          default: "2.0"
+          example: "2.0"
+          nullable: false
+
+    Pet:
+      required:
+        - id
+        - name
+      additionalProperties: false
+      nullable: true
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+
+    ListPetResponse:
+      type: array
+      additionalProperties: false
+      items:
+        $ref: "#/components/schemas/Pet"
