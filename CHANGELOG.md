@@ -1,5 +1,15 @@
 # OpenAPI-Postman Changelog
 
+#### v4.5.0 (December 23, 2022)
+* Fixed issue [#11519](https://github.com/postmanlabs/postman-app-support/issues/11519) Collection generated from imported OpenAPI were missing certain properties.
+* Fixed issue [#11227](https://github.com/postmanlabs/postman-app-support/issues/11227) Collection generated produces incorrect XML requests and responses from Open API 3.0 and Swagger 2.0 API definitions.
+* Fixed issue [#11527](https://github.com/postmanlabs/postman-app-support/issues/11527) where generated collection contained empty body when */* was used as content-type.
+* Fixed issue [#626](https://github.com/postmanlabs/openapi-to-postman/issues/626) - Add a new option (includeDeprecated) to handle deprecated properties (operations, parameters, or schema properties).
+* Fixed issue [#643](https://github.com/postmanlabs/openapi-to-postman/issues/643) Generated value for corresponding authorization should be an environment value.
+* Removed travis workflows as GitHub actions are present now.
+* Updated README.md to include Swagger 2.0 and OpenAPI 3.1 support.
+* Updated README.md to include new postman logo.
+
 #### v4.4.0 (November 29, 2022)
 * Fixed issue where collection folder name for paths were having extra spaces.
 * Fixed issue where pipelines were failing for certain node version.
