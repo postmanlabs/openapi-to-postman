@@ -24674,11 +24674,11 @@ function extend() {
       if (optionAPI('useExamplesValue') && 'example' in schema) {
         var clonedSchema,
           result,
-          finalResult,
+          isExampleValid,
           hashSchema = hash(schema);
 
         if(seenSchemaMap.has(hashSchema)) {
-          finalResult = seenSchemaMap.get(hashSchema);
+          isExampleValid = seenSchemaMap.get(hashSchema);
         }
         else {
           // avoid minItems and maxItems while checking for valid examples
@@ -24696,12 +24696,12 @@ function extend() {
           }
 
           // Store the final result that needs to be used in the seen map
-          finalResult = result && result.length === 0;
-          seenSchemaMap.set(hashSchema, finalResult);
+          isExampleValid = result && result.length === 0;
+          seenSchemaMap.set(hashSchema, isExampleValid);
         }
 
         // Use example only if valid
-        if (finalResult) {
+        if (isExampleValid) {
           return schema.example;
         }
       }
