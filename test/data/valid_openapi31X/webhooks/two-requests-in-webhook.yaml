@@ -124,7 +124,7 @@ components:
         - eventType
         - live
         - content
-    
+
     NotificationResponse:
       properties:
         notificationResponse:
@@ -242,7 +242,6 @@ components:
 webhooks:
   /ACCOUNT_CLOSED:
     post:
-      description: This notification is sent when an account has been closed.
       operationId: post-ACCOUNT_CLOSED
       requestBody:
         content:
@@ -265,13 +264,11 @@ webhooks:
       security:
         - BasicAuth: []
         - ApiKeyAuth: []
-      summary: Triggered upon the closure of an account.
       tags:
         - Accounts
       x-groupName: Accounts
       x-sortIndex: 3
     get:
-      summary: List all pets
       description: ''
       operationId: get-ACCOUNT_CLOSED
       tags:
