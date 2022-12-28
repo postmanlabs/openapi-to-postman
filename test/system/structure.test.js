@@ -86,7 +86,7 @@ const optionIds = [
       availableOptions: ['Url', 'Fallback'],
       description: 'Determines how the requests inside the generated collection will be named.' +
       ' If “Fallback” is selected, the request will be named after one of the following schema' +
-      ' values: `description`, `operationid`, `url`.'
+      ' values: `summary`, `operationId`, `description`, `url`.'
     },
     schemaFaker: {
       name: 'Enable Schema Faking',
