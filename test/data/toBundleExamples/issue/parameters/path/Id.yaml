@@ -1,7 +1,0 @@
-name: id
-in: path
-description: object identifier
-required: true
-schema:
-  type: integer
-  format: int64

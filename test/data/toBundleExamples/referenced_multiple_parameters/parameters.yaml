@@ -1,0 +1,119 @@
+param1:
+  name: tags1
+  in: query
+  description: tags to filter by
+  required: false
+  type: array
+  collectionFormat: csv
+  items:
+    type: string
+
+param2:
+  name: tags2
+  in: query
+  description: tags to filter by
+  required: false
+  type: array
+  collectionFormat: csv
+  items:
+    type: string
+
+param3:
+  name: tags3
+  in: query
+  description: tags to filter by
+  required: false
+  type: array
+  collectionFormat: csv
+  items:
+    type: string
+
+param4:
+  name: tags4
+  in: query
+  description: tags to filter by
+  required: false
+  type: array
+  collectionFormat: csv
+  items:
+    type: string
+
+param5:
+  name: tags5
+  in: query
+  description: tags to filter by
+  required: false
+  type: array
+  collectionFormat: csv
+  items:
+    type: string
+
+param6:
+  name: tags6
+  in: query
+  description: tags to filter by
+  required: false
+  type: array
+  collectionFormat: csv
+  items:
+    type: string
+
+param7:
+  name: tags7
+  in: query
+  description: tags to filter by
+  required: false
+  type: array
+  collectionFormat: csv
+  items:
+    type: string
+
+param8:
+  name: tags8
+  in: query
+  description: tags to filter by
+  required: false
+  type: array
+  collectionFormat: csv
+  items:
+    type: string
+
+param9:
+  name: tags9
+  in: query
+  description: tags to filter by
+  required: false
+  type: array
+  collectionFormat: csv
+  items:
+    type: string
+
+param10:
+  name: tags10
+  in: query
+  description: tags to filter by
+  required: false
+  type: array
+  collectionFormat: csv
+  items:
+    type: string
+
+param11:
+  name: tags11
+  in: query
+  description: tags to filter by
+  required: false
+  type: array
+  collectionFormat: csv
+  items:
+    type: string
+
+param12:
+  name: tags12
+  in: query
+  description: tags to filter by
+  required: false
+  type: array
+  collectionFormat: csv
+  items:
+    type: string

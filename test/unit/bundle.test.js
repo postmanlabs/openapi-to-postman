@@ -29,6 +29,7 @@ let expect = require('chai').expect,
   nestedProperties = path.join(__dirname, BUNDLES_FOLDER + '/nestedProperties'),
   referencedResponse = path.join(__dirname, BUNDLES_FOLDER + '/referenced_response'),
   referencedParameter = path.join(__dirname, BUNDLES_FOLDER + '/referenced_parameter'),
+  referencedMultipleParameters = path.join(__dirname, BUNDLES_FOLDER + '/referenced_multiple_parameters'),
   referencedRequestBody = path.join(__dirname, BUNDLES_FOLDER + '/referenced_request_body'),
   referencedHeader = path.join(__dirname, BUNDLES_FOLDER + '/referenced_header'),
   referencedLink = path.join(__dirname, BUNDLES_FOLDER + '/referenced_link'),
@@ -49,8 +50,7 @@ let expect = require('chai').expect,
   exampleValue = path.join(__dirname, BUNDLES_FOLDER + '/example_value'),
   example2 = path.join(__dirname, BUNDLES_FOLDER + '/example2'),
   schemaCircularRef = path.join(__dirname, BUNDLES_FOLDER + '/circular_reference'),
-  schemaCircularRefInline = path.join(__dirname, BUNDLES_FOLDER + '/circular_reference_inline'),
-  issue = path.join(__dirname, BUNDLES_FOLDER + '/issue');
+  schemaCircularRefInline = path.join(__dirname, BUNDLES_FOLDER + '/circular_reference_inline');
 
 describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
@@ -1620,6 +1620,38 @@ describe('bundle files method - 3.0', function () {
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
+  it('Should return bundled file - referenced Multiple Parameter', async function () {
+    let contentRoot = fs.readFileSync(referencedMultipleParameters + '/root.yaml', 'utf8'),
+      contentRef = fs.readFileSync(referencedMultipleParameters + '/parameters.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedMultipleParameters + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRoot
+          },
+          {
+            path: '/parameters.yaml',
+            content: contentRef
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
   it('Should return bundled file - referenced Request Body', async function () {
     let contentRoot = fs.readFileSync(referencedRequestBody + '/root.yaml', 'utf8'),
       contentRef = fs.readFileSync(referencedRequestBody + '/rbody.yaml', 'utf8'),
@@ -2679,48 +2711,6 @@ describe('bundle files method - 3.0', function () {
     expect(res.result).to.be.true;
     expect(res.output.specification.version).to.equal('3.0');
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
-  });
-
-  it('Should resolve ', async function () {
-    let contentRootFile = fs.readFileSync(issue + '/api.yaml', 'utf8'),
-      parameterIdContent = fs.readFileSync(issue + '/parameters/path/Id.yaml', 'utf8'),
-      parameterCFContent = fs.readFileSync(issue + '/parameters/query/qparam.yaml', 'utf8'),
-      schemaCFContent = fs.readFileSync(issue + '/schemas/properties/def.yaml', 'utf8'),
-      // expected = fs.readFileSync(schemaCircularRefInline + '/expected.json', 'utf8'),
-      input = {
-        type: 'multiFile',
-        specificationVersion: '3.0',
-        rootFiles: [
-          {
-            path: '/api.yaml'
-          }
-        ],
-        data: [
-          {
-            path: '/api.yaml',
-            content: contentRootFile
-          },
-          {
-            path: '/parameters/path/Id.yaml',
-            content: parameterIdContent
-          },
-          {
-            path: '/parameters/query/qparam.yaml',
-            content: parameterCFContent
-          },
-          {
-            path: '/schemas/properties/def.yaml',
-            content: schemaCFContent
-          }
-        ],
-        options: {},
-        bundleFormat: 'JSON'
-      };
-    const res = await Converter.bundle(input);
-    expect(res).to.not.be.empty;
-    expect(res.result).to.be.true;
-    expect(res.output.specification.version).to.equal('3.0');
-    // expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 });
 
