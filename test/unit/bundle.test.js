@@ -29,6 +29,7 @@ let expect = require('chai').expect,
   nestedProperties = path.join(__dirname, BUNDLES_FOLDER + '/nestedProperties'),
   referencedResponse = path.join(__dirname, BUNDLES_FOLDER + '/referenced_response'),
   referencedParameter = path.join(__dirname, BUNDLES_FOLDER + '/referenced_parameter'),
+  referencedMultipleParameters = path.join(__dirname, BUNDLES_FOLDER + '/referenced_multiple_parameters'),
   referencedRequestBody = path.join(__dirname, BUNDLES_FOLDER + '/referenced_request_body'),
   referencedHeader = path.join(__dirname, BUNDLES_FOLDER + '/referenced_header'),
   referencedLink = path.join(__dirname, BUNDLES_FOLDER + '/referenced_link'),
@@ -1606,6 +1607,38 @@ describe('bundle files method - 3.0', function () {
           },
           {
             path: '/parameter.yaml',
+            content: contentRef
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file - referenced Multiple Parameter', async function () {
+    let contentRoot = fs.readFileSync(referencedMultipleParameters + '/root.yaml', 'utf8'),
+      contentRef = fs.readFileSync(referencedMultipleParameters + '/parameters.yaml', 'utf8'),
+      expected = fs.readFileSync(referencedMultipleParameters + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: '/root.yaml'
+          }
+        ],
+        data: [
+          {
+            path: '/root.yaml',
+            content: contentRoot
+          },
+          {
+            path: '/parameters.yaml',
             content: contentRef
           }
         ],
