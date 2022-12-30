@@ -1,0 +1,231 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "version": "1.0.0",
+    "title": "Swagger Petstore",
+    "description": "A sample API that uses a petstore as an example to demonstrate features in the swagger-2.0 specification",
+    "termsOfService": "http://swagger.io/terms/",
+    "contact": {
+      "name": "Swagger API Team",
+      "email": "apiteam@swagger.io",
+      "url": "http://swagger.io"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "paths": {
+    "/pets": {
+      "get": {
+        "description": "Returns all pets alesuada ac...",
+        "operationId": "findPets",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/_parameters.yaml-param1"
+          },
+          {
+            "$ref": "#/components/parameters/_parameters.yaml-param2"
+          },
+          {
+            "$ref": "#/components/parameters/_parameters.yaml-param3"
+          },
+          {
+            "$ref": "#/components/parameters/_parameters.yaml-param4"
+          },
+          {
+            "$ref": "#/components/parameters/_parameters.yaml-param5"
+          },
+          {
+            "$ref": "#/components/parameters/_parameters.yaml-param6"
+          },
+          {
+            "$ref": "#/components/parameters/_parameters.yaml-param7"
+          },
+          {
+            "$ref": "#/components/parameters/_parameters.yaml-param8"
+          },
+          {
+            "$ref": "#/components/parameters/_parameters.yaml-param9"
+          },
+          {
+            "$ref": "#/components/parameters/_parameters.yaml-param10"
+          },
+          {
+            "$ref": "#/components/parameters/_parameters.yaml-param11"
+          },
+          {
+            "$ref": "#/components/parameters/_parameters.yaml-param12"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "pet response",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Pet"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Pet": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "_parameters.yaml-param1": {
+        "name": "tags1",
+        "in": "query",
+        "description": "tags to filter by",
+        "required": false,
+        "type": "array",
+        "collectionFormat": "csv",
+        "items": {
+          "type": "string"
+        }
+      },
+      "_parameters.yaml-param2": {
+        "name": "tags2",
+        "in": "query",
+        "description": "tags to filter by",
+        "required": false,
+        "type": "array",
+        "collectionFormat": "csv",
+        "items": {
+          "type": "string"
+        }
+      },
+      "_parameters.yaml-param3": {
+        "name": "tags3",
+        "in": "query",
+        "description": "tags to filter by",
+        "required": false,
+        "type": "array",
+        "collectionFormat": "csv",
+        "items": {
+          "type": "string"
+        }
+      },
+      "_parameters.yaml-param4": {
+        "name": "tags4",
+        "in": "query",
+        "description": "tags to filter by",
+        "required": false,
+        "type": "array",
+        "collectionFormat": "csv",
+        "items": {
+          "type": "string"
+        }
+      },
+      "_parameters.yaml-param5": {
+        "name": "tags5",
+        "in": "query",
+        "description": "tags to filter by",
+        "required": false,
+        "type": "array",
+        "collectionFormat": "csv",
+        "items": {
+          "type": "string"
+        }
+      },
+      "_parameters.yaml-param6": {
+        "name": "tags6",
+        "in": "query",
+        "description": "tags to filter by",
+        "required": false,
+        "type": "array",
+        "collectionFormat": "csv",
+        "items": {
+          "type": "string"
+        }
+      },
+      "_parameters.yaml-param7": {
+        "name": "tags7",
+        "in": "query",
+        "description": "tags to filter by",
+        "required": false,
+        "type": "array",
+        "collectionFormat": "csv",
+        "items": {
+          "type": "string"
+        }
+      },
+      "_parameters.yaml-param8": {
+        "name": "tags8",
+        "in": "query",
+        "description": "tags to filter by",
+        "required": false,
+        "type": "array",
+        "collectionFormat": "csv",
+        "items": {
+          "type": "string"
+        }
+      },
+      "_parameters.yaml-param9": {
+        "name": "tags9",
+        "in": "query",
+        "description": "tags to filter by",
+        "required": false,
+        "type": "array",
+        "collectionFormat": "csv",
+        "items": {
+          "type": "string"
+        }
+      },
+      "_parameters.yaml-param10": {
+        "name": "tags10",
+        "in": "query",
+        "description": "tags to filter by",
+        "required": false,
+        "type": "array",
+        "collectionFormat": "csv",
+        "items": {
+          "type": "string"
+        }
+      },
+      "_parameters.yaml-param11": {
+        "name": "tags11",
+        "in": "query",
+        "description": "tags to filter by",
+        "required": false,
+        "type": "array",
+        "collectionFormat": "csv",
+        "items": {
+          "type": "string"
+        }
+      },
+      "_parameters.yaml-param12": {
+        "name": "tags12",
+        "in": "query",
+        "description": "tags to filter by",
+        "required": false,
+        "type": "array",
+        "collectionFormat": "csv",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
