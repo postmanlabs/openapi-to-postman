@@ -1,5 +1,9 @@
 # OpenAPI-Postman Changelog
 
+#### v4.6.0 (December 30, 2022)
+* Fixed issue where bundling of multi-file definition was not working correctly for more than 10 params correctly.
+* Fixed issue where request name was not using operation description if available.
+
 #### v4.5.0 (December 23, 2022)
 * Fixed issue [#11519](https://github.com/postmanlabs/postman-app-support/issues/11519) Collection generated from imported OpenAPI were missing certain properties.
 * Fixed issue [#11227](https://github.com/postmanlabs/postman-app-support/issues/11227) Collection generated produces incorrect XML requests and responses from Open API 3.0 and Swagger 2.0 API definitions.
