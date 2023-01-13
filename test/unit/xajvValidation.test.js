@@ -500,6 +500,165 @@ describe('validateSchema', function () {
     expect(result[0].keyword).to.equal('enum');
     expect(result[1].keyword).to.equal('pattern');
   });
+
+  it('Should not report error with deprecated property when is present', function () {
+    const schema = {
+        type: 'object',
+        properties: {
+          deprecated: {
+            type: 'boolean'
+          },
+          pet: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                deprecated: true,
+                default: '<string>'
+              },
+              newID: {
+                type: 'string',
+                default: '<string>'
+              },
+              deprecated: {
+                type: 'string',
+                default: '<string>'
+              }
+            }
+          }
+        }
+      },
+      valueToUse = {
+        deprecated: false,
+        pet: {
+          id: '<string>',
+          newID: '122',
+          deprecated: 'value'
+        }
+      },
+      result = validateSchema(schema, valueToUse);
+    expect(result).to.be.empty;
+  });
+
+  it('Should report error with deprecated property when is invalid type', function () {
+    const schema = {
+        type: 'object',
+        properties: {
+          deprecated: {
+            type: 'boolean'
+          },
+          pet: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                deprecated: true,
+                default: '<string>'
+              },
+              newID: {
+                type: 'string',
+                default: '<string>'
+              },
+              deprecated: {
+                type: 'string',
+                default: '<string>'
+              }
+            }
+          }
+        }
+      },
+      valueToUse = {
+        deprecated: false,
+        pet: {
+          id: 2,
+          newID: '122',
+          deprecated: 'value'
+        }
+      },
+      result = validateSchema(schema, valueToUse);
+    expect(result[0].instancePath).to.equal('/pet/id');
+    expect(result[0].keyword).to.equal('type');
+  });
+
+  it('Should report error with deprecated property when is not present and it is required' +
+   ' includeDeprecated is false', function () {
+    const schema = {
+        type: 'object',
+        properties: {
+          deprecated: {
+            type: 'boolean'
+          },
+          pet: {
+            type: 'object',
+            required: ['id'],
+            properties: {
+              id: {
+                type: 'string',
+                deprecated: true,
+                default: '<string>'
+              },
+              newID: {
+                type: 'string',
+                default: '<string>'
+              },
+              deprecated: {
+                type: 'string',
+                default: '<string>'
+              }
+            }
+          }
+        }
+      },
+      valueToUse = {
+        deprecated: false,
+        pet: {
+          newID: '122'
+        }
+      },
+      result = validateSchema(schema, valueToUse, { includeDeprecated: false });
+    expect(result).to.not.be.empty;
+    expect(result[0].params.missingProperty).to.equal('id');
+  });
+
+  it('Should report error with deprecated property when is not present and' +
+  ' includeDeprecated is true', function () {
+    const schema = {
+        type: 'object',
+        properties: {
+          deprecated: {
+            type: 'boolean'
+          },
+          pet: {
+            type: 'object',
+            required: ['id'],
+            properties: {
+              id: {
+                type: 'string',
+                deprecated: true,
+                default: '<string>'
+              },
+              newID: {
+                type: 'string',
+                default: '<string>'
+              },
+              deprecated: {
+                type: 'string',
+                default: '<string>'
+              }
+            }
+          }
+        }
+      },
+      valueToUse = {
+        deprecated: false,
+        pet: {
+          newID: '122'
+        }
+      },
+      result = validateSchema(schema, valueToUse, { includeDeprecated: true });
+    expect(result).to.not.be.empty;
+    expect(result[0].params.missingProperty).to.equal('id');
+  });
 });
 
 describe('getDraftToUse', function() {

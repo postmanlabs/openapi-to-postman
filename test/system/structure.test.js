@@ -26,7 +26,8 @@ const optionIds = [
     'keepImplicitHeaders',
     'includeWebhooks',
     'allowUrlPathVarMatching',
-    'includeReferenceMap'
+    'includeReferenceMap',
+    'includeDeprecated'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -85,7 +86,7 @@ const optionIds = [
       availableOptions: ['Url', 'Fallback'],
       description: 'Determines how the requests inside the generated collection will be named.' +
       ' If “Fallback” is selected, the request will be named after one of the following schema' +
-      ' values: `description`, `operationid`, `url`.'
+      ' values: `summary`, `operationId`, `description`, `url`.'
     },
     schemaFaker: {
       name: 'Enable Schema Faking',
@@ -189,6 +190,15 @@ const optionIds = [
       description: 'Whether or not to include reference map or not as part of output',
       external: false,
       usage: ['BUNDLE']
+    },
+    includeDeprecated: {
+      name: 'Include deprecated properties',
+      type: 'boolean',
+      default: true,
+      description: 'Select whether to include deprecated operations, parameters, and properties' +
+        ' in generated collection or not',
+      external: true,
+      usage: ['CONVERSION']
     }
   };
 

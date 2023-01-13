@@ -1,6 +1,6 @@
 id|type|available options|default|description|usage
 |---|---|---|---|---|---|
-requestNameSource|enum|URL, Fallback|Fallback|Determines how the requests inside the generated collection will be named. If “Fallback” is selected, the request will be named after one of the following schema values: `description`, `operationid`, `url`.|CONVERSION, VALIDATION
+requestNameSource|enum|URL, Fallback|Fallback|Determines how the requests inside the generated collection will be named. If “Fallback” is selected, the request will be named after one of the following schema values: `summary`, `operationId`, `description`, `url`.|CONVERSION, VALIDATION
 indentCharacter|enum|Space, Tab|Space|Option for setting indentation character|CONVERSION
 collapseFolders|boolean|-|true|Importing will collapse all folders that have only one child element and lack persistent folder-level data.|CONVERSION
 optimizeConversion|boolean|-|true|Optimizes conversion for large specification, disabling this option might affect the performance of conversion.|CONVERSION
@@ -23,3 +23,4 @@ disableOptionalParameters|boolean|-|false|Whether to set optional parameters as 
 keepImplicitHeaders|boolean|-|false|Whether to keep implicit headers from the OpenAPI specification, which are removed by default.|CONVERSION
 includeWebhooks|boolean|-|false|Select whether to include Webhooks in the generated collection|CONVERSION
 includeReferenceMap|boolean|-|false|Whether or not to include reference map or not as part of output|BUNDLE
+includeDeprecated|boolean|-|true|Select whether to include deprecated operations, parameters, and properties in generated collection or not|CONVERSION, VALIDATION

@@ -1,0 +1,103 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "This API provides access to signature platform \n\nWorkflow:\n\nDepending on the needs of the client, the order and use of the calls to the API may differ.<br>\nHere is an example of a very basic workflow:\n1) Create Request - Provides the information that will be used for the signer's certificate.\n2) Create Signature Request - Provides the information for the creation of the visible signature. Also provides the document(s) to be signed.\n3) Launch Signature Request - Launches the signature process based on the two previous requests.\n4) Get Signature Request Status - Returns the current status of the signature request and, if the status is \"SIGNED\", provides the signed document.\nA list of all requests is provided below, however the order is not necessarily correct for the signature process.\n\nWe suggest that the client begins with this basic workflow and expands based on their specific needs.",
+    "version": "1.11.2",
+    "title": "Signature api"
+  },
+  "host": "sign-sandbox.certeurope.fr",
+  "basePath": "/",
+  "tags": [{
+    "name": "Signature",
+    "description": "Centralize Signing API"
+  }],
+  "paths": {
+    "/centralize/admin/orders/{raProfileId}": {
+      "post": {
+        "tags": ["Signature"],
+        "summary": "createAdminCentralizedOrder",
+        "operationId": "createAdminCentralizedOrderUsingPOST",
+        "consumes": ["application/json"],
+        "produces": ["*/*"],
+        "parameters": [{
+          "name": "raProfileId",
+          "in": "path",
+          "description": "raProfileId",
+          "required": true,
+          "type": "integer",
+          "format": "int64"
+        }, {
+          "in": "body",
+          "name": "request",
+          "description": "request",
+          "required": true,
+          "schema": {
+            "$ref": "#/definitions/CentralizedOrderRequestDTO"
+          }
+        }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/AliveOKDTO"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "AliveOKDTO": {
+      "type": "object",
+      "properties": {
+        "archiver": {
+          "type": "boolean"
+        },
+        "kms": {
+          "type": "boolean"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "ts": {
+          "type": "boolean"
+        }
+      },
+      "title": "AliveOKDTO"
+    },
+    "CentralizedOrderRequestDTO": {
+      "type": "object",
+      "properties": {
+        "aeFolderId": {
+          "type": "string"
+        },
+        "clientIdentifier": {
+          "type": "string"
+        },
+        "enableEmail": {
+          "type": "boolean"
+        },
+        "enableOtp": {
+          "type": "boolean"
+        },
+        "enablePin": {
+          "type": "boolean"
+        },
+        "enableSharing": {
+          "type": "boolean"
+        },
+        "externalOrderRequestId": {
+          "type": "string"
+        },
+        "otpContact": {
+          "type": "string"
+        },
+        "signatureMode": {
+          "type": "string",
+          "enum": ["SOFTWARE", "HARDWARE"]
+        }
+      },
+      "title": "CentralizedOrderRequestDTO"
+    }
+  }
+}
