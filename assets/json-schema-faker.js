@@ -16,8 +16,7 @@ var _ = require('lodash'),
     handleExclusiveMaximum,
     handleExclusiveMinimum
   } = require('./../lib/common/schemaUtilsCommon'),
-  hash = require('object-hash'),
-  seenSchemaMap = new Map();
+  hash = require('object-hash');
 
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
@@ -24102,7 +24101,7 @@ function extend() {
   var nullType = nullGenerator;
 
   // TODO provide types
-  function unique(path, items, value, sample, resolve, traverseCallback) {
+  function unique(path, items, value, sample, resolve, traverseCallback, seenSchemaCache) {
       var tmp = [], seen = [];
       function walk(obj) {
           var json = JSON.stringify(obj);
@@ -24115,7 +24114,7 @@ function extend() {
       // TODO: find a better solution?
       var limit = 10;
       while (tmp.length !== items.length) {
-          walk(traverseCallback(value.items || sample, path, resolve));
+          walk(traverseCallback(value.items || sample, path, resolve, null, seenSchemaCache));
           if (!limit--) {
               break;
           }
@@ -24123,7 +24122,7 @@ function extend() {
       return tmp;
   }
   // TODO provide types
-  var arrayType = function arrayType(value, path, resolve, traverseCallback) {
+  var arrayType = function arrayType(value, path, resolve, traverseCallback, seenSchemaCache) {
       var items = [];
       if (!(value.items || value.additionalItems)) {
           if (utils.hasProperties(value, 'minItems', 'maxItems', 'uniqueItems')) {
@@ -24138,7 +24137,7 @@ function extend() {
       if (tmpItems instanceof Array) {
           return Array.prototype.concat.call(items, tmpItems.map(function (item, key) {
               var itemSubpath = path.concat(['items', key + '']);
-              return traverseCallback(item, itemSubpath, resolve);
+              return traverseCallback(item, itemSubpath, resolve, null, seenSchemaCache);
           }));
       }
       var minItems = value.minItems;
@@ -24167,11 +24166,11 @@ function extend() {
       sample = typeof value.additionalItems === 'object' ? value.additionalItems : {};
       for (var current = items.length; current < length; current++) {
           var itemSubpath = path.concat(['items', current + '']);
-          var element = traverseCallback(value.items || sample, itemSubpath, resolve);
+          var element = traverseCallback(value.items || sample, itemSubpath, resolve, null, seenSchemaCache);
           items.push(element);
       }
       if (value.uniqueItems) {
-          return unique(path.concat(['items']), items, value, sample, resolve, traverseCallback);
+          return unique(path.concat(['items']), items, value, sample, resolve, traverseCallback, seenSchemaCache);
       }
       return items;
   };
@@ -24235,7 +24234,7 @@ function extend() {
   var anyType = { type: ['string', 'number', 'integer', 'boolean'] };
   // TODO provide types
   // Updated objectType definition to latest version (0.5.0-rcv.41)
-  var objectType = function objectType(value, path, resolve, traverseCallback) {
+  var objectType = function objectType(value, path, resolve, traverseCallback, seenSchemaCache) {
     const props = {};
   
     const properties = value.properties || {};
@@ -24271,7 +24270,7 @@ function extend() {
         }
       });
   
-      return traverseCallback(props, path.concat(['properties']), resolve, value);
+      return traverseCallback(props, path.concat(['properties']), resolve, value, seenSchemaCache);
     }
   
     const optionalsProbability = optionAPI('alwaysFakeOptionals') === true ? 1.0 : optionAPI('optionalsProbability');
@@ -24327,7 +24326,7 @@ function extend() {
   
         return traverseCallback({
           allOf: _defns.concat(value),
-        }, path.concat(['properties']), resolve, value);
+        }, path.concat(['properties']), resolve, value, seenSchemaCache);
       }
     }
   
@@ -24480,7 +24479,7 @@ function extend() {
       }
     }
   
-    return traverseCallback(props, path.concat(['properties']), resolve, value);
+    return traverseCallback(props, path.concat(['properties']), resolve, value, seenSchemaCache);
   };
 
   /**
@@ -24666,7 +24665,7 @@ function extend() {
   };
 
   // TODO provide types
-  function traverse(schema, path, resolve, rootSchema) {
+  function traverse(schema, path, resolve, rootSchema, seenSchemaCache) {
       schema = resolve(schema);
       if (!schema) {
         return;
@@ -24677,8 +24676,8 @@ function extend() {
           isExampleValid,
           hashSchema = hash(schema);
 
-        if(seenSchemaMap.has(hashSchema)) {
-          isExampleValid = seenSchemaMap.get(hashSchema);
+        if(seenSchemaCache && seenSchemaCache.has(hashSchema)) {
+          isExampleValid = seenSchemaCache.get(hashSchema);
         }
         else {
           // avoid minItems and maxItems while checking for valid examples
@@ -24697,7 +24696,7 @@ function extend() {
 
           // Store the final result that needs to be used in the seen map
           isExampleValid = result && result.length === 0;
-          seenSchemaMap.set(hashSchema, isExampleValid);
+          seenSchemaCache && seenSchemaCache.set(hashSchema, isExampleValid);
         }
 
         // Use example only if valid
@@ -24720,7 +24719,7 @@ function extend() {
       }
       // thunks can return sub-schemas
       if (typeof schema.thunk === 'function') {
-          return traverse(schema.thunk(), path, resolve);
+          return traverse(schema.thunk(), path, resolve, null, seenSchemaCache);
       }
       if (typeof schema.generate === 'function') {
           return utils.typecast(schema, function () { return schema.generate(rootSchema); });
@@ -24748,7 +24747,7 @@ function extend() {
           }
           else {
               try {
-                  var result = typeMap[type](schema, path, resolve, traverse);
+                  var result = typeMap[type](schema, path, resolve, traverse, seenSchemaCache);
                   var required = schema.items
                       ? schema.items.required
                       : schema.required;
@@ -24768,7 +24767,7 @@ function extend() {
       }
       for (var prop in schema) {
           if (typeof schema[prop] === 'object' && prop !== 'definitions') {
-              copy[prop] = traverse(schema[prop], path.concat([prop]), resolve, copy);
+              copy[prop] = traverse(schema[prop], path.concat([prop]), resolve, copy, seenSchemaCache);
           }
           else {
               copy[prop] = schema[prop];
@@ -24838,7 +24837,7 @@ function extend() {
       return obj;
   }
   // TODO provide types
-  function run(refs, schema, container) {
+  function run(refs, schema, container, seenSchemaCache) {
       try {
           var result = traverse(schema, [], function reduce(sub, maxReduceDepth) {
               if (typeof maxReduceDepth === 'undefined') {
@@ -24907,7 +24906,7 @@ function extend() {
                   }
               }
               return container.wrap(sub);
-          });
+          }, null, seenSchemaCache);
           if (optionAPI('resolveJsonPath')) {
               return resolve(result);
           }
@@ -24949,7 +24948,7 @@ function extend() {
           }
       }
   }
-  var jsf = function (schema, refs) {
+  var jsf = function (schema, refs, seenSchemaCache) {
       var ignore = optionAPI('ignoreMissingRefs');
       var $ = deref(function (id, refs) {
           // FIXME: allow custom callback?
@@ -24958,7 +24957,7 @@ function extend() {
           }
       });
       var $refs = getRefs(refs);
-      return run($refs, $(schema, $refs, true), container);
+      return run($refs, $(schema, $refs, true), container, seenSchemaCache);
   };
   jsf.resolve = function (schema, refs, cwd) {
       if (typeof refs === 'string') {
