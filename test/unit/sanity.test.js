@@ -19,7 +19,7 @@ describe('Runing validation tests for all files in `valid_openapi`', function ()
       // Increase timeout for larger schema
       this.timeout(30000);
 
-      Converter.convert({ data: fileData, type: 'string' }, {}, (err, conversionResult) => {
+      Converter.convert({ data: fileData, type: 'string' }, { optimizeConversion: false }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         var validator,
