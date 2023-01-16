@@ -201,13 +201,10 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         resolvedSchema = deref.resolveRefs(schema,
           parameterSource,
           { components, concreteUtils },
-          {},
-          resolveFor,
-          resolveTo
+          { resolveFor, resolveTo }
         ),
         schemaCache = {
-          schemaFakerCache: {},
-          schemaResolutionCache: {}
+          schemaFakerCache: {}
         },
         key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema)),
         options = {
@@ -247,15 +244,12 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         resolveTo = 'example',
         resolveFor = 'CONVERSION',
         schemaCache = {
-          schemaFakerCache: {},
-          schemaResolutionCache: {}
+          schemaFakerCache: {}
         },
         resolvedSchema = deref.resolveRefs(schema,
           parameterSource,
           { components, concreteUtils },
-          schemaCache.schemaResolutionCache,
-          resolveFor,
-          resolveTo
+          { resolveFor, resolveTo }
         ),
         key = hash('resolveToExample ' + JSON.stringify(resolvedSchema)),
         options = {
@@ -2805,7 +2799,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         explode: true
       };
 
-      SchemaUtils.getParamSerialisationInfo(param, 'REQUEST', {}, {});
+      SchemaUtils.getParamSerialisationInfo(param, 'REQUEST', {});
       expect(param.schema).to.have.property('type', 'array');
       expect(param.schema.items).to.have.property('type', 'string');
       expect(param.schema).to.not.have.property('default');

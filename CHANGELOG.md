@@ -1,5 +1,10 @@
 # OpenAPI-Postman Changelog
 
+#### v4.7.0 (January 16, 2023)
+* Fixed an issue where same schema was being validated against examples multiple times during a conversion - using local cache here.
+* Added a way to return analytics along with the result for better observability into the kind of schemas we get for conversion.
+* Refactored the resolveRefs and resolveAll to take in an options object as an argument.
+
 #### v4.6.0 (December 30, 2022)
 * Fixed issue where bundling of multi-file definition was not working correctly for more than 10 params correctly.
 * Fixed issue where request name was not using operation description if available.

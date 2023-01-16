@@ -116,18 +116,19 @@ describe('DEREF FUNCTION TESTS ', function() {
         },
         parameterSource = 'REQUEST',
         // deref.resolveRefs modifies the input schema and components so cloning to keep tests independent of each other
-        output = deref.resolveRefs(schema, parameterSource, _.cloneDeep(componentsAndPaths)),
+        output = deref.resolveRefs(schema, parameterSource, _.cloneDeep(componentsAndPaths), {}),
         output_validation = deref.resolveRefs(schema, parameterSource, _.cloneDeep(componentsAndPaths),
-          {}, 'VALIDATION'),
-        output_withdot = deref.resolveRefs(schemaWithDotInKey, parameterSource, _.cloneDeep(componentsAndPaths)),
+          { 'resolveFor': 'VALIDATION' }),
+        output_withdot = deref.resolveRefs(schemaWithDotInKey, parameterSource, _.cloneDeep(componentsAndPaths), {}),
         output_customFormat = deref.resolveRefs(schemaWithCustomFormat, parameterSource,
-          _.cloneDeep(componentsAndPaths)),
-        output_withAllOf = deref.resolveRefs(schemaWithAllOf, parameterSource, _.cloneDeep(componentsAndPaths)),
+          _.cloneDeep(componentsAndPaths), {}),
+        output_withAllOf = deref.resolveRefs(schemaWithAllOf, parameterSource, _.cloneDeep(componentsAndPaths), {}),
         output_validationTypeArray = deref.resolveRefs(schemaWithTypeArray, parameterSource,
-          _.cloneDeep(componentsAndPaths), {}, 'VALIDATION'),
-        output_emptyObject = deref.resolveRefs(schemaWithEmptyObject, parameterSource, _.cloneDeep(componentsAndPaths)),
+          _.cloneDeep(componentsAndPaths), { 'resolveFor': 'VALIDATION' }),
+        output_emptyObject = deref.resolveRefs(schemaWithEmptyObject, parameterSource, _.cloneDeep(componentsAndPaths),
+          {}),
         output_additionalProps = deref.resolveRefs(schemaWithAdditionPropRef, parameterSource,
-          _.cloneDeep(componentsAndPaths), {}, 'VALIDATION'),
+          _.cloneDeep(componentsAndPaths), { 'resolveFor': 'VALIDATION' }),
         output_additionalPropsOverride;
 
       expect(output).to.deep.include({ type: 'object',
@@ -183,7 +184,7 @@ describe('DEREF FUNCTION TESTS ', function() {
       output_additionalProps.additionalProperties.properties.hello.default = '<string>';
 
       output_additionalPropsOverride = deref.resolveRefs(schemaWithAdditionPropRef, parameterSource,
-        _.cloneDeep(componentsAndPaths), {}, 'VALIDATION');
+        _.cloneDeep(componentsAndPaths), { resolveFor: 'VALIDATION' });
 
       // override should not affect newly resolved schema
       expect(output_additionalPropsOverride).to.deep.include(
@@ -216,7 +217,7 @@ describe('DEREF FUNCTION TESTS ', function() {
             components:
               { schemas: { schemaWithFormat: { type: 'string', format: supportedFormat } } },
             concreteUtils: schemaUtils30X
-          });
+          }, {});
 
         expect(output.type).to.equal('string');
         expect(output.format).to.equal(supportedFormat);
@@ -228,7 +229,7 @@ describe('DEREF FUNCTION TESTS ', function() {
           {
             components: { schemas: { schemaWithFormat: nonSupportedFormat } },
             concreteUtils: schemaUtils30X
-          });
+          }, {});
 
         expect(output.type).to.equal(nonSupportedFormat.type);
         expect(output.format).to.be.undefined;
@@ -246,7 +247,7 @@ describe('DEREF FUNCTION TESTS ', function() {
         parameterSource = 'REQUEST',
         output;
 
-      output = deref.resolveRefs(schema, parameterSource, { concreteUtils: schemaUtils30X });
+      output = deref.resolveRefs(schema, parameterSource, { concreteUtils: schemaUtils30X }, {});
       expect(output.type).to.equal('string');
       expect(output.format).to.be.undefined;
       expect(output.pattern).to.eql(schema.pattern);
@@ -276,7 +277,7 @@ describe('DEREF FUNCTION TESTS ', function() {
         parameterSource = 'REQUEST',
         output;
 
-      output = deref.resolveRefs(schema, parameterSource, { concreteUtils: schemaUtils30X });
+      output = deref.resolveRefs(schema, parameterSource, { concreteUtils: schemaUtils30X }, {});
       expect(output.type).to.equal('object');
       expect(output.properties).to.not.haveOwnProperty('id');
       expect(output.required).to.not.include('id');
@@ -306,7 +307,7 @@ describe('DEREF FUNCTION TESTS ', function() {
         parameterSource = 'RESPONSE',
         output;
 
-      output = deref.resolveRefs(schema, parameterSource, { concreteUtils: schemaUtils30X });
+      output = deref.resolveRefs(schema, parameterSource, { concreteUtils: schemaUtils30X }, {});
       expect(output.type).to.equal('object');
       expect(output.properties).to.not.haveOwnProperty('tag');
       expect(output.required).to.not.include('tag');
@@ -346,9 +347,7 @@ describe('DEREF FUNCTION TESTS ', function() {
         allOfschema,
         'REQUEST',
         { concreteUtils: schemaUtils30X },
-        {},
-        null,
-        'example'
+        { resolveTo: 'example' }
       )).to.deep.include({
         type: 'object',
         properties: {
