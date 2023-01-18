@@ -22,7 +22,7 @@ const optionIds = [
     'ignoreUnresolvedVariables',
     'optimizeConversion',
     'strictRequestMatching',
-    'disableOptionalParameters',
+    'enableOptionalParameters',
     'keepImplicitHeaders',
     'includeWebhooks',
     'allowUrlPathVarMatching',
@@ -77,7 +77,7 @@ const optionIds = [
       type: 'enum',
       default: 'Space',
       availableOptions: ['Space', 'Tab'],
-      description: 'Option for setting indentation character'
+      description: 'Option for setting indentation character.'
     },
     requestNameSource: {
       name: 'Naming requests',
@@ -106,7 +106,7 @@ const optionIds = [
       name: 'Include auth info in example requests',
       type: 'boolean',
       default: true,
-      description: 'Select whether to include authentication parameters in the example request'
+      description: 'Select whether to include authentication parameters in the example request.'
     },
     shortValidationErrors: {
       name: 'Short error messages during request <> schema validation',
@@ -162,11 +162,12 @@ const optionIds = [
       description: 'Whether requests should be strictly matched with schema operations. Setting to true will not ' +
         'include any matches where the URL path segments don\'t match exactly.'
     },
-    disableOptionalParameters: {
-      name: 'Disable optional parameters',
+    enableOptionalParameters: {
+      name: 'Enable optional parameters',
       type: 'boolean',
-      default: false,
-      description: 'Whether to set optional parameters as disabled'
+      default: true,
+      description: 'Optional parameters aren\'t selected in the collection. ' +
+        'Once enabled they will be selected in the collection and request as well.'
     },
     keepImplicitHeaders: {
       name: 'Keep implicit headers',
