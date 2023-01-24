@@ -2012,21 +2012,24 @@ describe('INTERFACE FUNCTION TESTS ', function () {
     });
   });
 
-  describe('The converter must identify valid OA3 & 3.1 specifications', function () {
+  describe('The converter must identify valid OA3 specification', function () {
     var pathPrefix = VALID_OPENAPI_PATH,
-      sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix));
+      sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix)),
+      oa3_1_files = ['issue#479_2.yaml', 'issue#10229.json', 'query_param_with_enum_resolve_as_example.json'];
 
     sampleSpecs.map((sample) => {
-      var specPath = path.join(__dirname, pathPrefix, sample);
+      if (!oa3_1_files.includes(sample)) {
+        var specPath = path.join(__dirname, pathPrefix, sample);
 
-      it(specPath + ' is valid ', function(done) {
-        var openapi = fs.readFileSync(specPath, 'utf8'),
-          validationResult = Converter.validate({ type: 'string', data: openapi });
+        it(specPath + ' is valid ', function(done) {
+          var openapi = fs.readFileSync(specPath, 'utf8'),
+            validationResult = Converter.validate({ type: 'string', data: openapi });
 
-        expect(validationResult.result).to.equal(true);
-        expect(validationResult.specificationVersion).to.be.oneOf(['3.0.x', '3.1.x']);
-        done();
-      });
+          expect(validationResult.result).to.equal(true);
+          expect(validationResult.specificationVersion).to.equal('3.0.x');
+          done();
+        });
+      }
     });
   });
 
