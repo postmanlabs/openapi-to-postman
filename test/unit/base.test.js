@@ -2011,6 +2011,61 @@ describe('INTERFACE FUNCTION TESTS ', function () {
       });
     });
   });
+
+  describe('The converter must identify valid OA3 & 3.1 specifications', function () {
+    var pathPrefix = VALID_OPENAPI_PATH,
+      sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix));
+
+    sampleSpecs.map((sample) => {
+      var specPath = path.join(__dirname, pathPrefix, sample);
+
+      it(specPath + ' is valid ', function(done) {
+        var openapi = fs.readFileSync(specPath, 'utf8'),
+          validationResult = Converter.validate({ type: 'string', data: openapi });
+
+        expect(validationResult.result).to.equal(true);
+        expect(validationResult.specificationVersion).to.be.oneOf(['3.0.x', '3.1.x']);
+        done();
+      });
+    });
+  });
+
+  describe('The converter must identify valid OA2 specifications - JSON', function () {
+    var pathPrefix = SWAGGER_20_FOLDER_JSON,
+      sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix));
+
+    sampleSpecs.map((sample) => {
+      var specPath = path.join(__dirname, pathPrefix, sample);
+
+      it(specPath + ' is valid ', function(done) {
+        var openapi = fs.readFileSync(specPath, 'utf8'),
+          validationResult = Converter.validate({ type: 'string', data: openapi });
+
+        expect(validationResult.result).to.equal(true);
+        expect(validationResult.specificationVersion).to.equal('2.0');
+        done();
+      });
+    });
+  });
+
+  describe('The converter must identify valid OA2 specifications - YAML', function () {
+    var pathPrefix = SWAGGER_20_FOLDER_YAML,
+      sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix));
+
+    sampleSpecs.map((sample) => {
+      var specPath = path.join(__dirname, pathPrefix, sample);
+
+      it(specPath + ' is valid ', function(done) {
+        var openapi = fs.readFileSync(specPath, 'utf8'),
+          validationResult = Converter.validate({ type: 'string', data: openapi });
+
+        expect(validationResult.result).to.equal(true);
+        expect(validationResult.specificationVersion).to.equal('2.0');
+        done();
+      });
+    });
+  });
+
   describe('The converter must identify invalid specifications', function () {
     var pathPrefix = INVALID_OPENAPI_PATH,
       sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix));
