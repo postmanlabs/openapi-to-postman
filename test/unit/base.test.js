@@ -7,7 +7,9 @@ var expect = require('chai').expect,
   VALID_OPENAPI_PATH = '../data/valid_openapi',
   INVALID_OPENAPI_PATH = '../data/invalid_openapi',
   SWAGGER_20_FOLDER_YAML = '../data/valid_swagger/yaml/',
-  SWAGGER_20_FOLDER_JSON = '../data/valid_swagger/json/';
+  SWAGGER_20_FOLDER_JSON = '../data/valid_swagger/json/',
+  VALID_OPENAPI_3_1_FOLDER_JSON = '../data/valid_openapi31X/json',
+  VALID_OPENAPI_3_1_FOLDER_YAML = '../data/valid_openapi31X/yaml';
 
 describe('CONVERT FUNCTION TESTS ', function() {
   // these two covers remaining part of util.js
@@ -2015,10 +2017,10 @@ describe('INTERFACE FUNCTION TESTS ', function () {
   describe('The converter must identify valid OA3 specification', function () {
     var pathPrefix = VALID_OPENAPI_PATH,
       sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix)),
-      oa3_1_files = ['issue#479_2.yaml', 'issue#10229.json', 'query_param_with_enum_resolve_as_example.json'];
+      oa31Files = ['issue#479_2.yaml', 'issue#10229.json', 'query_param_with_enum_resolve_as_example.json'];
 
     sampleSpecs.map((sample) => {
-      if (!oa3_1_files.includes(sample)) {
+      if (!oa31Files.includes(sample)) {
         var specPath = path.join(__dirname, pathPrefix, sample);
 
         it(specPath + ' is valid ', function(done) {
@@ -2048,6 +2050,51 @@ describe('INTERFACE FUNCTION TESTS ', function () {
         expect(validationResult.specificationVersion).to.equal('2.0');
         done();
       });
+    });
+  });
+
+  describe('The converter must identify valid OA3.1 specifications - JSON', function () {
+    var pathPrefix = VALID_OPENAPI_3_1_FOLDER_JSON,
+      sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix)),
+      oa30Files = ['deprecated_property.json'],
+      incorrectOA31Files = ['webhooks.json'],
+      filesToIgnore = oa30Files + incorrectOA31Files;
+
+
+    sampleSpecs.map((sample) => {
+      if (!filesToIgnore.includes(sample)) {
+        var specPath = path.join(__dirname, pathPrefix, sample);
+
+        it(specPath + ' is valid ', function(done) {
+          var openapi = fs.readFileSync(specPath, 'utf8'),
+            validationResult = Converter.validate({ type: 'string', data: openapi });
+
+          expect(validationResult.result).to.equal(true);
+          expect(validationResult.specificationVersion).to.equal('3.1.x');
+          done();
+        });
+      }
+    });
+  });
+
+  describe('The converter must identify valid OA3.1 specifications - YAML', function () {
+    var pathPrefix = VALID_OPENAPI_3_1_FOLDER_YAML,
+      sampleSpecs = fs.readdirSync(path.join(__dirname, pathPrefix)),
+      invalidOA31Files = ['marketPayNotificationService4.yaml'];
+
+    sampleSpecs.map((sample) => {
+      if (!invalidOA31Files.includes(sample)) {
+        var specPath = path.join(__dirname, pathPrefix, sample);
+
+        it(specPath + ' is valid ', function(done) {
+          var openapi = fs.readFileSync(specPath, 'utf8'),
+            validationResult = Converter.validate({ type: 'string', data: openapi });
+
+          expect(validationResult.result).to.equal(true);
+          expect(validationResult.specificationVersion).to.equal('3.1.x');
+          done();
+        });
+      }
     });
   });
 
