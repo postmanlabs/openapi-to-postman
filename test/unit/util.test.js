@@ -2577,6 +2577,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
   });
 
   describe('fixPathVariablesInUrl function', function() {
+    it('should be able to handle incorrect urls', function(done) {
+      expect(SchemaUtils.fixPathVariablesInUrl({})).to.equal('');
+      expect(SchemaUtils.fixPathVariablesInUrl(null)).to.equal('');
+      expect(SchemaUtils.fixPathVariablesInUrl(undefined)).to.equal('');
+      done();
+    });
+
     it('should convert a url with scheme and path variables', function(done) {
       var convertedUrl = SchemaUtils.fixPathVariablesInUrl('{scheme}://developer.uspto.gov/{path0}/segment/{path1}');
       expect(convertedUrl).to.equal('{{scheme}}://developer.uspto.gov/{{path0}}/segment/{{path1}}');
