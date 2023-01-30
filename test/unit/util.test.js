@@ -201,13 +201,10 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         resolvedSchema = deref.resolveRefs(schema,
           parameterSource,
           { components, concreteUtils },
-          {},
-          resolveFor,
-          resolveTo
+          { resolveFor, resolveTo }
         ),
         schemaCache = {
-          schemaFakerCache: {},
-          schemaResolutionCache: {}
+          schemaFakerCache: {}
         },
         key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema)),
         options = {
@@ -247,15 +244,12 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         resolveTo = 'example',
         resolveFor = 'CONVERSION',
         schemaCache = {
-          schemaFakerCache: {},
-          schemaResolutionCache: {}
+          schemaFakerCache: {}
         },
         resolvedSchema = deref.resolveRefs(schema,
           parameterSource,
           { components, concreteUtils },
-          schemaCache.schemaResolutionCache,
-          resolveFor,
-          resolveTo
+          { resolveFor, resolveTo }
         ),
         key = hash('resolveToExample ' + JSON.stringify(resolvedSchema)),
         options = {
@@ -2583,6 +2577,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
   });
 
   describe('fixPathVariablesInUrl function', function() {
+    it('should be able to handle incorrect urls', function(done) {
+      expect(SchemaUtils.fixPathVariablesInUrl({})).to.equal('');
+      expect(SchemaUtils.fixPathVariablesInUrl(null)).to.equal('');
+      expect(SchemaUtils.fixPathVariablesInUrl(undefined)).to.equal('');
+      done();
+    });
+
     it('should convert a url with scheme and path variables', function(done) {
       var convertedUrl = SchemaUtils.fixPathVariablesInUrl('{scheme}://developer.uspto.gov/{path0}/segment/{path1}');
       expect(convertedUrl).to.equal('{{scheme}}://developer.uspto.gov/{{path0}}/segment/{{path1}}');
@@ -2805,7 +2806,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         explode: true
       };
 
-      SchemaUtils.getParamSerialisationInfo(param, 'REQUEST', {}, {});
+      SchemaUtils.getParamSerialisationInfo(param, 'REQUEST', {});
       expect(param.schema).to.have.property('type', 'array');
       expect(param.schema.items).to.have.property('type', 'string');
       expect(param.schema).to.not.have.property('default');
