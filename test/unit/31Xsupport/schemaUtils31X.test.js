@@ -624,6 +624,26 @@ describe('fixExamplesByVersion method', function() {
     expect(JSON.stringify(fixedSchemaWithExample)).to.be.equal(JSON.stringify(expectedSchemaAfterFix));
   });
 
+  it('Should correctly handle schema with properties defined as null', function() {
+    const providedSchema = {
+        required: [
+          'id',
+          'name'
+        ],
+        type: 'object',
+        properties: null
+      },
+      expectedSchemaAfterFix = {
+        required: [
+          'id',
+          'name'
+        ],
+        type: 'object',
+        properties: null
+      },
+      fixedSchemaWithExample = concreteUtils.fixExamplesByVersion(providedSchema);
+    expect(JSON.stringify(fixedSchemaWithExample)).to.be.equal(JSON.stringify(expectedSchemaAfterFix));
+  });
 });
 
 describe('isBinaryContentType method', function() {
@@ -650,6 +670,15 @@ describe('isBinaryContentType method', function() {
       },
       isBinary = concreteUtils.isBinaryContentType(bodyType, contentObject);
     expect(isBinary).to.be.false;
+  });
+
+  it('Should correctly handle null value for corresponding body', function() {
+    const bodyType = 'application/octet-stream',
+      contentObject = {
+        'application/octet-stream': null
+      },
+      isBinary = concreteUtils.isBinaryContentType(bodyType, contentObject);
+    expect(isBinary).to.be.true;
   });
 });
 
@@ -702,6 +731,22 @@ describe('getOuterPropsIfIsSupported method', function() {
     expect(resolvedSchema).to.be.an('object')
       .nested.to.have.all.keys('name', 'age', 'job', 'required');
     expect(resolvedSchema.job).to.be.equal(outerProperties.job);
+    expect(JSON.stringify(resolvedSchema.required)).to.be.equal(JSON.stringify(expectedRequiredValue));
+  });
+
+  it('Should correctly handle if outer properties are defined as null', function() {
+    const referencedSchema = {
+        name: 'Test name',
+        age: '30',
+        required: [
+          'name'
+        ]
+      },
+      outerProperties = null,
+      expectedRequiredValue = ['name'],
+      resolvedSchema = concreteUtils.addOuterPropsToRefSchemaIfIsSupported(referencedSchema, outerProperties);
+    expect(resolvedSchema).to.be.an('object')
+      .nested.to.have.all.keys('name', 'age', 'required');
     expect(JSON.stringify(resolvedSchema.required)).to.be.equal(JSON.stringify(expectedRequiredValue));
   });
 });
