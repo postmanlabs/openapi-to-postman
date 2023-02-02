@@ -206,7 +206,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         schemaCache = {
           schemaFakerCache: {}
         },
-        key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema)),
+        key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema) + ' schemaFormatDEFAULT'),
         options = {
           indentCharacter: '  ',
           stackLimit: 10,
@@ -251,7 +251,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           { components, concreteUtils },
           { resolveFor, resolveTo }
         ),
-        key = hash('resolveToExample ' + JSON.stringify(resolvedSchema)),
+        key = hash('resolveToExample ' + JSON.stringify(resolvedSchema) + ' schemaFormatDEFAULT'),
         options = {
           indentCharacter: '  ',
           stackLimit: 10,
@@ -268,6 +268,60 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       done();
 
     });
+
+    it('should populate schemaFakerCache with distinct value when only the schemaFormat is different', function (done) {
+      var schema = {
+          $ref: '#/components/schema/request'
+        },
+        components = {
+          schema: {
+            request: {
+              properties: {
+                name: {
+                  type: 'string'
+                }
+              }
+            }
+          }
+        },
+        parameterSource = 'REQUEST',
+        resolveTo = 'schema',
+        resolveFor = 'CONVERSION',
+        resolvedSchema = deref.resolveRefs(schema,
+          parameterSource,
+          { components, concreteUtils },
+          { resolveFor, resolveTo }
+        ),
+        schemaCache = {
+          schemaFakerCache: {}
+        },
+        xml_key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema) + ' schemaFormatXML'),
+        default_key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema) + ' schemaFormatDEFAULT'),
+        options = {
+          indentCharacter: '  ',
+          stackLimit: 10,
+          includeDeprecated: true
+        },
+        fakedSchema_default = SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource,
+          { components, concreteUtils }, 'default', schemaCache, options),
+        fakedSchema_xml = SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource,
+          { components, concreteUtils }, 'xml', schemaCache, options);
+
+      expect(schemaCache.schemaFakerCache).to.have.property(default_key);
+      expect(schemaCache.schemaFakerCache[default_key]).to.equal(fakedSchema_default);
+      expect(fakedSchema_default).to.eql({
+        name: '<string>'
+      });
+
+      expect(schemaCache.schemaFakerCache).to.have.property(xml_key);
+      expect(schemaCache.schemaFakerCache[xml_key]).to.equal(fakedSchema_xml);
+      expect(fakedSchema_xml).to.eql(
+        '<element>\n  <name>(string)</name>\n</element>'
+      );
+
+      done();
+    });
+
   });
 
   describe('convertToPmCollectionVariables function', function() {
