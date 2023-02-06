@@ -316,7 +316,8 @@ describe('DEREF FUNCTION TESTS ', function() {
 
     it('should return schema with example parameter(if given) for $ref just like inline schema', function(done) {
       var schema = {
-          $ref: '#/components/schemas/schema1'
+          $ref: '#/components/schemas/schema1',
+          example: 'asc'
         },
         componentsAndPaths = {
           components: {
