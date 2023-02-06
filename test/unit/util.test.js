@@ -206,7 +206,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         schemaCache = {
           schemaFakerCache: {}
         },
-        key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema)),
+        key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema) + ' schemaFormatDEFAULT'),
         options = {
           indentCharacter: '  ',
           stackLimit: 10,
@@ -251,7 +251,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           { components, concreteUtils },
           { resolveFor, resolveTo }
         ),
-        key = hash('resolveToExample ' + JSON.stringify(resolvedSchema)),
+        key = hash('resolveToExample ' + JSON.stringify(resolvedSchema) + ' schemaFormatDEFAULT'),
         options = {
           indentCharacter: '  ',
           stackLimit: 10,
@@ -268,6 +268,60 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
       done();
 
     });
+
+    it('should populate schemaFakerCache with distinct value when only the schemaFormat is different', function (done) {
+      var schema = {
+          $ref: '#/components/schema/request'
+        },
+        components = {
+          schema: {
+            request: {
+              properties: {
+                name: {
+                  type: 'string'
+                }
+              }
+            }
+          }
+        },
+        parameterSource = 'REQUEST',
+        resolveTo = 'schema',
+        resolveFor = 'CONVERSION',
+        resolvedSchema = deref.resolveRefs(schema,
+          parameterSource,
+          { components, concreteUtils },
+          { resolveFor, resolveTo }
+        ),
+        schemaCache = {
+          schemaFakerCache: {}
+        },
+        xml_key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema) + ' schemaFormatXML'),
+        default_key = hash('resolveToSchema ' + JSON.stringify(resolvedSchema) + ' schemaFormatDEFAULT'),
+        options = {
+          indentCharacter: '  ',
+          stackLimit: 10,
+          includeDeprecated: true
+        },
+        fakedSchema_default = SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource,
+          { components, concreteUtils }, 'default', schemaCache, options),
+        fakedSchema_xml = SchemaUtils.safeSchemaFaker(schema, resolveTo, resolveFor, parameterSource,
+          { components, concreteUtils }, 'xml', schemaCache, options);
+
+      expect(schemaCache.schemaFakerCache).to.have.property(default_key);
+      expect(schemaCache.schemaFakerCache[default_key]).to.equal(fakedSchema_default);
+      expect(fakedSchema_default).to.eql({
+        name: '<string>'
+      });
+
+      expect(schemaCache.schemaFakerCache).to.have.property(xml_key);
+      expect(schemaCache.schemaFakerCache[xml_key]).to.equal(fakedSchema_xml);
+      expect(fakedSchema_xml).to.eql(
+        '<element>\n  <name>(string)</name>\n</element>'
+      );
+
+      done();
+    });
+
   });
 
   describe('convertToPmCollectionVariables function', function() {
@@ -2577,6 +2631,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
   });
 
   describe('fixPathVariablesInUrl function', function() {
+    it('should be able to handle incorrect urls', function(done) {
+      expect(SchemaUtils.fixPathVariablesInUrl({})).to.equal('');
+      expect(SchemaUtils.fixPathVariablesInUrl(null)).to.equal('');
+      expect(SchemaUtils.fixPathVariablesInUrl(undefined)).to.equal('');
+      done();
+    });
+
     it('should convert a url with scheme and path variables', function(done) {
       var convertedUrl = SchemaUtils.fixPathVariablesInUrl('{scheme}://developer.uspto.gov/{path0}/segment/{path1}');
       expect(convertedUrl).to.equal('{{scheme}}://developer.uspto.gov/{{path0}}/segment/{{path1}}');
@@ -2590,6 +2651,18 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
       expect(SchemaUtils.fixPathVariablesInUrl('{protocol}://{host}:{port}/{contextpath}/{restapi}'))
         .to.equal('{{protocol}}://{{host}}:{{port}}/{{contextpath}}/{{restapi}}');
+
+      done();
+    });
+
+    it('should correctly handle non string values', function(done) {
+      expect(SchemaUtils.fixPathVariablesInUrl(123)).to.equal('');
+
+      expect(SchemaUtils.fixPathVariablesInUrl([])).to.equal('');
+
+      expect(SchemaUtils.fixPathVariablesInUrl({})).to.equal('');
+
+      expect(SchemaUtils.fixPathVariablesInUrl(true)).to.equal('');
 
       done();
     });
