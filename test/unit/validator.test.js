@@ -1404,6 +1404,23 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       expect(result[1].name).to.eql('GET /lookups');
       done();
     });
+
+    it('should correctly handle non string URLs', function (done) {
+      let schema = {
+          paths: {
+            '/lookups': {
+              'get': { 'summary': 'Lookup Job Values' }
+            }
+          }
+        },
+        schemaPath = null,
+        result;
+
+      result = schemaUtils.findMatchingRequestFromSchema('GET', schemaPath, schema, { strictRequestMatching: true });
+
+      expect(result).to.have.lengthOf(0);
+      done();
+    });
   });
 });
 
