@@ -2654,6 +2654,18 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
       done();
     });
+
+    it('should correctly handle non string values', function(done) {
+      expect(SchemaUtils.fixPathVariablesInUrl(123)).to.equal('');
+
+      expect(SchemaUtils.fixPathVariablesInUrl([])).to.equal('');
+
+      expect(SchemaUtils.fixPathVariablesInUrl({})).to.equal('');
+
+      expect(SchemaUtils.fixPathVariablesInUrl(true)).to.equal('');
+
+      done();
+    });
   });
 
   describe('findPathVariablesFromPath function', function() {
