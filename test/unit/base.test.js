@@ -1816,7 +1816,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
           const responseBodyWithAdditionalProperties =
             JSON.parse(conversionResult.output[0].data.item[0].response[1].body);
           expect(responseBodyWithAdditionalProperties).to.include.keys('test1');
-          expect(Object.keys(responseBodyWithAdditionalProperties).length).to.be.greaterThan(1);
+
+          // json-schema-faker doesn't guarantee that there will always be additional properties generated
+          expect(Object.keys(responseBodyWithAdditionalProperties).length).to.be.greaterThanOrEqual(1);
           done();
         });
     });
