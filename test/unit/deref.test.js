@@ -316,41 +316,127 @@ describe('DEREF FUNCTION TESTS ', function() {
   });
 
   describe('resolveAllOf Function', function () {
-    it('should resolve allOf schemas correctly', function (done) {
-      var allOfschema = [
-        {
-          'type': 'object',
-          'properties': {
-            'source': {
-              'type': 'string',
-              'format': 'uuid'
+    it('should resolve schemas containing allOf keyword correctly', function (done) {
+      var schema = {
+        'allOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'source': {
+                'type': 'string',
+                'format': 'uuid'
+              },
+              'actionId': { 'type': 'integer', 'minimum': 5 },
+              'result': { 'type': 'object' }
             },
-            'actionId': { 'type': 'integer', 'minimum': 5 },
-            'result': { 'type': 'object' }
+            'required': ['source', 'actionId', 'result']
           },
-          'required': ['source', 'actionId', 'result']
-        },
-        {
-          'properties': {
-            'result': {
-              'type': 'object',
-              'properties': {
-                'err': { 'type': 'string' },
-                'data': { 'type': 'object' }
+          {
+            'properties': {
+              'result': {
+                'type': 'object',
+                'properties': {
+                  'err': { 'type': 'string' },
+                  'data': { 'type': 'object' }
+                }
               }
             }
           }
-        }
-      ];
+        ]
+      };
 
       expect(deref.resolveAllOf(
-        allOfschema,
+        schema,
         'REQUEST',
         { concreteUtils: schemaUtils30X },
         { resolveTo: 'example' }
       )).to.deep.include({
         type: 'object',
         properties: {
+          source: {
+            type: 'string',
+            format: 'uuid'
+          },
+          actionId: { 'type': 'integer', 'minimum': 5 },
+          result: {
+            type: 'object',
+            properties: {
+              err: { 'type': 'string' },
+              data: { 'type': 'object' }
+            }
+          }
+        }
+      });
+      done();
+    });
+
+    it('should resolve schemas containing allOf keyword along with outer properties correctly', function (done) {
+      var schema = {
+        'properties': {
+          'id': {
+            'type': 'integer'
+          },
+          'name': {
+            'type': 'string'
+          },
+          'type': {
+            'type': 'string',
+            'enum': ['capsule', 'probe', 'satellite', 'spaceplane', 'station']
+          },
+          'registerdDate': {
+            'type': 'string',
+            'format': 'date-time'
+          }
+        },
+        'allOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'source': {
+                'type': 'string',
+                'format': 'uuid'
+              },
+              'actionId': { 'type': 'integer', 'minimum': 5 },
+              'result': { 'type': 'object' }
+            },
+            'required': ['source', 'actionId', 'result']
+          },
+          {
+            'properties': {
+              'result': {
+                'type': 'object',
+                'properties': {
+                  'err': { 'type': 'string' },
+                  'data': { 'type': 'object' }
+                }
+              }
+            }
+          }
+        ]
+      };
+
+      expect(deref.resolveAllOf(
+        schema,
+        'REQUEST',
+        { concreteUtils: schemaUtils30X },
+        { resolveTo: 'example' }
+      )).to.deep.include({
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer'
+          },
+          name: {
+            type: 'string'
+          },
+          type: {
+            type: 'string',
+            enum: ['capsule', 'probe', 'satellite', 'spaceplane', 'station']
+          },
+          registerdDate: {
+            type: 'string',
+            format: 'date-time'
+          },
           source: {
             type: 'string',
             format: 'uuid'
