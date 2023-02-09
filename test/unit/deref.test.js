@@ -313,6 +313,30 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(output.required).to.not.include('tag');
       done();
     });
+
+    it('should handle schema with enum having no type defined for resolveTo set as schema', function(done) {
+      var schema = {
+          'enum': [
+            'capsule',
+            'probe',
+            'satellite',
+            'spaceplane',
+            'station'
+          ]
+        },
+        resolveFor = 'CONVERSION',
+        resolveTo = 'schema',
+        parameterSource = 'REQUEST',
+        output;
+
+      output = deref.resolveRefs(schema, parameterSource, { concreteUtils: schemaUtils30X }, {
+        resolveFor,
+        resolveTo
+      });
+      expect(output.type).to.equal('string');
+      expect(output.default).to.equal('<string>');
+      done();
+    });
   });
 
   describe('resolveAllOf Function', function () {
