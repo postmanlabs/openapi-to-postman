@@ -76,6 +76,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       specWithAuthDigest = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthDigest.yaml'),
       specWithAuthOauth1 = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthOauth1.yaml'),
       specWithAuthBasic = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthBasic.yaml'),
+      sujay_testing = path.join(__dirname, VALID_OPENAPI_PATH + '/sujay_testing.yaml'),
       schemaWithArrayTypeAndAdditionalProperties =
         path.join(__dirname, VALID_OPENAPI_PATH + '/schemaWithArrayTypeAndAdditionalProperties.yaml'),
       xmlRequestAndResponseBody = path.join(__dirname, VALID_OPENAPI_PATH, '/xmlRequestAndResponseBody.json'),
@@ -93,9 +94,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
 
     it('Should add collection level auth with type as `bearer`' +
     securityTestCases, function(done) {
-      var openapi = fs.readFileSync(securityTestCases, 'utf8'),
+      var openapi = fs.readFileSync(sujay_testing, 'utf8'),
         auth;
-      Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+      Converter.convertV2({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
 
         auth = conversionResult.output[0].data.item[0].request.auth;
 
