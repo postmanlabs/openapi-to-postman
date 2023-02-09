@@ -32,13 +32,15 @@ module.exports = {
         }
 
         case 'folder': {
-          collectionTree.setNode(nodeIdentified, generateFolderFromOpenAPI(context, nodeIdentified));
+          collectionTree.setNode(nodeIdentified,
+            Object.assign(node, generateFolderFromOpenAPI(context, nodeIdentified)));
 
           break;
         }
 
         case 'collection': {
-          collectionTree.setNode(nodeIdentified, generateCollectionFromOpenAPI(context, nodeIdentified));
+          collectionTree.setNode(nodeIdentified,
+            Object.assign(node, generateCollectionFromOpenAPI(context, nodeIdentified)));
 
           break;
         }

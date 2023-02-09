@@ -9,7 +9,8 @@ let _ = require('lodash'),
 
     tree.setNode('root:collection', {
       type: 'collection',
-      data: {}
+      data: {},
+      meta: {}
     });
 
     _.forEach(openapi.paths, function (methods, path) {
@@ -22,6 +23,10 @@ let _ = require('lodash'),
         _.forEach(methods, function (data, method) {
           tree.setNode(`path:${pathSplit[0]}:${method}`, {
             type: 'request',
+            meta: {
+              path: path,
+              method: method
+            },
             data: {}
           });
 
@@ -42,6 +47,7 @@ let _ = require('lodash'),
           else {
             tree.setNode(`path:${p}`, {
               type: 'folder',
+              meta: {},
               data: {}
             });
 
@@ -63,7 +69,11 @@ let _ = require('lodash'),
         _.forEach(methods, function (data, method) {
           tree.setNode(`path:${_.last(pathSplit)}:${method}`, {
             type: 'request',
-            data: {}
+            data: {},
+            meta: {
+              path: path,
+              method: method
+            }
           });
 
           tree.setEdge(`path:${_.last(pathSplit)}`, `path:${_.last(pathSplit)}:${method}`);

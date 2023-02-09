@@ -69,11 +69,13 @@ module.exports = function ({ openapi }) {
   // Fix {scheme} and {path} vars in the URL to :scheme and :path
   openapi.baseUrl = fixPathVariablesInUrl(_.get(openapi, 'servers.0.url', '{{baseURL}}'));
 
-  return new sdk.Collection({
-    info: {
-      name: _.get(openapi, 'info.title', COLLECTION_NAME),
-      description: getCollectionDescription(openapi)
-    },
-    auth: generateAuthrForCollectionFromOpenAPI(openapi, openapi.security)
-  });
+  return {
+    data: new sdk.Collection({
+      info: {
+        name: _.get(openapi, 'info.title', COLLECTION_NAME),
+        description: getCollectionDescription(openapi)
+      },
+      auth: generateAuthrForCollectionFromOpenAPI(openapi, openapi.security)
+    })
+  };
 };
