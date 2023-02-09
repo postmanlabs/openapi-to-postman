@@ -1,4 +1,7 @@
-const QUERYPARAM = 'query';
+const QUERYPARAM = 'query',
+  CONVERSION = 'conversion',
+  HEADER = 'header';
+
 module.exports = {
   /**
   * Changes the {} around scheme and path variables to :variable
@@ -65,15 +68,12 @@ module.exports = {
 
     // for invalid param object return null
     if (!_.isObject(param)) {
-      return null;
+      return {};
     }
 
-    // Resolve the ref
-    paramSchema = (param.schema && param.schema.$ref) ?
-      this.resolveRefFromSchema(param.schema.$ref) :
-      param.schema;
+    // Resolve the ref and composite schemas
+    paramSchema = this.resolveSchema(param.schema);
 
-    // TODO: Handle anyOf and oneOf here
     isExplodable = paramSchema.type === 'object';
 
     // decide allowed / default style for respective param location
@@ -141,8 +141,36 @@ module.exports = {
    * @param {String} $ref - Ref that is to be resolved
    * @returns {Object} Returns the object that staisfies the schema
    */
-  resolveRefFromSchema: function ($ref) {
-    // TODO: Add implementation
+  resolveRefFromSchema: function (context, $ref, resolveFor, resolveFor) {
+    const {schema, schemaCache} = context;
+  },
+
+  /**
+   * Resolve a given ref from the schema
+   * @param {Object} schema - Schema that is to be resolved
+   * @param {String} resolveFor - For which action this resoltion is to be done
+   * @returns {Object} Returns the object that staisfies the schema
+   */
+  resolveSchema: function (schema, resolveFor = CONVERSION) {
+    if (!schema) {
+      return new Error('Schema is empty');
+    }
+
+    const compositeSchema = schema.anyOf || schema.oneOf;
+
+    if (compositeSchema) {
+      if (resolveFor === CONVERSION) {
+        return this.resolveSchema(compositeSchema[0]);
+      }
+
+      // TODO: Handle for validation
+    }
+
+    if (schema.$ref) {
+      return this.resolveRefFromSchema(schema.$ref);
+    }
+
+    return schema;
   },
 
   /**
@@ -195,6 +223,92 @@ module.exports = {
     return extractedParams;
   },
 
+  /**
+   * Gets the description of the parameter.
+   * If the parameter is required, it prepends a `(Requried)` before the parameter description
+   * If the parameter type is enum, it appends the possible enum values
+   * @param {object} parameter - input param for which description needs to be returned
+   * @returns {string} description of the parameters
+   */
+  getParameterDescription: function(parameter) {
+    if (!_.isObject(parameter)) {
+      return '';
+    }
+    return (parameter.required ? '(Required) ' : '') + (parameter.description || '') +
+      (parameter.enum ? ' (This can only be one of ' + parameter.enum + ')' : '');
+  },
+
+  serialiseParamsBasedOnStyle: function (param, paramValue) {
+    const { style, explode, startValue, propSeparator, keyValueSeparator, isExplodable } =
+    this.getParamSerialisationInfo(param);
+
+    let serialisedValue,
+      description = this.getParameterDescription(param),
+      paramName = _.get(param, 'name'),
+      pmParams = [];
+
+    // decide explodable params, starting value and separators between key-value and properties for serialisation
+    // Ref: https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.2.md#style-examples
+    switch (style) {
+      case 'form':
+        if (explode && _.isObject(paramValue)) {
+          const isArrayValue = _.isArray(paramValue);
+
+          _.forEach(paramValue, (value, key) => {
+            pmParams.push({
+              key: isArrayValue ? paramName : key,
+              value: (value === undefined ? '' : value),
+              description
+            });
+          });
+        }
+
+        break;
+      case 'deepObject':
+        // TODO: Confirm whether we should ignore array types here
+        if (_.isObject(paramValue) && !_.isArray(paramValue)) {
+          let extractedParams = this.extractDeepObjectParams(paramValue, paramName);
+
+          _.forEach(extractedParams, (extractedParam) => {
+            pmParams.push({
+              key: extractedParam.key,
+              value: extractedParam.value || '',
+              description
+            });
+          });
+        }
+
+        break;
+      default:
+        if (_.isObject(paramValue)) {
+          _.forEach(paramValue, (value, key) => {
+            // add property separator for all index/keys except first
+            !_.isEmpty(serialisedValue) && (serialisedValue += propSeparator);
+
+            // append key for param that can be exploded
+            isExplodable && (serialisedValue += (key + keyValueSeparator));
+            serialisedValue += (value === undefined ? '' : value);
+          });
+        }
+        // for non-object and non-empty value append value as is to string
+        else if (!_.isNil(paramValue)) {
+          serialisedValue += paramValue;
+        }
+
+        // prepend starting value to serialised value (valid for empty value also)
+        serialisedValue = startValue + serialisedValue;
+        pmParams.push({
+          key: paramName,
+          value: serialisedValue,
+          description
+        });
+
+        break;
+    }
+
+    return pmParams;
+  },
+
   resolveQueryParamsForPostmanRequest: function (operationItem) {
     const params = operationItem.properties.parameters,
       pmParams = [];
@@ -204,8 +318,7 @@ module.exports = {
         return;
       }
 
-      let paramValue = this.resolveValueOfParameter(param),
-        serialisedValue;
+      let paramValue = this.resolveValueOfParameter(param);
 
       if (typeof paramValue === 'number' || typeof paramValue === 'boolean') {
         // the SDK will keep the number-ness,
@@ -215,72 +328,38 @@ module.exports = {
         paramValue = paramValue.toString();
       }
 
-      const { style, explode, startValue, propSeparator, keyValueSeparator, isExplodable } =
-        this.getParamSerialisationInfo(param);
+      const deserialisedParams = this.serialiseParamsBasedOnStyle(param, paramValue);
 
-      // decide explodable params, starting value and separators between key-value and properties for serialisation
-      // Ref: https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.2.md#style-examples
-      // TODO: Complete this
-      switch (style) {
-        case 'form':
-          if (explode && _.isObject(paramValue)) {
-            const isArrayValue = _.isArray(paramValue);
+      pmParams.push(...deserialisedParams);
+    });
 
-            _.forEach(paramValue, (value, key) => {
-              pmParams.push({
-                key: isArrayValue ? paramName : key,
-                value: (value === undefined ? '' : value),
-                description,
-                disabled
-              });
-            });
-          }
+    return pmParams;
+  },
 
-          break;
-        case 'deepObject':
-          if (_.isObject(paramValue)) {
-            let extractedParams = this.extractDeepObjectParams(paramValue, paramName);
+  resolveHeadersForPostmanRequest: function (operationItem) {
+    const params = operationItem.properties.parameters,
+      pmParams = [];
 
-            _.forEach(extractedParams, (extractedParam) => {
-              pmParams.push({
-                key: extractedParam.key,
-                value: extractedParam.value || '',
-                description,
-                disabled
-              });
-            });
-          }
-
-          break;
-        default:
-          if (_.isObject(paramValue)) {
-            _.forEach(paramValue, (value, key) => {
-              // add property separator for all index/keys except first
-              !_.isEmpty(serialisedValue) && (serialisedValue += propSeparator);
-
-              // append key for param that can be exploded
-              isExplodable && (serialisedValue += (key + keyValueSeparator));
-              serialisedValue += (value === undefined ? '' : value);
-            });
-          }
-          // for non-object and non-empty value append value as is to string
-          else if (!_.isNil(paramValue)) {
-            serialisedValue += paramValue;
-          }
-
-          // prepend starting value to serialised value (valid for empty value also)
-          serialisedValue = startValue + serialisedValue;
-          pmParams.push({
-            key: paramName,
-            value: serialisedValue,
-            description,
-            disabled
-          });
-
-          break;
+    _.forEach(params, (param) => {
+      if (param.in !== HEADER) {
+        return;
       }
 
-      return pmParams;
+      let paramValue = this.resolveValueOfParameter(param);
+
+      if (typeof paramValue === 'number' || typeof paramValue === 'boolean') {
+        // the SDK will keep the number-ness,
+        // which will be rejected by the collection v2 schema
+        // converting to string to prevent issues like
+        // https://github.com/postmanlabs/postman-app-support/issues/6500
+        paramValue = paramValue.toString();
+      }
+
+      const deserialisedParams = this.serialiseParamsBasedOnStyle(param, paramValue);
+
+      pmParams.push(...deserialisedParams);
     });
+
+    return pmParams;
   }
 };
