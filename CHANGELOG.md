@@ -1,5 +1,13 @@
 # OpenAPI-Postman Changelog
 
+#### v4.9.0 (February 06, 2023)
+* Fixed issue [#660](https://github.com/postmanlabs/openapi-to-postman/issues/660) where for certain XML request bodies, conversion was failing with TypeError.
+* Fixed issue where for some definitions having non-string URLs were failing conversion with TypeErrors.
+* Fixed issue where a test in-consistently kept failing due to uncertainity of jsf library.
+
+#### v4.8.0 (January 24, 2023)
+* Added specifictionVersion field to validate result.
+
 #### v4.7.0 (January 16, 2023)
 * Fixed an issue where same schema was being validated against examples multiple times during a conversion - using local cache here.
 * Added a way to return analytics along with the result for better observability into the kind of schemas we get for conversion.
