@@ -313,6 +313,33 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(output.required).to.not.include('tag');
       done();
     });
+
+    it('should return schema with example parameter(if given) for $ref just like inline schema', function(done) {
+      var schema = {
+          $ref: '#/components/schemas/schema1',
+          example: 'asc'
+        },
+        componentsAndPaths = {
+          components: {
+            schemas: {
+              schema1: {
+                description: 'The unique identifier of a spacecraft',
+                enum: [
+                  'asc',
+                  'desc'
+                ],
+                type: 'string'
+              }
+            }
+          }
+        },
+        parameterSource = 'REQUEST',
+        // deref.resolveRefs modifies the input schema and components so cloning to keep tests independent of each other
+        output = deref.resolveRefs(schema, parameterSource, _.cloneDeep(componentsAndPaths), {});
+
+      expect(output.example).to.equal(schema.example);
+      done();
+    });
   });
 
   describe('resolveAllOf Function', function () {
