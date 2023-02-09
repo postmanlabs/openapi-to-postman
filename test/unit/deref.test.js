@@ -313,7 +313,7 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(output.required).to.not.include('tag');
       done();
     });
-    
+
     it('should handle schema with enum having no type defined for resolveTo set as schema', function(done) {
       var schema = {
           'enum': [
@@ -335,6 +335,8 @@ describe('DEREF FUNCTION TESTS ', function() {
       });
       expect(output.type).to.equal('string');
       expect(output.default).to.equal('<string>');
+      done();
+    });
 
     it('should return schema with example parameter(if given) for $ref just like inline schema', function(done) {
       var schema = {
