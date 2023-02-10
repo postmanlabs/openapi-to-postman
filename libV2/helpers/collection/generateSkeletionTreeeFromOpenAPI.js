@@ -79,7 +79,56 @@ let _ = require('lodash'),
           tree.setEdge(`path:${_.last(pathSplit)}`, `path:${_.last(pathSplit)}:${method}`);
         });
       }
+    });
 
+    return tree;
+  },
+
+  _generateTreeFromTags = function (openapi) {
+    let tree = new Graph();
+
+    tree.setNode('root:collection', {
+      type: 'collection',
+      data: {},
+      meta: {}
+    });
+
+    _.forEach(openapi.paths, function (methods, path) {
+      _.forEach(methods, function (data, method) {
+        tree.setNode(`path:${path}:${method}`, {
+          type: 'request',
+          data: {},
+          meta: {
+            path: path,
+            method: method
+          }
+        });
+
+        /**
+         * Pick the first tag. That needs to become a folder.
+         * If the folder does not exist, create and set the edge b/w folder and request
+         *
+         * else if tags not present set the edge b/w collection and request
+         */
+        if (data.tags && data.tags.length > 0) {
+          let tag = data.tags[0];
+
+          if (!tree.hasNode(`path:${tag}`)) {
+            tree.setNode(`path:${tag}`, {
+              type: 'folder',
+              meta: {},
+              data: {}
+            });
+
+            tree.setEdge('root:collection', `path:${tag}`);
+          }
+
+          tree.setEdge(`path:${tag}`, `path:${path}:${method}`);
+        }
+        else {
+          tree.setEdge('root:collection', `path:${path}:${method}`);
+        }
+      });
     });
 
     return tree;
