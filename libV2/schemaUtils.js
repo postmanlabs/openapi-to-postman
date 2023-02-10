@@ -1,14 +1,67 @@
-const QUERYPARAM = 'query',
-  CONVERSION = 'conversion',
-  HEADER = 'header';
+const schemaFaker = require('../assets/json-schema-faker'),
+  _ = require('lodash'),
+  xmlFaker = require('./xmlSchemaFaker.js'),
 
-module.exports = {
+  /**
+   * @param {*} rootObject - the object from which you're trying to read a property
+   * @param {*} pathArray - each element in this array a property of the previous object
+   * @param {*} defValue - what to return if the required path is not found
+   * @returns {*} - required property value
+   * @description - this is similar to _.get(rootObject, pathArray.join('.')), but also works for cases where
+   * there's a . in the property name
+   */
+  _getEscaped = (rootObject, pathArray, defValue) => {
+    if (!(pathArray instanceof Array)) {
+      return null;
+    }
+
+    if (!rootObject) {
+      return defValue;
+    }
+
+    if (_.isEmpty(pathArray)) {
+      return rootObject;
+    }
+
+    return _getEscaped(rootObject[pathArray.shift()], pathArray, defValue);
+  };
+
+// See https://github.com/json-schema-faker/json-schema-faker/tree/master/docs#available-options
+schemaFaker.option({
+  requiredOnly: false,
+  optionalsProbability: 1.0, // always add optional fields
+  maxLength: 256,
+  minItems: 1, // for arrays
+  maxItems: 20, // limit on maximum number of items faked for (type: arrray)
+  useDefaultValue: true,
+  ignoreMissingRefs: true,
+  avoidExampleItemsLength: true // option to avoid validating type array schema example's minItems and maxItems props.
+});
+
+let QUERYPARAM = 'query',
+  CONVERSION = 'conversion',
+  HEADER = 'header',
+  SCHEMA_TYPES = {
+    array: 'array',
+    boolean: 'boolean',
+    integer: 'integer',
+    number: 'number',
+    object: 'object',
+    string: 'string'
+  },
+  SCHEMA_FORMATS = {
+    DEFAULT: 'default', // used for non-request-body data and json
+    XML: 'xml' // used for request-body XMLs
+  },
+  REF_STACK_LIMIT = 10,
+  ERR_TOO_MANY_LEVELS = '<Error: Too many levels of nesting to fake this schema>',
+
   /**
   * Changes the {} around scheme and path variables to :variable
   * @param {string} url - the url string
   * @returns {string} string after replacing /{pet}/ with /:pet/
   */
-  sanitizeUrl: function (url) {
+  sanitizeUrl = (url) => {
     // URL should always be string so update value if non-string value is found
     if (typeof url !== 'string') {
       return '';
@@ -28,7 +81,7 @@ module.exports = {
 
     // converts the following:
     // /{{path}}/{{file}}.{{format}}/{{hello}} => /:path/{{file}}.{{format}}/:hello
-    let matches = this.findPathVariablesFromPath(url);
+    let matches = url.match(/(\/\{\{[^\/\{\}]+\}\})(?=\/|$)/g);
 
     if (matches) {
       matches.forEach((match) => {
@@ -38,6 +91,109 @@ module.exports = {
     }
 
     return url;
+  },
+
+  /**
+   * Resolve a given ref from the schema
+   * @param {Object} context - Global context object
+   * @param {Object} $ref - Ref that is to be resolved
+   * @param {Number} stackDepth - Depth of the current stack for Ref resolution
+   * @returns {Object} Returns the object that staisfies the schema
+   */
+  // TODO: Add caching of ref
+  resolveRefFromSchema = (context, $ref, stackDepth = 0) => {
+    const { specComponents } = context;
+
+    stackDepth++;
+
+    if (stackDepth >= REF_STACK_LIMIT) {
+      return { value: ERR_TOO_MANY_LEVELS };
+    }
+
+    if (!_.isFunction($ref.split)) {
+      return { value: 'reference ' + schema.$ref + ' not found in the OpenAPI spec' };
+    }
+
+    let splitRef = $ref.split('/'),
+      resolvedSchema;
+
+    // .split should return [#, components, schemas, schemaName]
+    // So length should atleast be 4
+    if (splitRef.length < 4) {
+      // not throwing an error. We didn't find the reference - generate a dummy value
+      return { value: 'reference ' + $ref + ' not found in the OpenAPI spec' };
+    }
+
+    // something like #/components/schemas/PaginationEnvelope/properties/page
+    // will be resolved - we don't care about anything before the components part
+    // splitRef.slice(1) will return ['components', 'schemas', 'PaginationEnvelope', 'properties', 'page']
+    // not using _.get here because that fails if there's a . in the property name (Pagination.Envelope, for example)
+    splitRef = splitRef.slice(1).map((elem) => {
+      // https://swagger.io/docs/specification/using-ref#escape
+      // since / is the default delimiter, slashes are escaped with ~1
+      return decodeURIComponent(
+        elem
+          .replace(/~1/g, '/')
+          .replace(/~0/g, '~')
+      );
+    });
+
+    resolvedSchema = _getEscaped(specComponents, splitRef);
+
+    if (!resolvedSchema) {
+      return { value: 'reference ' + $ref + ' not found in the OpenAPI spec' };
+    }
+
+    if (resolvedSchema.$ref) {
+      return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth);
+    }
+
+    return resolvedSchema;
+  },
+
+  /**
+   * Resolve a given ref from the schema
+   *
+   * @param {Object} context - Global context
+   * @param {Object} schema - Schema that is to be resolved
+   * @param {String} resolveFor - For which action this resoltion is to be done
+   * @returns {Object} Returns the object that staisfies the schema
+   */
+  resolveSchema = (context, schema, resolveFor = CONVERSION) => {
+    if (!schema) {
+      return new Error('Schema is empty');
+    }
+
+    const compositeSchema = schema.anyOf || schema.oneOf,
+      { concreteUtils } = context;
+
+    if (compositeSchema) {
+      if (resolveFor === CONVERSION) {
+        return resolveSchema(context, compositeSchema[0]);
+      }
+
+      // TODO: Handle for validation
+    }
+
+    // TODO: Handle allOf
+
+    if (schema.$ref) {
+      schema = resolveRefFromSchema(context, schema.$ref);
+    }
+
+    if (
+      concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.object) ||
+      schema.hasOwnProperty('properties') ||
+      (schema.hasOwnProperty('additionalProperties') && !schema.hasOwnProperty('type'))
+    ) {
+      // TODO: Handle case for objects
+    }
+    // If schema is of type array
+    else if (concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.array) && schema.items) {
+      // TODO: Handle case for array
+    }
+
+    return schema;
   },
 
   /**
@@ -54,7 +210,7 @@ module.exports = {
    *  isExplodable - whether params can be exploded (serialised value can contain key and value)
    * }
    */
-  getParamSerialisationInfo: function (param) {
+  getParamSerialisationInfo = (param) => {
     let paramName = _.get(param, 'name'),
       paramSchema,
       style, // style property defined/inferred from schema
@@ -72,7 +228,7 @@ module.exports = {
     }
 
     // Resolve the ref and composite schemas
-    paramSchema = this.resolveSchema(param.schema);
+    paramSchema = resolveSchema(param.schema);
 
     isExplodable = paramSchema.type === 'object';
 
@@ -137,68 +293,63 @@ module.exports = {
   },
 
   /**
-   * Resolve a given ref from the schema
-   * @param {String} $ref - Ref that is to be resolved
-   * @returns {Object} Returns the object that staisfies the schema
-   */
-  resolveRefFromSchema: function (context, $ref, resolveFor, resolveFor) {
-    const {schema, schemaCache} = context;
-  },
-
-  /**
-   * Resolve a given ref from the schema
-   * @param {Object} schema - Schema that is to be resolved
-   * @param {String} resolveFor - For which action this resoltion is to be done
-   * @returns {Object} Returns the object that staisfies the schema
-   */
-  resolveSchema: function (schema, resolveFor = CONVERSION) {
-    if (!schema) {
-      return new Error('Schema is empty');
-    }
-
-    const compositeSchema = schema.anyOf || schema.oneOf;
-
-    if (compositeSchema) {
-      if (resolveFor === CONVERSION) {
-        return this.resolveSchema(compositeSchema[0]);
-      }
-
-      // TODO: Handle for validation
-    }
-
-    if (schema.$ref) {
-      return this.resolveRefFromSchema(schema.$ref);
-    }
-
-    return schema;
-  },
-
-  /**
    * Resolve value of a given parameter
    *
    * @param {Object} param - Parameter that is to be resolved from schema
    * @returns {*} Value of the parameter
    */
-  resolveValueOfParameter: function (param) {
+  resolveValueOfParameter = (context, param, schemaFormat = SCHEMA_FORMATS.DEFAULT) => {
     if (!param || !param.hasOwnProperty('schema')) {
       return '';
     }
 
-    if (param.schema.$ref) {
-      param.schema = this.resolveRefFromSchema(param.schema.$ref);
+    const { indentCharacter } = context.computedOptions,
+      resolvedSchema = resolveSchema(context, param.schema);
+
+    // TODO: Handle resolving to examples
+    // if (options.resolveTo === 'example') {}
+
+    schemaFaker.option({
+      useExamplesValue: false
+    });
+
+    if (resolvedSchema.properties) {
+      // If any property exists with format:binary (and type: string) schemaFaker crashes
+      // we just delete based on format=binary
+      for (const prop in resolvedSchema.properties) {
+        if (resolvedSchema.properties.hasOwnProperty(prop)) {
+          if (resolvedSchema.properties[prop].format === 'binary') {
+            delete resolvedSchema.properties[prop].format;
+          }
+        }
+      }
     }
 
-    // TODO: Use schema faker to generate the value
+    try {
+      if (schemaFormat === SCHEMA_FORMATS.XML) {
+        return xmlFaker(null, resolvedSchema, indentCharacter);
+      }
+
+      // for JSON, the indentCharacter will be applied in the JSON.stringify step later on
+      return schemaFaker(resolvedSchema, null, context.schemaValidationCache || {});
+    }
+    catch (e) {
+      console.warn(
+        'Error faking a schema. Not faking this schema. Schema:', resolvedSchema,
+        'Error', e
+      );
+
+      return '';
+    }
   },
 
   /**
    * Resolve the url of the Postman request from the operation item
-   * @param {Object} operationItem - OperationItem from schema present at the path
-   * @property {String} operationItem.path - Exact path of the operation defined in the schema
+   * @param {Object} operationPath - Exact path of the operation defined in the schema
    * @returns {String} Url of the request
    */
-  resolveUrlForPostmanRequest: function (operationItem) {
-    return this.sanitizeUrl(operationItem.path);
+  resolveUrlForPostmanRequest = (operationPath) => {
+    return sanitizeUrl(operationPath);
   },
 
   /**
@@ -208,13 +359,13 @@ module.exports = {
    * @param {String} objectKey - key associated with deep object
    * @returns {Array} array of param key-value pairs
    */
-  extractDeepObjectParams: function (deepObject, objectKey) {
+  extractDeepObjectParams = (deepObject, objectKey) => {
     let extractedParams = [];
 
     Object.keys(deepObject).forEach((key) => {
       let value = deepObject[key];
       if (typeof value === 'object') {
-        extractedParams = _.concat(extractedParams, this.extractDeepObjectParams(value, objectKey + '[' + key + ']'));
+        extractedParams = _.concat(extractedParams, extractDeepObjectParams(value, objectKey + '[' + key + ']'));
       }
       else {
         extractedParams.push({ key: objectKey + '[' + key + ']', value });
@@ -230,20 +381,21 @@ module.exports = {
    * @param {object} parameter - input param for which description needs to be returned
    * @returns {string} description of the parameters
    */
-  getParameterDescription: function(parameter) {
+  getParameterDescription = (parameter) => {
     if (!_.isObject(parameter)) {
       return '';
     }
+
     return (parameter.required ? '(Required) ' : '') + (parameter.description || '') +
       (parameter.enum ? ' (This can only be one of ' + parameter.enum + ')' : '');
   },
 
-  serialiseParamsBasedOnStyle: function (param, paramValue) {
+  serialiseParamsBasedOnStyle = (param, paramValue) => {
     const { style, explode, startValue, propSeparator, keyValueSeparator, isExplodable } =
-    this.getParamSerialisationInfo(param);
+      getParamSerialisationInfo(param);
 
-    let serialisedValue,
-      description = this.getParameterDescription(param),
+    let serialisedValue = '',
+      description = getParameterDescription(param),
       paramName = _.get(param, 'name'),
       pmParams = [];
 
@@ -261,13 +413,15 @@ module.exports = {
               description
             });
           });
+
+          return pmParams;
         }
 
         break;
       case 'deepObject':
         // TODO: Confirm whether we should ignore array types here
         if (_.isObject(paramValue) && !_.isArray(paramValue)) {
-          let extractedParams = this.extractDeepObjectParams(paramValue, paramName);
+          let extractedParams = extractDeepObjectParams(paramValue, paramName);
 
           _.forEach(extractedParams, (extractedParam) => {
             pmParams.push({
@@ -276,41 +430,43 @@ module.exports = {
               description
             });
           });
+
+          return pmParams;
         }
 
         break;
       default:
-        if (_.isObject(paramValue)) {
-          _.forEach(paramValue, (value, key) => {
-            // add property separator for all index/keys except first
-            !_.isEmpty(serialisedValue) && (serialisedValue += propSeparator);
-
-            // append key for param that can be exploded
-            isExplodable && (serialisedValue += (key + keyValueSeparator));
-            serialisedValue += (value === undefined ? '' : value);
-          });
-        }
-        // for non-object and non-empty value append value as is to string
-        else if (!_.isNil(paramValue)) {
-          serialisedValue += paramValue;
-        }
-
-        // prepend starting value to serialised value (valid for empty value also)
-        serialisedValue = startValue + serialisedValue;
-        pmParams.push({
-          key: paramName,
-          value: serialisedValue,
-          description
-        });
-
         break;
     }
+
+    if (_.isObject(paramValue)) {
+      _.forEach(paramValue, (value, key) => {
+        // add property separator for all index/keys except first
+        !_.isEmpty(serialisedValue) && (serialisedValue += propSeparator);
+
+        // append key for param that can be exploded
+        isExplodable && (serialisedValue += (key + keyValueSeparator));
+        serialisedValue += (value === undefined ? '' : value);
+      });
+    }
+    // for non-object and non-empty value append value as is to string
+    else if (!_.isNil(paramValue)) {
+      serialisedValue += paramValue;
+    }
+
+    // prepend starting value to serialised value (valid for empty value also)
+    serialisedValue = startValue + serialisedValue;
+    pmParams.push({
+      key: paramName,
+      value: serialisedValue,
+      description
+    });
 
     return pmParams;
   },
 
-  resolveQueryParamsForPostmanRequest: function (operationItem) {
-    const params = operationItem.properties.parameters,
+  resolveQueryParamsForPostmanRequest = (context, operationItem) => {
+    const params = operationItem.parameters,
       pmParams = [];
 
     _.forEach(params, (param) => {
@@ -318,7 +474,7 @@ module.exports = {
         return;
       }
 
-      let paramValue = this.resolveValueOfParameter(param);
+      let paramValue = resolveValueOfParameter(context, param);
 
       if (typeof paramValue === 'number' || typeof paramValue === 'boolean') {
         // the SDK will keep the number-ness,
@@ -328,7 +484,7 @@ module.exports = {
         paramValue = paramValue.toString();
       }
 
-      const deserialisedParams = this.serialiseParamsBasedOnStyle(param, paramValue);
+      const deserialisedParams = serialiseParamsBasedOnStyle(param, paramValue);
 
       pmParams.push(...deserialisedParams);
     });
@@ -336,8 +492,8 @@ module.exports = {
     return pmParams;
   },
 
-  resolveHeadersForPostmanRequest: function (operationItem) {
-    const params = operationItem.properties.parameters,
+  resolveHeadersForPostmanRequest = (context, operationItem) => {
+    const params = operationItem.parameters,
       pmParams = [];
 
     _.forEach(params, (param) => {
@@ -345,7 +501,7 @@ module.exports = {
         return;
       }
 
-      let paramValue = this.resolveValueOfParameter(param);
+      let paramValue = resolveValueOfParameter(context, param);
 
       if (typeof paramValue === 'number' || typeof paramValue === 'boolean') {
         // the SDK will keep the number-ness,
@@ -355,11 +511,19 @@ module.exports = {
         paramValue = paramValue.toString();
       }
 
-      const deserialisedParams = this.serialiseParamsBasedOnStyle(param, paramValue);
+      const deserialisedParams = serialiseParamsBasedOnStyle(param, paramValue);
 
       pmParams.push(...deserialisedParams);
     });
 
     return pmParams;
+  };
+module.exports = {
+  resolvePostmanRequest: function (context, operationItem, path, method) {
+    const url = resolveUrlForPostmanRequest(path),
+      queryParams = resolveQueryParamsForPostmanRequest(context, operationItem),
+      headers = resolveHeadersForPostmanRequest(context, operationItem);
+
+    return;
   }
 };

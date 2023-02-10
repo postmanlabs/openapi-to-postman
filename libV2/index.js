@@ -4,6 +4,7 @@ const _ = require('lodash'),
   generateSkeletonTreeFromOpenAPI = require('./helpers/collection/generateSkeletionTreeeFromOpenAPI'),
   generateCollectionFromOpenAPI = require('./helpers/collection/generateCollectionFromOpenAPI'),
   generateFolderFromOpenAPI = require('./helpers/folder/generateFolderForOpenAPI');
+const { resolvePostmanRequest } = require('./schemaUtils');
 
 module.exports = {
   convertV2: function (context, cb) {
@@ -28,6 +29,11 @@ module.exports = {
 
       switch (node.type) {
         case 'request': {
+          resolvePostmanRequest(context,
+            context.openapi.paths[node.meta.path][node.meta.method],
+            node.meta.path,
+            node.meta.method
+          );
           break;
         }
 

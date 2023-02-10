@@ -33,7 +33,7 @@ paths:
           name: authorizableId
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/Authorizable'
         - in: query
           name: changelog
           required: true
@@ -2093,6 +2093,8 @@ paths:
         - sling
 components:
   schemas:
+    Authorizable:
+      type: string
     InstallStatus:
       properties:
         status:
