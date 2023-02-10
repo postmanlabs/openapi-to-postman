@@ -14,6 +14,12 @@ module.exports = {
     return cb(null, schema.validationResult);
   },
 
+  convertV2: function(input, options, cb) {
+    var schema = new SchemaPack(input, options);
+
+    return schema.convertV2(cb);
+  },
+
   validate: function (input) {
     var schema = new SchemaPack(input);
     return schema.validationResult;
