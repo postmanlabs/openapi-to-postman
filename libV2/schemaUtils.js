@@ -1,6 +1,7 @@
 const schemaFaker = require('../assets/json-schema-faker'),
   _ = require('lodash'),
   xmlFaker = require('./xmlSchemaFaker.js'),
+  URLENCODED = 'application/x-www-form-urlencoded',
 
   /**
    * @param {*} rootObject - the object from which you're trying to read a property
@@ -41,6 +42,7 @@ schemaFaker.option({
 let QUERYPARAM = 'query',
   CONVERSION = 'conversion',
   HEADER = 'header',
+  PATHPARAM = 'path',
   SCHEMA_TYPES = {
     array: 'array',
     boolean: 'boolean',
@@ -390,6 +392,32 @@ let QUERYPARAM = 'query',
       (parameter.enum ? ' (This can only be one of ' + parameter.enum + ')' : '');
   },
 
+  /**
+   * returns first example in the input map
+   * @param {Object} context - Global context object
+   * @param {Object} exampleObj - Object defined in the schema
+   * @returns {*} first example in the input map type
+   */
+  getExampleData = (context, exampleObj) => {
+    let example = {},
+      exampleKey;
+
+    if (typeof exampleObj !== 'object') {
+      return '';
+    }
+
+    exampleKey = Object.keys(exampleObj)[0];
+    example = exampleObj[exampleKey];
+
+    if (example.$ref) {
+      example = resolveRefFromSchema(context, example.$ref);
+    }
+
+    // TODO: Check whether we should return whole example if value is not found
+
+    return example.value;
+  },
+
   serialiseParamsBasedOnStyle = (param, paramValue) => {
     const { style, explode, startValue, propSeparator, keyValueSeparator, isExplodable } =
       getParamSerialisationInfo(param);
@@ -465,12 +493,130 @@ let QUERYPARAM = 'query',
     return pmParams;
   },
 
+  getTypeOfContent = (content) => {
+    if (_.isArray(content)) {
+      return SCHEMA_TYPES.array;
+    }
+
+    return typeof content;
+  },
+
+  resolveUrlEncodedRequestBodyForPostmanRequest = (context, requestBodyContent) => {
+    let { requestParametersResolution } = context.computedOptions,
+      bodyData = '',
+      urlEncodedParams = [],
+      requestBodyData = {
+        mode: 'urlencoded',
+        urlEncoded: urlEncodedParams
+      },
+      requestBodySchema,
+      shouldGenerateFromExample = requestParametersResolution === 'example';
+
+    if (_.isEmpty(requestBodyContent)) {
+      return requestBodyData;
+    }
+
+    requestBodySchema = requestBodyContent.schema;
+
+    if (shouldGenerateFromExample) {
+      /**
+       * Here it could be example or examples (plural)
+       * For examples, we'll pick the first example
+       */
+      const example = requestBodyContent.example || getExampleData(context, requestBodyContent.examples);
+
+      bodyData = example;
+    }
+    else if (requestBodySchema) {
+      if (requestBodySchema.$ref) {
+        requestBodySchema = resolveRefFromSchema(context, requestBodySchema.$ref);
+      }
+
+      schemaFaker.option({
+        useExamplesValue: shouldGenerateFromExample
+      });
+
+      bodyData = schemaFaker(requestBodySchema, null, context.schemaValidationCache || {});
+    }
+
+    const encoding = requestBodyContent.encoding;
+
+    // Serialise the data
+    _.forOwn(bodyData, (value, key) => {
+      let description,
+        required;
+
+      if (requestBodyContent.schema) {
+        description = _.get(requestBodyContent, ['schema', 'properties', key, 'description'], '');
+        required = _.get(requestBodyContent, ['schema', 'required'], true);
+      }
+
+      const param = encoding[key] || {};
+
+      param.name = key;
+      param.schema = { type: getTypeOfContent(value) };
+      // Since serialisation of urlencoded body is same as query param
+      // Setting .in property as query param
+      param.in = 'query';
+      param.description = description;
+      param.required = required;
+
+      urlEncodedParams.push(...serialiseParamsBasedOnStyle(param, value));
+    });
+
+    return requestBodyData;
+  },
+
+  resolveRequestBodyForPostmanRequest = (context, operationItem) => {
+    let requestBody = operationItem.requestBody,
+      requestContent;
+
+    if (requestBody.$ref) {
+      requestBody = resolveRefFromSchema(context, requestBody.$ref);
+    }
+
+    requestContent = requestBody.content;
+
+    if (requestContent[URLENCODED]) {
+      return resolveUrlEncodedRequestBodyForPostmanRequest(context, requestContent[URLENCODED]);
+    }
+
+    // TODO: Add handling for json type and multipart/form-data
+  },
+
   resolveQueryParamsForPostmanRequest = (context, operationItem) => {
     const params = operationItem.parameters,
       pmParams = [];
 
     _.forEach(params, (param) => {
       if (param.in !== QUERYPARAM) {
+        return;
+      }
+
+      let paramValue = resolveValueOfParameter(context, param);
+
+      if (typeof paramValue === 'number' || typeof paramValue === 'boolean') {
+        // the SDK will keep the number-ness,
+        // which will be rejected by the collection v2 schema
+        // converting to string to prevent issues like
+        // https://github.com/postmanlabs/postman-app-support/issues/6500
+        paramValue = paramValue.toString();
+      }
+
+      const deserialisedParams = serialiseParamsBasedOnStyle(param, paramValue);
+
+      pmParams.push(...deserialisedParams);
+    });
+
+    return pmParams;
+  },
+
+  resolvePathParamsForPostmanRequest = (context, operationItem) => {
+    const params = operationItem.parameters,
+      pmParams = [];
+
+    _.forEach(params, (param) => {
+      if (param.in !== PATHPARAM) {
         return;
       }
 
@@ -522,7 +668,9 @@ module.exports = {
   resolvePostmanRequest: function (context, operationItem, path, method) {
     const url = resolveUrlForPostmanRequest(path),
       queryParams = resolveQueryParamsForPostmanRequest(context, operationItem),
-      headers = resolveHeadersForPostmanRequest(context, operationItem);
+      headers = resolveHeadersForPostmanRequest(context, operationItem),
+      pathParams = resolvePathParamsForPostmanRequest(context, operationItem),
+      requestBody = resolveRequestBodyForPostmanRequest(context, operationItem);
 
     return;
   }
