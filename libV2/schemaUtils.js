@@ -2,6 +2,18 @@ const schemaFaker = require('../assets/json-schema-faker'),
   _ = require('lodash'),
   xmlFaker = require('./xmlSchemaFaker.js'),
   URLENCODED = 'application/x-www-form-urlencoded',
+  APP_JSON = 'application/json',
+  APP_JS = 'application/javascript',
+  TEXT_XML = 'text/xml',
+  APP_XML = 'application/xml',
+  TEXT_PLAIN = 'text/plain',
+  TEXT_HTML = 'text/html',
+  FORM_DATA = 'multipart/form-data',
+  HEADER_TYPE = {
+    JSON: 'json',
+    XML: 'xml',
+    INVALID: 'invalid'
+  },
 
   /**
    * @param {*} rootObject - the object from which you're trying to read a property
@@ -25,6 +37,16 @@ const schemaFaker = require('../assets/json-schema-faker'),
     }
 
     return _getEscaped(rootObject[pathArray.shift()], pathArray, defValue);
+  },
+  getXmlVersionContent = (bodyContent) => {
+    const regExp = new RegExp('([<\\?xml]+[\\s{1,}]+[version="\\d.\\d"]+[\\sencoding="]+.{1,15}"\\?>)');
+    let xmlBody = bodyContent;
+
+    if (!bodyContent.match(regExp)) {
+      const versionContent = '<?xml version="1.0" encoding="UTF-8"?>\n';
+      xmlBody = versionContent + xmlBody;
+    }
+    return xmlBody;
   };
 
 // See https://github.com/json-schema-faker/json-schema-faker/tree/master/docs#available-options
@@ -501,33 +523,68 @@ let QUERYPARAM = 'query',
     return typeof content;
   },
 
-  resolveUrlEncodedRequestBodyForPostmanRequest = (context, requestBodyContent) => {
-    let { requestParametersResolution } = context.computedOptions,
-      bodyData = '',
-      urlEncodedParams = [],
-      requestBodyData = {
-        mode: 'urlencoded',
-        urlEncoded: urlEncodedParams
-      },
-      requestBodySchema,
-      shouldGenerateFromExample = requestParametersResolution === 'example';
+  /**
+   * Parses media type from given content-type header or media type
+   * from content object into type and subtype
+   *
+   * @param {String} str - string to be parsed
+   * @returns {Object} - Parsed media type into type and subtype
+   */
+  parseMediaType = (str) => {
+    let simpleMediaTypeRegExp = /^\s*([^\s\/;]+)\/([^;\s]+)\s*(?:;(.*))?$/,
+      match = simpleMediaTypeRegExp.exec(str),
+      type = '',
+      subtype = '';
 
-    if (_.isEmpty(requestBodyContent)) {
-      return requestBodyData;
+    if (match) {
+      // as mediatype name are case-insensitive keep it in lower case for uniformity
+      type = _.toLower(match[1]);
+      subtype = _.toLower(match[2]);
     }
 
-    requestBodySchema = requestBodyContent.schema;
+    return { type, subtype };
+  },
+
+  /**
+  * Get the format of content type header
+  * @param {string} cTypeHeader - the content type header string
+  * @returns {string} type of content type header
+  */
+  getHeaderFamily = (cTypeHeader) => {
+    let mediaType = parseMediaType(cTypeHeader);
+
+    if (mediaType.type === 'application' &&
+      (mediaType.subtype === 'json' || _.endsWith(mediaType.subtype, '+json'))) {
+      return HEADER_TYPE.JSON;
+    }
+    if ((mediaType.type === 'application' || mediaType.type === 'text') &&
+      (mediaType.subtype === 'xml' || _.endsWith(mediaType.subtype, '+xml'))) {
+      return HEADER_TYPE.XML;
+    }
+    return HEADER_TYPE.INVALID;
+  },
+
+  resolveRequestBodyData = (context, requestBodySchema) => {
+    let { requestParametersResolution } = context.computedOptions,
+      bodyData = '',
+      shouldGenerateFromExample = requestParametersResolution === 'example';
+
+    if (_.isEmpty(requestBodySchema)) {
+      return requestBodyData;
+    }
 
     if (shouldGenerateFromExample) {
       /**
        * Here it could be example or examples (plural)
        * For examples, we'll pick the first example
        */
-      const example = requestBodyContent.example || getExampleData(context, requestBodyContent.examples);
+      const example = requestBodySchema.example || getExampleData(context, requestBodySchema.examples);
 
       bodyData = example;
     }
-    else if (requestBodySchema) {
+    else if (requestBodySchema.schema) {
+      requestBodySchema = requestBodySchema.schema;
+
       if (requestBodySchema.$ref) {
         requestBodySchema = resolveRefFromSchema(context, requestBodySchema.$ref);
       }
@@ -538,6 +595,23 @@ let QUERYPARAM = 'query',
 
       bodyData = schemaFaker(requestBodySchema, null, context.schemaValidationCache || {});
     }
+
+    return bodyData;
+  },
+
+  resolveUrlEncodedRequestBodyForPostmanRequest = (context, requestBodyContent) => {
+    let bodyData = '',
+      urlEncodedParams = [],
+      requestBodyData = {
+        mode: 'urlencoded',
+        urlEncoded: urlEncodedParams
+      };
+
+    if (_.isEmpty(requestBodyContent)) {
+      return requestBodyData;
+    }
+
+    bodyData = resolveRequestBodyData(context, requestBodyContent.schema);
 
     const encoding = requestBodyContent.encoding;
 
@@ -567,6 +641,123 @@ let QUERYPARAM = 'query',
     return requestBodyData;
   },
 
+  resolveFormDataRequestBodyForPostmanRequest = (context, requestBodyContent) => {
+    let bodyData = '',
+      formDataParams = [],
+      requestBodyData = {
+        mode: 'formdata',
+        formData: formDataParams
+      };
+
+    if (_.isEmpty(requestBodyContent)) {
+      return requestBodyData;
+    }
+
+    bodyData = resolveRequestBodyData(context, requestBodyContent.schema);
+
+    _.forOwn(bodyData, (value, key) => {
+      let paramSchema = _.get(requestBodyContent, ['schema', 'properties', key]),
+        description = getParameterDescription(paramSchema),
+        param;
+
+      // TODO: Add handling for headers from encoding
+
+      if (paramSchema && paramSchema.type === 'binary') {
+        param = {
+          key,
+          value: '',
+          type: 'file'
+        };
+      }
+      else {
+        param = {
+          key,
+          value,
+          type: 'text'
+        };
+      }
+
+      param.description = description;
+
+      formDataParams.push(param);
+    });
+
+    return {
+      body: requestBodyData,
+      headers: [{
+        key: 'Content-Type',
+        value: FORM_DATA
+      }]
+    };
+  },
+
+  resolveRawModeRequestBodyForPostmanRequest = (context, requestContent) => {
+    let bodyType,
+      bodyData,
+      headerFamily,
+      dataToBeReturned = {},
+      { concreteUtils } = context;
+
+    // checking for all possible raw types
+    if (requestContent.hasOwnProperty(APP_JS)) { bodyType = APP_JS; }
+    else if (requestContent.hasOwnProperty(APP_JSON)) { bodyType = APP_JSON; }
+    else if (requestContent.hasOwnProperty(TEXT_HTML)) { bodyType = TEXT_HTML; }
+    else if (requestContent.hasOwnProperty(TEXT_PLAIN)) { bodyType = TEXT_PLAIN; }
+    else if (requestContent.hasOwnProperty(APP_XML)) { bodyType = APP_XML; }
+    else if (requestContent.hasOwnProperty(TEXT_XML)) { bodyType = TEXT_XML; }
+    else {
+      // take the first property it has
+      // types like image/png etc
+      for (const cType in requestContent) {
+        if (requestContent.hasOwnProperty(cType)) {
+          bodyType = cType;
+          break;
+        }
+      }
+    }
+
+    headerFamily = getHeaderFamily(bodyType);
+
+    if (concreteUtils.isBinaryContentType(bodyType, requestContent)) {
+      dataToBeReturned = {
+        mode: 'file'
+      };
+    }
+    // Handling for Raw mode data
+    else {
+      bodyData = resolveRequestBodyData(context, requestContent[bodyType]);
+
+      if ((bodyType === TEXT_XML || bodyType === APP_XML || headerFamily === HEADER_TYPE.XML)) {
+        bodyData = getXmlVersionContent(bodyData);
+      }
+
+      const { indentCharacter } = context.computedOptions,
+        rawModeData = !_.isObject(bodyData) && _.isFunction(_.get(bodyData, 'toString')) ?
+          bodyData.toString() :
+          JSON.stringify(bodyData, null, indentCharacter);
+
+      dataToBeReturned = {
+        mode: 'raw',
+        raw: rawModeData
+      };
+    }
+
+    if (headerFamily !== HEADER_TYPE.INVALID) {
+      dataToBeReturned.options = {
+        raw: {
+          headerFamily
+        }
+      };
+    }
+
+    dataToBeReturned.headers = [{
+      key: 'Content-Type',
+      value: bodyType
+    }];
+
+    return dataToBeReturned;
+  },
+
   resolveRequestBodyForPostmanRequest = (context, operationItem) => {
     let requestBody = operationItem.requestBody,
       requestContent;
@@ -581,7 +772,11 @@ let QUERYPARAM = 'query',
       return resolveUrlEncodedRequestBodyForPostmanRequest(context, requestContent[URLENCODED]);
     }
 
-    // TODO: Add handling for json type and multipart/form-data
+    if (requestContent[FORM_DATA]) {
+      return resolveFormDataRequestBodyForPostmanRequest(context, requestContent[FORM_DATA]);
+    }
+
+    return resolveRawModeRequestBodyForPostmanRequest(context, requestContent);
   },
 
   resolveQueryParamsForPostmanRequest = (context, operationItem) => {
