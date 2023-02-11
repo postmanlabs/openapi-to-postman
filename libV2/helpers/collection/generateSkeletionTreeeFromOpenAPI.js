@@ -47,7 +47,9 @@ let _ = require('lodash'),
           else {
             tree.setNode(`path:${p}`, {
               type: 'folder',
-              meta: {},
+              meta: {
+                path: p
+              },
               data: {}
             });
 
@@ -116,7 +118,7 @@ let _ = require('lodash'),
           if (!tree.hasNode(`path:${tag}`)) {
             tree.setNode(`path:${tag}`, {
               type: 'folder',
-              meta: {},
+              meta: { path: p },
               data: {}
             });
 

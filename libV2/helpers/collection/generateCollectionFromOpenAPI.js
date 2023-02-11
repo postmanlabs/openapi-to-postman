@@ -1,5 +1,4 @@
 const _ = require('lodash'),
-  sdk = require('postman-collection'),
   generateAuthrForCollectionFromOpenAPI = require('./generateAuthForCollectionFromOpenAPI'),
   COLLECTION_NAME = 'Imported from OpenAPI 3.0',
 
@@ -70,12 +69,12 @@ module.exports = function ({ openapi }) {
   openapi.baseUrl = fixPathVariablesInUrl(_.get(openapi, 'servers.0.url', '{{baseURL}}'));
 
   return {
-    data: new sdk.Collection({
+    data: {
       info: {
         name: _.get(openapi, 'info.title', COLLECTION_NAME),
         description: getCollectionDescription(openapi)
       },
       auth: generateAuthrForCollectionFromOpenAPI(openapi, openapi.security)
-    })
+    }
   };
 };

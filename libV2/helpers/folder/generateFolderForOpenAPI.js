@@ -1,9 +1,9 @@
-const sdk = require('postman-collection');
+const _ = require('lodash');
 
-module.exports = function (openapi, nodeIdentified) {
+module.exports = function (openapi, node) {
   return {
-    data: new sdk.ItemGroup({
-      name: nodeIdentified
-    })
+    data: {
+      name: _.get(node, 'meta.path', 'FOLDER')
+    }
   };
 };
