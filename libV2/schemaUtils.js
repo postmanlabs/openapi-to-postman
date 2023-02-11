@@ -1,3 +1,5 @@
+const utils = require('./utils');
+
 const schemaFaker = require('../assets/json-schema-faker'),
   _ = require('lodash'),
   xmlFaker = require('./xmlSchemaFaker.js'),
@@ -77,7 +79,7 @@ let QUERYPARAM = 'query',
     DEFAULT: 'default', // used for non-request-body data and json
     XML: 'xml' // used for request-body XMLs
   },
-  REF_STACK_LIMIT = 10,
+  REF_STACK_LIMIT = 50,
   ERR_TOO_MANY_LEVELS = '<Error: Too many levels of nesting to fake this schema>',
 
   /**
@@ -183,10 +185,16 @@ let QUERYPARAM = 'query',
    * @param {String} resolveFor - For which action this resoltion is to be done
    * @returns {Object} Returns the object that staisfies the schema
    */
-  resolveSchema = (context, schema, resolveFor = CONVERSION) => {
+  resolveSchema = (context, schema, stack = 0, resolveFor = CONVERSION) => {
     if (!schema) {
       return new Error('Schema is empty');
     }
+
+    if (stack >= REF_STACK_LIMIT) {
+      return { value: ERR_TOO_MANY_LEVELS };
+    }
+
+    stack++;
 
     const compositeSchema = schema.anyOf || schema.oneOf,
       { concreteUtils } = context;
@@ -207,14 +215,34 @@ let QUERYPARAM = 'query',
 
     if (
       concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.object) ||
-      schema.hasOwnProperty('properties') ||
-      (schema.hasOwnProperty('additionalProperties') && !schema.hasOwnProperty('type'))
+      schema.hasOwnProperty('properties')
     ) {
-      // TODO: Handle case for objects
+      let resolvedSchemaProps = {};
+
+      _.forOwn(schema.properties, (property, propertyName) => {
+        resolvedSchemaProps[propertyName] = resolveSchema(context, property, stack);
+      });
+
+      schema.properties = resolvedSchemaProps;
     }
     // If schema is of type array
     else if (concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.array) && schema.items) {
-      // TODO: Handle case for array
+      // Add maxItem and minItem defintion since we want to enforce a limit on the number
+      // of items being faked by schema faker
+
+      if (!_.has(schema, 'minItems') && _.has(schema, 'maxItems') && schema.maxItems >= 2) {
+        schema.minItems = 2;
+      }
+
+      // Override maxItems to minItems if minItems is available
+      if (_.has(schema, 'minItems') && schema.minItems > 0) {
+        schema.maxItems = schema.minItems;
+      }
+
+      // If no maxItems is defined than override with default (2)
+      !_.has(schema, 'maxItems') && (schema.maxItems = 2);
+
+      schema.items = resolveSchema(context, schema.items, stack);
     }
 
     return schema;
@@ -573,6 +601,13 @@ let QUERYPARAM = 'query',
       return requestBodyData;
     }
 
+    if (requestBodySchema.$ref) {
+      requestBodySchema = resolveRefFromSchema(context, requestBodySchema.$ref);
+    }
+
+    requestBodySchema = requestBodySchema.schema || requestBodySchema;
+    requestBodySchema = resolveSchema(context, requestBodySchema);
+
     if (shouldGenerateFromExample) {
       /**
        * Here it could be example or examples (plural)
@@ -582,8 +617,8 @@ let QUERYPARAM = 'query',
 
       bodyData = example;
     }
-    else if (requestBodySchema.schema) {
-      requestBodySchema = requestBodySchema.schema;
+    else if (requestBodySchema) {
+      requestBodySchema = requestBodySchema.schema || requestBodySchema;
 
       if (requestBodySchema.$ref) {
         requestBodySchema = resolveRefFromSchema(context, requestBodySchema.$ref);
@@ -638,7 +673,9 @@ let QUERYPARAM = 'query',
       urlEncodedParams.push(...serialiseParamsBasedOnStyle(param, value));
     });
 
-    return requestBodyData;
+    return {
+      body: requestBodyData
+    };
   },
 
   resolveFormDataRequestBodyForPostmanRequest = (context, requestBodyContent) => {
@@ -755,7 +792,9 @@ let QUERYPARAM = 'query',
       value: bodyType
     }];
 
-    return dataToBeReturned;
+    return {
+      body: dataToBeReturned
+    };
   },
 
   resolveRequestBodyForPostmanRequest = (context, operationItem) => {
@@ -833,6 +872,31 @@ let QUERYPARAM = 'query',
     return pmParams;
   },
 
+  resolveNameForPostmanReqeust = (context, operationItem, requestUrl) => {
+    let reqName,
+      { requestNameSource } = context.computedOptions;
+
+    switch (requestNameSource) {
+      case 'fallback' : {
+        // operationId is usually camelcase or snake case
+        reqName = operationItem.summary ||
+            utils.insertSpacesInName(operationItem.operationId) ||
+            operationItem.description || requestUrl;
+        break;
+      }
+      case 'url' : {
+        reqName = requestUrl;
+        break;
+      }
+      default : {
+        reqName = operationItem[options.requestNameSource] || '';
+        break;
+      }
+    }
+
+    return reqName;
+  },
+
   resolveHeadersForPostmanRequest = (context, operationItem) => {
     const params = operationItem.parameters,
       pmParams = [];
@@ -858,15 +922,75 @@ let QUERYPARAM = 'query',
     });
 
     return pmParams;
+  },
+
+  resolveResponseBody = (context, responseBody) => {
+    let responseContent;
+
+    if (responseBody.$ref) {
+      responseBody = resolveRefFromSchema(context, responseBody.$ref);
+    }
+
+    responseContent = responseBody.content;
+
+    if (responseContent[URLENCODED]) {
+      return resolveUrlEncodedRequestBodyForPostmanRequest(context, responseContent[URLENCODED]);
+    }
+
+    if (responseContent[FORM_DATA]) {
+      return resolveFormDataRequestBodyForPostmanRequest(context, responseContent[FORM_DATA]);
+    }
+
+    return resolveRawModeRequestBodyForPostmanRequest(context, responseContent);
+  },
+
+  resolveResponseForPostmanRequest = (context, operationItem, originalRequest) => {
+    let responses = [];
+
+    _.forOwn(operationItem.responses, (responseSchema, code) => {
+      const response = {},
+        { body, headers = [] } = resolveResponseBody(context, responseSchema) || {};
+
+      response.body = body;
+      response.headers = headers;
+      response.code = code;
+      response.originalRequest = originalRequest;
+
+      responses.push(response);
+    });
+
+    return responses;
   };
+
 module.exports = {
   resolvePostmanRequest: function (context, operationItem, path, method) {
-    const url = resolveUrlForPostmanRequest(path),
+    let url = resolveUrlForPostmanRequest(path),
+      requestName = resolveNameForPostmanReqeust(context, operationItem, url),
       queryParams = resolveQueryParamsForPostmanRequest(context, operationItem),
       headers = resolveHeadersForPostmanRequest(context, operationItem),
       pathParams = resolvePathParamsForPostmanRequest(context, operationItem),
-      requestBody = resolveRequestBodyForPostmanRequest(context, operationItem);
+      requestBody = resolveRequestBodyForPostmanRequest(context, operationItem),
+      request = {
+        description: operationItem.description,
+        url,
+        name: requestName,
+        method: method.toUpperCase(),
+        params: {
+          queryParams,
+          pathParams
+        },
+        headers,
+        body: _.get(requestBody, 'body')
+      },
+      responses = resolveResponseForPostmanRequest(context, operationItem, request);
 
-    return;
+    headers.push(...(requestBody.headers || []));
+
+    return {
+      name: requestName,
+      request: Object.assign(request, {
+        responses
+      })
+    };
   }
 };
