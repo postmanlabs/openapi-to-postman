@@ -136,6 +136,10 @@ let QUERYPARAM = 'query',
       return { value: ERR_TOO_MANY_LEVELS };
     }
 
+    if (context.schemaCache[$ref]) {
+      return context.schemaCache[$ref];
+    }
+
     if (!_.isFunction($ref.split)) {
       return { value: 'reference ' + schema.$ref + ' not found in the OpenAPI spec' };
     }
@@ -174,6 +178,9 @@ let QUERYPARAM = 'query',
       return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth);
     }
 
+    // Add the resolved schema to the global schema cache
+    context.schemaCache[$ref] = resolvedSchema;
+
     return resolvedSchema;
   },
 
@@ -182,6 +189,7 @@ let QUERYPARAM = 'query',
    *
    * @param {Object} context - Global context
    * @param {Object} schema - Schema that is to be resolved
+   * @param {Number} [stack] - Current recursion depth
    * @param {String} resolveFor - For which action this resoltion is to be done
    * @returns {Object} Returns the object that staisfies the schema
    */
@@ -787,13 +795,12 @@ let QUERYPARAM = 'query',
       };
     }
 
-    dataToBeReturned.headers = [{
-      key: 'Content-Type',
-      value: bodyType
-    }];
-
     return {
-      body: dataToBeReturned
+      body: dataToBeReturned,
+      headers: [{
+        key: 'Content-Type',
+        value: bodyType
+      }]
     };
   },
 
@@ -964,31 +971,41 @@ let QUERYPARAM = 'query',
 
 module.exports = {
   resolvePostmanRequest: function (context, operationItem, path, method) {
+    /**
+     * schemaCache object will be used to cache the already resolved refs
+     * in the schema.
+     */
+    context.schemaCache = {};
+
     let url = resolveUrlForPostmanRequest(path),
       requestName = resolveNameForPostmanReqeust(context, operationItem, url),
       queryParams = resolveQueryParamsForPostmanRequest(context, operationItem),
       headers = resolveHeadersForPostmanRequest(context, operationItem),
       pathParams = resolvePathParamsForPostmanRequest(context, operationItem),
       requestBody = resolveRequestBodyForPostmanRequest(context, operationItem),
-      request = {
-        description: operationItem.description,
-        url,
-        name: requestName,
-        method: method.toUpperCase(),
-        params: {
-          queryParams,
-          pathParams
-        },
-        headers,
-        body: _.get(requestBody, 'body')
-      },
-      responses = resolveResponseForPostmanRequest(context, operationItem, request);
+      request,
+      responses;
 
     headers.push(...(requestBody.headers || []));
 
+    request = {
+      description: operationItem.description,
+      url,
+      name: requestName,
+      method: method.toUpperCase(),
+      params: {
+        queryParams,
+        pathParams
+      },
+      headers,
+      body: _.get(requestBody, 'body')
+    };
+
+    responses = resolveResponseForPostmanRequest(context, operationItem, request);
+
     return {
       name: requestName,
-      request: Object.assign(request, {
+      request: Object.assign({}, request, {
         responses
       })
     };
