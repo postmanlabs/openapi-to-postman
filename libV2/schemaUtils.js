@@ -2,6 +2,7 @@ const utils = require('./utils');
 
 const schemaFaker = require('../assets/json-schema-faker'),
   _ = require('lodash'),
+  mergeAllOf = require('json-schema-merge-allof'),
   xmlFaker = require('./xmlSchemaFaker.js'),
   URLENCODED = 'application/x-www-form-urlencoded',
   APP_JSON = 'application/json',
@@ -126,7 +127,6 @@ let QUERYPARAM = 'query',
    * @param {Number} stackDepth - Depth of the current stack for Ref resolution
    * @returns {Object} Returns the object that staisfies the schema
    */
-  // TODO: Add caching of ref
   resolveRefFromSchema = (context, $ref, stackDepth = 0) => {
     const { specComponents } = context;
 
@@ -185,6 +185,63 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * returns first example in the input map
+   * @param {Object} context - Global context object
+   * @param {Object} exampleObj - Object defined in the schema
+   * @returns {*} first example in the input map type
+   */
+  getExampleData = (context, exampleObj) => {
+    let example = {},
+      exampleKey;
+
+    if (typeof exampleObj !== 'object') {
+      return '';
+    }
+
+    exampleKey = Object.keys(exampleObj)[0];
+    example = exampleObj[exampleKey];
+
+    if (example.$ref) {
+      example = resolveRefFromSchema(context, example.$ref);
+    }
+
+    // TODO: Check whether we should return whole example if value is not found
+
+    return example.value;
+  },
+
+  /**
+   * Handle resoltion of allOf property of schema
+   *
+   * @param {Object} context - Global context object
+   * @param {Object} schema - Schema to be resolved
+   * @returns {Object} Resolved schema
+   */
+  resolveAllOfSchema = (context, schema) => {
+    // Resolve all the non allOf properties first
+    _.forOwn(schema, (schema, property) => {
+      schema[property] = resolveSchema(context, schema); // eslint-disable-line no-use-before-define
+    });
+
+    try {
+      return mergeAllOf(_.assign(schema, {
+        allOf: _.map(schema.allOf, (schema) => {
+          return resolveSchema(context, schema); // eslint-disable-line no-use-before-define
+        })
+      }), {
+        resolvers: {
+          // for keywords in OpenAPI schema that are not standard defined JSON schema keywords, use default resolver
+          defaultResolver: (compacted) => { return compacted[0]; }
+        }
+      });
+    }
+    catch (e) {
+      console.warn('Error while resolving allOf schema: ', e);
+      return { value: '<Error: Could not resolve allOf schema' };
+    }
+  },
+
+  /**
    * Resolve a given ref from the schema
    *
    * @param {Object} context - Global context
@@ -215,7 +272,9 @@ let QUERYPARAM = 'query',
       // TODO: Handle for validation
     }
 
-    // TODO: Handle allOf
+    if (schema.allOf) {
+      resolveAllOfSchema(context, schema.allOf);
+    }
 
     if (schema.$ref) {
       schema = resolveRefFromSchema(context, schema.$ref);
@@ -364,10 +423,19 @@ let QUERYPARAM = 'query',
     }
 
     const { indentCharacter } = context.computedOptions,
-      resolvedSchema = resolveSchema(context, param.schema);
+      resolvedSchema = resolveSchema(context, param.schema),
+      { requestParametersResolution } = context.computedOptions,
+      shouldGenerateFromExample = requestParametersResolution === 'example';
 
-    // TODO: Handle resolving to examples
-    // if (options.resolveTo === 'example') {}
+    if (shouldGenerateFromExample) {
+      /**
+       * Here it could be example or examples (plural)
+       * For examples, we'll pick the first example
+       */
+      const example = param.schema.example || getExampleData(context, param.schema.examples);
+
+      return example;
+    }
 
     schemaFaker.option({
       useExamplesValue: false
@@ -450,32 +518,6 @@ let QUERYPARAM = 'query',
       (parameter.enum ? ' (This can only be one of ' + parameter.enum + ')' : '');
   },
 
-  /**
-   * returns first example in the input map
-   * @param {Object} context - Global context object
-   * @param {Object} exampleObj - Object defined in the schema
-   * @returns {*} first example in the input map type
-   */
-  getExampleData = (context, exampleObj) => {
-    let example = {},
-      exampleKey;
-
-    if (typeof exampleObj !== 'object') {
-      return '';
-    }
-
-    exampleKey = Object.keys(exampleObj)[0];
-    example = exampleObj[exampleKey];
-
-    if (example.$ref) {
-      example = resolveRefFromSchema(context, example.$ref);
-    }
-
-    // TODO: Check whether we should return whole example if value is not found
-
-    return example.value;
-  },
-
   serialiseParamsBasedOnStyle = (param, paramValue) => {
     const { style, explode, startValue, propSeparator, keyValueSeparator, isExplodable } =
       getParamSerialisationInfo(param);
@@ -505,7 +547,6 @@ let QUERYPARAM = 'query',
 
         break;
       case 'deepObject':
-        // TODO: Confirm whether we should ignore array types here
         if (_.isObject(paramValue) && !_.isArray(paramValue)) {
           let extractedParams = extractDeepObjectParams(paramValue, paramName);
 
