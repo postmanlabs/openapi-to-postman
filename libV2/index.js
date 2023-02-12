@@ -75,7 +75,11 @@ module.exports = {
 
         case 'request': {
           // generate the request form the node
-          let request = { name: 'REQUEST' };
+          let request = resolvePostmanRequest(context,
+            context.openapi.paths[node.meta.path][node.meta.method],
+            node.meta.path,
+            node.meta.method
+          );
 
           // find the parent of the request in question
           let parent = collectionTree.predecessors(nodeIdentified);

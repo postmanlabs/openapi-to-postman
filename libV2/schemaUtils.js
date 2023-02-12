@@ -446,7 +446,10 @@ let QUERYPARAM = 'query',
       // we just delete based on format=binary
       for (const prop in resolvedSchema.properties) {
         if (resolvedSchema.properties.hasOwnProperty(prop)) {
-          if (resolvedSchema.properties[prop].format === 'binary') {
+          if (
+            resolvedSchema.properties[prop].format === 'binary' ||
+            resolvedSchema.properties[prop].format === 'byte'
+          ) {
             delete resolvedSchema.properties[prop].format;
           }
         }
@@ -676,6 +679,19 @@ let QUERYPARAM = 'query',
       schemaFaker.option({
         useExamplesValue: shouldGenerateFromExample
       });
+
+      if (requestBodySchema.properties) {
+        // If any property exists with format:binary or byte schemaFaker crashes
+        // we just delete based on that format
+        _.forOwn(requestBodySchema.properties, (schema, prop) => {
+          if (
+            requestBodySchema.properties[prop].format === 'binary' ||
+            requestBodySchema.properties[prop].format === 'byte'
+          ) {
+            delete requestBodySchema.properties[prop].format;
+          }
+        });
+      }
 
       bodyData = schemaFaker(requestBodySchema, null, context.schemaValidationCache || {});
     }
