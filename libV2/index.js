@@ -93,6 +93,10 @@ module.exports = {
             requestObject = new sdk.Item(request);
 
             _.forEach(request.request.responses, (response) => {
+              // replace 'X' char with '0'
+              response.code = response.code.replace(/X|x/g, '0');
+              response.code = response.code === 'default' ? 500 : _.toSafeInteger(response.code);
+
               requestObject.responses.add(new sdk.Response({
                 name: response.name,
                 code: response.code,
