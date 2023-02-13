@@ -75,11 +75,31 @@ module.exports = {
 
         case 'request': {
           // generate the request form the node
-          let request = resolvePostmanRequest(context,
-            context.openapi.paths[node.meta.path][node.meta.method],
-            node.meta.path,
-            node.meta.method
-          );
+          let request = {},
+            requestObject = {};
+
+          try {
+            request = resolvePostmanRequest(context,
+              context.openapi.paths[node.meta.path][node.meta.method],
+              node.meta.path,
+              node.meta.method
+            );
+
+            requestObject = new sdk.Item(request);
+
+            _.forEach(request.request.responses, (response) => {
+              requestObject.responses.add(new sdk.Response({
+                name: response.description,
+                code: response.code,
+                header: response.headers,
+                body: response.body,
+                originalRequest: response.originalRequest
+              }));
+            });
+          }
+          catch (error) {
+            console.error(error);
+          }
 
           // find the parent of the request in question
           let parent = collectionTree.predecessors(nodeIdentified);
@@ -93,7 +113,7 @@ module.exports = {
           }
 
           // push the folder in the item that is in question
-          parent.ref.item.push(request);
+          parent.ref.item.push(requestObject);
 
           // set the ref for the newly created request in this.
           collectionTree.setNode(nodeIdentified,

@@ -80,7 +80,7 @@ let QUERYPARAM = 'query',
     DEFAULT: 'default', // used for non-request-body data and json
     XML: 'xml' // used for request-body XMLs
   },
-  REF_STACK_LIMIT = 50,
+  REF_STACK_LIMIT = 30,
   ERR_TOO_MANY_LEVELS = '<Error: Too many levels of nesting to fake this schema>',
 
   /**
@@ -704,7 +704,7 @@ let QUERYPARAM = 'query',
       urlEncodedParams = [],
       requestBodyData = {
         mode: 'urlencoded',
-        urlEncoded: urlEncodedParams
+        urlencoded: urlEncodedParams
       };
 
     if (_.isEmpty(requestBodyContent)) {
@@ -748,7 +748,7 @@ let QUERYPARAM = 'query',
       formDataParams = [],
       requestBodyData = {
         mode: 'formdata',
-        formData: formDataParams
+        formdata: formDataParams
       };
 
     if (_.isEmpty(requestBodyContent)) {
