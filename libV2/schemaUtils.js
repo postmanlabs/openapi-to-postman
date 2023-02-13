@@ -178,6 +178,8 @@ let QUERYPARAM = 'query',
       return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth);
     }
 
+    resolvedSchema = resolveSchema(context, resolvedSchema); // eslint-disable-line no-use-before-define
+
     // Add the resolved schema to the global schema cache
     context.schemaCache[$ref] = resolvedSchema;
 
