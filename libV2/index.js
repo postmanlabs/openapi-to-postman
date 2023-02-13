@@ -78,6 +78,11 @@ module.exports = {
           let request = {},
             requestObject = {};
 
+          // TODO: Figure out a proper fix for this
+          if (node.meta.method === 'parameters') {
+            break;
+          }
+
           try {
             request = resolvePostmanRequest(context,
               context.openapi.paths[node.meta.path],
