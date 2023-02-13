@@ -80,7 +80,7 @@ module.exports = {
 
           try {
             request = resolvePostmanRequest(context,
-              context.openapi.paths[node.meta.path][node.meta.method],
+              context.openapi.paths[node.meta.path],
               node.meta.path,
               node.meta.method
             );
@@ -89,7 +89,7 @@ module.exports = {
 
             _.forEach(request.request.responses, (response) => {
               requestObject.responses.add(new sdk.Response({
-                name: response.description,
+                name: response.name,
                 code: response.code,
                 header: response.headers,
                 body: response.body,

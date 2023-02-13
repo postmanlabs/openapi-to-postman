@@ -273,7 +273,7 @@ let QUERYPARAM = 'query',
     }
 
     if (schema.allOf) {
-      resolveAllOfSchema(context, schema.allOf);
+      return resolveAllOfSchema(context, schema.allOf);
     }
 
     if (schema.$ref) {
@@ -650,7 +650,7 @@ let QUERYPARAM = 'query',
       shouldGenerateFromExample = requestParametersResolution === 'example';
 
     if (_.isEmpty(requestBodySchema)) {
-      return requestBodyData;
+      return bodyData;
     }
 
     if (requestBodySchema.$ref) {
@@ -713,7 +713,7 @@ let QUERYPARAM = 'query',
 
     bodyData = resolveRequestBodyData(context, requestBodyContent.schema);
 
-    const encoding = requestBodyContent.encoding;
+    const encoding = requestBodyContent.encoding || {};
 
     // Serialise the data
     _.forOwn(bodyData, (value, key) => {
@@ -793,30 +793,36 @@ let QUERYPARAM = 'query',
     };
   },
 
-  resolveRawModeRequestBodyForPostmanRequest = (context, requestContent) => {
-    let bodyType,
-      bodyData,
-      headerFamily,
-      dataToBeReturned = {},
-      { concreteUtils } = context;
+  getRawBodyType = (content) => {
+    let bodyType;
 
     // checking for all possible raw types
-    if (requestContent.hasOwnProperty(APP_JS)) { bodyType = APP_JS; }
-    else if (requestContent.hasOwnProperty(APP_JSON)) { bodyType = APP_JSON; }
-    else if (requestContent.hasOwnProperty(TEXT_HTML)) { bodyType = TEXT_HTML; }
-    else if (requestContent.hasOwnProperty(TEXT_PLAIN)) { bodyType = TEXT_PLAIN; }
-    else if (requestContent.hasOwnProperty(APP_XML)) { bodyType = APP_XML; }
-    else if (requestContent.hasOwnProperty(TEXT_XML)) { bodyType = TEXT_XML; }
+    if (content.hasOwnProperty(APP_JS)) { bodyType = APP_JS; }
+    else if (content.hasOwnProperty(APP_JSON)) { bodyType = APP_JSON; }
+    else if (content.hasOwnProperty(TEXT_HTML)) { bodyType = TEXT_HTML; }
+    else if (content.hasOwnProperty(TEXT_PLAIN)) { bodyType = TEXT_PLAIN; }
+    else if (content.hasOwnProperty(APP_XML)) { bodyType = APP_XML; }
+    else if (content.hasOwnProperty(TEXT_XML)) { bodyType = TEXT_XML; }
     else {
       // take the first property it has
       // types like image/png etc
-      for (const cType in requestContent) {
-        if (requestContent.hasOwnProperty(cType)) {
+      for (const cType in content) {
+        if (content.hasOwnProperty(cType)) {
           bodyType = cType;
           break;
         }
       }
     }
+
+    return bodyType;
+  },
+
+  resolveRawModeRequestBodyForPostmanRequest = (context, requestContent) => {
+    let bodyType = getRawBodyType(requestContent),
+      bodyData,
+      headerFamily,
+      dataToBeReturned = {},
+      { concreteUtils } = context;
 
     headerFamily = getHeaderFamily(bodyType);
 
@@ -864,6 +870,10 @@ let QUERYPARAM = 'query',
   resolveRequestBodyForPostmanRequest = (context, operationItem) => {
     let requestBody = operationItem.requestBody,
       requestContent;
+
+    if (!requestBody) {
+      return requestBody;
+    }
 
     if (requestBody.$ref) {
       requestBody = resolveRefFromSchema(context, requestBody.$ref);
@@ -988,8 +998,12 @@ let QUERYPARAM = 'query',
     return pmParams;
   },
 
-  resolveResponseBody = (context, responseBody) => {
-    let responseContent;
+  resolveResponseBody = (context, responseBody = {}) => {
+    let responseContent, bodyType, bodyData, headerFamily;
+
+    if (_.isEmpty(responseBody)) {
+      return responseBody;
+    }
 
     if (responseBody.$ref) {
       responseBody = resolveRefFromSchema(context, responseBody.$ref);
@@ -997,28 +1011,47 @@ let QUERYPARAM = 'query',
 
     responseContent = responseBody.content;
 
-    if (responseContent[URLENCODED]) {
-      return resolveUrlEncodedRequestBodyForPostmanRequest(context, responseContent[URLENCODED]);
+    if (_.isEmpty(responseContent)) {
+      return responseContent;
     }
 
-    if (responseContent[FORM_DATA]) {
-      return resolveFormDataRequestBodyForPostmanRequest(context, responseContent[FORM_DATA]);
+    bodyType = getRawBodyType(responseContent);
+    headerFamily = getHeaderFamily(bodyType);
+    bodyData = resolveRequestBodyData(context, responseContent[bodyType]);
+
+    if ((bodyType === TEXT_XML || bodyType === APP_XML || headerFamily === HEADER_TYPE.XML)) {
+      bodyData = getXmlVersionContent(bodyData);
     }
 
-    return resolveRawModeRequestBodyForPostmanRequest(context, responseContent);
+    const { indentCharacter } = context.computedOptions,
+      rawModeData = !_.isObject(bodyData) && _.isFunction(_.get(bodyData, 'toString')) ?
+        bodyData.toString() :
+        JSON.stringify(bodyData, null, indentCharacter);
+
+
+    return {
+      body: rawModeData,
+      headers: [{
+        key: 'Content-Type',
+        value: bodyType
+      }]
+    };
   },
 
   resolveResponseForPostmanRequest = (context, operationItem, originalRequest) => {
     let responses = [];
 
     _.forOwn(operationItem.responses, (responseSchema, code) => {
-      const response = {},
+      let response,
         { body, headers = [] } = resolveResponseBody(context, responseSchema) || {};
 
-      response.body = body;
-      response.headers = headers;
-      response.code = code;
-      response.originalRequest = originalRequest;
+      response = {
+        name: _.get(responseSchema, 'description'),
+        body,
+        headers,
+        code,
+        originalRequest
+      };
 
       responses.push(response);
     });
@@ -1035,18 +1068,18 @@ module.exports = {
     context.schemaCache = {};
 
     let url = resolveUrlForPostmanRequest(path),
-      requestName = resolveNameForPostmanReqeust(context, operationItem, url),
+      requestName = resolveNameForPostmanReqeust(context, operationItem[method], url),
       queryParams = resolveQueryParamsForPostmanRequest(context, operationItem),
       headers = resolveHeadersForPostmanRequest(context, operationItem),
       pathParams = resolvePathParamsForPostmanRequest(context, operationItem),
-      requestBody = resolveRequestBodyForPostmanRequest(context, operationItem),
+      requestBody = resolveRequestBodyForPostmanRequest(context, operationItem[method]),
       request,
       responses;
 
-    headers.push(...(requestBody.headers || []));
+    headers.push(..._.get(requestBody, 'headers', []));
 
     request = {
-      description: operationItem.description,
+      description: operationItem[method].description,
       url,
       name: requestName,
       method: method.toUpperCase(),
@@ -1058,7 +1091,7 @@ module.exports = {
       body: _.get(requestBody, 'body')
     };
 
-    responses = resolveResponseForPostmanRequest(context, operationItem, request);
+    responses = resolveResponseForPostmanRequest(context, operationItem[method], request);
 
     return {
       name: requestName,
