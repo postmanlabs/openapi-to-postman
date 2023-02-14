@@ -3,7 +3,9 @@ const _ = require('lodash');
 
 function convertSchemaToXML(name, schema, attribute, indentChar, indent) {
   var tagPrefix = '',
-    cIndent = _.times(indent, _.constant(indentChar)).join('');
+    cIndent = _.times(indent, _.constant(indentChar)).join(''),
+    retVal = '';
+
   name = _.get(schema, 'xml.name', name || 'element');
   if (_.get(schema, 'xml.prefix')) {
     tagPrefix = schema.xml.prefix ? `${schema.xml.prefix}:` : '';

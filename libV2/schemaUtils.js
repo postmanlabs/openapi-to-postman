@@ -17,6 +17,10 @@ const schemaFaker = require('../assets/json-schema-faker'),
     XML: 'xml',
     INVALID: 'invalid'
   },
+  HEADER_TYPE_PREVIEW_LANGUAGE_MAP = {
+    [HEADER_TYPE.JSON]: 'json',
+    [HEADER_TYPE.XML]: 'xml'
+  },
 
   /**
    * @param {*} rootObject - the object from which you're trying to read a property
@@ -646,8 +650,8 @@ let QUERYPARAM = 'query',
     return HEADER_TYPE.INVALID;
   },
 
-  resolveRequestBodyData = (context, requestBodySchema) => {
-    let { requestParametersResolution } = context.computedOptions,
+  resolveRequestBodyData = (context, requestBodySchema, bodyType) => {
+    let { requestParametersResolution, indentCharacter } = context.computedOptions,
       bodyData = '',
       shouldGenerateFromExample = requestParametersResolution === 'example',
       hasExample;
@@ -678,6 +682,10 @@ let QUERYPARAM = 'query',
 
       if (requestBodySchema.$ref) {
         requestBodySchema = resolveRefFromSchema(context, requestBodySchema.$ref);
+      }
+
+      if (bodyType === APP_XML || bodyType === TEXT_XML) {
+        return xmlFaker(null, requestBodySchema, indentCharacter);
       }
 
       schemaFaker.option({
@@ -837,7 +845,7 @@ let QUERYPARAM = 'query',
     }
     // Handling for Raw mode data
     else {
-      bodyData = resolveRequestBodyData(context, requestContent[bodyType]);
+      bodyData = resolveRequestBodyData(context, requestContent[bodyType], bodyType);
 
       if ((bodyType === TEXT_XML || bodyType === APP_XML || headerFamily === HEADER_TYPE.XML)) {
         bodyData = getXmlVersionContent(bodyData);
@@ -857,7 +865,8 @@ let QUERYPARAM = 'query',
     if (headerFamily !== HEADER_TYPE.INVALID) {
       dataToBeReturned.options = {
         raw: {
-          headerFamily
+          headerFamily,
+          language: headerFamily
         }
       };
     }
@@ -1021,7 +1030,7 @@ let QUERYPARAM = 'query',
 
     bodyType = getRawBodyType(responseContent);
     headerFamily = getHeaderFamily(bodyType);
-    bodyData = resolveRequestBodyData(context, responseContent[bodyType]);
+    bodyData = resolveRequestBodyData(context, responseContent[bodyType], bodyType);
 
     if ((bodyType === TEXT_XML || bodyType === APP_XML || headerFamily === HEADER_TYPE.XML)) {
       bodyData = getXmlVersionContent(bodyData);
@@ -1038,8 +1047,15 @@ let QUERYPARAM = 'query',
       headers: [{
         key: 'Content-Type',
         value: bodyType
-      }]
+      }],
+      bodyType
     };
+  },
+
+  getPreviewLangugaForResponseBody = (bodyType) => {
+    const headerFamily = getHeaderFamily(bodyType);
+
+    return HEADER_TYPE_PREVIEW_LANGUAGE_MAP[headerFamily] || 'text';
   },
 
   resolveResponseForPostmanRequest = (context, operationItem, originalRequest) => {
@@ -1047,14 +1063,15 @@ let QUERYPARAM = 'query',
 
     _.forOwn(operationItem.responses, (responseSchema, code) => {
       let response,
-        { body, headers = [] } = resolveResponseBody(context, responseSchema) || {};
+        { body, headers = [], bodyType } = resolveResponseBody(context, responseSchema) || {};
 
       response = {
         name: _.get(responseSchema, 'description'),
         body,
         headers,
         code,
-        originalRequest
+        originalRequest,
+        _postman_previewlanguage: getPreviewLangugaForResponseBody(bodyType)
       };
 
       responses.push(response);

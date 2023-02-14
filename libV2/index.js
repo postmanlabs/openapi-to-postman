@@ -97,13 +97,21 @@ module.exports = {
               response.code = response.code.replace(/X|x/g, '0');
               response.code = response.code === 'default' ? 500 : _.toSafeInteger(response.code);
 
-              requestObject.responses.add(new sdk.Response({
+              const sdkResponse = new sdk.Response({
                 name: response.name,
                 code: response.code,
                 header: response.headers,
                 body: response.body,
                 originalRequest: response.originalRequest
-              }));
+              });
+
+              /**
+               * Adding it here because sdk converts
+               * _postman_previewlanguage to {'_': {'postman_previewlanguage': ''}}
+               */
+              sdkResponse._postman_previewlanguage = response._postman_previewlanguage;
+
+              requestObject.responses.add(sdkResponse);
             });
           }
           catch (error) {
