@@ -649,7 +649,8 @@ let QUERYPARAM = 'query',
   resolveRequestBodyData = (context, requestBodySchema) => {
     let { requestParametersResolution } = context.computedOptions,
       bodyData = '',
-      shouldGenerateFromExample = requestParametersResolution === 'example';
+      shouldGenerateFromExample = requestParametersResolution === 'example',
+      hasExample;
 
     if (_.isEmpty(requestBodySchema)) {
       return bodyData;
@@ -661,8 +662,9 @@ let QUERYPARAM = 'query',
 
     requestBodySchema = requestBodySchema.schema || requestBodySchema;
     requestBodySchema = resolveSchema(context, requestBodySchema);
+    hasExample = requestBodySchema.example || requestBodySchema.examples;
 
-    if (shouldGenerateFromExample) {
+    if (shouldGenerateFromExample && hasExample) {
       /**
        * Here it could be example or examples (plural)
        * For examples, we'll pick the first example
