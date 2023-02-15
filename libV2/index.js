@@ -77,6 +77,7 @@ module.exports = {
         case 'request': {
           // generate the request form the node
           let request = {},
+            collectionVariables = [],
             requestObject = {};
 
           // TODO: Figure out a proper fix for this
@@ -85,16 +86,17 @@ module.exports = {
           }
 
           try {
-            request = resolvePostmanRequest(context,
+            ({ request, collectionVariables } = resolvePostmanRequest(context,
               context.openapi.paths[node.meta.path],
               node.meta.path,
               node.meta.method
-            );
+            ));
 
             requestObject = generateRequestItemObject(request);
           }
           catch (error) {
             console.error(error);
+            break;
           }
 
           // find the parent of the request in question

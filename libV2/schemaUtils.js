@@ -112,16 +112,50 @@ let QUERYPARAM = 'query',
 
     // converts the following:
     // /{{path}}/{{file}}.{{format}}/{{hello}} => /:path/{{file}}.{{format}}/:hello
-    let matches = url.match(/(\/\{\{[^\/\{\}]+\}\})(?=\/|$)/g);
+    let pathVariables = url.match(/(\/\{\{[^\/\{\}]+\}\})(?=\/|$)/g);
 
-    if (matches) {
-      matches.forEach((match) => {
+    if (pathVariables) {
+      pathVariables.forEach((match) => {
         const replaceWith = match.replace(/{{/g, ':').replace(/}}/g, '');
         url = url.replace(match, replaceWith);
       });
     }
 
     return url;
+  },
+
+  filterCollectionAndPathVariables = (url, pathVariables) => {
+    // URL should always be string so update value if non-string value is found
+    if (typeof url !== 'string') {
+      return '';
+    }
+
+    // /:path/{{file}}.{{format}}/:hello => only {{file}} and {{format}} will match
+    let variables = url.match(/(\{\{[^\/\{\}]+\}\})/g),
+      collectionVariables = [],
+      collectionVariableMap = {},
+      filteredPathVariables = [];
+
+    _.forEach(variables, (variable) => {
+      const collVar = variable.replace(/{{/g, '').replace(/}}/g, '');
+
+      collectionVariableMap[collVar] = true;
+    });
+
+    // Filter out variables that are to be added as collection variables
+    _.forEach(pathVariables, (pathVariable) => {
+      if (collectionVariableMap[pathVariable.key]) {
+        collectionVariables.push(_.pick(pathVariable, ['key', 'value']));
+      }
+      else {
+        filteredPathVariables.push(pathVariable);
+      }
+    });
+
+    return {
+      collectionVariables,
+      pathVariables: filteredPathVariables
+    };
   },
 
   /**
@@ -431,14 +465,20 @@ let QUERYPARAM = 'query',
     const { indentCharacter } = context.computedOptions,
       resolvedSchema = resolveSchema(context, param.schema),
       { requestParametersResolution } = context.computedOptions,
-      shouldGenerateFromExample = requestParametersResolution === 'example';
+      shouldGenerateFromExample = requestParametersResolution === 'example',
+      hasExample = param.example ||
+        param.schema.example ||
+        param.examples ||
+        param.schema.examples;
 
-    if (shouldGenerateFromExample) {
+    if (shouldGenerateFromExample && hasExample) {
       /**
        * Here it could be example or examples (plural)
        * For examples, we'll pick the first example
        */
-      const example = param.schema.example || getExampleData(context, param.schema.examples);
+      const example = param.example ||
+        param.schema.example ||
+        getExampleData(context, param.examples || param.schema.examples);
 
       return example;
     }
@@ -1093,6 +1133,7 @@ module.exports = {
       queryParams = resolveQueryParamsForPostmanRequest(context, operationItem, method),
       headers = resolveHeadersForPostmanRequest(context, operationItem, method),
       pathParams = resolvePathParamsForPostmanRequest(context, operationItem, method),
+      { pathVariables, collectionVariables } = filterCollectionAndPathVariables(url, pathParams),
       requestBody = resolveRequestBodyForPostmanRequest(context, operationItem[method]),
       request,
       responses;
@@ -1106,7 +1147,7 @@ module.exports = {
       method: method.toUpperCase(),
       params: {
         queryParams,
-        pathParams
+        pathParams: pathVariables
       },
       headers,
       body: _.get(requestBody, 'body')
@@ -1115,10 +1156,13 @@ module.exports = {
     responses = resolveResponseForPostmanRequest(context, operationItem[method], request);
 
     return {
-      name: requestName,
-      request: Object.assign({}, request, {
-        responses
-      })
+      request: {
+        name: requestName,
+        request: Object.assign({}, request, {
+          responses
+        })
+      },
+      collectionVariables
     };
   }
 };
