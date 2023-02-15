@@ -32,7 +32,7 @@ const sdk = require('postman-collection'),
 
     // Setting headers
     originalRequest.header = _.get(response, 'originalRequest.headers', []);
-    originalRequest.body = requestItem.body;
+    originalRequest.body = requestItem.request.body;
 
     // replace 'X' char with '0'
     response.code = response.code.replace(/X|x/g, '0');
