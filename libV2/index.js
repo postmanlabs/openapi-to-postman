@@ -92,6 +92,14 @@ module.exports = {
 
             requestObject = new sdk.Item(request);
 
+            const queryParams = _.get(request, 'request.params.queryParams'),
+              pathParams = _.get(request, 'request.params.pathParams', []);
+
+            _.forEach(queryParams, (param) => {
+              requestObject.request.url.addQueryParams(param);
+            });
+            requestObject.request.url.variables.assimilate(pathParams);
+
             _.forEach(request.request.responses, (response) => {
               // replace 'X' char with '0'
               response.code = response.code.replace(/X|x/g, '0');

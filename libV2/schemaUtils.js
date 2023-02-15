@@ -905,8 +905,8 @@ let QUERYPARAM = 'query',
     return resolveRawModeRequestBodyForPostmanRequest(context, requestContent);
   },
 
-  resolveQueryParamsForPostmanRequest = (context, operationItem) => {
-    const params = operationItem.parameters,
+  resolveQueryParamsForPostmanRequest = (context, operationItem, method) => {
+    const params = operationItem.parameters || operationItem[method].parameters,
       pmParams = [];
 
     _.forEach(params, (param) => {
@@ -932,8 +932,8 @@ let QUERYPARAM = 'query',
     return pmParams;
   },
 
-  resolvePathParamsForPostmanRequest = (context, operationItem) => {
-    const params = operationItem.parameters,
+  resolvePathParamsForPostmanRequest = (context, operationItem, method) => {
+    const params = operationItem.parameters || operationItem[method].parameters,
       pmParams = [];
 
     _.forEach(params, (param) => {
@@ -984,8 +984,8 @@ let QUERYPARAM = 'query',
     return reqName;
   },
 
-  resolveHeadersForPostmanRequest = (context, operationItem) => {
-    const params = operationItem.parameters,
+  resolveHeadersForPostmanRequest = (context, operationItem, method) => {
+    const params = operationItem.parameters || operationItem[method].parameters,
       pmParams = [];
 
     _.forEach(params, (param) => {
@@ -1090,9 +1090,9 @@ module.exports = {
 
     let url = resolveUrlForPostmanRequest(path),
       requestName = resolveNameForPostmanReqeust(context, operationItem[method], url),
-      queryParams = resolveQueryParamsForPostmanRequest(context, operationItem),
-      headers = resolveHeadersForPostmanRequest(context, operationItem),
-      pathParams = resolvePathParamsForPostmanRequest(context, operationItem),
+      queryParams = resolveQueryParamsForPostmanRequest(context, operationItem, method),
+      headers = resolveHeadersForPostmanRequest(context, operationItem, method),
+      pathParams = resolvePathParamsForPostmanRequest(context, operationItem, method),
       requestBody = resolveRequestBodyForPostmanRequest(context, operationItem[method]),
       request,
       responses;
