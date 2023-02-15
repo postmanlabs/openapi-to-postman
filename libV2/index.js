@@ -6,6 +6,7 @@ const _ = require('lodash'),
   generateCollectionFromOpenAPI = require('./helpers/collection/generateCollectionFromOpenAPI'),
   generateFolderFromOpenAPI = require('./helpers/folder/generateFolderForOpenAPI');
 const { resolvePostmanRequest } = require('./schemaUtils');
+const { generateRequestItemObject } = require('./utils');
 
 module.exports = {
   convertV2: function (context, cb) {
@@ -90,37 +91,7 @@ module.exports = {
               node.meta.method
             );
 
-            requestObject = new sdk.Item(request);
-
-            const queryParams = _.get(request, 'request.params.queryParams'),
-              pathParams = _.get(request, 'request.params.pathParams', []);
-
-            _.forEach(queryParams, (param) => {
-              requestObject.request.url.addQueryParams(param);
-            });
-            requestObject.request.url.variables.assimilate(pathParams);
-
-            _.forEach(request.request.responses, (response) => {
-              // replace 'X' char with '0'
-              response.code = response.code.replace(/X|x/g, '0');
-              response.code = response.code === 'default' ? 500 : _.toSafeInteger(response.code);
-
-              const sdkResponse = new sdk.Response({
-                name: response.name,
-                code: response.code,
-                header: response.headers,
-                body: response.body,
-                originalRequest: response.originalRequest
-              });
-
-              /**
-               * Adding it here because sdk converts
-               * _postman_previewlanguage to {'_': {'postman_previewlanguage': ''}}
-               */
-              sdkResponse._postman_previewlanguage = response._postman_previewlanguage;
-
-              requestObject.responses.add(sdkResponse);
-            });
+            requestObject = generateRequestItemObject(request);
           }
           catch (error) {
             console.error(error);
