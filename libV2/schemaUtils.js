@@ -148,7 +148,7 @@ let QUERYPARAM = 'query',
     }
 
     if (!_.isFunction($ref.split)) {
-      return { value: 'reference ' + schema.$ref + ' not found in the OpenAPI spec' };
+      return { value: `reference ${schema.$ref} not found in the OpenAPI spec` };
     }
 
     let splitRef = $ref.split('/'),
@@ -158,7 +158,7 @@ let QUERYPARAM = 'query',
     // So length should atleast be 4
     if (splitRef.length < 4) {
       // not throwing an error. We didn't find the reference - generate a dummy value
-      return { value: 'reference ' + $ref + ' not found in the OpenAPI spec' };
+      return { value: `reference ${$ref} not found in the OpenAPI spec` };
     }
 
     // something like #/components/schemas/PaginationEnvelope/properties/page
@@ -184,7 +184,7 @@ let QUERYPARAM = 'query',
     if (resolvedSchema.$ref) {
       if (seenRef[resolvedSchema.$ref]) {
         return {
-          value: '<Circular reference to ' + resolvedSchema.$ref + ' detected>'
+          value: `<Circular reference to ${resolvedSchema.$ref} detected>`
         };
       }
       return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth, _.cloneDeep(seenRef));
