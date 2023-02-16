@@ -187,13 +187,16 @@ let QUERYPARAM = 'query',
    * @param {Object} context - Global context object
    * @param {Object} $ref - Ref that is to be resolved
    * @param {Number} stackDepth - Depth of the current stack for Ref resolution
+   * @param {Object} seenRef - Seen Reference map
+   *
    * @returns {Object} Returns the object that staisfies the schema
    */
-  resolveRefFromSchema = (context, $ref, stackDepth = 0) => {
+  resolveRefFromSchema = (context, $ref, stackDepth = 0, seenRef = {}) => {
     const { specComponents } = context;
 
     stackDepth++;
 
+    seenRef[$ref] = true;
     if (stackDepth >= REF_STACK_LIMIT) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
@@ -203,7 +206,7 @@ let QUERYPARAM = 'query',
     }
 
     if (!_.isFunction($ref.split)) {
-      return { value: 'reference ' + schema.$ref + ' not found in the OpenAPI spec' };
+      return { value: `reference ${schema.$ref} not found in the OpenAPI spec` };
     }
 
     let splitRef = $ref.split('/'),
@@ -213,7 +216,7 @@ let QUERYPARAM = 'query',
     // So length should atleast be 4
     if (splitRef.length < 4) {
       // not throwing an error. We didn't find the reference - generate a dummy value
-      return { value: 'reference ' + $ref + ' not found in the OpenAPI spec' };
+      return { value: `reference ${$ref} not found in the OpenAPI spec` };
     }
 
     // something like #/components/schemas/PaginationEnvelope/properties/page
@@ -237,10 +240,16 @@ let QUERYPARAM = 'query',
     }
 
     if (resolvedSchema.$ref) {
-      return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth);
+      if (seenRef[resolvedSchema.$ref]) {
+        return {
+          value: `<Circular reference to ${resolvedSchema.$ref} detected>`
+        };
+      }
+      return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth, _.cloneDeep(seenRef));
     }
 
-    resolvedSchema = resolveSchema(context, resolvedSchema); // eslint-disable-line no-use-before-define
+    // eslint-disable-next-line no-use-before-define
+    resolvedSchema = resolveSchema(context, resolvedSchema, stackDepth, CONVERSION, _.cloneDeep(seenRef));
 
     // Add the resolved schema to the global schema cache
     context.schemaCache[$ref] = resolvedSchema;
@@ -279,18 +288,22 @@ let QUERYPARAM = 'query',
    *
    * @param {Object} context - Global context object
    * @param {Object} schema - Schema to be resolved
+   * @param {Object} seenRef - Map of all the references that have been resolved
+   *
    * @returns {Object} Resolved schema
    */
-  resolveAllOfSchema = (context, schema) => {
+  resolveAllOfSchema = (context, schema, seenRef = {}) => {
     // Resolve all the non allOf properties first
     _.forOwn(schema, (schema, property) => {
-      schema[property] = resolveSchema(context, schema); // eslint-disable-line no-use-before-define
+      // eslint-disable-next-line no-use-before-define
+      schema[property] = resolveSchema(context, schema, 0, _.cloneDeep(seenRef));
     });
 
     try {
       return mergeAllOf(_.assign(schema, {
         allOf: _.map(schema.allOf, (schema) => {
-          return resolveSchema(context, schema); // eslint-disable-line no-use-before-define
+          // eslint-disable-next-line no-use-before-define
+          return resolveSchema(context, schema, 0, CONVERSION, _.cloneDeep(seenRef));
         })
       }), {
         resolvers: {
@@ -312,9 +325,11 @@ let QUERYPARAM = 'query',
    * @param {Object} schema - Schema that is to be resolved
    * @param {Number} [stack] - Current recursion depth
    * @param {String} resolveFor - For which action this resoltion is to be done
+   * @param {Object} seenRef - Map of all the references that have been resolved
+   *
    * @returns {Object} Returns the object that staisfies the schema
    */
-  resolveSchema = (context, schema, stack = 0, resolveFor = CONVERSION) => {
+  resolveSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}) => {
     if (!schema) {
       return new Error('Schema is empty');
     }
@@ -330,18 +345,23 @@ let QUERYPARAM = 'query',
 
     if (compositeSchema) {
       if (resolveFor === CONVERSION) {
-        return resolveSchema(context, compositeSchema[0]);
+        return resolveSchema(context, compositeSchema[0], stack, CONVERSION, _.cloneDeep(seenRef));
       }
 
       // TODO: Handle for validation
     }
 
     if (schema.allOf) {
-      return resolveAllOfSchema(context, schema.allOf);
+      return resolveAllOfSchema(context, schema.allOf, _.cloneDeep(seenRef));
     }
 
     if (schema.$ref) {
-      schema = resolveRefFromSchema(context, schema.$ref);
+      if (seenRef[schema.$ref]) {
+        return {
+          value: '<Circular reference to ' + schema.$ref + ' detected>'
+        };
+      }
+      schema = resolveRefFromSchema(context, schema.$ref, stack, _.cloneDeep(seenRef));
     }
 
     if (
@@ -351,7 +371,7 @@ let QUERYPARAM = 'query',
       let resolvedSchemaProps = {};
 
       _.forOwn(schema.properties, (property, propertyName) => {
-        resolvedSchemaProps[propertyName] = resolveSchema(context, property, stack);
+        resolvedSchemaProps[propertyName] = resolveSchema(context, property, stack, CONVERSION, _.cloneDeep(seenRef));
       });
 
       schema.properties = resolvedSchemaProps;
@@ -373,7 +393,7 @@ let QUERYPARAM = 'query',
       // If no maxItems is defined than override with default (2)
       !_.has(schema, 'maxItems') && (schema.maxItems = 2);
 
-      schema.items = resolveSchema(context, schema.items, stack);
+      schema.items = resolveSchema(context, schema.items, stack, CONVERSION, _.cloneDeep(seenRef));
     }
 
     return schema;
