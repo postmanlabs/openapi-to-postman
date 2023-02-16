@@ -300,7 +300,7 @@ let QUERYPARAM = 'query',
     if (schema.$ref) {
       if (seenRef[schema.$ref]) {
         return {
-          value: '<Circular reference to ' + $ref + ' detected>'
+          value: '<Circular reference to ' + schema.$ref + ' detected>'
         };
       }
       schema = resolveRefFromSchema(context, schema.$ref, stack, _.cloneDeep(seenRef));
