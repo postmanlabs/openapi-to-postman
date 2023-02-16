@@ -886,7 +886,7 @@ let QUERYPARAM = 'query',
       else {
         param = {
           key,
-          value,
+          value: _.toString(value),
           type: 'text'
         };
       }
