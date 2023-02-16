@@ -158,6 +158,30 @@ let QUERYPARAM = 'query',
     };
   },
 
+  resolveBaseUrlForPostmanRequest = (operationItem) => {
+    let serverObj = _.get(operationItem, 'servers.0'),
+      baseUrl = '{{baseUrl}}',
+      serverVariables = [],
+      pathVariables = [],
+      collectionVariables = [];
+
+    if (!serverObj) {
+      return { collectionVariables, pathVariables, baseUrl };
+    }
+
+    baseUrl = sanitizeUrl(serverObj.url);
+    _.forOwn(serverObj.variables, (value, key) => {
+      serverVariables.push({
+        key,
+        value: value.default || ''
+      });
+    });
+
+    ({ collectionVariables, pathVariables } = filterCollectionAndPathVariables(baseUrl, serverVariables));
+
+    return { collectionVariables, pathVariables, baseUrl };
+  },
+
   /**
    * Resolve a given ref from the schema
    * @param {Object} context - Global context object
@@ -1129,6 +1153,7 @@ module.exports = {
     context.schemaCache = {};
 
     let url = resolveUrlForPostmanRequest(path),
+      baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[method]),
       requestName = resolveNameForPostmanReqeust(context, operationItem[method], url),
       queryParams = resolveQueryParamsForPostmanRequest(context, operationItem, method),
       headers = resolveHeadersForPostmanRequest(context, operationItem, method),
@@ -1139,6 +1164,10 @@ module.exports = {
       responses;
 
     headers.push(..._.get(requestBody, 'headers', []));
+    pathVariables.push(...baseUrlData.pathVariables);
+    collectionVariables.push(...baseUrlData.collectionVariables);
+
+    url = _.get(baseUrlData, 'baseUrl', '') + url;
 
     request = {
       description: operationItem[method].description,

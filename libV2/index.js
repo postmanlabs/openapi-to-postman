@@ -99,6 +99,8 @@ module.exports = {
             break;
           }
 
+          collection.variable.push(...collectionVariables);
+
           // find the parent of the request in question
           let parent = collectionTree.predecessors(nodeIdentified);
 
