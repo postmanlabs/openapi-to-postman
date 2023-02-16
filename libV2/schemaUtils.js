@@ -715,17 +715,32 @@ let QUERYPARAM = 'query',
       if (requestBodySchema.properties) {
         // If any property exists with format:binary or byte schemaFaker crashes
         // we just delete based on that format
+
+        // TODO: This could have properties inside properties which needs to be handled
+        // That's why for some properties we are not deleting the format
         _.forOwn(requestBodySchema.properties, (schema, prop) => {
           if (
             requestBodySchema.properties[prop].format === 'binary' ||
-            requestBodySchema.properties[prop].format === 'byte'
+            requestBodySchema.properties[prop].format === 'byte' ||
+            requestBodySchema.properties[prop].format === 'decimal'
           ) {
             delete requestBodySchema.properties[prop].format;
           }
         });
       }
 
-      bodyData = schemaFaker(requestBodySchema, null, context.schemaValidationCache || {});
+      // This is to handle cases when the jsf throws errors on finding unsupported types/formats
+      try {
+        bodyData = schemaFaker(requestBodySchema, null, context.schemaValidationCache || {});
+      }
+      catch (e) {
+        console.warn(
+          'Error faking a schema. Not faking this schema. Schema:', requestBodySchema,
+          'Error', e.message
+        );
+
+        return '';
+      }
     }
 
     return bodyData;
@@ -1050,6 +1065,7 @@ let QUERYPARAM = 'query',
 
     bodyType = getRawBodyType(responseContent);
     headerFamily = getHeaderFamily(bodyType);
+
     bodyData = resolveRequestBodyData(context, responseContent[bodyType], bodyType);
 
     if ((bodyType === TEXT_XML || bodyType === APP_XML || headerFamily === HEADER_TYPE.XML)) {
