@@ -631,7 +631,7 @@ let QUERYPARAM = 'query',
           _.forEach(paramValue, (value, key) => {
             pmParams.push({
               key: isArrayValue ? paramName : key,
-              value: (value === undefined ? '' : value),
+              value: (value === undefined ? '' : _.toString(value)),
               description
             });
           });
@@ -647,7 +647,7 @@ let QUERYPARAM = 'query',
           _.forEach(extractedParams, (extractedParam) => {
             pmParams.push({
               key: extractedParam.key,
-              value: extractedParam.value || '',
+              value: _.toString(extractedParam.value) || '',
               description
             });
           });
@@ -667,7 +667,7 @@ let QUERYPARAM = 'query',
 
         // append key for param that can be exploded
         isExplodable && (serialisedValue += (key + keyValueSeparator));
-        serialisedValue += (value === undefined ? '' : value);
+        serialisedValue += (value === undefined ? '' : _.toString(value));
       });
     }
     // for non-object and non-empty value append value as is to string
@@ -679,7 +679,7 @@ let QUERYPARAM = 'query',
     serialisedValue = startValue + serialisedValue;
     pmParams.push({
       key: paramName,
-      value: serialisedValue,
+      value: _.toString(serialisedValue),
       description
     });
 
