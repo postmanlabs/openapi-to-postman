@@ -78,7 +78,7 @@ const sdk = require('postman-collection'),
     });
 
 
-    return requestItem;
+    return requestItem.toJSON();
   };
 
 module.exports = {
