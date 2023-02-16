@@ -851,7 +851,11 @@ let QUERYPARAM = 'query',
     });
 
     return {
-      body: requestBodyData
+      body: requestBodyData,
+      headers: [{
+        key: 'Content-Type',
+        value: URLENCODED
+      }]
     };
   },
 
@@ -1146,7 +1150,7 @@ let QUERYPARAM = 'query',
     return {
       body: rawModeData,
       headers: [{
-        key: 'Accept',
+        key: 'Content-Type',
         value: bodyType
       }],
       bodyType
