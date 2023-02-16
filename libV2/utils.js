@@ -59,7 +59,8 @@ const sdk = require('postman-collection'),
       queryParams = _.get(requestObject, 'request.params.queryParams'),
       pathParams = _.get(requestObject, 'request.params.pathParams', []),
       headers = _.get(requestObject, 'request.headers', []),
-      responses = _.get(requestObject, 'request.responses', []);
+      responses = _.get(requestObject, 'request.responses', []),
+      auth = _.get(requestObject, 'request.auth', []);
 
     _.forEach(queryParams, (param) => {
       requestItem.request.url.addQueryParams(param);
@@ -70,6 +71,7 @@ const sdk = require('postman-collection'),
     });
 
     requestItem.request.url.variables.assimilate(pathParams);
+    requestItem.request.auth = auth;
 
     _.forEach(responses, (response) => {
       requestItem.responses.add(generatePmResponseObject(response, requestItem));

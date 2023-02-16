@@ -1,3 +1,4 @@
+const generateAuthForCollectionFromOpenAPI = require('./helpers/collection/generateAuthForCollectionFromOpenAPI');
 const utils = require('./utils');
 
 const schemaFaker = require('../assets/json-schema-faker'),
@@ -1161,7 +1162,9 @@ module.exports = {
       { pathVariables, collectionVariables } = filterCollectionAndPathVariables(url, pathParams),
       requestBody = resolveRequestBodyForPostmanRequest(context, operationItem[method]),
       request,
-      responses;
+      responses,
+      securitySchema = _.get(operationItem, [method, 'properties.security']),
+      authHelper = generateAuthForCollectionFromOpenAPI(context.openapi, securitySchema);
 
     headers.push(..._.get(requestBody, 'headers', []));
     pathVariables.push(...baseUrlData.pathVariables);
@@ -1179,7 +1182,8 @@ module.exports = {
         pathParams: pathVariables
       },
       headers,
-      body: _.get(requestBody, 'body')
+      body: _.get(requestBody, 'body'),
+      auth: authHelper
     };
 
     responses = resolveResponseForPostmanRequest(context, operationItem[method], request);
