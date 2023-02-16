@@ -1085,7 +1085,7 @@ let QUERYPARAM = 'query',
     return {
       body: rawModeData,
       headers: [{
-        key: 'Content-Type',
+        key: 'Accept',
         value: bodyType
       }],
       bodyType
