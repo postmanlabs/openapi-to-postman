@@ -372,6 +372,10 @@ let QUERYPARAM = 'query',
       let resolvedSchemaProps = {};
 
       _.forOwn(schema.properties, (property, propertyName) => {
+        if (property.format === 'decimal') {
+          delete property.format;
+        }
+
         resolvedSchemaProps[propertyName] = resolveSchema(context, property, stack, CONVERSION, _.cloneDeep(seenRef));
       });
 
@@ -539,7 +543,8 @@ let QUERYPARAM = 'query',
         if (resolvedSchema.properties.hasOwnProperty(prop)) {
           if (
             resolvedSchema.properties[prop].format === 'binary' ||
-            resolvedSchema.properties[prop].format === 'byte'
+            resolvedSchema.properties[prop].format === 'byte' ||
+            resolvedSchema.properties[prop].format === 'decimal'
           ) {
             delete resolvedSchema.properties[prop].format;
           }
