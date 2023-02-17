@@ -1,3 +1,6 @@
+/* eslint-disable require-jsdoc */
+// TODO: REMOVE THIS ☝🏻
+
 const _ = require('lodash'),
   sdk = require('postman-collection'),
   async = require('async'),
@@ -2376,7 +2379,9 @@ function checkResponses (responses, transactionPathPrefix, schemaPathPrefix, sch
 }
 
 module.exports = {
-  validateTransaction: function (transaction, { schema, options, componentsAndPaths, schemaCache }, callback) {
+  validateTransaction: function (transaction, {
+    schema, options, componentsAndPaths, schemaCache, matchedEndpoints = []
+  }, callback) {
     if (!transaction.id || !transaction.request) {
       return callback(new Error('All transactions must have `id` and `request` properties.'));
     }
@@ -2384,8 +2389,7 @@ module.exports = {
     const jsonSchemaDialect = schema.jsonSchemaDialect;
 
     let requestUrl = transaction.request.url,
-      matchedPaths,
-      matchedEndpoints = [];
+      matchedPaths;
 
     if (typeof requestUrl === 'object') {
 

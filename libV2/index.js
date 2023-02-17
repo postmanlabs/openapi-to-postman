@@ -191,7 +191,7 @@ module.exports = {
     return setTimeout(() => {
       async.map(transactions, (transaction, callback) => {
         return validateTransaction(transaction, {
-          schema, options, componentsAndPaths, schemaCache
+          schema, options, componentsAndPaths, schemaCache, matchedEndpoints
         }, callback);
       }, (err, result) => {
         var retVal;
