@@ -4,9 +4,19 @@ const _ = require('lodash'),
   GraphLib = require('graphlib'),
   generateSkeletonTreeFromOpenAPI = require('./helpers/collection/generateSkeletionTreeeFromOpenAPI'),
   generateCollectionFromOpenAPI = require('./helpers/collection/generateCollectionFromOpenAPI'),
-  generateFolderFromOpenAPI = require('./helpers/folder/generateFolderForOpenAPI');
+  generateFolderFromOpenAPI = require('./helpers/folder/generateFolderForOpenAPI'),
+
+  Ajv = require('ajv'),
+  addFormats = require('ajv-formats'),
+  async = require('async'),
+  transactionSchema = require('../assets/validationRequestListSchema.json'),
+
+  // All V1 interfaces used
+  OpenApiErr = require('../lib/error'),
+  { validateTransaction, getMissingSchemaEndpoints } = require('./validationUtils');
+
 const { resolvePostmanRequest } = require('./schemaUtils');
-const { generateRequestItemObject } = require('./utils');
+const { generateRequestItemObject, fixPathVariablesInUrl } = require('./utils');
 
 module.exports = {
   convertV2: function (context, cb) {
@@ -132,5 +142,85 @@ module.exports = {
     });
 
     return cb(null, collection);
+  },
+
+  /**
+   *
+   * @description Takes in a request collection (transaction object) and validates it against
+   * corresponding definition matching endpoint
+   *
+   * @param {Object} context - Required context from related SchemaPack function
+   * @param {*} callback return
+   * @returns {boolean} validation
+   */
+  validateTransactionV2(context, callback) {
+    let { schema, options, transactions, componentsAndPaths, schemaCache } = context,
+      matchedEndpoints = [];
+
+    // create and sanitize basic spec
+    schema.servers = _.isEmpty(schema.servers) ? [{ url: '/' }] : schema.servers;
+    schema.securityDefs = _.get(schema, 'components.securitySchemes', {});
+    schema.baseUrl = _.get(schema, 'servers.0.url', '{{baseURL}}');
+    schema.baseUrlVariables = _.get(schema, 'servers.0.variables');
+
+    // Fix {scheme} and {path} vars in the URL to :scheme and :path
+    schema.baseUrl = fixPathVariablesInUrl(schema.baseUrl);
+
+    // check validity of transactions
+    try {
+      // add Ajv options to support validation of OpenAPI schema.
+      // For more details see https://ajv.js.org/#options
+      let ajv = new Ajv({
+          allErrors: true,
+          strict: false
+        }),
+        validate,
+        res;
+      addFormats(ajv);
+      validate = ajv.compile(transactionSchema);
+      res = validate(transactions);
+
+      if (!res) {
+        return callback(new OpenApiErr('Invalid syntax provided for requestList', validate.errors));
+      }
+    }
+    catch (e) {
+      return callback(new OpenApiErr('Invalid syntax provided for requestList', e));
+    }
+
+    return setTimeout(() => {
+      async.map(transactions, (transaction, callback) => {
+        return validateTransaction(transaction, {
+          schema, options, componentsAndPaths, schemaCache
+        }, callback);
+      }, (err, result) => {
+        var retVal;
+
+        if (err) {
+          return callback(err);
+        }
+
+        // determine if any endpoint for any request misatched
+        _.each(result, (reqRes) => {
+          let thisMismatch = false;
+          _.each(reqRes.endpoints, (ep) => {
+            if (!ep.matched) {
+              return false;
+            }
+          });
+          if (thisMismatch) {
+            return false;
+          }
+        });
+
+        retVal = {
+          requests: _.keyBy(result, 'requestId'),
+          missingEndpoints: getMissingSchemaEndpoints(schema, matchedEndpoints,
+            componentsAndPaths, options, schemaCache)
+        };
+
+        callback(null, retVal);
+      });
+    }, 0);
   }
 };

@@ -98,6 +98,93 @@ module.exports = {
       .replace(/(_+)([a-zA-Z0-9])/g, ' $2'); // convert create_user to create user
   },
 
+  /**
+   * Trims request name string to 255 characters.
+   *
+   * @param {*} reqName - Request name
+   * @returns {*} trimmed string upto 255 characters
+   */
+  trimRequestName: function (reqName) {
+    if (typeof reqName === 'string') {
+      return reqName.substring(0, 255);
+    }
+    return reqName;
+  },
+
+  /**
+   * Finds all the possible path variables conversion from schema path,
+   * and excludes path variable that are converted to collection variable
+   * @param {string} path Path string
+   * @returns {array} Array of path variables.
+   */
+  findPathVariablesFromSchemaPath: function (path) {
+    // /{path}/{file}.{format}/{hello} return [ '/{path}', '/{hello}' ]
+    // https://regex101.com/r/aFRWQD/4
+    let matches = path.match(/(\/\{[^\/\{\}]+\}(?=[\/\0]|$))/g);
+
+    // remove leading '/' and starting and ending curly braces
+    return _.map(matches, (match) => { return match.slice(2, -1); });
+  },
+
+  /** Finds all the possible path variables in a given path string
+   * @param {string} path Path string : /pets/{petId}
+   * @returns {array} Array of path variables.
+   */
+  findPathVariablesFromPath: function (path) {
+
+    // /{{path}}/{{file}}.{{format}}/{{hello}} return [ '{{path}}', '{{hello}}' ]
+    // https://regex101.com/r/XGL4Gh/1
+    return path.match(/(\/\{\{[^\/\{\}]+\}\})(?=\/|$)/g);
+  },
+
+  /** Finds all the possible collection variables in a given path string
+   * @param {string} path Path string : /pets/{petId}
+   * @returns {array} Array of collection variables.
+   */
+  findCollectionVariablesFromPath: function (path) {
+
+    // /:path/{{file}}.{{format}}/:hello => only {{file}} and {{format}} will match
+    // https://regex101.com/r/XGL4Gh/2
+    return path.match(/(\{\{[^\/\{\}]+\}\})/g);
+  },
+
+  /**
+   * Changes path structure that contains {var} to :var and '/' to '_'
+   * This is done so generated collection variable is in correct format
+   * i.e. variable '{{item/{itemId}}}' is considered separates variable in URL by collection sdk
+   * @param {string} path - path defined in openapi spec
+   * @returns {string} - string after replacing {itemId} with :itemId
+   */
+  fixPathVariableName: function (path) {
+    // Replaces structure like 'item/{itemId}' into 'item-itemId-Url'
+    return path.replace(/\//g, '-').replace(/[{}]/g, '') + '-Url';
+  },
+
+  /**
+  * Changes the {} around scheme and path variables to :variable
+  * @param {string} url - the url string
+  * @returns {string} string after replacing /{pet}/ with /:pet/
+  */
+  fixPathVariablesInUrl: function (url) {
+    // URL should always be string so update value if non-string value is found
+    if (typeof url !== 'string') {
+      return '';
+    }
+
+    // All complicated logic removed
+    // This simply replaces all instances of {text} with {{text}}
+    // text cannot have any of these 3 chars: /{}
+    // {{text}} will not be converted
+
+    let replacer = function (match, p1, offset, string) {
+      if (string[offset - 1] === '{' && string[offset + match.length + 1] !== '}') {
+        return match;
+      }
+      return '{' + p1 + '}';
+    };
+    return _.isString(url) ? url.replace(/(\{[^\/\{\}]+\})/g, replacer) : '';
+  },
+
   generatePmResponseObject,
   generateRequestItemObject
 };

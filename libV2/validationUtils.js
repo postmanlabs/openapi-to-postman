@@ -1,0 +1,2628 @@
+const _ = require('lodash'),
+  sdk = require('postman-collection'),
+  async = require('async'),
+  crypto = require('crypto'),
+  schemaFaker = require('../assets/json-schema-faker.js'),
+  xmlFaker = require('./xmlSchemaFaker.js'),
+  utils = require('./utils'),
+
+  // lib v1 components
+  deref = require('../lib/deref.js'),
+  schemaUtilsV1 = require('../lib/schemaUtils'),
+  ajvValidationError = require('../lib/ajValidation/ajvValidationError'),
+  { validateSchema } = require('../lib/ajValidation/ajvValidation'),
+  { formatDataPath, checkIsCorrectType, isKnownType,
+    getServersPathVars } = require('../lib/common/schemaUtilsCommon.js'),
+
+  defaultOptions = require('../lib/options.js').getOptions('use'),
+  { findMatchingRequestFromSchema, isPmVariable } = require('./requestMatchingUtils'),
+  traverseUtility = require('traverse'),
+
+  // common global constants
+  SCHEMA_FORMATS = {
+    DEFAULT: 'default', // used for non-request-body data and json
+    XML: 'xml' // used for request-body XMLs
+  },
+  URLENCODED = 'application/x-www-form-urlencoded',
+  TEXT_PLAIN = 'text/plain',
+  PARAMETER_SOURCE = {
+    REQUEST: 'REQUEST',
+    RESPONSE: 'RESPONSE'
+  },
+  HEADER_TYPE = {
+    JSON: 'json',
+    XML: 'xml',
+    INVALID: 'invalid'
+  },
+  propNames = {
+    QUERYPARAM: 'query parameter',
+    PATHVARIABLE: 'path variable',
+    HEADER: 'header',
+    BODY: 'request body',
+    RESPONSE_HEADER: 'response header',
+    RESPONSE_BODY: 'response body'
+  },
+  // Specifies types of processing Refs
+  PROCESSING_TYPE = {
+    VALIDATION: 'VALIDATION',
+    CONVERSION: 'CONVERSION'
+  },
+
+  // These are the methods supported in the PathItem schema
+  // https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#pathItemObject
+  METHODS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'],
+
+  // These headers are to be validated explicitly
+  // As these are not defined under usual parameters object and need special handling
+  IMPLICIT_HEADERS = [
+    'content-type', // 'content-type' is defined based on content/media-type of req/res body,
+    'accept',
+    'authorization'
+  ],
+  DEFAULT_SCHEMA_UTILS = require('../lib/30XUtils/schemaUtils30X');
+
+// See https://github.com/json-schema-faker/json-schema-faker/tree/master/docs#available-options
+schemaFaker.option({
+  requiredOnly: false,
+  optionalsProbability: 1.0, // always add optional fields
+  maxLength: 256,
+  minItems: 1, // for arrays
+  maxItems: 20, // limit on maximum number of items faked for (type: arrray)
+  useDefaultValue: true,
+  ignoreMissingRefs: true,
+  avoidExampleItemsLength: true // option to avoid validating type array schema example's minItems and maxItems props.
+});
+
+/**
+ *
+ * @param {*} input - input string that needs to be hashed
+ * @returns {*} sha1 hash of the string
+ */
+function hash(input) {
+  return crypto.createHash('sha1').update(input).digest('base64');
+}
+
+/**
+ * Remove or keep the deprecated properties according to the option
+ * @param {object} resolvedSchema - the schema to verify properties
+ * @param {boolean} includeDeprecated - Whether to include the deprecated properties
+ * @returns {undefined} undefined
+ */
+function verifyDeprecatedProperties(resolvedSchema, includeDeprecated) {
+  traverseUtility(resolvedSchema.properties).forEach(function (property) {
+    if (property && typeof property === 'object') {
+      if (property.deprecated === true && includeDeprecated === false) {
+        this.delete();
+      }
+    }
+  });
+}
+
+/**
+ * Verifies if the deprecated operations should be added
+ *
+ * @param {object} operation - openAPI operation object
+ * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
+ * @returns {boolean} whether to add or not the deprecated operation
+ */
+function shouldAddDeprecatedOperation (operation, options) {
+  if (typeof operation === 'object') {
+    return !operation.deprecated ||
+      (operation.deprecated === true && options.includeDeprecated === true);
+  }
+  return false;
+}
+
+/**
+ * Safe wrapper for schemaFaker that resolves references and
+ * removes things that might make schemaFaker crash
+ * @param {*} oldSchema the schema to fake
+ * @param {string} resolveTo The desired JSON-generation mechanism (schema: prefer using the JSONschema to
+ * generate a fake object, example: use specified examples as-is). Default: schema
+ * @param {*} resolveFor - resolve refs for flow validation/conversion (value to be one of VALIDATION/CONVERSION)
+ * @param {string} parameterSourceOption Specifies whether the schema being faked is from a request or response.
+ * @param {*} components list of predefined components (with schemas)
+ * @param {string} schemaFormat default or xml
+ * @param {object} schemaCache - object storing schemaFaker and schemaResolution caches
+ * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
+ * @returns {object} fakedObject
+ */
+function safeSchemaFaker (oldSchema, resolveTo, resolveFor, parameterSourceOption, components,
+  schemaFormat, schemaCache, options) {
+  var prop, key, resolvedSchema, fakedSchema,
+    schemaFakerCache = _.get(schemaCache, 'schemaFakerCache', {});
+  let concreteUtils = components && components.hasOwnProperty('concreteUtils') ?
+    components.concreteUtils :
+    DEFAULT_SCHEMA_UTILS;
+  const indentCharacter = options.indentCharacter,
+    includeDeprecated = options.includeDeprecated;
+
+  resolvedSchema = deref.resolveRefs(oldSchema, parameterSourceOption, components, {
+    resolveFor,
+    resolveTo,
+    stackLimit: options.stackLimit,
+    analytics: _.get(schemaCache, 'analytics', {})
+  });
+
+  resolvedSchema = concreteUtils.fixExamplesByVersion(resolvedSchema);
+  key = JSON.stringify(resolvedSchema);
+
+  if (resolveTo === 'schema') {
+    key = 'resolveToSchema ' + key;
+    schemaFaker.option({
+      useExamplesValue: false
+    });
+  }
+  else if (resolveTo === 'example') {
+    key = 'resolveToExample ' + key;
+    schemaFaker.option({
+      useExamplesValue: true
+    });
+  }
+
+  if (resolveFor === PROCESSING_TYPE.VALIDATION) {
+    schemaFaker.option({
+      useDefaultValue: false,
+      avoidExampleItemsLength: false
+    });
+  }
+
+  if (schemaFormat === 'xml') {
+    key += ' schemaFormatXML';
+  }
+  else {
+    key += ' schemaFormatDEFAULT';
+  }
+
+  key = hash(key);
+  if (schemaFakerCache[key]) {
+    return schemaFakerCache[key];
+  }
+
+  if (resolvedSchema.properties) {
+    // If any property exists with format:binary (and type: string) schemaFaker crashes
+    // we just delete based on format=binary
+    for (prop in resolvedSchema.properties) {
+      if (resolvedSchema.properties.hasOwnProperty(prop)) {
+        if (resolvedSchema.properties[prop].format === 'binary') {
+          delete resolvedSchema.properties[prop].format;
+        }
+      }
+    }
+    verifyDeprecatedProperties(resolvedSchema, includeDeprecated);
+  }
+
+  try {
+    if (schemaFormat === SCHEMA_FORMATS.XML) {
+      fakedSchema = xmlFaker(null, resolvedSchema, indentCharacter);
+      schemaFakerCache[key] = fakedSchema;
+      return fakedSchema;
+    }
+    // for JSON, the indentCharacter will be applied in the JSON.stringify step later on
+    fakedSchema = schemaFaker(resolvedSchema, null, _.get(schemaCache, 'schemaValidationCache'));
+    schemaFakerCache[key] = fakedSchema;
+    return fakedSchema;
+  }
+  catch (e) {
+    console.warn(
+      'Error faking a schema. Not faking this schema. Schema:', resolvedSchema,
+      'Error', e
+    );
+    return null;
+  }
+}
+
+/**
+ * @param {*} $ref reference object
+ * @param {object} components - components defined in the OAS spec. These are used to
+ * resolve references while generating params.
+ * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
+ * @returns {Object} reference object from the saved components
+ * @no-unit-tests
+ */
+function getRefObject ($ref, components, options) {
+  options = _.merge({}, defaultOptions, options);
+  var refObj, savedSchema;
+
+  if (typeof $ref !== 'string') {
+    return { value: `Invalid $ref: ${$ref} was found` };
+  }
+
+  savedSchema = $ref.split('/').slice(1).map((elem) => {
+    // https://swagger.io/docs/specification/using-ref#escape
+    // since / is the default delimiter, slashes are escaped with ~1
+    return decodeURIComponent(
+      elem
+        .replace(/~1/g, '/')
+        .replace(/~0/g, '~')
+    );
+  });
+  // at this stage, savedSchema is [components, part1, parts]
+  // must have min. 2 segments after "#/components"
+  if (savedSchema.length < 3) {
+    console.warn(`ref ${$ref} not found.`);
+    return { value: `reference ${$ref} not found in the given specification` };
+  }
+
+  if (savedSchema[0] !== 'components' && savedSchema[0] !== 'paths') {
+    console.warn(`Error reading ${$ref}. Can only use references from components and paths`);
+    return { value: `Error reading ${$ref}. Can only use references from components and paths` };
+  }
+
+  // at this point, savedSchema is similar to ['components', 'schemas','Address']
+  // components is actually components and paths (an object with components + paths as 1st-level-props)
+  refObj = _.get(components, savedSchema);
+
+  if (!refObj) {
+    console.warn(`ref ${$ref} not found.`);
+    return { value: `reference ${$ref} not found in the given specification` };
+  }
+
+  if (refObj.$ref) {
+    return getRefObject(refObj.$ref, components, options);
+  }
+
+  return refObj;
+}
+
+/** Separates out collection and path variables from the reqUrl
+ *
+ * @param {string} reqUrl Request Url
+ * @param {Array} pathVars Path variables
+ *
+ * @returns {Object} reqUrl, updated path Variables array and collection Variables.
+ */
+function sanitizeUrlPathParams (reqUrl, pathVars) {
+  var matches,
+    collectionVars = [];
+
+  // converts all the of the following:
+  // /{{path}}/{{file}}.{{format}}/{{hello}} => /:path/{{file}}.{{format}}/:hello
+  matches = utils.findPathVariablesFromPath(reqUrl);
+  if (matches) {
+    matches.forEach((match) => {
+      const replaceWith = match.replace(/{{/g, ':').replace(/}}/g, '');
+      reqUrl = reqUrl.replace(match, replaceWith);
+    });
+  }
+
+  // Separates pathVars array and collectionVars.
+  matches = utils.findCollectionVariablesFromPath(reqUrl);
+  if (matches) {
+    matches.forEach((match) => {
+      const collVar = match.replace(/{{/g, '').replace(/}}/g, '');
+
+      pathVars = pathVars.filter((item) => {
+        if (item.name === collVar) {
+          collectionVars.push(item);
+        }
+        return !(item.name === collVar);
+      });
+    });
+  }
+
+  return { url: reqUrl, pathVars, collectionVars };
+}
+
+/**
+ *
+ * @param {*} transaction Transaction with which to compare
+ * @param {*} transactionPathPrefix the jsonpath for this validation (will be prepended to all identified mismatches)
+ * @param {*} schemaPath the applicable pathItem defined at the schema level
+ * @param {*} pathRoute Route to applicable pathItem (i.e. 'GET /users/{userID}')
+ * @param {*} options OAS options
+ * @param {*} callback Callback
+ * @returns {array} mismatches (in the callback)
+ */
+function checkMetadata (transaction, transactionPathPrefix, schemaPath, pathRoute, options, callback) {
+  let expectedReqName,
+    expectedReqDesc,
+    reqNameMismatch,
+    actualReqName = _.get(transaction, 'name'),
+    trimmedReqName,
+    actualReqDesc,
+    mismatches = [],
+    mismatchObj,
+    reqUrl;
+
+  if (!options.validateMetadata) {
+    return callback(null, []);
+  }
+
+  // only validate string upto 255 character as longer name results in issues while updation
+  trimmedReqName = utils.trimRequestName(actualReqName);
+
+  // handling path templating in request url if any
+  // convert all {anything} to {{anything}}
+  reqUrl = utils.fixPathVariablesInUrl(pathRoute.slice(pathRoute.indexOf('/')));
+
+  // convert all /{{one}}/{{two}} to /:one/:two
+  // Doesn't touch /{{file}}.{{format}}
+  reqUrl = sanitizeUrlPathParams(reqUrl, []).url;
+
+  // description can be one of following two
+  actualReqDesc = _.isObject(_.get(transaction, 'request.description')) ?
+    _.get(transaction, 'request.description.content') : _.get(transaction, 'request.description');
+  expectedReqDesc = schemaPath.description;
+
+  switch (options.requestNameSource) {
+    case 'fallback' : {
+      // operationId is usually camelcase or snake case
+      expectedReqName = schemaPath.summary || utils.insertSpacesInName(schemaPath.operationId) || reqUrl;
+      expectedReqName = utils.trimRequestName(expectedReqName);
+      reqNameMismatch = (trimmedReqName !== expectedReqName);
+      break;
+    }
+    case 'url' : {
+      // actual value may differ in conversion as it uses local/global servers info to generate it
+      // for now suggest actual path as request name
+      expectedReqName = reqUrl;
+      reqNameMismatch = !_.endsWith(actualReqName, reqUrl);
+      break;
+    }
+    default : {
+      expectedReqName = schemaPath[options.requestNameSource];
+      expectedReqName = utils.trimRequestName(expectedReqName);
+      reqNameMismatch = (trimmedReqName !== expectedReqName);
+      break;
+    }
+  }
+
+  if (reqNameMismatch) {
+    mismatchObj = {
+      property: 'REQUEST_NAME',
+      transactionJsonPath: transactionPathPrefix + '.name',
+      schemaJsonPath: null,
+      reasonCode: 'INVALID_VALUE',
+      reason: 'The request name didn\'t match with specified schema'
+    };
+
+    options.suggestAvailableFixes && (mismatchObj.suggestedFix = {
+      key: 'name',
+      actualValue: actualReqName || null,
+      suggestedValue: expectedReqName
+    });
+    mismatches.push(mismatchObj);
+  }
+
+  /**
+   * Collection stores empty description as null, while OpenAPI spec can have empty string as description.
+   * Hence We need to treat null and empty string as match. So check first if both schema and collection description
+   * are not empty. _.isEmpty() returns true for null/undefined/''(empty string)
+   * i.e. collection desc = null and schema desc = '', for this case no mismatch will occurr
+   */
+  if ((!_.isEmpty(actualReqDesc) || !_.isEmpty(expectedReqDesc)) && (actualReqDesc !== expectedReqDesc)) {
+    mismatchObj = {
+      property: 'REQUEST_DESCRIPTION',
+      transactionJsonPath: transactionPathPrefix + '.request.description',
+      schemaJsonPath: null,
+      reasonCode: 'INVALID_VALUE',
+      reason: 'The request description didn\'t match with specified schema'
+    };
+
+    options.suggestAvailableFixes && (mismatchObj.suggestedFix = {
+      key: 'description',
+      actualValue: actualReqDesc || null,
+      suggestedValue: expectedReqDesc
+    });
+    mismatches.push(mismatchObj);
+  }
+  return callback(null, mismatches);
+}
+
+/**
+ * Given parameter objects, it assigns example/examples of parameter object as schema example.
+ *
+ * @param {Object} parameter - parameter object
+ * @returns {null} - null
+ */
+function assignParameterExamples (parameter) {
+  let example = _.get(parameter, 'example'),
+    examples = _.values(_.get(parameter, 'examples'));
+
+  if (example !== undefined) {
+    _.set(parameter, 'schema.example', example);
+  }
+  else if (examples) {
+    let exampleToUse = _.get(examples, '[0].value');
+
+    !_.isUndefined(exampleToUse) && (_.set(parameter, 'schema.example', exampleToUse));
+  }
+}
+
+/**
+ * Gets the description of the parameter.
+ * If the parameter is required, it prepends a `(Requried)` before the parameter description
+ * If the parameter type is enum, it appends the possible enum values
+ * @param {object} parameter - input param for which description needs to be returned
+ * @returns {string} description of the parameters
+ */
+function getParameterDescription (parameter) {
+  if (!_.isObject(parameter)) {
+    return '';
+  }
+  return (parameter.required ? '(Required) ' : '') + (parameter.description || '') +
+    (parameter.enum ? ' (This can only be one of ' + parameter.enum + ')' : '');
+}
+
+/**
+ * Provides information regarding serialisation of param
+ *
+ * @param {*} param - OpenAPI Parameter object
+ * @param {String} parameterSource - Specifies whether the schema being faked is from a request or response.
+ * @param {Object} components - OpenAPI components defined in the OAS spec. These are used to
+ *  resolve references while generating params.
+ * @param {Object} schemaCache - object storing schemaFaker and schmeResolution caches
+ * @returns {Object} - Information regarding parameter serialisation. Contains following properties.
+ * {
+ *  style - style property defined/inferred from schema
+ *  explode - explode property defined/inferred from schema
+ *  startValue - starting value that is prepended to serialised value
+ *  propSeparator - Character that separates two properties or values in serialised string of respective param
+ *  keyValueSeparator - Character that separates key from values in serialised string of respective param
+ *  isExplodable - whether params can be exploded (serialised value can contain key and value)
+ * }
+ */
+function getParamSerialisationInfo (param, parameterSource, components) {
+  var paramName = _.get(param, 'name'),
+    paramSchema = deref.resolveRefs(_.cloneDeep(param.schema), parameterSource, components, {}),
+    style, // style property defined/inferred from schema
+    explode, // explode property defined/inferred from schema
+    propSeparator, // separates two properties or values
+    keyValueSeparator, // separats key from value
+    startValue = '', // starting value that is unique to each style
+    // following prop represents whether param can be truly exploded, as for some style even when explode is true,
+    // serialisation doesn't separate key-value
+    isExplodable = paramSchema.type === 'object';
+
+  // for invalid param object return null
+  if (!_.isObject(param)) {
+    return null;
+  }
+
+  // decide allowed / default style for respective param location
+  switch (param.in) {
+    case 'path':
+      style = _.includes(['matrix', 'label', 'simple'], param.style) ? param.style : 'simple';
+      break;
+    case 'query':
+      style = _.includes(['form', 'spaceDelimited', 'pipeDelimited', 'deepObject'], param.style) ?
+        param.style : 'form';
+      break;
+    case 'header':
+      style = 'simple';
+      break;
+    default:
+      style = 'simple';
+      break;
+  }
+
+  // decide allowed / default explode property for respective param location
+  explode = (_.isBoolean(param.explode) ? param.explode : (_.includes(['form', 'deepObject'], style)));
+
+  // decide explodable params, starting value and separators between key-value and properties for serialisation
+  switch (style) {
+    case 'matrix':
+      isExplodable = paramSchema.type === 'object' || explode;
+      startValue = ';' + ((paramSchema.type === 'object' && explode) ? '' : (paramName + '='));
+      propSeparator = explode ? ';' : ',';
+      keyValueSeparator = explode ? '=' : ',';
+      break;
+    case 'label':
+      startValue = '.';
+      propSeparator = '.';
+      keyValueSeparator = explode ? '=' : '.';
+      break;
+    case 'form':
+      // for 'form' when explode is true, query is devided into different key-value pairs
+      propSeparator = keyValueSeparator = ',';
+      break;
+    case 'simple':
+      propSeparator = ',';
+      keyValueSeparator = explode ? '=' : ',';
+      break;
+    case 'spaceDelimited':
+      explode = false;
+      propSeparator = keyValueSeparator = '%20';
+      break;
+    case 'pipeDelimited':
+      explode = false;
+      propSeparator = keyValueSeparator = '|';
+      break;
+    case 'deepObject':
+      // for 'deepObject' query is devided into different key-value pairs
+      explode = true;
+      break;
+    default:
+      break;
+  }
+
+  return { style, explode, startValue, propSeparator, keyValueSeparator, isExplodable };
+}
+
+/**
+ * This functiom deserialises parameter value based on param schema
+ *
+ * @param {*} param - OpenAPI Parameter object
+ * @param {String} paramValue - Parameter value to be deserialised
+ * @param {String} parameterSource - Specifies whether the schema being faked is from a request or response.
+ * @param {Object} components - OpenAPI components defined in the OAS spec. These are used to
+ *  resolve references while generating params.
+ * @param {Object} schemaCache - object storing schemaFaker and schmeResolution caches
+ * @returns {*} - deserialises parameter value
+ */
+function deserialiseParamValue (param, paramValue, parameterSource, components) {
+  var constructedValue,
+    paramSchema = deref.resolveRefs(_.cloneDeep(param.schema), parameterSource, components, {}),
+    isEvenNumber = (num) => {
+      return (num % 2 === 0);
+    },
+    convertToDataType = (value) => {
+      try {
+        return JSON.parse(value);
+      }
+      catch (e) {
+        return value;
+      }
+    };
+
+  // for invalid param object return null
+  if (!_.isObject(param) || !_.isString(paramValue)) {
+    return null;
+  }
+
+  let { startValue, propSeparator, keyValueSeparator, isExplodable } =
+    getParamSerialisationInfo(param, parameterSource, components);
+
+  // as query params are constructed from url, during conversion we use decodeURI which converts ('%20' into ' ')
+  (keyValueSeparator === '%20') && (keyValueSeparator = ' ');
+  (propSeparator === '%20') && (propSeparator = ' ');
+
+  // remove start value from serialised value
+  paramValue = paramValue.slice(paramValue.indexOf(startValue) === 0 ? startValue.length : 0);
+
+  // define value to constructed according to type
+  paramSchema.type === 'object' && (constructedValue = {});
+  paramSchema.type === 'array' && (constructedValue = []);
+
+  if (constructedValue) {
+    let allProps = paramValue.split(propSeparator);
+    _.forEach(allProps, (element, index) => {
+      let keyValArray;
+
+      if (propSeparator === keyValueSeparator && isExplodable) {
+        if (isEvenNumber(index)) {
+          keyValArray = _.slice(allProps, index, index + 2);
+        }
+        else {
+          return;
+        }
+      }
+      else if (isExplodable) {
+        keyValArray = element.split(keyValueSeparator);
+      }
+
+      if (paramSchema.type === 'object') {
+        _.set(constructedValue, keyValArray[0], convertToDataType(keyValArray[1]));
+      }
+      else if (paramSchema.type === 'array') {
+        constructedValue.push(convertToDataType(_.get(keyValArray, '[1]', element)));
+      }
+    });
+  }
+  else {
+    constructedValue = paramValue;
+  }
+  return constructedValue;
+}
+
+/**
+ * This function is little modified version of lodash _.get()
+ * where if path is empty it will return source object instead undefined/fallback value
+ *
+ * @param {Object} sourceValue - source from where value is to be extracted
+ * @param {String} dataPath - json path to value that is to be extracted
+ * @param {*} fallback - fallback value if sourceValue doesn't contain value at dataPath
+ * @returns {*} extracted value
+ */
+function getPathValue (sourceValue, dataPath, fallback) {
+  return (dataPath === '' ? sourceValue : _.get(sourceValue, dataPath, fallback));
+}
+
+/**
+ * This function extracts suggested value from faked value at Ajv mismatch path (dataPath)
+ *
+ * @param {*} fakedValue Faked value by jsf
+ * @param {*} actualValue Actual value in transaction
+ * @param {*} ajvValidationErrorObj Ajv error for which fix is suggested
+ * @returns {*} Suggested Value
+ */
+function getSuggestedValue (fakedValue, actualValue, ajvValidationErrorObj) {
+  var suggestedValue,
+    tempSuggestedValue,
+    dataPath = formatDataPath(ajvValidationErrorObj.instancePath || ''),
+    targetActualValue,
+    targetFakedValue;
+
+  // discard the leading '.' if it exists
+  if (dataPath[0] === '.') {
+    dataPath = dataPath.slice(1);
+  }
+
+  targetActualValue = getPathValue(actualValue, dataPath, {});
+  targetFakedValue = getPathValue(fakedValue, dataPath, {});
+
+  switch (ajvValidationErrorObj.keyword) {
+
+    // to do: check for minItems, maxItems
+
+    case 'minProperties':
+      suggestedValue = _.assign({}, targetActualValue,
+        _.pick(targetFakedValue, _.difference(_.keys(targetFakedValue), _.keys(targetActualValue))));
+      break;
+
+    case 'maxProperties':
+      suggestedValue = _.pick(targetActualValue, _.intersection(_.keys(targetActualValue), _.keys(targetFakedValue)));
+      break;
+
+    case 'required':
+      suggestedValue = _.assign({}, targetActualValue,
+        _.pick(targetFakedValue, ajvValidationErrorObj.params.missingProperty));
+      break;
+
+    case 'minItems':
+      suggestedValue = _.concat(targetActualValue, _.slice(targetFakedValue, targetActualValue.length));
+      break;
+
+    case 'maxItems':
+      suggestedValue = _.slice(targetActualValue, 0, ajvValidationErrorObj.params.limit);
+      break;
+
+    case 'uniqueItems':
+      tempSuggestedValue = _.cloneDeep(targetActualValue);
+      tempSuggestedValue[ajvValidationErrorObj.params.j] = _.last(targetFakedValue);
+      suggestedValue = tempSuggestedValue;
+      break;
+
+    // Keywords: minLength, maxLength, format, minimum, maximum, type, multipleOf, pattern
+    default:
+      suggestedValue = getPathValue(fakedValue, dataPath, null);
+      break;
+  }
+
+  return suggestedValue;
+}
+
+/**
+ * Returns all security params that can be applied during converion.
+ *
+ * @param {Object} components - OpenAPI components
+ * @param {String} location - location for which we want to get security params (i.e. 'header' | 'query')
+ * @returns {Array} applicable security params
+ */
+function getSecurityParams (components, location) {
+  let securityDefs = _.get(components, 'securitySchemes', {}),
+    securityParams = [];
+
+  _.forEach(securityDefs, (securityDef) => {
+    // Currently we only apply header and query for apiKey type of security param during conversion
+    if (_.get(securityDef, 'type') === 'apiKey' && _.get(securityDef, 'in') === location) {
+      securityParams.push(securityDef);
+    }
+  });
+  return securityParams;
+}
+
+/**
+ * Tests whether given parameter is of complex array type from param key
+ *
+ * @param {*} paramKey - Parmaeter key that is to be tested
+ * @returns {Boolean} - result
+ */
+function isParamComplexArray (paramKey) {
+  // this checks if parameter key numbered element (i.e. itemArray[1] is complex array param)
+  let regex = /\[[\d]+\]/gm;
+  return regex.test(paramKey);
+}
+
+/**
+ * Parses media type from given content-type header or media type
+ * from content object into type and subtype
+ *
+ * @param {String} str - string to be parsed
+ * @returns {Object} - Parsed media type into type and subtype
+ */
+function parseMediaType (str) {
+  let simpleMediaTypeRegExp = /^\s*([^\s\/;]+)\/([^;\s]+)\s*(?:;(.*))?$/,
+    match = simpleMediaTypeRegExp.exec(str),
+    type = '',
+    subtype = '';
+
+  if (match) {
+    // as mediatype name are case-insensitive keep it in lower case for uniformity
+    type = _.toLower(match[1]);
+    subtype = _.toLower(match[2]);
+  }
+
+  return { type, subtype };
+}
+
+/**
+* Get the format of content type header
+* @param {string} cTypeHeader - the content type header string
+* @returns {string} type of content type header
+*/
+function getHeaderFamily (cTypeHeader) {
+  let mediaType = parseMediaType(cTypeHeader);
+
+  if (mediaType.type === 'application' &&
+    (mediaType.subtype === 'json' || _.endsWith(mediaType.subtype, '+json'))) {
+    return HEADER_TYPE.JSON;
+  }
+  if ((mediaType.type === 'application' || mediaType.type === 'text') &&
+    (mediaType.subtype === 'xml' || _.endsWith(mediaType.subtype, '+xml'))) {
+    return HEADER_TYPE.XML;
+  }
+  return HEADER_TYPE.INVALID;
+}
+
+/**
+ * Finds valid JSON media type object from content object
+ *
+ * @param {*} contentObj - Content Object from schema
+ * @returns {*} - valid JSON media type if exists
+ */
+function getJsonContentType (contentObj) {
+  let jsonContentType = _.find(_.keys(contentObj), (contentType) => {
+    let mediaType = parseMediaType(contentType);
+
+    return mediaType.type === 'application' && (
+      mediaType.subtype === 'json' || _.endsWith(mediaType.subtype, '+json')
+    );
+  });
+
+  return jsonContentType;
+}
+
+/**
+ * Gives mismtach for content type header for request/response
+ *
+ * @param {Array} headers - Transaction Headers
+ * @param {String} transactionPathPrefix - Transaction Path to headers
+ * @param {String} schemaPathPrefix - Schema path to content object
+ * @param {Object} contentObj - Corresponding Schema content object
+ * @param {String} mismatchProperty - Mismatch property (HEADER / RESPONSE_HEADER)
+ * @param {*} options - OAS options, check lib/options.js for more
+ * @returns {Array} found mismatch objects
+ */
+function checkContentTypeHeader (headers, transactionPathPrefix, schemaPathPrefix, contentObj,
+  mismatchProperty, options) {
+  let mediaTypes = [],
+    contentHeader,
+    contentHeaderIndex,
+    contentHeaderMediaType,
+    suggestedContentHeader,
+    hasComputedType,
+    humanPropName = mismatchProperty === 'HEADER' ? 'header' : 'response header',
+    mismatches = [];
+
+  // get all media types present in content object
+  _.forEach(_.keys(contentObj), (contentType) => {
+    let contentMediaType = parseMediaType(contentType);
+
+    mediaTypes.push({
+      type: contentMediaType.type,
+      subtype: contentMediaType.subtype,
+      contentType: contentMediaType.type + '/' + contentMediaType.subtype
+    });
+  });
+
+  // prefer JSON > XML > Other media types for suggested header.
+  _.forEach(mediaTypes, (mediaType) => {
+    let headerFamily = getHeaderFamily(mediaType.contentType);
+
+    if (headerFamily !== HEADER_TYPE.INVALID) {
+      suggestedContentHeader = mediaType.contentType;
+      hasComputedType = true;
+      if (headerFamily === HEADER_TYPE.JSON) {
+        return false;
+      }
+    }
+  });
+
+  // if no JSON or XML, take whatever we have
+  if (!hasComputedType && mediaTypes.length > 0) {
+    suggestedContentHeader = mediaTypes[0].contentType;
+    hasComputedType = true;
+  }
+
+  // get content-type header and info
+  _.forEach(headers, (header, index) => {
+    if (_.toLower(header.key) === 'content-type') {
+      let mediaType = parseMediaType(header.value);
+
+      contentHeader = header;
+      contentHeaderIndex = index;
+      contentHeaderMediaType = mediaType.type + '/' + mediaType.subtype;
+      return false;
+    }
+  });
+
+  // Schema body content has no media type objects
+  if (!_.isEmpty(contentHeader) && _.isEmpty(mediaTypes)) {
+    // ignore mismatch for default header (text/plain) added by conversion
+    if (options.showMissingInSchemaErrors && _.toLower(contentHeaderMediaType) !== TEXT_PLAIN) {
+      mismatches.push({
+        property: mismatchProperty,
+        transactionJsonPath: transactionPathPrefix + `[${contentHeaderIndex}]`,
+        schemaJsonPath: null,
+        reasonCode: 'MISSING_IN_SCHEMA',
+        // Reason for missing in schema suggests that certain media type in req/res body is not present
+        reason: `The ${mismatchProperty === 'HEADER' ? 'request' : 'response'} body should have media type` +
+          ` "${contentHeaderMediaType}"`
+      });
+    }
+  }
+
+  // No request/response content-type header
+  else if (_.isEmpty(contentHeader) && !_.isEmpty(mediaTypes)) {
+    let mismatchObj = {
+      property: mismatchProperty,
+      transactionJsonPath: transactionPathPrefix,
+      schemaJsonPath: schemaPathPrefix,
+      reasonCode: 'MISSING_IN_REQUEST',
+      reason: `The ${humanPropName} "Content-Type" was not found in the transaction`
+    };
+
+    if (options.suggestAvailableFixes) {
+      mismatchObj.suggestedFix = {
+        key: 'Content-Type',
+        actualValue: null,
+        suggestedValue: {
+          key: 'Content-Type',
+          value: suggestedContentHeader
+        }
+      };
+    }
+    mismatches.push(mismatchObj);
+  }
+
+  // Invalid type of header found
+  else if (!_.isEmpty(contentHeader)) {
+    let mismatchObj,
+      matched = false;
+
+    // wildcard header matching
+    _.forEach(mediaTypes, (mediaType) => {
+      let transactionHeader = _.split(contentHeaderMediaType, '/'),
+        headerTypeMatched = (mediaType.type === '*' || mediaType.type === transactionHeader[0]),
+        headerSubtypeMatched = (mediaType.subtype === '*' || mediaType.subtype === transactionHeader[1]);
+
+      if (headerTypeMatched && headerSubtypeMatched) {
+        matched = true;
+      }
+    });
+
+    if (!matched) {
+      mismatchObj = {
+        property: mismatchProperty,
+        transactionJsonPath: transactionPathPrefix + `[${contentHeaderIndex}].value`,
+        schemaJsonPath: schemaPathPrefix,
+        reasonCode: 'INVALID_TYPE',
+        reason: `The ${humanPropName} "Content-Type" needs to be "${suggestedContentHeader}",` +
+          ` but we found "${contentHeaderMediaType}" instead`
+      };
+
+      if (options.suggestAvailableFixes) {
+        mismatchObj.suggestedFix = {
+          key: 'Content-Type',
+          actualValue: contentHeader.value,
+          suggestedValue: suggestedContentHeader
+        };
+      }
+      mismatches.push(mismatchObj);
+    }
+  }
+  return mismatches;
+}
+
+/**
+ * Extracts all child parameters from explodable param
+ *
+ * @param {*} schema - Corresponding schema object of parent parameter to be devided into child params
+ * @param {*} paramKey - Parameter name of parent param object
+ * @param {*} metaInfo - meta information of param (i.e. required)
+ * @returns {Array} - Extracted child parameters
+ */
+function extractChildParamSchema (schema, paramKey, metaInfo) {
+  let childParamSchemas = [];
+
+  _.forEach(_.get(schema, 'properties', {}), (value, key) => {
+    if (_.get(value, 'type') === 'object') {
+      childParamSchemas = _.concat(childParamSchemas, extractChildParamSchema(value,
+        `${paramKey}[${key}]`, metaInfo));
+    }
+    else {
+      let required = _.get(metaInfo, 'required') || false,
+        description = _.get(metaInfo, 'description') || '',
+        pathPrefix = _.get(metaInfo, 'pathPrefix');
+
+      childParamSchemas.push({
+        name: `${paramKey}[${key}]`,
+        schema: value,
+        description,
+        required,
+        isResolvedParam: true,
+        pathPrefix
+      });
+    }
+  });
+  return childParamSchemas;
+}
+
+/**
+ * Generates appropriate collection element based on parameter location
+ *
+ * @param {Object} param - Parameter object habing key, value and description (optional)
+ * @param {String} location - Parameter location ("in" property of OAS defined parameter object)
+ * @returns {Object} - SDK element
+ */
+function generateSdkParam (param, location) {
+  const sdkElementMap = {
+    'query': sdk.QueryParam,
+    'header': sdk.Header,
+    'path': sdk.Variable
+  };
+
+  let generatedParam = {
+    key: param.key,
+    value: param.value
+  };
+
+  _.has(param, 'disabled') && (generatedParam.disabled = param.disabled);
+
+  // use appropriate sdk element based on location parmaeter is in for param generation
+  if (sdkElementMap[location]) {
+    generatedParam = new sdkElementMap[location](generatedParam);
+  }
+  param.description && (generatedParam.description = param.description);
+  return generatedParam;
+}
+
+/**
+ * Recursively extracts key-value pair from deep objects.
+ *
+ * @param {*} deepObject - Deep object
+ * @param {*} objectKey - key associated with deep object
+ * @returns {Array} array of param key-value pairs
+ */
+function extractDeepObjectParams (deepObject, objectKey) {
+  let extractedParams = [];
+
+  Object.keys(deepObject).forEach((key) => {
+    let value = deepObject[key];
+    if (typeof value === 'object') {
+      extractedParams = _.concat(extractedParams, extractDeepObjectParams(value, objectKey + '[' + key + ']'));
+    }
+    else {
+      extractedParams.push({ key: objectKey + '[' + key + ']', value });
+    }
+  });
+  return extractedParams;
+}
+
+/**
+ * Returns an array of parameters
+ * Handles array/object/string param types
+ * @param {*} param - the param object, as defined in
+ * https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#parameterObject
+ * @param {any} paramValue - the value to use (from schema or example) for the given param.
+ * This will be exploded/parsed according to the param type
+ * @param  {*} parameterSource — Specifies whether the schema being faked is from a request or response.
+ * @param {object} components - components defined in the OAS spec. These are used to
+ * resolve references while generating params.
+ * @param {object} schemaCache - object storing schemaFaker and schmeResolution caches
+ * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
+ * @returns {array} parameters. One param with type=array might lead to multiple params
+ * in the return value
+ * The styles are documented at
+ * https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#style-values
+ */
+function convertParamsWithStyle (param, paramValue, parameterSource, components, schemaCache, options) {
+  var paramName = _.get(param, 'name'),
+    pmParams = [],
+    serialisedValue = '',
+    description = getParameterDescription(param),
+    disabled = false;
+
+  // for invalid param object return null
+  if (!_.isObject(param)) {
+    return null;
+  }
+
+  let { style, explode, startValue, propSeparator, keyValueSeparator, isExplodable } =
+    getParamSerialisationInfo(param, parameterSource, components);
+
+  if (options && !options.enableOptionalParameters) {
+    disabled = !param.required;
+  }
+
+  // decide explodable params, starting value and separators between key-value and properties for serialisation
+  switch (style) {
+    case 'form':
+      if (explode && _.isObject(paramValue)) {
+        _.forEach(paramValue, (value, key) => {
+          pmParams.push(generateSdkParam({
+            key: _.isArray(paramValue) ? paramName : key,
+            value: (value === undefined ? '' : value),
+            description,
+            disabled
+          }, _.get(param, 'in')));
+        });
+        return pmParams;
+      }
+
+      // handle free-form parameter correctly
+      if (explode && (_.get(param, 'schema.type') === 'object') && _.isEmpty(_.get(param, 'schema.properties'))) {
+        return pmParams;
+      }
+      break;
+    case 'deepObject':
+      if (_.isObject(paramValue)) {
+        let extractedParams = extractDeepObjectParams(paramValue, paramName);
+
+        _.forEach(extractedParams, (extractedParam) => {
+          pmParams.push(generateSdkParam({
+            key: extractedParam.key,
+            value: extractedParam.value || '',
+            description,
+            disabled
+          }, _.get(param, 'in')));
+        });
+      }
+      return pmParams;
+    default:
+      break;
+  }
+
+  // for array and object, serialize value
+  if (_.isObject(paramValue)) {
+    _.forEach(paramValue, (value, key) => {
+      // add property separator for all index/keys except first
+      !_.isEmpty(serialisedValue) && (serialisedValue += propSeparator);
+
+      // append key for param that can be exploded
+      isExplodable && (serialisedValue += (key + keyValueSeparator));
+      serialisedValue += (value === undefined ? '' : value);
+    });
+  }
+  // for non-object and non-empty value append value as is to string
+  else if (!_.isNil(paramValue)) {
+    serialisedValue += paramValue;
+  }
+
+  // prepend starting value to serialised value (valid for empty value also)
+  serialisedValue = startValue + serialisedValue;
+  pmParams.push(generateSdkParam({
+    key: paramName,
+    value: serialisedValue,
+    description,
+    disabled
+  }, _.get(param, 'in')));
+
+  return pmParams;
+}
+
+/**
+ * Converts the necessary server variables to the
+ * something that can be added to the collection
+ * TODO: Figure out better description
+ * @param {object} serverVariables - Object containing the server variables at the root/path-item level
+ * @param {string} keyName - an additional key to add the serverUrl to the variable list
+ * @param {string} serverUrl - URL from the server object
+ * @returns {object} modified collection after the addition of the server variables
+ */
+function convertToPmCollectionVariables (serverVariables, keyName, serverUrl = '') {
+  var variables = [];
+  if (serverVariables) {
+    _.forOwn(serverVariables, (value, key) => {
+      let description = getParameterDescription(value);
+      variables.push(new sdk.Variable({
+        key: key,
+        value: value.default || '',
+        description: description
+      }));
+    });
+  }
+  if (keyName) {
+    variables.push(new sdk.Variable({
+      key: keyName,
+      value: serverUrl,
+      type: 'string'
+    }));
+  }
+  return variables;
+}
+
+/**
+ * Returns params applied to specific operation with resolved references. Params from parent
+ * blocks (collection/folder) are merged, so that the request has a flattened list of params needed.
+ * OperationParams take precedence over pathParams
+ * @param {array} operationParam operation (Postman request)-level params.
+ * @param {array} pathParam are path parent-level params.
+ * @param {object} components - components defined in the OAS spec. These are used to
+ * resolve references while generating params.
+ * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
+ * @returns {*} combined requestParams from operation and path params.
+ */
+function getRequestParams (operationParam, pathParam, components, options) {
+  options = _.merge({}, defaultOptions, options);
+  if (!Array.isArray(operationParam)) {
+    operationParam = [];
+  }
+  if (!Array.isArray(pathParam)) {
+    pathParam = [];
+  }
+  pathParam.forEach((param, index, arr) => {
+    if (_.has(param, '$ref')) {
+      arr[index] = getRefObject(param.$ref, components, options);
+    }
+  });
+
+  operationParam.forEach((param, index, arr) => {
+    if (_.has(param, '$ref')) {
+      arr[index] = getRefObject(param.$ref, components, options);
+    }
+  });
+
+  if (_.isEmpty(pathParam)) {
+    return operationParam;
+  }
+  else if (_.isEmpty(operationParam)) {
+    return pathParam;
+  }
+
+  // If both path and operation params exist,
+  // we need to de-duplicate
+  // A param with the same name and 'in' value from operationParam
+  // will get precedence
+  var reqParam = operationParam.slice();
+  pathParam.forEach((param) => {
+    var dupParam = operationParam.find(function(element) {
+      return element.name === param.name && element.in === param.in &&
+      // the below two conditions because undefined === undefined returns true
+        element.name && param.name &&
+        element.in && param.in;
+    });
+    if (!dupParam) {
+      // if there's no duplicate param in operationParam,
+      // use the one from the common pathParam list
+      // this ensures that operationParam is given precedence
+      reqParam.push(param);
+    }
+  });
+  return reqParam;
+}
+
+/**
+ *
+ * @param {String} property - one of QUERYPARAM, PATHVARIABLE, HEADER, BODY, RESPONSE_HEADER, RESPONSE_BODY
+ * @param {String} jsonPathPrefix - this will be prepended to all JSON schema paths on the request
+ * @param {String} txnParamName - Optional - The name of the param being validated (useful for query params,
+ *  req headers, res headers)
+ * @param {*} value - the value of the property in the request
+ * @param {String} schemaPathPrefix - this will be prepended to all JSON schema paths on the schema
+ * @param {Object} openApiSchemaObj - The OpenAPI schema object against which to validate
+ * @param {String} parameterSourceOption tells that the schema object is of request or response
+ * @param {Object} components - Components in the spec that the schema might refer to
+ * @param {Object} options - Global options
+ * @param {Object} schemaCache object storing schemaFaker and schmeResolution caches
+ * @param {string} jsonSchemaDialect The schema dialect defined in the OAS object
+ * @param {Function} callback - For return
+ * @returns {Array} array of mismatches
+ */
+function checkValueAgainstSchema (property, jsonPathPrefix, txnParamName, value, schemaPathPrefix, openApiSchemaObj,
+  parameterSourceOption, components, options, schemaCache, jsonSchemaDialect, callback) {
+
+  let mismatches = [],
+    jsonValue,
+    humanPropName = propNames[property],
+    needJsonMatching = (property === 'BODY' || property === 'RESPONSE_BODY'),
+    invalidJson = false,
+    valueToUse = value,
+
+    // This is dereferenced schema (converted to JSON schema for validation)
+    schema = deref.resolveRefs(openApiSchemaObj, parameterSourceOption, components, {
+      resolveFor: PROCESSING_TYPE.VALIDATION,
+      resolveTo: 'example',
+      stackLimit: options.stackLimit
+    }),
+    compositeSchema = schema.oneOf || schema.anyOf;
+
+  if (needJsonMatching) {
+    try {
+      jsonValue = JSON.parse(value);
+      // If valid JSON is detected, the parsed value should be used
+      // to determine mismatches
+      valueToUse = jsonValue;
+    }
+    catch (e) {
+      jsonValue = '';
+      invalidJson = true;
+    }
+  }
+
+  // For anyOf and oneOf schemas, validate value against each schema and report result with least mismatches
+  if (compositeSchema) {
+    // get mismatches of value against each schema
+    async.map(compositeSchema, (elementSchema, cb) => {
+      setTimeout(() => {
+        checkValueAgainstSchema(property, jsonPathPrefix, txnParamName, value,
+          `${schemaPathPrefix}.${schema.oneOf ? 'oneOf' : 'anyOf'}[${_.findIndex(compositeSchema, elementSchema)}]`,
+          elementSchema, parameterSourceOption, components, options, schemaCache, jsonSchemaDialect, cb);
+      }, 0);
+    }, (err, results) => {
+      let sortedResults;
+
+      if (err) {
+        return callback(err, []);
+      }
+
+      // return mismatches of schema against which least validation mismatches were found
+      sortedResults = _.sortBy(results, (res) => { return res.length; });
+      return callback(null, sortedResults[0]);
+    });
+  }
+  // When processing a reference, schema.type could also be undefined
+  else if (schema && schema.type) {
+    if (isKnownType(schema)) {
+      let isCorrectType;
+
+      // Treat unresolved postman collection/environment variable as correct type
+      if (options.ignoreUnresolvedVariables && isPmVariable(valueToUse)) {
+        isCorrectType = true;
+      }
+      else {
+        isCorrectType = checkIsCorrectType(valueToUse, schema);
+      }
+
+      if (!isCorrectType) {
+        // if type didn't match, no point checking for AJV
+        let reason = '',
+          mismatchObj;
+
+        // exclude mismatch errors for nested objects in parameters (at this point simple objects and array should
+        // be already converted to primitive schema and only nested objects remains as type object/array)
+        if (_.includes(['QUERYPARAM', 'PATHVARIABLE', 'HEADER'], property) &&
+          (schema.type === 'object' || schema.type === 'array')) {
+          return callback(null, []);
+        }
+
+        if (property === 'RESPONSE_BODY' || property === 'BODY') {
+          // we don't have names for the body, but there's only one
+          reason = 'The ' + humanPropName;
+        }
+        else if (txnParamName) {
+          // for query params, req/res headers, path vars, we have a name. Praise the lord.
+          reason = `The ${humanPropName} "${txnParamName}"`;
+        }
+        else {
+          // for query params, req/res headers, path vars, we might not ALWAYS have a name.
+          reason = `A ${humanPropName}`;
+        }
+        reason += ` needs to be of type ${schema.type}, but we found `;
+        if (!options.shortValidationErrors) {
+          reason += `"${valueToUse}"`;
+        }
+        else if (invalidJson) {
+          reason += 'invalid JSON';
+        }
+        else if (Array.isArray(valueToUse)) {
+          reason += 'an array instead';
+        }
+        else if (typeof valueToUse === 'object') {
+          reason += 'an object instead';
+        }
+        else {
+          reason += `a ${typeof valueToUse} instead`;
+        }
+
+        mismatchObj = {
+          property,
+          transactionJsonPath: jsonPathPrefix,
+          schemaJsonPath: schemaPathPrefix,
+          reasonCode: 'INVALID_TYPE',
+          reason
+        };
+
+        if (options.suggestAvailableFixes) {
+          mismatchObj.suggestedFix = {
+            key: txnParamName,
+            actualValue: valueToUse,
+            suggestedValue: safeSchemaFaker(openApiSchemaObj || {}, 'example', PROCESSING_TYPE.VALIDATION,
+              parameterSourceOption, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options.includeDeprecated)
+          };
+        }
+
+        return callback(null, [mismatchObj]);
+      }
+
+      // only do AJV if type is array or object
+      // simpler cases are handled by a type check
+      if (isCorrectType && needJsonMatching) {
+        let filteredValidationError = validateSchema(schema, valueToUse, options, jsonSchemaDialect);
+
+        if (!_.isEmpty(filteredValidationError)) {
+          let mismatchObj,
+            suggestedValue,
+            fakedValue = safeSchemaFaker(openApiSchemaObj || {}, 'example', PROCESSING_TYPE.VALIDATION,
+              parameterSourceOption, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options);
+
+          // Show detailed validation mismatches for only request/response body
+          if (options.detailedBlobValidation && needJsonMatching) {
+            _.forEach(filteredValidationError, (ajvError) => {
+              let localSchemaPath = ajvError.schemaPath.replace(/\//g, '.').slice(2),
+                dataPath = formatDataPath(ajvError.instancePath || '');
+
+              // discard the leading '.' if it exists
+              if (dataPath[0] === '.') {
+                dataPath = dataPath.slice(1);
+              }
+
+              mismatchObj = _.assign({
+                property: property,
+                transactionJsonPath: jsonPathPrefix + formatDataPath(ajvError.instancePath),
+                schemaJsonPath: schemaPathPrefix + '.' + localSchemaPath
+              }, ajvValidationError(ajvError, { property, humanPropName }));
+
+              if (options.suggestAvailableFixes) {
+                mismatchObj.suggestedFix = {
+                  key: _.split(dataPath, '.').pop(),
+                  actualValue: getPathValue(valueToUse, dataPath, null),
+                  suggestedValue: getSuggestedValue(fakedValue, valueToUse, ajvError)
+                };
+              }
+              mismatches.push(mismatchObj);
+            });
+          }
+          else {
+            mismatchObj = {
+              reason: `The ${humanPropName} didn\'t match the specified schema`,
+              reasonCode: 'INVALID_TYPE'
+            };
+
+            // assign proper reason codes for invalid body
+            if (property === 'BODY') {
+              mismatchObj.reasonCode = 'INVALID_BODY';
+            }
+            else if (property === 'RESPONSE_BODY') {
+              mismatchObj.reasonCode = 'INVALID_RESPONSE_BODY';
+            }
+
+            if (options.suggestAvailableFixes) {
+              suggestedValue = _.cloneDeep(valueToUse);
+
+              // Apply each fix individually to respect existing values in request
+              _.forEach(filteredValidationError, (ajvError) => {
+                let dataPath = formatDataPath(ajvError.instancePath || '');
+
+                // discard the leading '.' if it exists
+                if (dataPath[0] === '.') {
+                  dataPath = dataPath.slice(1);
+                }
+
+                // for empty string _.set creates new key with empty string '', so separate handling
+                if (dataPath === '') {
+                  suggestedValue = getSuggestedValue(fakedValue, suggestedValue, ajvError);
+                }
+                else {
+                  _.set(suggestedValue, dataPath, getSuggestedValue(fakedValue, suggestedValue, ajvError));
+                }
+              });
+
+              mismatchObj.suggestedFix = {
+                key: property.toLowerCase(),
+                actualValue: valueToUse,
+                suggestedValue
+              };
+            }
+
+            mismatches.push(_.assign({
+              property: property,
+              transactionJsonPath: jsonPathPrefix,
+              schemaJsonPath: schemaPathPrefix
+            }, mismatchObj));
+          }
+
+          // only return AJV mismatches
+          return callback(null, mismatches);
+        }
+        // result passed. No AJV mismatch
+        return callback(null, []);
+      }
+
+      // Schema was not AJV or object
+      // Req/Res Body was non-object but content type is application/json
+      else if (needJsonMatching) {
+        return callback(null, [{
+          property,
+          transactionJsonPath: jsonPathPrefix,
+          schemaJsonPath: schemaPathPrefix,
+          reasonCode: 'INVALID_TYPE',
+          reason: `The ${humanPropName} needs to be of type object/array, but we found "${valueToUse}"`,
+          suggestedFix: {
+            key: null,
+            actualValue: valueToUse,
+            suggestedValue: {} // suggest value to be object
+          }
+        }]);
+      }
+      else {
+        return callback(null, []);
+      }
+    }
+    else {
+      // unknown schema.type found
+      // TODO: Decide how to handle. Log?
+      return callback(null, []);
+    }
+  }
+  // Schema not defined
+  else {
+    return callback(null, []);
+  }
+  // if (!schemaTypeToJsValidator[schema.type](value)) {
+  //   callback(null, [{
+  //     property,
+  //     transactionJsonPath: jsonPathPrefix,
+  //     schemaJsonPath: schemaPathPrefix,
+  //     reasonCode: 'INVALID_TYPE',
+  //     reason: `Value must be a token of type ${schema.type}, found ${value}`
+  //   }]);
+  // }
+  // TODO: Further checks for object type
+  // else {
+  //   callback(null, []);
+  // }
+}
+
+/**
+ *
+ * @param {*} matchedPathData the matchedPath data
+ * @param {*} transactionPathPrefix the jsonpath for this validation (will be prepended to all identified mismatches)
+ * @param {*} schemaPath the applicable pathItem defined at the schema level
+ * @param {*} components the components + paths from the OAS spec that need to be used to resolve $refs
+ * @param {*} options OAS options
+ * @param {*} schemaCache object storing schemaFaker and schmeResolution caches
+ * @param {string} jsonSchemaDialect Defined schema dialect at the OAS object
+ * @param {*} callback Callback
+ * @returns {array} mismatches (in the callback)
+ */
+function checkPathVariables (matchedPathData, transactionPathPrefix, schemaPath, components, options, schemaCache,
+  jsonSchemaDialect, callback) {
+
+  // schema path should have all parameters needed
+  // components need to be stored globally
+  var mismatchProperty = 'PATHVARIABLE',
+    // all path variables defined in this path. acc. to the spec, all path params are required
+    schemaPathVariables,
+    pmPathVariables,
+    determinedPathVariables = matchedPathData.pathVariables,
+    unmatchedVariablesFromTransaction = matchedPathData.unmatchedVariablesFromTransaction;
+
+  if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
+    return callback(null, []);
+  }
+
+  // find all schema path variables that can be present as collection path variables
+  pmPathVariables = utils.findPathVariablesFromSchemaPath(schemaPath.schemaPathName);
+  schemaPathVariables = _.filter(schemaPath.parameters, (param) => {
+    // exclude path variables stored as collection variable from being validated further
+    return (param.in === 'path' && _.includes(pmPathVariables, param.name));
+  });
+
+  async.map(determinedPathVariables, (pathVar, cb) => {
+    let mismatches = [],
+      resolvedParamValue,
+      index = _.findIndex(determinedPathVariables, pathVar);
+
+    const schemaPathVar = _.find(schemaPathVariables, (param) => {
+      return param.name === pathVar.key;
+    });
+
+    if (!schemaPathVar) {
+      // extra pathVar present in given request.
+      if (options.showMissingInSchemaErrors) {
+        mismatches.push({
+          property: mismatchProperty,
+          // not adding the pathVar name to the jsonPath because URL is just a string
+          transactionJsonPath: transactionPathPrefix + `[${index}]`,
+          schemaJsonPath: null,
+          reasonCode: 'MISSING_IN_SCHEMA',
+          reason: `The path variable "${pathVar.key}" was not found in the schema`
+        });
+      }
+      return cb(null, mismatches);
+    }
+
+    // don't validate variable if not present in transaction and URL path vars are not allowed
+    if (!pathVar._varMatched && !options.allowUrlPathVarMatching) {
+      return cb(null, mismatches);
+    }
+
+    // assign parameter example(s) as schema examples
+    assignParameterExamples(schemaPathVar);
+
+    resolvedParamValue = deserialiseParamValue(schemaPathVar, pathVar.value, PARAMETER_SOURCE.REQUEST,
+      components, schemaCache);
+
+    setTimeout(() => {
+      if (!(schemaPathVar && schemaPathVar.schema)) {
+        // no errors to show if there's no schema present in the spec
+        return cb(null, []);
+      }
+
+      checkValueAgainstSchema(mismatchProperty,
+        transactionPathPrefix + `[${index}].value`,
+        pathVar.key,
+        resolvedParamValue,
+        schemaPathVar.pathPrefix + '[?(@.name==\'' + schemaPathVar.name + '\')]',
+        schemaPathVar.schema,
+        PARAMETER_SOURCE.REQUEST,
+        components, options, schemaCache, jsonSchemaDialect, cb);
+    }, 0);
+  }, (err, res) => {
+    let mismatches = [],
+      mismatchObj;
+    const unmatchedSchemaVariableNames = determinedPathVariables.filter((pathVariable) => {
+      return !pathVariable._varMatched;
+    }).map((schemaPathVar) => {
+      return schemaPathVar.key;
+    });
+
+    if (err) {
+      return callback(err);
+    }
+
+    // go through required schemaPathVariables, and params that aren't found in the given transaction are errors
+    _.each(schemaPathVariables, (pathVar, index) => {
+      if (!_.find(determinedPathVariables, (param) => {
+        // only consider variable matching if url path variables is not allowed
+        return param.key === pathVar.name && (options.allowUrlPathVarMatching || param._varMatched);
+      })) {
+        let reasonCode = 'MISSING_IN_REQUEST',
+          reason,
+          actualValue,
+          currentUnmatchedVariableInTransaction = unmatchedVariablesFromTransaction[index],
+          isInvalidValue = currentUnmatchedVariableInTransaction !== undefined;
+
+        if (unmatchedSchemaVariableNames.length > 0 && isInvalidValue) {
+          reason = `The ${currentUnmatchedVariableInTransaction.key} path variable does not match with ` +
+            `path variable expected (${unmatchedSchemaVariableNames[index]}) in the schema at this position`;
+          actualValue = {
+            key: currentUnmatchedVariableInTransaction.key,
+            description: getParameterDescription(currentUnmatchedVariableInTransaction),
+            value: currentUnmatchedVariableInTransaction.value
+          };
+        }
+        else {
+          reason = `The required path variable "${pathVar.name}" was not found in the transaction`;
+          actualValue = null;
+        }
+
+        // assign parameter example(s) as schema examples;
+        assignParameterExamples(pathVar);
+
+        mismatchObj = {
+          property: mismatchProperty,
+          transactionJsonPath: transactionPathPrefix,
+          schemaJsonPath: pathVar.pathPrefix,
+          reasonCode,
+          reason
+        };
+
+        if (options.suggestAvailableFixes) {
+          mismatchObj.suggestedFix = {
+            key: pathVar.name,
+            actualValue,
+            suggestedValue: {
+              key: pathVar.name,
+              value: safeSchemaFaker(pathVar.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
+                PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
+              description: getParameterDescription(pathVar)
+            }
+          };
+        }
+        mismatches.push(mismatchObj);
+      }
+    });
+
+    // res is an array of mismatches (also an array) from all checkValueAgainstSchema calls
+    return callback(null, _.concat(_.flatten(res), mismatches));
+  });
+}
+
+function checkQueryParams (requestUrl, transactionPathPrefix, schemaPath, components, options,
+  schemaCache, jsonSchemaDialect, callback) {
+  let parsedUrl = require('url').parse(requestUrl),
+    schemaParams = _.filter(schemaPath.parameters, (param) => { return param.in === 'query'; }),
+    requestQueryArray = [],
+    requestQueryParams = [],
+    resolvedSchemaParams = [],
+    mismatchProperty = 'QUERYPARAM',
+    securityParams,
+    urlMalformedError;
+
+  if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
+    return callback(null, []);
+  }
+
+  if (!parsedUrl.query) {
+    // null query params should be treated as lack of any params
+    parsedUrl.query = '';
+  }
+  requestQueryArray = parsedUrl.query.split('&');
+
+  _.each(requestQueryArray, (rqp) => {
+    let parts = rqp.split('='),
+      qKey, qVal;
+
+    try {
+      qKey = decodeURIComponent(parts[0]);
+      qVal = decodeURIComponent(parts.slice(1).join('='));
+    }
+    catch (err) {
+      return (urlMalformedError = err);
+    }
+
+
+    if (qKey.length > 0) {
+      requestQueryParams.push({
+        key: qKey,
+        value: qVal
+      });
+    }
+  });
+
+  if (urlMalformedError) {
+    return callback(urlMalformedError);
+  }
+
+  // filter out query params added by security schemes
+  securityParams = _.map(getSecurityParams(_.get(components, 'components'), 'query'), 'name');
+  requestQueryParams = _.filter(requestQueryParams, (pQuery) => {
+    return !_.includes(securityParams, pQuery.key);
+  });
+
+  // resolve schema params
+  // below will make sure for exploded params actual schema of property present in collection is present
+  _.forEach(schemaParams, (param) => {
+    let pathPrefix = param.pathPrefix,
+      paramSchema = deref.resolveRefs(_.cloneDeep(param.schema), PARAMETER_SOURCE.REQUEST, components, {}),
+      { style, explode } = getParamSerialisationInfo(param, PARAMETER_SOURCE.REQUEST, components),
+      isPropSeparable = _.includes(['form', 'deepObject'], style);
+
+    if (isPropSeparable && paramSchema.type === 'array' && explode) {
+      /**
+       * avoid validation of complex array type param as OAS doesn't define serialisation
+       * of Array with deepObject style
+       */
+      if (!_.includes(['array', 'object'], _.get(paramSchema, 'items.type'))) {
+        // add schema of corresponding items instead array
+        resolvedSchemaParams.push(_.assign({}, param, {
+          schema: _.get(paramSchema, 'items'),
+          isResolvedParam: true
+        }));
+      }
+    }
+    else if (isPropSeparable && paramSchema.type === 'object' && explode) {
+      // resolve all child params of parent param with deepObject style
+      if (style === 'deepObject') {
+        resolvedSchemaParams = _.concat(resolvedSchemaParams, extractChildParamSchema(paramSchema,
+          param.name, { required: _.get(param, 'required'), pathPrefix, description: _.get(param, 'description') }));
+      }
+      else {
+        // add schema of all properties instead entire object
+        _.forEach(_.get(paramSchema, 'properties', {}), (propSchema, propName) => {
+          resolvedSchemaParams.push({
+            name: propName,
+            schema: propSchema,
+            required: _.get(param, 'required') || false,
+            description: _.get(param, 'description'),
+            isResolvedParam: true,
+            pathPrefix
+          });
+        });
+      }
+    }
+    else {
+      resolvedSchemaParams.push(param);
+    }
+  });
+
+  return async.map(requestQueryParams, (pQuery, cb) => {
+    let mismatches = [],
+      index = _.findIndex(requestQueryParams, pQuery),
+      resolvedParamValue = pQuery.value;
+
+    const schemaParam = _.find(resolvedSchemaParams, (param) => { return param.name === pQuery.key; });
+
+    if (!schemaParam) {
+      // skip validation of complex array params
+      if (isParamComplexArray(pQuery.key)) {
+        return cb(null, mismatches);
+      }
+      if (options.showMissingInSchemaErrors) {
+        mismatches.push({
+          property: mismatchProperty,
+          transactionJsonPath: transactionPathPrefix + `[${index}]`,
+          schemaJsonPath: null,
+          reasonCode: 'MISSING_IN_SCHEMA',
+          reason: `The query parameter ${pQuery.key} was not found in the schema`
+        });
+      }
+      return cb(null, mismatches);
+    }
+
+    // assign parameter example(s) as schema examples;
+    assignParameterExamples(schemaParam);
+
+    if (!schemaParam.isResolvedParam) {
+      resolvedParamValue = deserialiseParamValue(schemaParam, pQuery.value, PARAMETER_SOURCE.REQUEST,
+        components, schemaCache);
+    }
+
+    // query found in spec. check query's schema
+    setTimeout(() => {
+      if (!schemaParam.schema) {
+        // no errors to show if there's no schema present in the spec
+        return cb(null, []);
+      }
+      checkValueAgainstSchema(mismatchProperty,
+        transactionPathPrefix + `[${index}].value`,
+        pQuery.key,
+        resolvedParamValue,
+        schemaParam.pathPrefix + '[?(@.name==\'' + schemaParam.name + '\')]',
+        schemaParam.schema,
+        PARAMETER_SOURCE.REQUEST,
+        components, options, schemaCache, jsonSchemaDialect, cb
+      );
+    }, 0);
+  }, (err, res) => {
+    let mismatches = [],
+      mismatchObj;
+
+    _.each(_.filter(resolvedSchemaParams, (q) => { return q.required; }), (qp) => {
+      if (!_.find(requestQueryParams, (param) => {
+        return param.key === qp.name;
+      })) {
+
+        // assign parameter example(s) as schema examples;
+        assignParameterExamples(qp);
+
+        mismatchObj = {
+          property: mismatchProperty,
+          transactionJsonPath: transactionPathPrefix,
+          schemaJsonPath: qp.pathPrefix + '[?(@.name==\'' + qp.name + '\')]',
+          reasonCode: 'MISSING_IN_REQUEST',
+          reason: `The required query parameter "${qp.name}" was not found in the transaction`
+        };
+
+        if (options.suggestAvailableFixes) {
+          mismatchObj.suggestedFix = {
+            key: qp.name,
+            actualValue: null,
+            suggestedValue: {
+              key: qp.name,
+              value: safeSchemaFaker(qp.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
+                PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
+              description: getParameterDescription(qp)
+            }
+          };
+        }
+        mismatches.push(mismatchObj);
+      }
+    });
+    return callback(null, _.concat(_.flatten(res), mismatches));
+  });
+}
+
+function checkRequestHeaders (headers, transactionPathPrefix, schemaPathPrefix, schemaPath,
+  components, options, schemaCache, jsonSchemaDialect, callback) {
+  let schemaHeaders = _.filter(schemaPath.parameters, (param) => { return param.in === 'header'; }),
+    // key name of headers which are added by security schemes
+    securityHeaders = _.map(getSecurityParams(_.get(components, 'components'), 'header'), 'name'),
+    // filter out headers for following cases
+    reqHeaders = _.filter(headers, (header) => {
+      // 1. which need explicit handling according to schema (other than parameters object)
+      // 2. which are added by security schemes
+      return !_.includes(IMPLICIT_HEADERS, _.toLower(_.get(header, 'key'))) &&
+        !_.includes(securityHeaders, header.key);
+    }),
+    mismatchProperty = 'HEADER';
+
+  if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
+    return callback(null, []);
+  }
+  // 1. for each header, find relevant schemaPath property
+
+  return async.map(reqHeaders, (pHeader, cb) => {
+    let mismatches = [],
+      resolvedParamValue,
+      index = _.findIndex(headers, pHeader); // find actual index from collection request headers
+
+    const schemaHeader = _.find(schemaHeaders, (header) => { return header.name === pHeader.key; });
+
+    if (!schemaHeader) {
+      // no schema header found
+      if (options.showMissingInSchemaErrors) {
+        mismatches.push({
+          property: mismatchProperty,
+          transactionJsonPath: transactionPathPrefix + `[${index}]`,
+          schemaJsonPath: null,
+          reasonCode: 'MISSING_IN_SCHEMA',
+          reason: `The header ${pHeader.key} was not found in the schema`
+        });
+      }
+      return cb(null, mismatches);
+    }
+
+    // assign parameter example(s) as schema examples;
+    assignParameterExamples(schemaHeader);
+
+    resolvedParamValue = deserialiseParamValue(schemaHeader, pHeader.value, PARAMETER_SOURCE.REQUEST,
+      components, schemaCache);
+
+    // header found in spec. check header's schema
+    setTimeout(() => {
+      if (!schemaHeader.schema) {
+        // no errors to show if there's no schema present in the spec
+        return cb(null, []);
+      }
+      checkValueAgainstSchema(mismatchProperty,
+        transactionPathPrefix + `[${index}].value`,
+        pHeader.key,
+        resolvedParamValue,
+        schemaHeader.pathPrefix + '[?(@.name==\'' + schemaHeader.name + '\')]',
+        schemaHeader.schema,
+        PARAMETER_SOURCE.REQUEST,
+        components, options, schemaCache, jsonSchemaDialect, cb
+      );
+    }, 0);
+  }, (err, res) => {
+    let mismatches = [],
+      mismatchObj,
+      reqBody = _.get(schemaPath, 'requestBody'),
+      contentHeaderMismatches = [];
+
+    // resolve $ref in request body if present
+    if (reqBody) {
+      if (_.has(reqBody, '$ref')) {
+        reqBody = getRefObject(reqBody.$ref, components, options);
+      }
+
+      contentHeaderMismatches = checkContentTypeHeader(headers, transactionPathPrefix,
+        schemaPathPrefix + '.requestBody.content', _.get(reqBody, 'content'),
+        mismatchProperty, options);
+    }
+    _.each(_.filter(schemaHeaders, (h) => {
+      // exclude non-required and implicit header from further validation
+      return h.required && !_.includes(IMPLICIT_HEADERS, _.toLower(h.name));
+    }), (header) => {
+      if (!_.find(reqHeaders, (param) => { return param.key === header.name; })) {
+
+        // assign parameter example(s) as schema examples;
+        assignParameterExamples(header);
+
+        mismatchObj = {
+          property: mismatchProperty,
+          transactionJsonPath: transactionPathPrefix,
+          schemaJsonPath: header.pathPrefix + '[?(@.name==\'' + header.name + '\')]',
+          reasonCode: 'MISSING_IN_REQUEST',
+          reason: `The required header "${header.name}" was not found in the transaction`
+        };
+
+        if (options.suggestAvailableFixes) {
+          mismatchObj.suggestedFix = {
+            key: header.name,
+            actualValue: null,
+            suggestedValue: {
+              key: header.name,
+              value: safeSchemaFaker(header.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
+                PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
+              description: getParameterDescription(header)
+            }
+          };
+        }
+        mismatches.push(mismatchObj);
+      }
+    });
+    return callback(null, _.concat(contentHeaderMismatches, _.flatten(res), mismatches));
+  });
+}
+
+function checkResponseHeaders (schemaResponse, headers, transactionPathPrefix, schemaPathPrefix,
+  components, options, schemaCache, jsonSchemaDialect, callback) {
+  // 0. Need to find relevant response from schemaPath.responses
+  let schemaHeaders,
+    // filter out headers which need explicit handling according to schema (other than parameters object)
+    resHeaders = _.filter(headers, (header) => {
+      return !_.includes(IMPLICIT_HEADERS, _.toLower(_.get(header, 'key')));
+    }),
+    mismatchProperty = 'RESPONSE_HEADER';
+
+  if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
+    return callback(null, []);
+  }
+
+  if (!schemaResponse) {
+    // no default response found, we can't call it a mismatch
+    return callback(null, []);
+  }
+
+  schemaHeaders = schemaResponse.headers;
+
+  return async.map(resHeaders, (pHeader, cb) => {
+    let mismatches = [],
+      index = _.findIndex(headers, pHeader); // find actual index from collection response headers
+
+    const schemaHeader = _.get(schemaHeaders, pHeader.key);
+
+    if (!schemaHeader) {
+      // no schema header found
+      if (options.showMissingInSchemaErrors) {
+        mismatches.push({
+          property: mismatchProperty,
+          transactionJsonPath: transactionPathPrefix + `[${index}]`,
+          schemaJsonPath: schemaPathPrefix + '.headers',
+          reasonCode: 'MISSING_IN_SCHEMA',
+          reason: `The header ${pHeader.key} was not found in the schema`
+        });
+      }
+      return cb(null, mismatches);
+    }
+
+    // assign parameter example(s) as schema examples;
+    assignParameterExamples(schemaHeader);
+
+    // header found in spec. check header's schema
+    setTimeout(() => {
+      if (!schemaHeader.schema) {
+        // no errors to show if there's no schema present in the spec
+        return cb(null, []);
+      }
+      return checkValueAgainstSchema(mismatchProperty,
+        transactionPathPrefix + `[${index}].value`,
+        pHeader.key,
+        pHeader.value,
+        schemaPathPrefix + '.headers[' + pHeader.key + ']',
+        schemaHeader.schema,
+        PARAMETER_SOURCE.RESPONSE,
+        components, options, schemaCache, jsonSchemaDialect, cb
+      );
+    }, 0);
+  }, (err, res) => {
+    let mismatches = [],
+      mismatchObj,
+      contentHeaderMismatches = checkContentTypeHeader(headers, transactionPathPrefix,
+        schemaPathPrefix + '.content', _.get(schemaResponse, 'content'), mismatchProperty, options);
+
+    _.each(_.filter(schemaHeaders, (h, hName) => {
+      // exclude empty headers fron validation
+      if (_.isEmpty(h)) {
+        return false;
+      }
+      h.name = hName;
+      // exclude non-required and implicit header from further validation
+      return h.required && !_.includes(IMPLICIT_HEADERS, _.toLower(hName));
+    }), (header) => {
+      if (!_.find(resHeaders, (param) => { return param.key === header.name; })) {
+
+        // assign parameter example(s) as schema examples;
+        assignParameterExamples(header);
+
+        mismatchObj = {
+          property: mismatchProperty,
+          transactionJsonPath: transactionPathPrefix,
+          schemaJsonPath: schemaPathPrefix + '.headers[\'' + header.name + '\']',
+          reasonCode: 'MISSING_IN_REQUEST',
+          reason: `The required response header "${header.name}" was not found in the transaction`
+        };
+
+        if (options.suggestAvailableFixes) {
+          mismatchObj.suggestedFix = {
+            key: header.name,
+            actualValue: null,
+            suggestedValue: {
+              key: header.name,
+              value: safeSchemaFaker(header.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
+                PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
+              description: getParameterDescription(header)
+            }
+          };
+        }
+        mismatches.push(mismatchObj);
+      }
+    });
+    callback(null, _.concat(contentHeaderMismatches, _.flatten(res), mismatches));
+  });
+}
+
+// Only application/json and application/x-www-form-urlencoded is validated for now
+function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix, schemaPath,
+  components, options, schemaCache, jsonSchemaDialect, callback) {
+  // check for body modes
+  let jsonSchemaBody,
+    jsonContentType,
+    mismatchProperty = 'BODY';
+
+  if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
+    return callback(null, []);
+  }
+
+  // resolve $ref in requestBody object if present
+  if (!_.isEmpty(_.get(schemaPath, 'requestBody.$ref'))) {
+    schemaPath.requestBody = getRefObject(schemaPath.requestBody.$ref, components, options);
+  }
+
+  // get valid json content type
+  jsonContentType = getJsonContentType(_.get(schemaPath, 'requestBody.content', {}));
+  jsonSchemaBody = _.get(schemaPath, ['requestBody', 'content', jsonContentType, 'schema']);
+
+  if (requestBody && requestBody.mode === 'raw' && jsonSchemaBody) {
+    setTimeout(() => {
+      return checkValueAgainstSchema(mismatchProperty,
+        transactionPathPrefix,
+        null, // no param name for the request body
+        requestBody.raw,
+        schemaPathPrefix + '.requestBody.content[' + jsonContentType + '].schema',
+        jsonSchemaBody,
+        PARAMETER_SOURCE.REQUEST,
+        components,
+        _.extend({}, options, { shortValidationErrors: true }),
+        schemaCache,
+        jsonSchemaDialect,
+        callback
+      );
+    }, 0);
+  }
+  else if (requestBody && requestBody.mode === 'urlencoded') {
+    let urlencodedBodySchema = _.get(schemaPath, ['requestBody', 'content', URLENCODED, 'schema']),
+      resolvedSchemaParams = [],
+      pathPrefix = `${schemaPathPrefix}.requestBody.content[${URLENCODED}].schema`;
+
+    urlencodedBodySchema = deref.resolveRefs(urlencodedBodySchema, PARAMETER_SOURCE.REQUEST, components, {
+      resolveFor: PROCESSING_TYPE.VALIDATION,
+      stackLimit: options.stackLimit
+    });
+
+    // resolve each property as separate param similar to query parmas
+    _.forEach(_.get(urlencodedBodySchema, 'properties'), (propSchema, propName) => {
+      let resolvedProp = {
+          name: propName,
+          schema: propSchema,
+          in: 'query', // serialization follows same behaviour as query params
+          description: _.get(propSchema, 'description') || ''
+        },
+        encodingValue = _.get(schemaPath, ['requestBody', 'content', URLENCODED, 'encoding', propName]),
+        pSerialisationInfo,
+        isPropSeparable;
+
+      if (_.isObject(encodingValue)) {
+        _.has(encodingValue, 'style') && (resolvedProp.style = encodingValue.style);
+        _.has(encodingValue, 'explode') && (resolvedProp.explode = encodingValue.explode);
+      }
+
+      if (_.includes(_.get(urlencodedBodySchema, 'required'), propName)) {
+        resolvedProp.required = true;
+      }
+
+      pSerialisationInfo = getParamSerialisationInfo(resolvedProp, PARAMETER_SOURCE.REQUEST,
+        components);
+      isPropSeparable = _.includes(['form', 'deepObject'], pSerialisationInfo.style);
+
+      if (isPropSeparable && propSchema.type === 'array' && pSerialisationInfo.explode) {
+        /**
+         * avoid validation of complex array type param as OAS doesn't define serialisation
+         * of Array with deepObject style
+         */
+        if (!_.includes(['array', 'object'], _.get(propSchema, 'items.type'))) {
+          // add schema of corresponding items instead array
+          resolvedSchemaParams.push(_.assign({}, resolvedProp, {
+            schema: _.get(propSchema, 'items'),
+            isResolvedParam: true
+          }));
+        }
+      }
+      else if (isPropSeparable && propSchema.type === 'object' && pSerialisationInfo.explode) {
+        // resolve all child params of parent param with deepObject style
+        if (pSerialisationInfo.style === 'deepObject') {
+          resolvedSchemaParams = _.concat(resolvedSchemaParams, extractChildParamSchema(propSchema,
+            propName, { required: resolvedProp.required || false, description: resolvedProp.description }));
+        }
+        else {
+          // add schema of all properties instead entire object
+          _.forEach(_.get(propSchema, 'properties', {}), (value, key) => {
+            resolvedSchemaParams.push({
+              name: key,
+              schema: value,
+              isResolvedParam: true,
+              required: resolvedProp.required || false,
+              description: resolvedProp.description
+            });
+          });
+        }
+      }
+      else {
+        resolvedSchemaParams.push(resolvedProp);
+      }
+    });
+
+    return async.map(requestBody.urlencoded, (uParam, cb) => {
+      let mismatches = [],
+        index = _.findIndex(requestBody.urlencoded, uParam),
+        resolvedParamValue = uParam.value;
+
+      const schemaParam = _.find(resolvedSchemaParams, (param) => { return param.name === uParam.key; });
+
+      if (!schemaParam) {
+        // skip validation of complex array params
+        if (isParamComplexArray(uParam.key)) {
+          return cb(null, mismatches);
+        }
+        if (options.showMissingInSchemaErrors) {
+          mismatches.push({
+            property: mismatchProperty,
+            transactionJsonPath: transactionPathPrefix + `.urlencoded[${index}]`,
+            schemaJsonPath: null,
+            reasonCode: 'MISSING_IN_SCHEMA',
+            reason: `The Url Encoded body param "${uParam.key}" was not found in the schema`
+          });
+        }
+        return cb(null, mismatches);
+      }
+
+      if (!schemaParam.isResolvedParam) {
+        resolvedParamValue = deserialiseParamValue(schemaParam, uParam.value, PARAMETER_SOURCE.REQUEST,
+          components, schemaCache);
+      }
+      // store value of transaction to use in mismatch object
+      schemaParam.actualValue = uParam.value;
+
+      // param found in spec. check param's schema
+      setTimeout(() => {
+        if (!schemaParam.schema) {
+          // no errors to show if there's no schema present in the spec
+          return cb(null, []);
+        }
+        checkValueAgainstSchema(mismatchProperty,
+          transactionPathPrefix + `.urlencoded[${index}].value`,
+          uParam.key,
+          resolvedParamValue,
+          pathPrefix + '.properties[' + schemaParam.name + ']',
+          schemaParam.schema,
+          PARAMETER_SOURCE.REQUEST,
+          components, options, schemaCache, jsonSchemaDialect, cb
+        );
+      }, 0);
+    }, (err, res) => {
+      let mismatches = [],
+        mismatchObj,
+        // fetches property name from schem path
+        getPropNameFromSchemPath = (schemaPath) => {
+          let regex = /\.properties\[(.+)\]/gm;
+          return _.last(regex.exec(schemaPath));
+        };
+
+      // update actual value and suggested value from JSON to serialized strings
+      _.forEach(_.flatten(res), (mismatchObj) => {
+        if (!_.isEmpty(mismatchObj)) {
+          let propertyName = getPropNameFromSchemPath(mismatchObj.schemaJsonPath),
+            schemaParam = _.find(resolvedSchemaParams, (param) => { return param.name === propertyName; }),
+            serializedParamValue;
+
+          if (schemaParam) {
+            // serialize param value (to be used in suggested value)
+            serializedParamValue = _.get(convertParamsWithStyle(schemaParam, _.get(mismatchObj,
+              'suggestedFix.suggestedValue'), PARAMETER_SOURCE.REQUEST, components, schemaCache, options),
+            '[0].value');
+            _.set(mismatchObj, 'suggestedFix.actualValue', schemaParam.actualValue);
+            _.set(mismatchObj, 'suggestedFix.suggestedValue', serializedParamValue);
+          }
+        }
+      });
+
+      _.each(resolvedSchemaParams, (uParam) => {
+        // report mismatches only for required properties
+        if (!_.find(requestBody.urlencoded, (param) => { return param.key === uParam.name; }) && uParam.required) {
+          mismatchObj = {
+            property: mismatchProperty,
+            transactionJsonPath: transactionPathPrefix + '.urlencoded',
+            schemaJsonPath: pathPrefix + '.properties[' + uParam.name + ']',
+            reasonCode: 'MISSING_IN_REQUEST',
+            reason: `The Url Encoded body param "${uParam.name}" was not found in the transaction`
+          };
+
+          if (options.suggestAvailableFixes) {
+            mismatchObj.suggestedFix = {
+              key: uParam.name,
+              actualValue: null,
+              suggestedValue: {
+                key: uParam.name,
+                value: safeSchemaFaker(uParam.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
+                  PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
+                description: getParameterDescription(uParam)
+              }
+            };
+          }
+          mismatches.push(mismatchObj);
+        }
+      });
+      return callback(null, _.concat(_.flatten(res), mismatches));
+    });
+  }
+  else {
+    return callback(null, []);
+  }
+}
+
+function checkResponseBody (schemaResponse, body, transactionPathPrefix, schemaPathPrefix,
+  components, options, schemaCache, jsonSchemaDialect, callback) {
+  let schemaContent,
+    jsonContentType,
+    mismatchProperty = 'RESPONSE_BODY';
+
+  if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
+    return callback(null, []);
+  }
+
+  // get valid json content type
+  jsonContentType = getJsonContentType(_.get(schemaResponse, 'content', {}));
+  schemaContent = _.get(schemaResponse, ['content', jsonContentType, 'schema']);
+
+  if (!schemaContent) {
+    // no specific or default response with application/json
+    // return callback(null, [{
+    //   property: mismatchProperty,
+    //   transactionJsonPath: transactionPathPrefix,
+    //   schemaJsonPath: null,
+    //   reasonCode: 'BODY_SCHEMA_NOT_FOUND',
+    //   reason: 'No JSON schema found for this response'
+    // }]);
+
+    // cannot show mismatches if the schema didn't have any application/JSON response
+    return callback(null, []);
+  }
+
+  setTimeout(() => {
+    return checkValueAgainstSchema(mismatchProperty,
+      transactionPathPrefix,
+      null, // no param name for the response body
+      body,
+      schemaPathPrefix + '.content[' + jsonContentType + '].schema',
+      schemaContent,
+      PARAMETER_SOURCE.RESPONSE,
+      components,
+      _.extend({}, options, { shortValidationErrors: true }),
+      schemaCache,
+      jsonSchemaDialect,
+      callback
+    );
+  }, 0);
+}
+
+function checkResponses (responses, transactionPathPrefix, schemaPathPrefix, schemaPath,
+  components, options, schemaCache, jsonSchemaDialect, cb) {
+  // responses is an array of repsonses recd. for one Postman request
+  // we've already determined the schemaPath against which all responses need to be validated
+  // loop through all responses
+  // for each response, find the appropriate response from schemaPath, and then validate response body and headers
+  async.map(responses, (response, responseCallback) => {
+    let thisResponseCode = response.code,
+      thisSchemaResponse = _.get(schemaPath, ['responses', thisResponseCode]),
+      responsePathPrefix = thisResponseCode;
+    // find this code from the schemaPath
+    if (!thisSchemaResponse) {
+      // could not find an appropriate response for this code. check default?
+      thisSchemaResponse = _.get(schemaPath, ['responses', 'default']);
+      responsePathPrefix = 'default';
+    }
+
+    // resolve $ref in response object if present
+    if (!_.isEmpty(_.get(thisSchemaResponse, '$ref'))) {
+      thisSchemaResponse = getRefObject(thisSchemaResponse.$ref, components, options);
+    }
+
+    // resolve $ref in all header objects if present
+    _.forEach(_.get(thisSchemaResponse, 'headers'), (header) => {
+      if (_.has(header, '$ref')) {
+        _.assign(header, getRefObject(header.$ref, components, options));
+        _.unset(header, '$ref');
+      }
+    });
+
+    if (!thisSchemaResponse) {
+      // still didn't find a response
+      responseCallback(null);
+    }
+    else {
+      // check headers and body
+      async.parallel({
+        headers: (cb) => {
+          checkResponseHeaders(thisSchemaResponse, response.header,
+            transactionPathPrefix + '[' + response.id + '].header',
+            schemaPathPrefix + '.responses.' + responsePathPrefix,
+            components, options, schemaCache, jsonSchemaDialect, cb);
+        },
+        body: (cb) => {
+          // assume it's JSON at this point
+          checkResponseBody(thisSchemaResponse, response.body,
+            transactionPathPrefix + '[' + response.id + '].body',
+            schemaPathPrefix + '.responses.' + responsePathPrefix,
+            components, options, schemaCache, jsonSchemaDialect, cb);
+        }
+      }, (err, result) => {
+        return responseCallback(null, {
+          id: response.id,
+          matched: (result.body.length === 0 && result.headers.length === 0),
+          mismatches: result.body.concat(result.headers)
+        });
+      });
+    }
+  }, (err, result) => {
+    var retVal = _.keyBy(_.reject(result, (ai) => { return !ai; }), 'id');
+    return cb(null, retVal);
+  });
+}
+
+module.exports = {
+  validateTransaction: function (transaction, { schema, options, componentsAndPaths, schemaCache }, callback) {
+    if (!transaction.id || !transaction.request) {
+      return callback(new Error('All transactions must have `id` and `request` properties.'));
+    }
+
+    const jsonSchemaDialect = schema.jsonSchemaDialect;
+
+    let requestUrl = transaction.request.url,
+      matchedPaths,
+      matchedEndpoints = [];
+
+    if (typeof requestUrl === 'object') {
+
+      // SDK.Url.toString() resolves pathvar to empty string if value is empty
+      // so update path variable value to same as key in such cases
+      _.forEach(requestUrl.variable, (pathVar) => {
+        if (_.isNil(pathVar.value) || (typeof pathVar.value === 'string' && _.trim(pathVar.value).length === 0)) {
+          pathVar.value = ':' + pathVar.key;
+        }
+      });
+
+      // SDK URL object. Get raw string representation.
+      requestUrl = (new sdk.Url(requestUrl)).toString();
+    }
+
+    // 1. Look at transaction.request.URL + method, and find matching request from schema
+    matchedPaths = findMatchingRequestFromSchema(
+      transaction.request.method,
+      requestUrl,
+      schema,
+      options
+    );
+
+    if (!matchedPaths.length) {
+      // No matching paths found
+      return callback(null, {
+        requestId: transaction.id,
+        endpoints: []
+      });
+    }
+
+    return setTimeout(() => {
+      // 2. perform validation for each identified matchedPath (schema endpoint)
+      return async.map(matchedPaths, (matchedPath, pathsCallback) => {
+        const transactionPathVariables = _.get(transaction, 'request.url.variable', []),
+          localServers = matchedPath.path.hasOwnProperty('servers') ?
+            matchedPath.path.servers :
+            [],
+          serversPathVars = [...getServersPathVars(localServers), ...getServersPathVars(schema.servers)],
+          isNotAServerPathVar = (pathVarName) => {
+            return !serversPathVars.includes(pathVarName);
+          };
+
+        matchedPath.unmatchedVariablesFromTransaction = [];
+        // override path variable value with actual value present in transaction
+        // as matched pathvariable contains key as value, as it is generated from url only
+        _.forEach(matchedPath.pathVariables, (pathVar) => {
+          const mappedPathVar = _.find(transactionPathVariables, (transactionPathVar) => {
+            let matched = transactionPathVar.key === pathVar.key;
+            if (
+              !matched &&
+              isNotAServerPathVar(transactionPathVar.key) &&
+              !matchedPath.unmatchedVariablesFromTransaction.includes(transactionPathVar)
+            ) {
+              matchedPath.unmatchedVariablesFromTransaction.push(transactionPathVar);
+            }
+            return matched;
+          });
+          pathVar.value = _.get(mappedPathVar, 'value', pathVar.value);
+          // set _varMatched flag which represents if variable was found in transaction or not
+          pathVar._varMatched = !_.isEmpty(mappedPathVar);
+        });
+
+        // resolve $ref in all parameter objects if present
+        _.forEach(_.get(matchedPath, 'path.parameters'), (param) => {
+          if (param.hasOwnProperty('$ref')) {
+            _.assign(param, getRefObject(param.$ref, componentsAndPaths, options));
+            _.unset(param, '$ref');
+          }
+        });
+
+        matchedEndpoints.push(matchedPath.jsonPath);
+        // 3. validation involves checking these individual properties
+        async.parallel({
+          metadata: function(cb) {
+            checkMetadata(transaction, '$', matchedPath.path, matchedPath.name, options, cb);
+          },
+          path: function(cb) {
+            checkPathVariables(matchedPath, '$.request.url.variable', matchedPath.path,
+              componentsAndPaths, options, schemaCache, jsonSchemaDialect, cb);
+          },
+          queryparams: function(cb) {
+            checkQueryParams(requestUrl, '$.request.url.query', matchedPath.path,
+              componentsAndPaths, options, schemaCache, jsonSchemaDialect, cb);
+          },
+          headers: function(cb) {
+            checkRequestHeaders(transaction.request.header, '$.request.header', matchedPath.jsonPath,
+              matchedPath.path, componentsAndPaths, options, schemaCache, jsonSchemaDialect, cb);
+          },
+          requestBody: function(cb) {
+            checkRequestBody(transaction.request.body, '$.request.body', matchedPath.jsonPath,
+              matchedPath.path, componentsAndPaths, options, schemaCache, jsonSchemaDialect, cb);
+          },
+          responses: function (cb) {
+            checkResponses(transaction.response, '$.responses', matchedPath.jsonPath,
+              matchedPath.path, componentsAndPaths, options, schemaCache, jsonSchemaDialect, cb);
+          }
+        }, (err, result) => {
+          let allMismatches = _.concat(result.metadata, result.queryparams, result.headers, result.path,
+              result.requestBody),
+            responseMismatchesPresent = false,
+            retVal;
+
+          // adding mistmatches from responses
+          _.each(result.responses, (response) => {
+            if (_.get(response, 'mismatches', []).length > 0) {
+              responseMismatchesPresent = true;
+              return false;
+            }
+          });
+
+          retVal = {
+            matched: (allMismatches.length === 0 && !responseMismatchesPresent),
+            endpointMatchScore: matchedPath.score,
+            endpoint: matchedPath.name,
+            mismatches: allMismatches,
+            responses: result.responses
+          };
+
+          pathsCallback(null, retVal);
+        });
+      }, (err, result) => {
+        // only need to return endpoints that have the joint-highest score
+        let highestScore = -Infinity,
+          bestResults;
+        result.forEach((endpoint) => {
+          if (endpoint.endpointMatchScore > highestScore) {
+            highestScore = endpoint.endpointMatchScore;
+          }
+        });
+        bestResults = _.filter(result, (ep) => {
+          return ep.endpointMatchScore === highestScore;
+        });
+
+        callback(err, {
+          requestId: transaction.id,
+          endpoints: bestResults
+        });
+      });
+    }, 0);
+  },
+
+  /**
+   * @param {*} schema OpenAPI spec
+   * @param {Array} matchedEndpoints - All matched endpoints
+   * @param {object} components - components defined in the OAS spec. These are used to
+   * resolve references while generating params.
+   * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
+   * @param {object} schemaCache - object storing schemaFaker and schmeResolution caches
+   * @returns {Array} - Array of all MISSING_ENDPOINT objects
+   */
+  getMissingSchemaEndpoints: function (schema, matchedEndpoints, components, options, schemaCache) {
+    let endpoints = [],
+      schemaPaths = schema.paths,
+      rootCollectionVariables,
+      schemaJsonPath;
+
+    // collection variables generated for resolving for baseUrl and variables
+    rootCollectionVariables = convertToPmCollectionVariables(
+      schema.baseUrlVariables,
+      'baseUrl',
+      schema.baseUrl
+    );
+
+    _.forEach(schemaPaths, (schemaPathObj, schemaPath) => {
+      _.forEach(_.keys(schemaPathObj), (pathKey) => {
+        schemaJsonPath = `$.paths[${schemaPath}].${_.toLower(pathKey)}`;
+        let operationItem = _.get(schemaPathObj, pathKey) || {},
+          shouldValidateDeprecated = shouldAddDeprecatedOperation(operationItem, options);
+        if (METHODS.includes(pathKey) && !matchedEndpoints.includes(schemaJsonPath) &&
+        shouldValidateDeprecated) {
+          let mismatchObj = {
+            property: 'ENDPOINT',
+            transactionJsonPath: null,
+            schemaJsonPath,
+            reasonCode: 'MISSING_ENDPOINT',
+            reason: `The endpoint "${_.toUpper(pathKey)} ${schemaPath}" is missing in collection`,
+            endpoint: _.toUpper(pathKey) + ' ' + schemaPath
+          };
+
+          if (options.suggestAvailableFixes) {
+            let operationItem = _.get(schemaPathObj, pathKey) || {},
+              convertedRequest,
+              variables = rootCollectionVariables,
+              path = schemaPath,
+              request;
+
+            // add common parameters of path level
+            operationItem.parameters = getRequestParams(operationItem.parameters,
+              _.get(schemaPathObj, 'parameters'), components, options);
+
+            // discard the leading slash, if it exists
+            if (path[0] === '/') {
+              path = path.substring(1);
+            }
+
+            // override root level collection variables (baseUrl and vars) with path level server url and vars if exists
+            // storing common path/collection vars from the server object at the path item level
+            if (!_.isEmpty(_.get(schemaPathObj, 'servers'))) {
+              let pathLevelServers = schemaPathObj.servers;
+
+              // add path level server object's URL as collection variable
+              variables = convertToPmCollectionVariables(
+                pathLevelServers[0].variables, // these are path variables in the server block
+                utils.fixPathVariableName(path), // the name of the variable
+                utils.fixPathVariablesInUrl(pathLevelServers[0].url)
+              );
+            }
+
+            request = {
+              name: operationItem.summary || operationItem.description,
+              method: pathKey,
+              path: schemaPath[0] === '/' ? schemaPath.substring(1) : schemaPath,
+              properties: operationItem,
+              type: 'item',
+              servers: _.isEmpty(_.get(schemaPathObj, 'servers'))
+            };
+
+            // convert request to collection item and store collection variables
+            convertedRequest = schemaUtilsV1.convertRequestToItem(schema, request,
+              components, options, schemaCache, variables);
+
+            mismatchObj.suggestedFix = {
+              key: pathKey,
+              actualValue: null,
+              // Not adding colloection variables for now
+              suggestedValue: {
+                request: convertedRequest,
+                variables: _.values(variables)
+              }
+            };
+          }
+
+          endpoints.push(mismatchObj);
+        }
+      });
+    });
+    return endpoints;
+  }
+};
