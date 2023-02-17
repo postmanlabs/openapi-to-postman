@@ -25,7 +25,8 @@ let _ = require('lodash'),
             type: 'request',
             meta: {
               path: path,
-              method: method
+              method: method,
+              pathIdentifier: pathSplit[0]
             },
             data: {}
           });
@@ -36,19 +37,23 @@ let _ = require('lodash'),
 
       else {
         _.forEach(pathSplit, function (p, index) {
+          let previousPathIdentified = pathSplit.slice(0, index).join('/'),
+            pathIdentifier = pathSplit.slice(0, index + 1).join('/');
+
           /**
            * Always first try to find the node if it already exists.
            * if yes, bail out nothing is needed to be done.
            */
-          if (tree.hasNode(`path:${p}`)) {
+          if (tree.hasNode(`path:${pathIdentifier}`)) {
             return;
           }
 
           else {
-            tree.setNode(`path:${p}`, {
+            tree.setNode(`path:${pathIdentifier}`, {
               type: 'folder',
               meta: {
-                path: p
+                path: p,
+                pathIdentifier: pathIdentifier
               },
               data: {}
             });
@@ -60,7 +65,7 @@ let _ = require('lodash'),
              * If after the split we have more than one paths, then we need
              * to add to the previous node.
              */
-            tree.setEdge(index === 0 ? 'root:collection' : `path:${[pathSplit[index - 1]]}`, `path:${p}`);
+            tree.setEdge(index === 0 ? 'root:collection' : `path:${previousPathIdentified}`, `path:${pathIdentifier}`);
           }
         });
 
@@ -69,16 +74,21 @@ let _ = require('lodash'),
          */
 
         _.forEach(methods, function (data, method) {
-          tree.setNode(`path:${_.last(pathSplit)}:${method}`, {
+          // join till the last path i.e. the folder.
+          let previousPathIdentified = pathSplit.slice(0, (pathSplit.length)).join('/'),
+            pathIdentifier = `${pathSplit.join('/')}:${method}`;
+
+          tree.setNode(`path:${pathIdentifier}`, {
             type: 'request',
             data: {},
             meta: {
               path: path,
-              method: method
+              method: method,
+              pathIdentifier: pathIdentifier
             }
           });
 
-          tree.setEdge(`path:${_.last(pathSplit)}`, `path:${_.last(pathSplit)}:${method}`);
+          tree.setEdge(`path:${previousPathIdentified}`, `path:${pathIdentifier}`);
         });
       }
     });
