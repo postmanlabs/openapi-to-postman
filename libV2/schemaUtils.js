@@ -1080,7 +1080,7 @@ let QUERYPARAM = 'query',
         break;
       }
       default : {
-        reqName = operationItem[options.requestNameSource] || '';
+        reqName = operationItem[requestNameSource] || '';
         break;
       }
     }

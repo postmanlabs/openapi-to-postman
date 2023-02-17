@@ -34,9 +34,12 @@ module.exports = {
       switch (node.type) {
         case 'collection': {
           // dummy collection to be generated.
-          collection = new sdk.Collection(generateCollectionFromOpenAPI(context, node).data);
+          const { data, variables } = generateCollectionFromOpenAPI(context, node);
+          collection = new sdk.Collection(data);
 
           collection = collection.toJSON();
+
+          collection.variable.push(...variables);
 
           // set the ref for the collection in the node.
           collectionTree.setNode(nodeIdentified,

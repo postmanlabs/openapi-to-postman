@@ -53,6 +53,29 @@ const _ = require('lodash'),
       return '{' + p1 + '}';
     };
     return _.isString(url) ? url.replace(/(\{[^\/\{\}]+\})/g, replacer) : '';
+  },
+
+  resolveCollectionVariablesForBaseUrlFromServersObject = (serverObject) => {
+    if (!serverObject) {
+      return [];
+    }
+
+    let baseUrl = fixPathVariablesInUrl(serverObject.url),
+      collectionVariables = [];
+
+    _.forOwn(serverObject.variables, (value, key) => {
+      collectionVariables.push({
+        key,
+        value: value.default || ''
+      });
+    });
+
+    collectionVariables.push({
+      key: 'baseUrl',
+      value: baseUrl
+    });
+
+    return collectionVariables;
   };
 
 
@@ -68,6 +91,8 @@ module.exports = function ({ openapi }) {
   // Fix {scheme} and {path} vars in the URL to :scheme and :path
   openapi.baseUrl = fixPathVariablesInUrl(_.get(openapi, 'servers.0.url', '{{baseURL}}'));
 
+  const collectionVariables = resolveCollectionVariablesForBaseUrlFromServersObject(_.get(openapi, 'servers.0'));
+
   return {
     data: {
       info: {
@@ -75,6 +100,7 @@ module.exports = function ({ openapi }) {
         description: getCollectionDescription(openapi)
       },
       auth: generateAuthrForCollectionFromOpenAPI(openapi, openapi.security)
-    }
+    },
+    variables: collectionVariables
   };
 };
