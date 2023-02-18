@@ -14,7 +14,7 @@ module.exports = {
      * Start generating the Bare bone tree that should exist for the schema
      */
 
-    let collectionTree = generateSkeletonTreeFromOpenAPI(context.openapi, context.computedOptions.folderStrategy);
+    let collectionTree = generateSkeletonTreeFromOpenAPI(context.openapi, context.computedOptions);
 
     /**
      * Do post order traversal so we get the request nodes first and generate the request object
@@ -51,7 +51,7 @@ module.exports = {
         }
 
         case 'folder': {
-          // generate the request form the node.
+          // generate the folder form the node.
           let folder = generateFolderFromOpenAPI(context, node).data || {};
 
           // find the parent of the folder in question / root collection.
@@ -123,6 +123,39 @@ module.exports = {
             Object.assign(node, {
               ref: _.last(parent.ref.item)
             }));
+
+          break;
+        }
+
+        case 'webhook~folder': {
+          // generate the request form the node.
+          let folder = generateFolderFromOpenAPI(context, node).data || {};
+
+          // find the parent of the folder in question / root collection.
+          let parent = collectionTree.predecessors(nodeIdentified);
+
+          // this is directed graph, and hence have only one parent.
+          parent = collectionTree.node(parent && parent[0]);
+
+          // if the item construct does not exist add and initialize it to zero
+          if (!parent.ref.item) {
+            parent.ref.item = [];
+          }
+
+          // push the folder in the item that is in question
+          parent.ref.item.push(folder);
+
+          // set the ref for the newly created folder in this.
+          collectionTree.setNode(nodeIdentified,
+            Object.assign(node, {
+              ref: _.last(parent.ref.item)
+            }));
+
+          break;
+        }
+
+        case 'webhook~request': {
+          // @avishek
 
           break;
         }
