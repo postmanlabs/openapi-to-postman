@@ -70,7 +70,7 @@ schemaFaker.option({
   optionalsProbability: 1.0, // always add optional fields
   maxLength: 256,
   minItems: 1, // for arrays
-  maxItems: 20, // limit on maximum number of items faked for (type: arrray)
+  maxItems: 20, // limit on maximum number of items faked for (type: array)
   useDefaultValue: true,
   ignoreMissingRefs: true,
   avoidExampleItemsLength: true // option to avoid validating type array schema example's minItems and maxItems props.
@@ -455,7 +455,7 @@ function getParameterDescription (parameter) {
  * @param {String} parameterSource - Specifies whether the schema being faked is from a request or response.
  * @param {Object} components - OpenAPI components defined in the OAS spec. These are used to
  *  resolve references while generating params.
- * @param {Object} schemaCache - object storing schemaFaker and schmeResolution caches
+ * @param {Object} schemaCache - object storing schemaFaker and schemaResolution caches
  * @returns {Object} - Information regarding parameter serialisation. Contains following properties.
  * {
  *  style - style property defined/inferred from schema
@@ -517,7 +517,7 @@ function getParamSerialisationInfo (param, parameterSource, components) {
       keyValueSeparator = explode ? '=' : '.';
       break;
     case 'form':
-      // for 'form' when explode is true, query is devided into different key-value pairs
+      // for 'form' when explode is true, query is divided into different key-value pairs
       propSeparator = keyValueSeparator = ',';
       break;
     case 'simple':
@@ -533,7 +533,7 @@ function getParamSerialisationInfo (param, parameterSource, components) {
       propSeparator = keyValueSeparator = '|';
       break;
     case 'deepObject':
-      // for 'deepObject' query is devided into different key-value pairs
+      // for 'deepObject' query is divided into different key-value pairs
       explode = true;
       break;
     default:
@@ -544,14 +544,14 @@ function getParamSerialisationInfo (param, parameterSource, components) {
 }
 
 /**
- * This functiom deserialises parameter value based on param schema
+ * This function deserialises parameter value based on param schema
  *
  * @param {*} param - OpenAPI Parameter object
  * @param {String} paramValue - Parameter value to be deserialised
  * @param {String} parameterSource - Specifies whether the schema being faked is from a request or response.
  * @param {Object} components - OpenAPI components defined in the OAS spec. These are used to
  *  resolve references while generating params.
- * @param {Object} schemaCache - object storing schemaFaker and schmeResolution caches
+ * @param {Object} schemaCache - object storing schemaFaker and schemaResolution caches
  * @returns {*} - deserialises parameter value
  */
 function deserialiseParamValue (param, paramValue, parameterSource, components) {
@@ -935,15 +935,17 @@ function checkContentTypeHeader (headers, transactionPathPrefix, schemaPathPrefi
  * @param {*} schema - Corresponding schema object of parent parameter to be devided into child params
  * @param {*} paramKey - Parameter name of parent param object
  * @param {*} metaInfo - meta information of param (i.e. required)
+ * @param {Array} requestParams - Corresponding matched request params
+ * @param {Boolean} shouldIterateChildren - Defines whether to iterate over children further for type object children
  * @returns {Array} - Extracted child parameters
  */
-function extractChildParamSchema (schema, paramKey, metaInfo) {
+function extractChildParamSchema (schema, paramKey, metaInfo, requestParams, shouldIterateChildren = true) {
   let childParamSchemas = [];
 
   _.forEach(_.get(schema, 'properties', {}), (value, key) => {
-    if (_.get(value, 'type') === 'object') {
+    if (_.get(value, 'type') === 'object' && shouldIterateChildren) {
       childParamSchemas = _.concat(childParamSchemas, extractChildParamSchema(value,
-        `${paramKey}[${key}]`, metaInfo));
+        `${paramKey}[${key}]`, metaInfo, requestParams, shouldIterateChildren));
     }
     else {
       let required = _.get(metaInfo, 'required') || false,
@@ -960,6 +962,50 @@ function extractChildParamSchema (schema, paramKey, metaInfo) {
       });
     }
   });
+
+  if (_.isObject(_.get(schema, 'additionalProperties'))) {
+    const additionalPropSchema = _.get(schema, 'additionalProperties'),
+      matchingRequestParamKeys = [];
+
+    /**
+     * Find matching keys from request param as additional props can be unknown keys.
+     * and these unknown key names are not mentioned in schema
+     */
+    _.forEach(requestParams, ({ key }) => {
+      if (_.isString(key) && _.startsWith(key, paramKey + '[') && _.endsWith(key, ']')) {
+        const childKey = key.substring(key.indexOf(paramKey + '[') + key.length + 1, key.length - 1);
+
+        if (!_.includes(childKey, '[')) {
+          matchingRequestParamKeys.push(key);
+        }
+      }
+    });
+
+    // For every matched request param key add a child param schema that can be validated further
+    _.forEach(matchingRequestParamKeys, (matchedRequestParamKey) => {
+      if (_.get(additionalPropSchema, 'type') === 'object' && shouldIterateChildren) {
+        childParamSchemas = _.concat(childParamSchemas, extractChildParamSchema(additionalPropSchema,
+          matchedRequestParamKey, metaInfo, requestParams, shouldIterateChildren));
+      }
+
+      // Avoid adding invalid array child params as deepObject style should only contain object or simple types
+      else if (_.get(additionalPropSchema, 'type') !== 'array') {
+        let required = _.get(metaInfo, 'required') || false,
+          description = _.get(metaInfo, 'description') || '',
+          pathPrefix = _.get(metaInfo, 'pathPrefix');
+
+        childParamSchemas.push({
+          name: matchedRequestParamKey,
+          schema: additionalPropSchema,
+          description,
+          required,
+          isResolvedParam: true,
+          pathPrefix
+        });
+      }
+    });
+  }
+
   return childParamSchemas;
 }
 
@@ -1024,7 +1070,7 @@ function extractDeepObjectParams (deepObject, objectKey) {
  * @param  {*} parameterSource — Specifies whether the schema being faked is from a request or response.
  * @param {object} components - components defined in the OAS spec. These are used to
  * resolve references while generating params.
- * @param {object} schemaCache - object storing schemaFaker and schmeResolution caches
+ * @param {object} schemaCache - object storing schemaFaker and schemaResolution caches
  * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
  * @returns {array} parameters. One param with type=array might lead to multiple params
  * in the return value
@@ -1208,6 +1254,174 @@ function getRequestParams (operationParam, pathParam, components, options) {
 }
 
 /**
+ * Resolves URL Encoded schema such that each individual request body param can be validated
+ * to corresponding resolved schema params
+ *
+ * @param {*} schema - Schema object for corresponding URL encoded body
+ * @param {*} schemaKey - Key for corresponding Schema object to be resolved
+ * @param {*} encodingObj - OAS Encoding object
+ * @param {*} requestParams - URL Encoded Request body parameters
+ * @param {object} components - components defined in the OAS spec. These are used to
+ * resolve references while generating params.
+ * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
+ * @return {Array} Resolved URL Encoded body schema params
+ */
+function resolveUrlEncodedSchema (schema, schemaKey, encodingObj, requestParams, components, options) {
+
+  let resolvedSchemaParams = [];
+
+  if (_.isArray(schema.anyOf) || _.isArray(schema.oneOf)) {
+    _.forEach(schema.anyOf || schema.oneOf, (schemaElement) => {
+      resolvedSchemaParams = _.concat(resolvedSchemaParams, resolveUrlEncodedSchema(schemaElement, schemaKey,
+        encodingObj, requestParams, components, options));
+    });
+
+    return resolvedSchemaParams;
+  }
+
+  /**
+   * schema apart from type object should be only resolved if corresponding schema key is present.
+   * i.e. As URL encoded body requires key-value pair, non key schemas should not be resolved.
+   */
+  if (_.get(schema, 'type') !== 'object' && !_.isEmpty(schemaKey)) {
+    let resolvedProp = {
+        name: schemaKey,
+        schema: schema,
+        in: 'query', // serialization follows same behaviour as query params
+        description: _.get(schema, 'description') || ''
+      },
+      encodingValue = _.get(encodingObj, schemaKey);
+
+    if (_.isObject(encodingValue)) {
+      _.has(encodingValue, 'style') && (resolvedProp.style = encodingValue.style);
+      _.has(encodingValue, 'explode') && (resolvedProp.explode = encodingValue.explode);
+    }
+    resolvedSchemaParams.push(resolvedProp);
+  }
+  else {
+    // resolve each property as separate param similar to query params
+    _.forEach(_.get(schema, 'properties'), (propSchema, propName) => {
+      if (_.isArray(propSchema.anyOf) || _.isArray(propSchema.oneOf)) {
+        _.forEach(propSchema.anyOf || propSchema.oneOf, (schemaElement) => {
+          let nextSchemaKey = _.isEmpty(schemaKey) ? propName : `${schemaKey}[${propName}]`;
+
+          resolvedSchemaParams = _.concat(resolvedSchemaParams,
+            resolveUrlEncodedSchema(schemaElement, nextSchemaKey, encodingObj, requestParams, components, options));
+        });
+      }
+      else {
+        let resolvedProp = {
+            name: _.isEmpty(schemaKey) ? propName : `${schemaKey}[${propName}]`,
+            schema: propSchema,
+            in: 'query', // serialization follows same behaviour as query params
+            description: _.get(propSchema, 'description') || ''
+          },
+          encodingValue = _.get(encodingObj, propName),
+          pSerialisationInfo,
+          isPropSeparable;
+
+        if (_.isObject(encodingValue)) {
+          _.has(encodingValue, 'style') && (resolvedProp.style = encodingValue.style);
+          _.has(encodingValue, 'explode') && (resolvedProp.explode = encodingValue.explode);
+        }
+
+        if (_.includes(_.get(schema, 'required'), propName)) {
+          resolvedProp.required = true;
+        }
+
+        pSerialisationInfo = getParamSerialisationInfo(resolvedProp, PARAMETER_SOURCE.REQUEST,
+          components);
+        isPropSeparable = _.includes(['form', 'deepObject'], pSerialisationInfo.style);
+
+        if (isPropSeparable && propSchema.type === 'array' && pSerialisationInfo.explode) {
+          /**
+           * avoid validation of complex array type param as OAS doesn't define serialisation
+           * of Array with deepObject style
+           */
+          if (!_.includes(['array', 'object'], _.get(propSchema, 'items.type'))) {
+            // add schema of corresponding items instead array
+            resolvedSchemaParams.push(_.assign({}, resolvedProp, {
+              schema: _.get(propSchema, 'items'),
+              isResolvedParam: true
+            }));
+          }
+        }
+        else if (isPropSeparable && propSchema.type === 'object' && pSerialisationInfo.explode) {
+          // resolve all child params of parent param with deepObject style
+          if (pSerialisationInfo.style === 'deepObject') {
+            resolvedSchemaParams = _.concat(resolvedSchemaParams, extractChildParamSchema(propSchema,
+              propName, { required: resolvedProp.required || false, description: resolvedProp.description },
+              requestParams));
+          }
+          else {
+            // add schema of all properties instead entire object
+            _.forEach(_.get(propSchema, 'properties', {}), (value, key) => {
+              resolvedSchemaParams.push({
+                name: key,
+                schema: value,
+                isResolvedParam: true,
+                required: resolvedProp.required || false,
+                description: resolvedProp.description
+              });
+            });
+          }
+        }
+        else {
+          resolvedSchemaParams.push(resolvedProp);
+        }
+      }
+    });
+
+    // Resolve additionalProperties via first finding additionalProper
+    if (_.isObject(_.get(schema, 'additionalProperties'))) {
+      const additionalPropSchema = _.get(schema, 'additionalProperties'),
+        matchingRequestParamKeys = [];
+
+      /**
+       * Find matching keys from request param as additional props can be unknown keys.
+       * and these unknown key names are not mentioned in schema
+       */
+      _.forEach(requestParams, ({ key }) => {
+        if (_.isString(key) && schemaKey === '') {
+          const isParamResolved = _.some(resolvedSchemaParams, (param) => {
+            return key === param.key;
+          });
+          !isParamResolved && (matchingRequestParamKeys.push(key));
+        }
+        else if (_.isString(key) && _.startsWith(key, schemaKey + '[') && _.endsWith(key, ']')) {
+          const childKey = key.substring(key.indexOf(schemaKey + '[') + schemaKey.length + 1, key.length - 1);
+
+          if (!_.includes(childKey, '[')) {
+            matchingRequestParamKeys.push(key);
+          }
+        }
+      });
+
+      // For every matched request param key add a child param schema that can be validated further
+      _.forEach(matchingRequestParamKeys, (matchedRequestParamKey) => {
+        if (_.get(additionalPropSchema, 'type') === 'object') {
+          resolvedSchemaParams = _.concat(resolvedSchemaParams, extractChildParamSchema(additionalPropSchema,
+            matchedRequestParamKey, metaInfo, requestParams, false));
+        }
+
+        // Avoid adding invalid array child params as deepObject style should only contain object or simple types
+        else if (_.get(additionalPropSchema, 'type') !== 'array') {
+          resolvedSchemaParams.push({
+            name: matchedRequestParamKey,
+            schema: additionalPropSchema,
+            description: _.get(additionalPropSchema, 'description'),
+            required: false,
+            isResolvedParam: true
+          });
+        }
+      });
+    }
+  }
+
+  return resolvedSchemaParams;
+}
+
+/**
  *
  * @param {String} property - one of QUERYPARAM, PATHVARIABLE, HEADER, BODY, RESPONSE_HEADER, RESPONSE_BODY
  * @param {String} jsonPathPrefix - this will be prepended to all JSON schema paths on the request
@@ -1219,7 +1433,7 @@ function getRequestParams (operationParam, pathParam, components, options) {
  * @param {String} parameterSourceOption tells that the schema object is of request or response
  * @param {Object} components - Components in the spec that the schema might refer to
  * @param {Object} options - Global options
- * @param {Object} schemaCache object storing schemaFaker and schmeResolution caches
+ * @param {Object} schemaCache object storing schemaFaker and schemaResolution caches
  * @param {string} jsonSchemaDialect The schema dialect defined in the OAS object
  * @param {Function} callback - For return
  * @returns {Array} array of mismatches
@@ -1496,7 +1710,7 @@ function checkValueAgainstSchema (property, jsonPathPrefix, txnParamName, value,
  * @param {*} schemaPath the applicable pathItem defined at the schema level
  * @param {*} components the components + paths from the OAS spec that need to be used to resolve $refs
  * @param {*} options OAS options
- * @param {*} schemaCache object storing schemaFaker and schmeResolution caches
+ * @param {*} schemaCache object storing schemaFaker and schemaResolution caches
  * @param {string} jsonSchemaDialect Defined schema dialect at the OAS object
  * @param {*} callback Callback
  * @returns {array} mismatches (in the callback)
@@ -2011,7 +2225,7 @@ function checkResponseHeaders (schemaResponse, headers, transactionPathPrefix, s
         schemaPathPrefix + '.content', _.get(schemaResponse, 'content'), mismatchProperty, options);
 
     _.each(_.filter(schemaHeaders, (h, hName) => {
-      // exclude empty headers fron validation
+      // exclude empty headers from validation
       if (_.isEmpty(h)) {
         return false;
       }
@@ -2092,74 +2306,16 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
   else if (requestBody && requestBody.mode === 'urlencoded') {
     let urlencodedBodySchema = _.get(schemaPath, ['requestBody', 'content', URLENCODED, 'schema']),
       resolvedSchemaParams = [],
-      pathPrefix = `${schemaPathPrefix}.requestBody.content[${URLENCODED}].schema`;
+      pathPrefix = `${schemaPathPrefix}.requestBody.content[${URLENCODED}].schema`,
+      encodingObj = _.get(schemaPath, ['requestBody', 'content', URLENCODED, 'encoding']);
 
     urlencodedBodySchema = deref.resolveRefs(urlencodedBodySchema, PARAMETER_SOURCE.REQUEST, components, {
       resolveFor: PROCESSING_TYPE.VALIDATION,
       stackLimit: options.stackLimit
     });
 
-    // resolve each property as separate param similar to query parmas
-    _.forEach(_.get(urlencodedBodySchema, 'properties'), (propSchema, propName) => {
-      let resolvedProp = {
-          name: propName,
-          schema: propSchema,
-          in: 'query', // serialization follows same behaviour as query params
-          description: _.get(propSchema, 'description') || ''
-        },
-        encodingValue = _.get(schemaPath, ['requestBody', 'content', URLENCODED, 'encoding', propName]),
-        pSerialisationInfo,
-        isPropSeparable;
-
-      if (_.isObject(encodingValue)) {
-        _.has(encodingValue, 'style') && (resolvedProp.style = encodingValue.style);
-        _.has(encodingValue, 'explode') && (resolvedProp.explode = encodingValue.explode);
-      }
-
-      if (_.includes(_.get(urlencodedBodySchema, 'required'), propName)) {
-        resolvedProp.required = true;
-      }
-
-      pSerialisationInfo = getParamSerialisationInfo(resolvedProp, PARAMETER_SOURCE.REQUEST,
-        components);
-      isPropSeparable = _.includes(['form', 'deepObject'], pSerialisationInfo.style);
-
-      if (isPropSeparable && propSchema.type === 'array' && pSerialisationInfo.explode) {
-        /**
-         * avoid validation of complex array type param as OAS doesn't define serialisation
-         * of Array with deepObject style
-         */
-        if (!_.includes(['array', 'object'], _.get(propSchema, 'items.type'))) {
-          // add schema of corresponding items instead array
-          resolvedSchemaParams.push(_.assign({}, resolvedProp, {
-            schema: _.get(propSchema, 'items'),
-            isResolvedParam: true
-          }));
-        }
-      }
-      else if (isPropSeparable && propSchema.type === 'object' && pSerialisationInfo.explode) {
-        // resolve all child params of parent param with deepObject style
-        if (pSerialisationInfo.style === 'deepObject') {
-          resolvedSchemaParams = _.concat(resolvedSchemaParams, extractChildParamSchema(propSchema,
-            propName, { required: resolvedProp.required || false, description: resolvedProp.description }));
-        }
-        else {
-          // add schema of all properties instead entire object
-          _.forEach(_.get(propSchema, 'properties', {}), (value, key) => {
-            resolvedSchemaParams.push({
-              name: key,
-              schema: value,
-              isResolvedParam: true,
-              required: resolvedProp.required || false,
-              description: resolvedProp.description
-            });
-          });
-        }
-      }
-      else {
-        resolvedSchemaParams.push(resolvedProp);
-      }
-    });
+    resolvedSchemaParams = resolveUrlEncodedSchema(urlencodedBodySchema, '', encodingObj,
+      requestBody.urlencoded, components, options);
 
     return async.map(requestBody.urlencoded, (uParam, cb) => {
       let mismatches = [],
@@ -2173,7 +2329,7 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
         if (isParamComplexArray(uParam.key)) {
           return cb(null, mismatches);
         }
-        if (options.showMissingInSchemaErrors) {
+        if (options.showMissingInSchemaErrors && _.get(urlencodedBodySchema, 'additionalProperties') !== true) {
           mismatches.push({
             property: mismatchProperty,
             transactionJsonPath: transactionPathPrefix + `.urlencoded[${index}]`,
@@ -2211,8 +2367,8 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
     }, (err, res) => {
       let mismatches = [],
         mismatchObj,
-        // fetches property name from schem path
-        getPropNameFromSchemPath = (schemaPath) => {
+        // fetches property name from schema path
+        getPropNameFromSchemaPath = (schemaPath) => {
           let regex = /\.properties\[(.+)\]/gm;
           return _.last(regex.exec(schemaPath));
         };
@@ -2220,7 +2376,7 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
       // update actual value and suggested value from JSON to serialized strings
       _.forEach(_.flatten(res), (mismatchObj) => {
         if (!_.isEmpty(mismatchObj)) {
-          let propertyName = getPropNameFromSchemPath(mismatchObj.schemaJsonPath),
+          let propertyName = getPropNameFromSchemaPath(mismatchObj.schemaJsonPath),
             schemaParam = _.find(resolvedSchemaParams, (param) => { return param.name === propertyName; }),
             serializedParamValue;
 
@@ -2316,7 +2472,7 @@ function checkResponseBody (schemaResponse, body, transactionPathPrefix, schemaP
 
 function checkResponses (responses, transactionPathPrefix, schemaPathPrefix, schemaPath,
   components, options, schemaCache, jsonSchemaDialect, cb) {
-  // responses is an array of repsonses recd. for one Postman request
+  // responses is an array of responses recd. for one Postman request
   // we've already determined the schemaPath against which all responses need to be validated
   // loop through all responses
   // for each response, find the appropriate response from schemaPath, and then validate response body and headers
@@ -2538,7 +2694,7 @@ module.exports = {
    * @param {object} components - components defined in the OAS spec. These are used to
    * resolve references while generating params.
    * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
-   * @param {object} schemaCache - object storing schemaFaker and schmeResolution caches
+   * @param {object} schemaCache - object storing schemaFaker and schemaResolution caches
    * @returns {Array} - Array of all MISSING_ENDPOINT objects
    */
   getMissingSchemaEndpoints: function (schema, matchedEndpoints, components, options, schemaCache) {
@@ -2615,7 +2771,7 @@ module.exports = {
             mismatchObj.suggestedFix = {
               key: pathKey,
               actualValue: null,
-              // Not adding colloection variables for now
+              // Not adding collection variables for now
               suggestedValue: {
                 request: convertedRequest,
                 variables: _.values(variables)
