@@ -128,7 +128,7 @@ module.exports = {
         }
 
         case 'webhook~folder': {
-          // generate the request form the node.
+          // generate the folder form the node.
           let folder = generateFolderFromOpenAPI(context, node).data || {};
 
           // find the parent of the folder in question / root collection.
@@ -155,7 +155,51 @@ module.exports = {
         }
 
         case 'webhook~request': {
-          // @avishek
+          // generate the request form the node
+          let request = {},
+            collectionVariables = [],
+            requestObject = {};
+
+          // TODO: Figure out a proper fix for this
+          if (node.meta.method === 'parameters') {
+            break;
+          }
+
+          try {
+            ({ request, collectionVariables } = resolvePostmanRequest(context,
+              context.openapi.webhooks[node.meta.path],
+              node.meta.path,
+              node.meta.method
+            ));
+
+            requestObject = generateRequestItemObject(request);
+          }
+          catch (error) {
+            console.error(error);
+            break;
+          }
+
+          collection.variable.push(...collectionVariables);
+
+          // find the parent of the request in question
+          let parent = collectionTree.predecessors(nodeIdentified);
+
+          // this is directed graph, and hence have only one parent.
+          parent = collectionTree.node(parent && parent[0]);
+
+          // if the item construct does not exist add and initialize it to zero
+          if (!parent.ref.item) {
+            parent.ref.item = [];
+          }
+
+          // push the folder in the item that is in question
+          parent.ref.item.push(requestObject);
+
+          // set the ref for the newly created request in this.
+          collectionTree.setNode(nodeIdentified,
+            Object.assign(node, {
+              ref: _.last(parent.ref.item)
+            }));
 
           break;
         }
