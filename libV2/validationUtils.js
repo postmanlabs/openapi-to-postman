@@ -1254,25 +1254,25 @@ function getRequestParams (operationParam, pathParam, components, options) {
 }
 
 /**
- * Resolves URL Encoded schema such that each individual request body param can be validated
+ * Resolves schema for form params such that each individual request body param can be validated
  * to corresponding resolved schema params
  *
- * @param {*} schema - Schema object for corresponding URL encoded body
+ * @param {*} schema - Schema object for corresponding form params
  * @param {*} schemaKey - Key for corresponding Schema object to be resolved
  * @param {*} encodingObj - OAS Encoding object
- * @param {*} requestParams - URL Encoded Request body parameters
+ * @param {*} requestParams - collection request parameters
  * @param {object} components - components defined in the OAS spec. These are used to
  * resolve references while generating params.
  * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
- * @return {Array} Resolved URL Encoded body schema params
+ * @return {Array} Resolved form schema params
  */
-function resolveUrlEncodedSchema (schema, schemaKey, encodingObj, requestParams, components, options) {
+function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, components, options) {
 
   let resolvedSchemaParams = [];
 
   if (_.isArray(schema.anyOf) || _.isArray(schema.oneOf)) {
     _.forEach(schema.anyOf || schema.oneOf, (schemaElement) => {
-      resolvedSchemaParams = _.concat(resolvedSchemaParams, resolveUrlEncodedSchema(schemaElement, schemaKey,
+      resolvedSchemaParams = _.concat(resolvedSchemaParams, resolveFormParamSchema(schemaElement, schemaKey,
         encodingObj, requestParams, components, options));
     });
 
@@ -1306,7 +1306,7 @@ function resolveUrlEncodedSchema (schema, schemaKey, encodingObj, requestParams,
           let nextSchemaKey = _.isEmpty(schemaKey) ? propName : `${schemaKey}[${propName}]`;
 
           resolvedSchemaParams = _.concat(resolvedSchemaParams,
-            resolveUrlEncodedSchema(schemaElement, nextSchemaKey, encodingObj, requestParams, components, options));
+            resolveFormParamSchema(schemaElement, nextSchemaKey, encodingObj, requestParams, components, options));
         });
       }
       else {
@@ -1915,7 +1915,10 @@ function checkQueryParams (requestUrl, transactionPathPrefix, schemaPath, compon
   // below will make sure for exploded params actual schema of property present in collection is present
   _.forEach(schemaParams, (param) => {
     let pathPrefix = param.pathPrefix,
-      paramSchema = deref.resolveRefs(_.cloneDeep(param.schema), PARAMETER_SOURCE.REQUEST, components, {}),
+      paramSchema = deref.resolveRefs(_.cloneDeep(param.schema), PARAMETER_SOURCE.REQUEST, components, {
+        resolveFor: PROCESSING_TYPE.VALIDATION,
+        stackLimit: options.stackLimit
+      }),
       { style, explode } = getParamSerialisationInfo(param, PARAMETER_SOURCE.REQUEST, components),
       isPropSeparable = _.includes(['form', 'deepObject'], style);
 
@@ -1936,7 +1939,8 @@ function checkQueryParams (requestUrl, transactionPathPrefix, schemaPath, compon
       // resolve all child params of parent param with deepObject style
       if (style === 'deepObject') {
         resolvedSchemaParams = _.concat(resolvedSchemaParams, extractChildParamSchema(paramSchema,
-          param.name, { required: _.get(param, 'required'), pathPrefix, description: _.get(param, 'description') }));
+          param.name, { required: _.get(param, 'required'), pathPrefix, description: _.get(param, 'description') },
+          requestQueryParams));
       }
       else {
         // add schema of all properties instead entire object
@@ -2314,7 +2318,7 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
       stackLimit: options.stackLimit
     });
 
-    resolvedSchemaParams = resolveUrlEncodedSchema(urlencodedBodySchema, '', encodingObj,
+    resolvedSchemaParams = resolveFormParamSchema(urlencodedBodySchema, '', encodingObj,
       requestBody.urlencoded, components, options);
 
     return async.map(requestBody.urlencoded, (uParam, cb) => {
