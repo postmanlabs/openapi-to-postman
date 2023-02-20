@@ -294,12 +294,6 @@ let QUERYPARAM = 'query',
    * @returns {Object} Resolved schema
    */
   resolveAllOfSchema = (context, schema, seenRef = {}) => {
-    // Resolve all the non allOf properties first
-    _.forOwn(schema, (schema, property) => {
-      // eslint-disable-next-line no-use-before-define
-      schema[property] = resolveSchema(context, schema, 0, _.cloneDeep(seenRef));
-    });
-
     try {
       return mergeAllOf(_.assign(schema, {
         allOf: _.map(schema.allOf, (schema) => {
@@ -353,7 +347,7 @@ let QUERYPARAM = 'query',
     }
 
     if (schema.allOf) {
-      return resolveAllOfSchema(context, schema.allOf, _.cloneDeep(seenRef));
+      return resolveAllOfSchema(context, schema, _.cloneDeep(seenRef));
     }
 
     if (schema.$ref) {
@@ -380,6 +374,7 @@ let QUERYPARAM = 'query',
       });
 
       schema.properties = resolvedSchemaProps;
+      schema.type = schema.type || SCHEMA_TYPES.object;
     }
     // If schema is of type array
     else if (concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.array) && schema.items) {
@@ -399,6 +394,12 @@ let QUERYPARAM = 'query',
       !_.has(schema, 'maxItems') && (schema.maxItems = 2);
 
       schema.items = resolveSchema(context, schema.items, stack, CONVERSION, _.cloneDeep(seenRef));
+    }
+
+    if (schema.hasOwnProperty('additionalProperties')) {
+      schema.additionalProperties = _.isBoolean(schema.additionalProperties) ? schema.additionalProperties :
+        resolveSchema(context, schema.additionalProperties, CONVERSION, _.cloneDeep(seenRef));
+      schema.type = schema.type || SCHEMA_TYPES.object;
     }
 
     return schema;
@@ -632,7 +633,8 @@ let QUERYPARAM = 'query',
     let serialisedValue = '',
       description = getParameterDescription(param),
       paramName = _.get(param, 'name'),
-      pmParams = [];
+      pmParams = [],
+      isNotSerializable = false;
 
     // decide explodable params, starting value and separators between key-value and properties for serialisation
     // Ref: https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.2.md#style-examples
@@ -667,10 +669,21 @@ let QUERYPARAM = 'query',
 
           return pmParams;
         }
+        else if (_.isArray(paramValue)) {
+          isNotSerializable = true;
+          pmParams.push({
+            key: paramName,
+            value: 'Not supported in OAS'
+          });
+        }
 
         break;
       default:
         break;
+    }
+
+    if (isNotSerializable) {
+      return pmParams;
     }
 
     if (_.isObject(paramValue)) {
@@ -767,7 +780,7 @@ let QUERYPARAM = 'query',
       example = requestBodySchema.example;
     }
     else if (_.get(requestBodySchema, 'schema.example') !== undefined) {
-      example = _.get(requestBodySchema, 'schema.example');
+      example = requestBodySchema.schema.example;
     }
 
     examples = requestBodySchema.examples || _.get(requestBodySchema, 'schema.examples');
@@ -845,6 +858,10 @@ let QUERYPARAM = 'query',
       return requestBodyData;
     }
 
+    if (_.has(requestBodyContent, 'schema.$ref')) {
+      requestBodyContent.schema = resolveRefFromSchema(context, requestBodyContent.schema.$ref);
+    }
+
     bodyData = resolveRequestBodyData(context, requestBodyContent.schema);
 
     const encoding = requestBodyContent.encoding || {};
@@ -856,7 +873,9 @@ let QUERYPARAM = 'query',
 
       if (requestBodyContent.schema) {
         description = _.get(requestBodyContent, ['schema', 'properties', key, 'description'], '');
-        required = _.get(requestBodyContent, ['schema', 'required'], true);
+        required = _.has(requestBodyContent.schema, 'required') ?
+          _.indexOf(requestBodyContent.schema.required, key) !== -1 :
+          _.get(requestBodyContent, ['schema.properties', key], false);
       }
 
       const param = encoding[key] || {};
@@ -896,9 +915,22 @@ let QUERYPARAM = 'query',
     bodyData = resolveRequestBodyData(context, requestBodyContent.schema);
 
     _.forOwn(bodyData, (value, key) => {
-      let paramSchema = _.get(requestBodyContent, ['schema', 'properties', key]),
-        description = getParameterDescription(paramSchema),
+      let requestBodySchema,
+        paramSchema,
+        description,
         param;
+
+      requestBodySchema = _.has(requestBodyContent, 'schema.$ref') ?
+        resolveRefFromSchema(context, requestBodyContent.schema.$ref) :
+        _.get(requestBodyContent, 'schema');
+
+      paramSchema = _.get(requestBodySchema, ['properties', key], {});
+
+      // Handle `required` array found the schema
+      paramSchema.required = _.has(paramSchema, 'required') ?
+        paramSchema.required :
+        _.indexOf(requestBodySchema.required, key) !== -1;
+      description = getParameterDescription(paramSchema);
 
       // TODO: Add handling for headers from encoding
 
@@ -1036,6 +1068,10 @@ let QUERYPARAM = 'query',
       pmParams = [];
 
     _.forEach(params, (param) => {
+      if (_.has(param, '$ref')) {
+        param = resolveRefFromSchema(context, param.$ref);
+      }
+
       if (param.in !== QUERYPARAM) {
         return;
       }
@@ -1171,12 +1207,39 @@ let QUERYPARAM = 'query',
 
     return {
       body: rawModeData,
-      headers: [{
+      contentHeader: [{
         key: 'Content-Type',
         value: bodyType
       }],
       bodyType
     };
+  },
+
+  resolveResponseHeaders = (context, responseHeaders) => {
+    const headers = [];
+
+    if (_.has(responseHeaders, '$ref')) {
+      responseHeaders = resolveRefFromSchema(context, responseHeaders.$ref);
+    }
+
+    _.forOwn(responseHeaders, (value, headerName) => {
+      let headerValue = resolveValueOfParameter(context, value);
+
+      if (typeof headerValue === 'number' || typeof headerValue === 'boolean') {
+        // the SDK will keep the number-ness,
+        // which will be rejected by the collection v2 schema
+        // converting to string to prevent issues like
+        // https://github.com/postmanlabs/postman-app-support/issues/6500
+        headerValue = headerValue.toString();
+      }
+
+      const headerData = Object.assign({}, value, { name: headerName }),
+        serialisedHeader = serialiseParamsBasedOnStyle(context, headerData, headerValue);
+
+      headers.push(...serialisedHeader);
+    });
+
+    return headers;
   },
 
   getPreviewLangugaForResponseBody = (bodyType) => {
@@ -1190,12 +1253,13 @@ let QUERYPARAM = 'query',
 
     _.forOwn(operationItem.responses, (responseSchema, code) => {
       let response,
-        { body, headers = [], bodyType } = resolveResponseBody(context, responseSchema) || {};
+        { body, contentHeader = [], bodyType } = resolveResponseBody(context, responseSchema) || {},
+        headers = resolveResponseHeaders(context, responseSchema.headers);
 
       response = {
         name: _.get(responseSchema, 'description'),
         body,
-        headers,
+        headers: _.concat(contentHeader, headers),
         code,
         originalRequest,
         _postman_previewlanguage: getPreviewLangugaForResponseBody(bodyType)
