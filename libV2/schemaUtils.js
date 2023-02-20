@@ -374,6 +374,7 @@ let QUERYPARAM = 'query',
       });
 
       schema.properties = resolvedSchemaProps;
+      schema.type = schema.type || SCHEMA_TYPES.object;
     }
     // If schema is of type array
     else if (concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.array) && schema.items) {
@@ -393,6 +394,12 @@ let QUERYPARAM = 'query',
       !_.has(schema, 'maxItems') && (schema.maxItems = 2);
 
       schema.items = resolveSchema(context, schema.items, stack, CONVERSION, _.cloneDeep(seenRef));
+    }
+
+    if (schema.hasOwnProperty('additionalProperties')) {
+      schema.additionalProperties = _.isBoolean(schema.additionalProperties) ? schema.additionalProperties :
+        resolveSchema(context, schema.additionalProperties, CONVERSION, _.cloneDeep(seenRef));
+      schema.type = schema.type || SCHEMA_TYPES.object;
     }
 
     return schema;
