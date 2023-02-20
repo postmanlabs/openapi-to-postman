@@ -418,7 +418,7 @@ let QUERYPARAM = 'query',
    *  isExplodable - whether params can be exploded (serialised value can contain key and value)
    * }
    */
-  getParamSerialisationInfo = (param) => {
+  getParamSerialisationInfo = (context, param) => {
     let paramName = _.get(param, 'name'),
       paramSchema,
       style, // style property defined/inferred from schema
@@ -436,7 +436,7 @@ let QUERYPARAM = 'query',
     }
 
     // Resolve the ref and composite schemas
-    paramSchema = resolveSchema(param.schema);
+    paramSchema = resolveSchema(context, param.schema);
 
     isExplodable = paramSchema.type === 'object';
 
@@ -515,25 +515,33 @@ let QUERYPARAM = 'query',
       resolvedSchema = resolveSchema(context, param.schema),
       { requestParametersResolution } = context.computedOptions,
       shouldGenerateFromExample = requestParametersResolution === 'example',
-      hasExample = param.example ||
-        param.schema.example ||
-        param.examples ||
-        param.schema.examples;
+      hasExample = param.example !== undefined ||
+        param.schema.example !== undefined ||
+        param.examples !== undefined ||
+        param.schema.examples !== undefined;
 
     if (shouldGenerateFromExample && hasExample) {
       /**
        * Here it could be example or examples (plural)
        * For examples, we'll pick the first example
        */
-      const example = param.example ||
-        param.schema.example ||
-        getExampleData(context, param.examples || param.schema.examples);
+      let example;
+
+      if (param.example !== undefined) {
+        example = param.example;
+      }
+      else if (param.schema.example !== undefined) {
+        example = param.schema.example;
+      }
+      else {
+        example = getExampleData(context, param.examples || param.schema.examples);
+      }
 
       return example;
     }
 
     schemaFaker.option({
-      useExamplesValue: false
+      useExamplesValue: true
     });
 
     if (resolvedSchema.properties) {
@@ -617,9 +625,9 @@ let QUERYPARAM = 'query',
       (parameter.enum ? ' (This can only be one of ' + parameter.enum + ')' : '');
   },
 
-  serialiseParamsBasedOnStyle = (param, paramValue) => {
+  serialiseParamsBasedOnStyle = (context, param, paramValue) => {
     const { style, explode, startValue, propSeparator, keyValueSeparator, isExplodable } =
-      getParamSerialisationInfo(param);
+      getParamSerialisationInfo(context, param);
 
     let serialisedValue = '',
       description = getParameterDescription(param),
@@ -744,7 +752,8 @@ let QUERYPARAM = 'query',
     let { requestParametersResolution, indentCharacter } = context.computedOptions,
       bodyData = '',
       shouldGenerateFromExample = requestParametersResolution === 'example',
-      hasExample;
+      example,
+      examples;
 
     if (_.isEmpty(requestBodySchema)) {
       return bodyData;
@@ -754,18 +763,26 @@ let QUERYPARAM = 'query',
       requestBodySchema = resolveRefFromSchema(context, requestBodySchema.$ref);
     }
 
+    if (requestBodySchema.example !== undefined) {
+      example = requestBodySchema.example;
+    }
+    else if (_.get(requestBodySchema, 'schema.example') !== undefined) {
+      example = _.get(requestBodySchema, 'schema.example');
+    }
+
+    examples = requestBodySchema.examples || _.get(requestBodySchema, 'schema.examples');
+
     requestBodySchema = requestBodySchema.schema || requestBodySchema;
     requestBodySchema = resolveSchema(context, requestBodySchema);
-    hasExample = requestBodySchema.example || requestBodySchema.examples;
 
-    if (shouldGenerateFromExample && hasExample) {
+    if (shouldGenerateFromExample && (example !== undefined || examples)) {
       /**
        * Here it could be example or examples (plural)
        * For examples, we'll pick the first example
        */
-      const example = requestBodySchema.example || getExampleData(context, requestBodySchema.examples);
+      const exampleData = example || getExampleData(context, examples);
 
-      bodyData = example;
+      bodyData = exampleData;
     }
     else if (requestBodySchema) {
       requestBodySchema = requestBodySchema.schema || requestBodySchema;
@@ -852,7 +869,7 @@ let QUERYPARAM = 'query',
       param.description = description;
       param.required = required;
 
-      urlEncodedParams.push(...serialiseParamsBasedOnStyle(param, value));
+      urlEncodedParams.push(...serialiseParamsBasedOnStyle(context, param, value));
     });
 
     return {
@@ -1033,7 +1050,7 @@ let QUERYPARAM = 'query',
         paramValue = paramValue.toString();
       }
 
-      const deserialisedParams = serialiseParamsBasedOnStyle(param, paramValue);
+      const deserialisedParams = serialiseParamsBasedOnStyle(context, param, paramValue);
 
       pmParams.push(...deserialisedParams);
     });
@@ -1060,7 +1077,7 @@ let QUERYPARAM = 'query',
         paramValue = paramValue.toString();
       }
 
-      const deserialisedParams = serialiseParamsBasedOnStyle(param, paramValue);
+      const deserialisedParams = serialiseParamsBasedOnStyle(context, param, paramValue);
 
       pmParams.push(...deserialisedParams);
     });
@@ -1112,7 +1129,7 @@ let QUERYPARAM = 'query',
         paramValue = paramValue.toString();
       }
 
-      const deserialisedParams = serialiseParamsBasedOnStyle(param, paramValue);
+      const deserialisedParams = serialiseParamsBasedOnStyle(context, param, paramValue);
 
       pmParams.push(...deserialisedParams);
     });
