@@ -673,7 +673,7 @@ let QUERYPARAM = 'query',
           isNotSerializable = true;
           pmParams.push({
             key: paramName,
-            value: 'Not supported in OAS'
+            value: '<Error: Not supported in OAS>'
           });
         }
 

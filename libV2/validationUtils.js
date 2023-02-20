@@ -62,7 +62,9 @@ const _ = require('lodash'),
     'accept',
     'authorization'
   ],
-  DEFAULT_SCHEMA_UTILS = require('../lib/30XUtils/schemaUtils30X');
+  DEFAULT_SCHEMA_UTILS = require('../lib/30XUtils/schemaUtils30X'),
+
+  OAS_NOT_SUPPORTED = '<Error: Not supported in OAS>';
 
 // See https://github.com/json-schema-faker/json-schema-faker/tree/master/docs#available-options
 schemaFaker.option({
@@ -930,109 +932,6 @@ function checkContentTypeHeader (headers, transactionPathPrefix, schemaPathPrefi
 }
 
 /**
- * Extracts all child parameters from explodable param
- *
- * @param {*} schema - Corresponding schema object of parent parameter to be devided into child params
- * @param {*} paramKey - Parameter name of parent param object
- * @param {*} metaInfo - meta information of param (i.e. required)
- * @param {Array} requestParams - Corresponding matched request params
- * @param {Boolean} shouldIterateChildren - Defines whether to iterate over children further for type object children
- * @returns {Array} - Extracted child parameters
- */
-function extractChildParamSchema (schema, paramKey, metaInfo, requestParams, shouldIterateChildren = true) {
-  let childParamSchemas = [];
-
-  if (_.get(schema, 'type') !== 'object' && !_.isEmpty(paramKey)) {
-    let required = _.get(metaInfo, 'required') || false,
-      description = _.get(metaInfo, 'description') || '',
-      pathPrefix = _.get(metaInfo, 'pathPrefix');
-
-    childParamSchemas.push({
-      name: paramKey,
-      schema: schema,
-      description,
-      required,
-      isResolvedParam: true,
-      pathPrefix
-    });
-  }
-  else {
-    _.forEach(_.get(schema, 'properties', {}), (value, key) => {
-
-      if (_.isArray(value.anyOf) || _.isArray(value.oneOf)) {
-        _.forEach(value.anyOf || value.oneOf, (schemaElement) => {
-          childParamSchemas = _.concat(childParamSchemas, extractChildParamSchema(schemaElement, `${paramKey}[${key}]`,
-            metaInfo, requestParams, shouldIterateChildren));
-        });
-      }
-      else if (_.get(value, 'type') === 'object' && shouldIterateChildren) {
-        childParamSchemas = _.concat(childParamSchemas, extractChildParamSchema(value,
-          `${paramKey}[${key}]`, metaInfo, requestParams, shouldIterateChildren));
-      }
-      else {
-        let required = _.get(metaInfo, 'required') || false,
-          description = _.get(metaInfo, 'description') || '',
-          pathPrefix = _.get(metaInfo, 'pathPrefix');
-
-        childParamSchemas.push({
-          name: `${paramKey}[${key}]`,
-          schema: value,
-          description,
-          required,
-          isResolvedParam: true,
-          pathPrefix
-        });
-      }
-    });
-
-    if (_.isObject(_.get(schema, 'additionalProperties'))) {
-      const additionalPropSchema = _.get(schema, 'additionalProperties'),
-        matchingRequestParamKeys = [];
-
-      /**
-       * Find matching keys from request param as additional props can be unknown keys.
-       * and these unknown key names are not mentioned in schema
-       */
-      _.forEach(requestParams, ({ key }) => {
-        if (_.isString(key) && _.startsWith(key, paramKey + '[') && _.endsWith(key, ']')) {
-          const childKey = key.substring(key.indexOf(paramKey + '[') + key.length + 1, key.length - 1);
-
-          if (!_.includes(childKey, '[')) {
-            matchingRequestParamKeys.push(key);
-          }
-        }
-      });
-
-      // For every matched request param key add a child param schema that can be validated further
-      _.forEach(matchingRequestParamKeys, (matchedRequestParamKey) => {
-        if (_.get(additionalPropSchema, 'type') === 'object' && shouldIterateChildren) {
-          childParamSchemas = _.concat(childParamSchemas, extractChildParamSchema(additionalPropSchema,
-            matchedRequestParamKey, metaInfo, requestParams, shouldIterateChildren));
-        }
-
-        // Avoid adding invalid array child params as deepObject style should only contain object or simple types
-        else if (_.get(additionalPropSchema, 'type') !== 'array') {
-          let required = _.get(metaInfo, 'required') || false,
-            description = _.get(metaInfo, 'description') || '',
-            pathPrefix = _.get(metaInfo, 'pathPrefix');
-
-          childParamSchemas.push({
-            name: matchedRequestParamKey,
-            schema: additionalPropSchema,
-            description,
-            required,
-            isResolvedParam: true,
-            pathPrefix
-          });
-        }
-      });
-    }
-  }
-
-  return childParamSchemas;
-}
-
-/**
  * Generates appropriate collection element based on parameter location
  *
  * @param {Object} param - Parameter object habing key, value and description (optional)
@@ -1284,114 +1183,145 @@ function getRequestParams (operationParam, pathParam, components, options) {
  * @param {*} schemaKey - Key for corresponding Schema object to be resolved
  * @param {*} encodingObj - OAS Encoding object
  * @param {*} requestParams - collection request parameters
+ * @param {*} metaInfo - meta information of param (i.e. required)
  * @param {object} components - components defined in the OAS spec. These are used to
  * resolve references while generating params.
  * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
+ * @param {Boolean} shouldIterateChildren - Defines whether to iterate over children further for type object children
  * @return {Array} Resolved form schema params
  */
-function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, components, options) {
+function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, metaInfo, components, options,
+  shouldIterateChildren) {
 
-  let resolvedSchemaParams = [];
+  let resolvedSchemaParams = [],
+    resolvedProp,
+    encodingValue,
+    pSerialisationInfo,
+    isPropSeparable;
 
   if (_.isArray(schema.anyOf) || _.isArray(schema.oneOf)) {
     _.forEach(schema.anyOf || schema.oneOf, (schemaElement) => {
+      // As for such schemas there can be multiple choices, keep them as non required
       resolvedSchemaParams = _.concat(resolvedSchemaParams, resolveFormParamSchema(schemaElement, schemaKey,
-        encodingObj, requestParams, components, options));
+        encodingObj, requestParams, _.assign(metaInfo, { required: false }),
+        components, options, shouldIterateChildren));
     });
 
     return resolvedSchemaParams;
   }
 
+  resolvedProp = {
+    name: schemaKey,
+    schema: schema,
+    required: _.get(metaInfo, 'required'),
+    in: 'query', // serialization follows same behaviour as query params
+    description: _.get(schema, 'description', _.get(metaInfo, 'description', '')),
+    pathPrefix: _.get(metaInfo, 'pathPrefix'),
+    isResolvedParam: true
+  };
+  encodingValue = _.get(encodingObj, schemaKey);
+
+  if (_.isObject(encodingValue)) {
+    _.has(encodingValue, 'style') && (resolvedProp.style = encodingValue.style);
+    _.has(encodingValue, 'explode') && (resolvedProp.explode = encodingValue.explode);
+  }
+
+  pSerialisationInfo = getParamSerialisationInfo(resolvedProp, PARAMETER_SOURCE.REQUEST,
+    components);
+  isPropSeparable = _.includes(['form', 'deepObject'], pSerialisationInfo.style);
+
   /**
    * schema apart from type object should be only resolved if corresponding schema key is present.
    * i.e. As URL encoded body requires key-value pair, non key schemas should not be resolved.
    */
-  if (_.get(schema, 'type') !== 'object' && !_.isEmpty(schemaKey)) {
-    let resolvedProp = {
-        name: schemaKey,
-        schema: schema,
-        in: 'query', // serialization follows same behaviour as query params
-        description: _.get(schema, 'description') || ''
-      },
-      encodingValue = _.get(encodingObj, schemaKey);
-
-    if (_.isObject(encodingValue)) {
-      _.has(encodingValue, 'style') && (resolvedProp.style = encodingValue.style);
-      _.has(encodingValue, 'explode') && (resolvedProp.explode = encodingValue.explode);
-    }
+  if (!isPropSeparable || (!_.includes(['object', 'array'], _.get(schema, 'type')) && !_.isEmpty(schemaKey)) ||
+    (_.isEmpty(schemaKey) && _.get(schema, 'type') === 'array') || !pSerialisationInfo.explode) {
     resolvedSchemaParams.push(resolvedProp);
   }
   else {
     // resolve each property as separate param similar to query params
     _.forEach(_.get(schema, 'properties'), (propSchema, propName) => {
+      let resolvedPropName = _.isEmpty(schemaKey) ? propName : `${schemaKey}[${propName}]`,
+        resolvedProp = {
+          name: resolvedPropName,
+          schema: propSchema,
+          in: 'query', // serialization follows same behaviour as query params
+          description: _.get(propSchema, 'description') || '',
+          required: _.get(metaInfo, 'required'),
+          isResolvedParam: true
+        },
+        parentPropName = resolvedPropName.indexOf('[') === -1 ? resolvedPropName :
+          resolvedPropName.slice(0, resolvedPropName.indexOf('[')),
+        encodingValue = _.get(encodingObj, parentPropName),
+        pSerialisationInfo,
+        isPropSeparable;
+
+      if (_.isObject(encodingValue)) {
+        _.has(encodingValue, 'style') && (resolvedProp.style = encodingValue.style);
+        _.has(encodingValue, 'explode') && (resolvedProp.explode = encodingValue.explode);
+      }
+
+      if (_.isUndefined(metaInfo.required) && _.includes(_.get(schema, 'required'), propName)) {
+        resolvedProp.required = true;
+      }
+
+      pSerialisationInfo = getParamSerialisationInfo(resolvedProp, PARAMETER_SOURCE.REQUEST,
+        components);
+      isPropSeparable = _.includes(['form', 'deepObject'], pSerialisationInfo.style);
+
       if (_.isArray(propSchema.anyOf) || _.isArray(propSchema.oneOf)) {
         _.forEach(propSchema.anyOf || propSchema.oneOf, (schemaElement) => {
           let nextSchemaKey = _.isEmpty(schemaKey) ? propName : `${schemaKey}[${propName}]`;
 
-          resolvedSchemaParams = _.concat(resolvedSchemaParams,
-            resolveFormParamSchema(schemaElement, nextSchemaKey, encodingObj, requestParams, components, options));
+          resolvedSchemaParams = _.concat(resolvedSchemaParams, resolveFormParamSchema(schemaElement, nextSchemaKey,
+            encodingObj, requestParams, _.assign(metaInfo, { required: false }),
+            components, options, pSerialisationInfo.style === 'deepObject'));
         });
+
+        return resolvedSchemaParams;
       }
-      else {
-        let resolvedProp = {
-            name: _.isEmpty(schemaKey) ? propName : `${schemaKey}[${propName}]`,
-            schema: propSchema,
-            in: 'query', // serialization follows same behaviour as query params
-            description: _.get(propSchema, 'description') || ''
-          },
-          encodingValue = _.get(encodingObj, propName),
-          pSerialisationInfo,
-          isPropSeparable;
 
-        if (_.isObject(encodingValue)) {
-          _.has(encodingValue, 'style') && (resolvedProp.style = encodingValue.style);
-          _.has(encodingValue, 'explode') && (resolvedProp.explode = encodingValue.explode);
+      if (isPropSeparable && propSchema.type === 'array' && pSerialisationInfo.explode) {
+        /**
+         * avoid validation of complex array type param as OAS doesn't define serialisation
+         * of Array with deepObject style
+         */
+        if (pSerialisationInfo.style !== 'deepObject' &&
+          !_.includes(['array', 'object'], _.get(propSchema, 'items.type'))) {
+          // add schema of corresponding items instead array
+          resolvedSchemaParams.push(_.assign({}, resolvedProp, {
+            schema: _.get(propSchema, 'items'),
+            isResolvedParam: true
+          }));
         }
+      }
+      else if (isPropSeparable && propSchema.type === 'object' && pSerialisationInfo.explode) {
+        let localMetaInfo = _.isEmpty(metaInfo) ? (metaInfo = {
+            required: resolvedProp.required,
+            description: resolvedProp.description
+          }) : metaInfo,
+          nextSchemaKey = _.isEmpty(schemaKey) ? propName : `${schemaKey}[${propName}]`;
 
-        if (_.includes(_.get(schema, 'required'), propName)) {
-          resolvedProp.required = true;
-        }
-
-        pSerialisationInfo = getParamSerialisationInfo(resolvedProp, PARAMETER_SOURCE.REQUEST,
-          components);
-        isPropSeparable = _.includes(['form', 'deepObject'], pSerialisationInfo.style);
-
-        if (isPropSeparable && propSchema.type === 'array' && pSerialisationInfo.explode) {
-          /**
-           * avoid validation of complex array type param as OAS doesn't define serialisation
-           * of Array with deepObject style
-           */
-          if (!_.includes(['array', 'object'], _.get(propSchema, 'items.type'))) {
-            // add schema of corresponding items instead array
-            resolvedSchemaParams.push(_.assign({}, resolvedProp, {
-              schema: _.get(propSchema, 'items'),
-              isResolvedParam: true
-            }));
-          }
-        }
-        else if (isPropSeparable && propSchema.type === 'object' && pSerialisationInfo.explode) {
-          // resolve all child params of parent param with deepObject style
-          if (pSerialisationInfo.style === 'deepObject') {
-            resolvedSchemaParams = _.concat(resolvedSchemaParams, extractChildParamSchema(propSchema,
-              propName, { required: resolvedProp.required || false, description: resolvedProp.description },
-              requestParams));
-          }
-          else {
-            // add schema of all properties instead entire object
-            _.forEach(_.get(propSchema, 'properties', {}), (value, key) => {
-              resolvedSchemaParams.push({
-                name: key,
-                schema: value,
-                isResolvedParam: true,
-                required: resolvedProp.required || false,
-                description: resolvedProp.description
-              });
-            });
-          }
+        // resolve all child params of parent param with deepObject style
+        if (pSerialisationInfo.style === 'deepObject') {
+          resolvedSchemaParams = _.concat(resolvedSchemaParams, resolveFormParamSchema(propSchema, nextSchemaKey,
+            encodingObj, requestParams, localMetaInfo, components, options, true));
         }
         else {
-          resolvedSchemaParams.push(resolvedProp);
+          // add schema of all properties instead entire object
+          _.forEach(_.get(propSchema, 'properties', {}), (value, key) => {
+            resolvedSchemaParams.push({
+              name: key,
+              schema: value,
+              isResolvedParam: true,
+              required: resolvedProp.required,
+              description: resolvedProp.description
+            });
+          });
         }
+      }
+      else {
+        resolvedSchemaParams.push(resolvedProp);
       }
     });
 
@@ -1417,17 +1347,20 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
           if (!_.includes(childKey, '[')) {
             matchingRequestParamKeys.push(key);
           }
+          else {
+            matchingRequestParamKeys.push(schemaKey + '[' + childKey.slice(0, childKey.indexOf('[')));
+          }
         }
       });
 
       // For every matched request param key add a child param schema that can be validated further
       _.forEach(matchingRequestParamKeys, (matchedRequestParamKey) => {
-        if (_.get(additionalPropSchema, 'type') === 'object') {
-          resolvedSchemaParams = _.concat(resolvedSchemaParams, extractChildParamSchema(additionalPropSchema,
-            matchedRequestParamKey, metaInfo, requestParams, false));
+        if (_.get(additionalPropSchema, 'type') === 'object' && shouldIterateChildren) {
+          resolvedSchemaParams = _.concat(resolvedSchemaParams, resolveFormParamSchema(additionalPropSchema,
+            matchedRequestParamKey, encodingObj, requestParams, metaInfo, components, options, shouldIterateChildren));
         }
 
-        // Avoid adding invalid array child params as deepObject style should only contain object or simple types
+        // Avoid adding invalid array child params, As deepObject style should only contain object or simple types
         else if (_.get(additionalPropSchema, 'type') !== 'array') {
           resolvedSchemaParams.push({
             name: matchedRequestParamKey,
@@ -1931,7 +1864,7 @@ function checkQueryParams (requestUrl, transactionPathPrefix, schemaPath, compon
   // filter out query params added by security schemes
   securityParams = _.map(getSecurityParams(_.get(components, 'components'), 'query'), 'name');
   requestQueryParams = _.filter(requestQueryParams, (pQuery) => {
-    return !_.includes(securityParams, pQuery.key);
+    return !_.includes(securityParams, pQuery.key) && pQuery.value !== OAS_NOT_SUPPORTED;
   });
 
   // resolve schema params
@@ -1943,45 +1876,15 @@ function checkQueryParams (requestUrl, transactionPathPrefix, schemaPath, compon
         stackLimit: options.stackLimit
       }),
       { style, explode } = getParamSerialisationInfo(param, PARAMETER_SOURCE.REQUEST, components),
-      isPropSeparable = _.includes(['form', 'deepObject'], style);
+      encodingObj = { [param.name]: { style, explode } },
+      metaInfo = {
+        required: _.get(param, 'required') || false,
+        description: _.get(param, 'description'),
+        pathPrefix
+      };
 
-    if (isPropSeparable && paramSchema.type === 'array' && explode) {
-      /**
-       * avoid validation of complex array type param as OAS doesn't define serialisation
-       * of Array with deepObject style
-       */
-      if (!_.includes(['array', 'object'], _.get(paramSchema, 'items.type'))) {
-        // add schema of corresponding items instead array
-        resolvedSchemaParams.push(_.assign({}, param, {
-          schema: _.get(paramSchema, 'items'),
-          isResolvedParam: true
-        }));
-      }
-    }
-    else if (isPropSeparable && paramSchema.type === 'object' && explode) {
-      // resolve all child params of parent param with deepObject style
-      if (style === 'deepObject') {
-        resolvedSchemaParams = _.concat(resolvedSchemaParams, extractChildParamSchema(paramSchema,
-          param.name, { required: _.get(param, 'required'), pathPrefix, description: _.get(param, 'description') },
-          requestQueryParams));
-      }
-      else {
-        // add schema of all properties instead entire object
-        _.forEach(_.get(paramSchema, 'properties', {}), (propSchema, propName) => {
-          resolvedSchemaParams.push({
-            name: propName,
-            schema: propSchema,
-            required: _.get(param, 'required') || false,
-            description: _.get(param, 'description'),
-            isResolvedParam: true,
-            pathPrefix
-          });
-        });
-      }
-    }
-    else {
-      resolvedSchemaParams.push(param);
-    }
+    resolvedSchemaParams = _.concat(resolvedSchemaParams, resolveFormParamSchema(paramSchema, param.name,
+      encodingObj, requestQueryParams, metaInfo, components, options));
   });
 
   return async.map(requestQueryParams, (pQuery, cb) => {
@@ -2334,7 +2237,10 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
     let urlencodedBodySchema = _.get(schemaPath, ['requestBody', 'content', URLENCODED, 'schema']),
       resolvedSchemaParams = [],
       pathPrefix = `${schemaPathPrefix}.requestBody.content[${URLENCODED}].schema`,
-      encodingObj = _.get(schemaPath, ['requestBody', 'content', URLENCODED, 'encoding']);
+      encodingObj = _.get(schemaPath, ['requestBody', 'content', URLENCODED, 'encoding']),
+      filteredUrlEncodedBody = _.filter(requestBody.urlencoded, (param) => {
+        return param.value !== OAS_NOT_SUPPORTED;
+      });
 
     urlencodedBodySchema = deref.resolveRefs(urlencodedBodySchema, PARAMETER_SOURCE.REQUEST, components, {
       resolveFor: PROCESSING_TYPE.VALIDATION,
@@ -2342,11 +2248,11 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
     });
 
     resolvedSchemaParams = resolveFormParamSchema(urlencodedBodySchema, '', encodingObj,
-      requestBody.urlencoded, components, options);
+      filteredUrlEncodedBody, {}, components, options);
 
-    return async.map(requestBody.urlencoded, (uParam, cb) => {
+    return async.map(filteredUrlEncodedBody, (uParam, cb) => {
       let mismatches = [],
-        index = _.findIndex(requestBody.urlencoded, uParam),
+        index = _.findIndex(filteredUrlEncodedBody, uParam),
         resolvedParamValue = uParam.value;
 
       const schemaParam = _.find(resolvedSchemaParams, (param) => { return param.name === uParam.key; });
@@ -2409,9 +2315,9 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
 
           if (schemaParam) {
             // serialize param value (to be used in suggested value)
-            serializedParamValue = _.get(convertParamsWithStyle(schemaParam, _.get(mismatchObj,
-              'suggestedFix.suggestedValue'), PARAMETER_SOURCE.REQUEST, components, schemaCache, options),
-            '[0].value');
+            serializedParamValue = _.get(convertParamsWithStyle(_.omit(schemaParam, ['style', 'explode']),
+              _.get(mismatchObj, 'suggestedFix.suggestedValue'), PARAMETER_SOURCE.REQUEST, components, schemaCache,
+              options), '[0].value');
             _.set(mismatchObj, 'suggestedFix.actualValue', schemaParam.actualValue);
             _.set(mismatchObj, 'suggestedFix.suggestedValue', serializedParamValue);
           }
@@ -2420,7 +2326,7 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
 
       _.each(resolvedSchemaParams, (uParam) => {
         // report mismatches only for required properties
-        if (!_.find(requestBody.urlencoded, (param) => { return param.key === uParam.name; }) && uParam.required) {
+        if (!_.find(filteredUrlEncodedBody, (param) => { return param.key === uParam.name; }) && uParam.required) {
           mismatchObj = {
             property: mismatchProperty,
             transactionJsonPath: transactionPathPrefix + '.urlencoded',
