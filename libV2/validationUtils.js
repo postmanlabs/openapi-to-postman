@@ -942,61 +942,41 @@ function checkContentTypeHeader (headers, transactionPathPrefix, schemaPathPrefi
 function extractChildParamSchema (schema, paramKey, metaInfo, requestParams, shouldIterateChildren = true) {
   let childParamSchemas = [];
 
-  _.forEach(_.get(schema, 'properties', {}), (value, key) => {
-    if (_.get(value, 'type') === 'object' && shouldIterateChildren) {
-      childParamSchemas = _.concat(childParamSchemas, extractChildParamSchema(value,
-        `${paramKey}[${key}]`, metaInfo, requestParams, shouldIterateChildren));
-    }
-    else {
-      let required = _.get(metaInfo, 'required') || false,
-        description = _.get(metaInfo, 'description') || '',
-        pathPrefix = _.get(metaInfo, 'pathPrefix');
+  if (_.get(schema, 'type') !== 'object' && !_.isEmpty(paramKey)) {
+    let required = _.get(metaInfo, 'required') || false,
+      description = _.get(metaInfo, 'description') || '',
+      pathPrefix = _.get(metaInfo, 'pathPrefix');
 
-      childParamSchemas.push({
-        name: `${paramKey}[${key}]`,
-        schema: value,
-        description,
-        required,
-        isResolvedParam: true,
-        pathPrefix
-      });
-    }
-  });
-
-  if (_.isObject(_.get(schema, 'additionalProperties'))) {
-    const additionalPropSchema = _.get(schema, 'additionalProperties'),
-      matchingRequestParamKeys = [];
-
-    /**
-     * Find matching keys from request param as additional props can be unknown keys.
-     * and these unknown key names are not mentioned in schema
-     */
-    _.forEach(requestParams, ({ key }) => {
-      if (_.isString(key) && _.startsWith(key, paramKey + '[') && _.endsWith(key, ']')) {
-        const childKey = key.substring(key.indexOf(paramKey + '[') + key.length + 1, key.length - 1);
-
-        if (!_.includes(childKey, '[')) {
-          matchingRequestParamKeys.push(key);
-        }
-      }
+    childParamSchemas.push({
+      name: paramKey,
+      schema: schema,
+      description,
+      required,
+      isResolvedParam: true,
+      pathPrefix
     });
+  }
+  else {
+    _.forEach(_.get(schema, 'properties', {}), (value, key) => {
 
-    // For every matched request param key add a child param schema that can be validated further
-    _.forEach(matchingRequestParamKeys, (matchedRequestParamKey) => {
-      if (_.get(additionalPropSchema, 'type') === 'object' && shouldIterateChildren) {
-        childParamSchemas = _.concat(childParamSchemas, extractChildParamSchema(additionalPropSchema,
-          matchedRequestParamKey, metaInfo, requestParams, shouldIterateChildren));
+      if (_.isArray(value.anyOf) || _.isArray(value.oneOf)) {
+        _.forEach(value.anyOf || value.oneOf, (schemaElement) => {
+          childParamSchemas = _.concat(childParamSchemas, extractChildParamSchema(schemaElement, `${paramKey}[${key}]`,
+            metaInfo, requestParams, shouldIterateChildren));
+        });
       }
-
-      // Avoid adding invalid array child params as deepObject style should only contain object or simple types
-      else if (_.get(additionalPropSchema, 'type') !== 'array') {
+      else if (_.get(value, 'type') === 'object' && shouldIterateChildren) {
+        childParamSchemas = _.concat(childParamSchemas, extractChildParamSchema(value,
+          `${paramKey}[${key}]`, metaInfo, requestParams, shouldIterateChildren));
+      }
+      else {
         let required = _.get(metaInfo, 'required') || false,
           description = _.get(metaInfo, 'description') || '',
           pathPrefix = _.get(metaInfo, 'pathPrefix');
 
         childParamSchemas.push({
-          name: matchedRequestParamKey,
-          schema: additionalPropSchema,
+          name: `${paramKey}[${key}]`,
+          schema: value,
           description,
           required,
           isResolvedParam: true,
@@ -1004,6 +984,49 @@ function extractChildParamSchema (schema, paramKey, metaInfo, requestParams, sho
         });
       }
     });
+
+    if (_.isObject(_.get(schema, 'additionalProperties'))) {
+      const additionalPropSchema = _.get(schema, 'additionalProperties'),
+        matchingRequestParamKeys = [];
+
+      /**
+       * Find matching keys from request param as additional props can be unknown keys.
+       * and these unknown key names are not mentioned in schema
+       */
+      _.forEach(requestParams, ({ key }) => {
+        if (_.isString(key) && _.startsWith(key, paramKey + '[') && _.endsWith(key, ']')) {
+          const childKey = key.substring(key.indexOf(paramKey + '[') + key.length + 1, key.length - 1);
+
+          if (!_.includes(childKey, '[')) {
+            matchingRequestParamKeys.push(key);
+          }
+        }
+      });
+
+      // For every matched request param key add a child param schema that can be validated further
+      _.forEach(matchingRequestParamKeys, (matchedRequestParamKey) => {
+        if (_.get(additionalPropSchema, 'type') === 'object' && shouldIterateChildren) {
+          childParamSchemas = _.concat(childParamSchemas, extractChildParamSchema(additionalPropSchema,
+            matchedRequestParamKey, metaInfo, requestParams, shouldIterateChildren));
+        }
+
+        // Avoid adding invalid array child params as deepObject style should only contain object or simple types
+        else if (_.get(additionalPropSchema, 'type') !== 'array') {
+          let required = _.get(metaInfo, 'required') || false,
+            description = _.get(metaInfo, 'description') || '',
+            pathPrefix = _.get(metaInfo, 'pathPrefix');
+
+          childParamSchemas.push({
+            name: matchedRequestParamKey,
+            schema: additionalPropSchema,
+            description,
+            required,
+            isResolvedParam: true,
+            pathPrefix
+          });
+        }
+      });
+    }
   }
 
   return childParamSchemas;
