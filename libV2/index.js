@@ -131,6 +131,13 @@ module.exports = {
       }
     });
 
-    return cb(null, collection);
+    return cb(null, {
+      result: true,
+      output: [{
+        type: 'collection',
+        data: collection
+      }],
+      analytics: this.analytics
+    });
   }
 };
