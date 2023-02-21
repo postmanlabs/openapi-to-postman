@@ -1200,6 +1200,7 @@ function getRequestParams (operationParam, pathParam, components, options) {
   return reqParam;
 }
 
+// TODO: document / comment properly all cases
 /**
  * Resolves schema for form params such that each individual request body param can be validated
  * to corresponding resolved schema params
@@ -1261,6 +1262,12 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
    */
   if (!isPropSeparable || (!_.includes(['object', 'array'], _.get(schema, 'type')) && !_.isEmpty(schemaKey)) ||
     (_.isEmpty(schemaKey) && _.get(schema, 'type') === 'array') || !pSerialisationInfo.explode) {
+    resolvedSchemaParams.push(resolvedProp);
+  }
+  else if (_.get(schema, 'type') === 'array' && pSerialisationInfo.style === 'form' &&
+    pSerialisationInfo.explode) {
+
+    resolvedProp.schema = _.get(schema, 'items', {});
     resolvedSchemaParams.push(resolvedProp);
   }
   else {
