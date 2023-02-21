@@ -93,11 +93,6 @@ module.exports = {
             collectionVariables = [],
             requestObject = {};
 
-          // TODO: Figure out a proper fix for this
-          if (node.meta.method === 'parameters') {
-            break;
-          }
-
           try {
             ({ request, collectionVariables } = resolvePostmanRequest(context,
               context.openapi.paths[node.meta.path],
@@ -224,7 +219,7 @@ module.exports = {
         type: 'collection',
         data: collection
       }],
-      analytics: this.analytics
+      analytics: this.analytics || {}
     });
   },
 

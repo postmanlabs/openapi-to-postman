@@ -22,6 +22,13 @@ const schemaFaker = require('../assets/json-schema-faker'),
     [HEADER_TYPE.JSON]: 'json',
     [HEADER_TYPE.XML]: 'xml'
   },
+  // These headers are to be validated explicitly
+  // As these are not defined under usual parameters object and need special handling
+  IMPLICIT_HEADERS = [
+    'content-type', // 'content-type' is defined based on content/media-type of req/res body,
+    'accept',
+    'authorization'
+  ],
 
   /**
    * @param {*} rootObject - the object from which you're trying to read a property
@@ -532,7 +539,7 @@ let QUERYPARAM = 'query',
         example = param.example;
       }
       else if (param.schema.example !== undefined) {
-        example = param.schema.example;
+        example = _.has(param.schema.example, 'value') ? param.schema.example.value : param.schema.example;
       }
       else {
         example = getExampleData(context, param.examples || param.schema.examples);
@@ -776,11 +783,47 @@ let QUERYPARAM = 'query',
       requestBodySchema = resolveRefFromSchema(context, requestBodySchema.$ref);
     }
 
+    /**
+     * We'll be picking up example data from `value` only if
+     * `value` is the only key present at the root level;
+     * e.g: {
+     *  example: {
+     *    value: {
+     *      a: 1,
+     *      b: 1
+     *    }
+     *  }
+     * }
+     * In the above case example should be :{
+     *      a: 1,
+     *      b: 1
+     *    }
+     * example: {
+     *    value: 1,
+     *    a: 1,
+     *    b: 2
+     *  }
+     * But for this example it should be {
+     *    value: 1,
+     *    a: 1,
+     *    b: 2
+     *  }
+     */
     if (requestBodySchema.example !== undefined) {
-      example = requestBodySchema.example;
+      const shouldResolveValueKey = _.has(requestBodySchema.example, 'value') &&
+        _.keys(requestBodySchema.example).length <= 1;
+
+      example = shouldResolveValueKey ?
+        requestBodySchema.example.value :
+        requestBodySchema.example;
     }
     else if (_.get(requestBodySchema, 'schema.example') !== undefined) {
-      example = requestBodySchema.schema.example;
+      const shouldResolveValueKey = _.has(requestBodySchema.schema.example, 'value') &&
+        _.keys(requestBodySchema.schema.example).length <= 1;
+
+      example = shouldResolveValueKey ?
+        requestBodySchema.schema.example.value :
+        requestBodySchema.schema.example;
     }
 
     examples = requestBodySchema.examples || _.get(requestBodySchema, 'schema.examples');
@@ -1148,10 +1191,15 @@ let QUERYPARAM = 'query',
 
   resolveHeadersForPostmanRequest = (context, operationItem, method) => {
     const params = operationItem.parameters || operationItem[method].parameters,
-      pmParams = [];
+      pmParams = [],
+      { keepImplicitHeaders } = context.computedOptions;
 
     _.forEach(params, (param) => {
       if (param.in !== HEADER) {
+        return;
+      }
+
+      if (!keepImplicitHeaders && _.includes(IMPLICIT_HEADERS, _.toLower(_.get(param, 'name')))) {
         return;
       }
 
