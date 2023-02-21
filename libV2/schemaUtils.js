@@ -30,6 +30,8 @@ const schemaFaker = require('../assets/json-schema-faker'),
     'authorization'
   ],
 
+  PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable'],
+
   /**
    * @param {*} rootObject - the object from which you're trying to read a property
    * @param {*} pathArray - each element in this array a property of the previous object
@@ -73,7 +75,8 @@ schemaFaker.option({
   maxItems: 20, // limit on maximum number of items faked for (type: arrray)
   useDefaultValue: true,
   ignoreMissingRefs: true,
-  avoidExampleItemsLength: true // option to avoid validating type array schema example's minItems and maxItems props.
+  avoidExampleItemsLength: true, // option to avoid validating type array schema example's minItems and maxItems props.
+  failOnInvalidFormat: false
 });
 
 let QUERYPARAM = 'query',
@@ -199,7 +202,7 @@ let QUERYPARAM = 'query',
    *
    * @returns {Object} Returns the object that staisfies the schema
    */
-  resolveRefFromSchema = (context, $ref, stackDepth = 0, seenRef = {}) => {
+  resolveRefFromSchema = (context, $ref, stackDepth = 0, resolveFor = CONVERSION, seenRef = {}) => {
     const { specComponents } = context;
 
     stackDepth++;
@@ -253,11 +256,11 @@ let QUERYPARAM = 'query',
           value: `<Circular reference to ${resolvedSchema.$ref} detected>`
         };
       }
-      return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth, _.cloneDeep(seenRef));
+      return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth, resolveFor, _.cloneDeep(seenRef));
     }
 
     // eslint-disable-next-line no-use-before-define
-    resolvedSchema = resolveSchema(context, resolvedSchema, stackDepth, CONVERSION, _.cloneDeep(seenRef));
+    resolvedSchema = resolveSchema(context, resolvedSchema, stackDepth, resolveFor, _.cloneDeep(seenRef));
 
     // Add the resolved schema to the global schema cache
     context.schemaCache[$ref] = resolvedSchema;
@@ -300,12 +303,12 @@ let QUERYPARAM = 'query',
    *
    * @returns {Object} Resolved schema
    */
-  resolveAllOfSchema = (context, schema, seenRef = {}) => {
+  resolveAllOfSchema = (context, schema, stack, resolveFor = CONVERSION, seenRef = {}) => {
     try {
       return mergeAllOf(_.assign(schema, {
         allOf: _.map(schema.allOf, (schema) => {
           // eslint-disable-next-line no-use-before-define
-          return resolveSchema(context, schema, 0, CONVERSION, _.cloneDeep(seenRef));
+          return resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef));
         })
       }), {
         resolvers: {
@@ -343,18 +346,26 @@ let QUERYPARAM = 'query',
     stack++;
 
     const compositeSchema = schema.anyOf || schema.oneOf,
+      compositeKeyword = schema.anyOf ? 'anyOf' : 'oneOf',
       { concreteUtils } = context;
 
     if (compositeSchema) {
       if (resolveFor === CONVERSION) {
-        return resolveSchema(context, compositeSchema[0], stack, CONVERSION, _.cloneDeep(seenRef));
+        return resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef));
       }
 
-      // TODO: Handle for validation
+      return { [compositeKeyword]: _.map(compositeSchema, (schemaElement) => {
+        PROPERTIES_TO_ASSIGN_ON_CASCADE.forEach((prop) => {
+          if (_.isNil(schemaElement[prop]) && !_.isNil(schema[prop])) {
+            schemaElement[prop] = schema[prop];
+          }
+        });
+        return resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef));
+      }) };
     }
 
     if (schema.allOf) {
-      return resolveAllOfSchema(context, schema, _.cloneDeep(seenRef));
+      return resolveAllOfSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef));
     }
 
     if (schema.$ref) {
@@ -363,7 +374,7 @@ let QUERYPARAM = 'query',
           value: '<Circular reference to ' + schema.$ref + ' detected>'
         };
       }
-      schema = resolveRefFromSchema(context, schema.$ref, stack, _.cloneDeep(seenRef));
+      schema = resolveRefFromSchema(context, schema.$ref, stack, resolveFor, _.cloneDeep(seenRef));
     }
 
     if (
@@ -373,11 +384,17 @@ let QUERYPARAM = 'query',
       let resolvedSchemaProps = {};
 
       _.forOwn(schema.properties, (property, propertyName) => {
-        if (property.format === 'decimal') {
+        if (
+          property.format === 'decimal' ||
+          property.format === 'byte' ||
+          property.format === 'binary' ||
+          property.format === 'password' ||
+          property.format === 'unix-time'
+        ) {
           delete property.format;
         }
 
-        resolvedSchemaProps[propertyName] = resolveSchema(context, property, stack, CONVERSION, _.cloneDeep(seenRef));
+        resolvedSchemaProps[propertyName] = resolveSchema(context, property, stack, resolveFor, _.cloneDeep(seenRef));
       });
 
       schema.properties = resolvedSchemaProps;
@@ -400,12 +417,12 @@ let QUERYPARAM = 'query',
       // If no maxItems is defined than override with default (2)
       !_.has(schema, 'maxItems') && (schema.maxItems = 2);
 
-      schema.items = resolveSchema(context, schema.items, stack, CONVERSION, _.cloneDeep(seenRef));
+      schema.items = resolveSchema(context, schema.items, stack, resolveFor, _.cloneDeep(seenRef));
     }
 
     if (schema.hasOwnProperty('additionalProperties')) {
       schema.additionalProperties = _.isBoolean(schema.additionalProperties) ? schema.additionalProperties :
-        resolveSchema(context, schema.additionalProperties, CONVERSION, _.cloneDeep(seenRef));
+        resolveSchema(context, schema.additionalProperties, stack, resolveFor, _.cloneDeep(seenRef));
       schema.type = schema.type || SCHEMA_TYPES.object;
     }
 
@@ -1371,5 +1388,7 @@ module.exports = {
       },
       collectionVariables
     };
-  }
+  },
+
+  resolveSchema
 };

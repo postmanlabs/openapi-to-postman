@@ -9,8 +9,10 @@ const _ = require('lodash'),
   xmlFaker = require('./xmlSchemaFaker.js'),
   utils = require('./utils'),
 
+  { resolveSchema } = require('./schemaUtils'),
+  concreteUtils = require('../lib/30XUtils/schemaUtils30X'),
+
   // lib v1 components
-  deref = require('../lib/deref.js'),
   schemaUtilsV1 = require('../lib/schemaUtils'),
   ajvValidationError = require('../lib/ajValidation/ajvValidationError'),
   { validateSchema } = require('../lib/ajValidation/ajvValidation'),
@@ -88,6 +90,24 @@ function hash(input) {
 }
 
 /**
+ * Provides context that's needed for V2 resolveSchema() interface
+ *
+ * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
+ * @param {object} components - components defined in the OAS spec. These are used to
+ * resolve references while generating params
+ * @returns {object} - Provides default context
+ */
+function getDefaultContext (options, components = {}) {
+  return {
+    concreteUtils,
+    schemaCache: {},
+    computedOptions: options,
+    schemaValidationCache: new Map(),
+    specComponents: { components: components.components }
+  };
+}
+
+/**
  * Remove or keep the deprecated properties according to the option
  * @param {object} resolvedSchema - the schema to verify properties
  * @param {boolean} includeDeprecated - Whether to include the deprecated properties
@@ -142,12 +162,14 @@ function safeSchemaFaker (oldSchema, resolveTo, resolveFor, parameterSourceOptio
   const indentCharacter = options.indentCharacter,
     includeDeprecated = options.includeDeprecated;
 
-  resolvedSchema = deref.resolveRefs(oldSchema, parameterSourceOption, components, {
-    resolveFor,
-    resolveTo,
-    stackLimit: options.stackLimit,
-    analytics: _.get(schemaCache, 'analytics', {})
-  });
+  // resolvedSchema = deref.resolveRefs(oldSchema, parameterSourceOption, components, {
+  //   resolveFor,
+  //   resolveTo,
+  //   stackLimit: options.stackLimit,
+  //   analytics: _.get(schemaCache, 'analytics', {})
+  // });
+
+  resolvedSchema = resolveSchema(getDefaultContext(options, components), oldSchema, 0, PROCESSING_TYPE.VALIDATION);
 
   resolvedSchema = concreteUtils.fixExamplesByVersion(resolvedSchema);
   key = JSON.stringify(resolvedSchema);
@@ -457,7 +479,7 @@ function getParameterDescription (parameter) {
  * @param {String} parameterSource - Specifies whether the schema being faked is from a request or response.
  * @param {Object} components - OpenAPI components defined in the OAS spec. These are used to
  *  resolve references while generating params.
- * @param {Object} schemaCache - object storing schemaFaker and schemaResolution caches
+ * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
  * @returns {Object} - Information regarding parameter serialisation. Contains following properties.
  * {
  *  style - style property defined/inferred from schema
@@ -468,9 +490,10 @@ function getParameterDescription (parameter) {
  *  isExplodable - whether params can be exploded (serialised value can contain key and value)
  * }
  */
-function getParamSerialisationInfo (param, parameterSource, components) {
+function getParamSerialisationInfo (param, parameterSource, components, options) {
   var paramName = _.get(param, 'name'),
-    paramSchema = deref.resolveRefs(_.cloneDeep(param.schema), parameterSource, components, {}),
+    paramSchema = resolveSchema(getDefaultContext(options, components), _.cloneDeep(param.schema),
+      0, PROCESSING_TYPE.VALIDATION),
     style, // style property defined/inferred from schema
     explode, // explode property defined/inferred from schema
     propSeparator, // separates two properties or values
@@ -553,12 +576,14 @@ function getParamSerialisationInfo (param, parameterSource, components) {
  * @param {String} parameterSource - Specifies whether the schema being faked is from a request or response.
  * @param {Object} components - OpenAPI components defined in the OAS spec. These are used to
  *  resolve references while generating params.
+ * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
  * @param {Object} schemaCache - object storing schemaFaker and schemaResolution caches
  * @returns {*} - deserialises parameter value
  */
-function deserialiseParamValue (param, paramValue, parameterSource, components) {
+function deserialiseParamValue (param, paramValue, parameterSource, components, options) {
   var constructedValue,
-    paramSchema = deref.resolveRefs(_.cloneDeep(param.schema), parameterSource, components, {}),
+    paramSchema = resolveSchema(getDefaultContext(options, components), _.cloneDeep(param.schema),
+      0, PROCESSING_TYPE.VALIDATION),
     isEvenNumber = (num) => {
       return (num % 2 === 0);
     },
@@ -577,7 +602,7 @@ function deserialiseParamValue (param, paramValue, parameterSource, components) 
   }
 
   let { startValue, propSeparator, keyValueSeparator, isExplodable } =
-    getParamSerialisationInfo(param, parameterSource, components);
+    getParamSerialisationInfo(param, parameterSource, components, options);
 
   // as query params are constructed from url, during conversion we use decodeURI which converts ('%20' into ' ')
   (keyValueSeparator === '%20') && (keyValueSeparator = ' ');
@@ -1012,7 +1037,7 @@ function convertParamsWithStyle (param, paramValue, parameterSource, components,
   }
 
   let { style, explode, startValue, propSeparator, keyValueSeparator, isExplodable } =
-    getParamSerialisationInfo(param, parameterSource, components);
+    getParamSerialisationInfo(param, parameterSource, components, options);
 
   if (options && !options.enableOptionalParameters) {
     disabled = !param.required;
@@ -1227,7 +1252,7 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
   }
 
   pSerialisationInfo = getParamSerialisationInfo(resolvedProp, PARAMETER_SOURCE.REQUEST,
-    components);
+    components, options);
   isPropSeparable = _.includes(['form', 'deepObject'], pSerialisationInfo.style);
 
   /**
@@ -1266,7 +1291,7 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
       }
 
       pSerialisationInfo = getParamSerialisationInfo(resolvedProp, PARAMETER_SOURCE.REQUEST,
-        components);
+        components, options);
       isPropSeparable = _.includes(['form', 'deepObject'], pSerialisationInfo.style);
 
       if (_.isArray(propSchema.anyOf) || _.isArray(propSchema.oneOf)) {
@@ -1405,11 +1430,13 @@ function checkValueAgainstSchema (property, jsonPathPrefix, txnParamName, value,
     valueToUse = value,
 
     // This is dereferenced schema (converted to JSON schema for validation)
-    schema = deref.resolveRefs(openApiSchemaObj, parameterSourceOption, components, {
-      resolveFor: PROCESSING_TYPE.VALIDATION,
-      resolveTo: 'example',
-      stackLimit: options.stackLimit
-    }),
+    // schema = deref.resolveRefs(openApiSchemaObj, parameterSourceOption, components, {
+    //   resolveFor: PROCESSING_TYPE.VALIDATION,
+    //   resolveTo: 'example',
+    //   stackLimit: options.stackLimit
+    // }),
+
+    schema = resolveSchema(getDefaultContext(options, components), openApiSchemaObj, 0, PROCESSING_TYPE.VALIDATION),
     compositeSchema = schema.oneOf || schema.anyOf;
 
   if (needJsonMatching) {
@@ -1727,7 +1754,7 @@ function checkPathVariables (matchedPathData, transactionPathPrefix, schemaPath,
     assignParameterExamples(schemaPathVar);
 
     resolvedParamValue = deserialiseParamValue(schemaPathVar, pathVar.value, PARAMETER_SOURCE.REQUEST,
-      components, schemaCache);
+      components, options, schemaCache);
 
     setTimeout(() => {
       if (!(schemaPathVar && schemaPathVar.schema)) {
@@ -1871,11 +1898,15 @@ function checkQueryParams (requestUrl, transactionPathPrefix, schemaPath, compon
   // below will make sure for exploded params actual schema of property present in collection is present
   _.forEach(schemaParams, (param) => {
     let pathPrefix = param.pathPrefix,
-      paramSchema = deref.resolveRefs(_.cloneDeep(param.schema), PARAMETER_SOURCE.REQUEST, components, {
-        resolveFor: PROCESSING_TYPE.VALIDATION,
-        stackLimit: options.stackLimit
-      }),
-      { style, explode } = getParamSerialisationInfo(param, PARAMETER_SOURCE.REQUEST, components),
+
+      // paramSchema = deref.resolveRefs(_.cloneDeep(param.schema), PARAMETER_SOURCE.REQUEST, components, {
+      //   resolveFor: PROCESSING_TYPE.VALIDATION,
+      //   stackLimit: options.stackLimit
+      // }),
+
+      paramSchema = resolveSchema(getDefaultContext(options, components), _.cloneDeep(param.schema),
+        0, PROCESSING_TYPE.VALIDATION),
+      { style, explode } = getParamSerialisationInfo(param, PARAMETER_SOURCE.REQUEST, components, options),
       encodingObj = { [param.name]: { style, explode } },
       metaInfo = {
         required: _.get(param, 'required') || false,
@@ -1916,7 +1947,7 @@ function checkQueryParams (requestUrl, transactionPathPrefix, schemaPath, compon
 
     if (!schemaParam.isResolvedParam) {
       resolvedParamValue = deserialiseParamValue(schemaParam, pQuery.value, PARAMETER_SOURCE.REQUEST,
-        components, schemaCache);
+        components, options, schemaCache);
     }
 
     // query found in spec. check query's schema
@@ -2018,7 +2049,7 @@ function checkRequestHeaders (headers, transactionPathPrefix, schemaPathPrefix, 
     assignParameterExamples(schemaHeader);
 
     resolvedParamValue = deserialiseParamValue(schemaHeader, pHeader.value, PARAMETER_SOURCE.REQUEST,
-      components, schemaCache);
+      components, options, schemaCache);
 
     // header found in spec. check header's schema
     setTimeout(() => {
@@ -2242,10 +2273,13 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
         return param.value !== OAS_NOT_SUPPORTED;
       });
 
-    urlencodedBodySchema = deref.resolveRefs(urlencodedBodySchema, PARAMETER_SOURCE.REQUEST, components, {
-      resolveFor: PROCESSING_TYPE.VALIDATION,
-      stackLimit: options.stackLimit
-    });
+    // urlencodedBodySchema = deref.resolveRefs(urlencodedBodySchema, PARAMETER_SOURCE.REQUEST, components, {
+    //   resolveFor: PROCESSING_TYPE.VALIDATION,
+    //   stackLimit: options.stackLimit
+    // });
+
+    urlencodedBodySchema = resolveSchema(getDefaultContext(options, components), urlencodedBodySchema,
+      0, PROCESSING_TYPE.VALIDATION);
 
     resolvedSchemaParams = resolveFormParamSchema(urlencodedBodySchema, '', encodingObj,
       filteredUrlEncodedBody, {}, components, options);
@@ -2276,7 +2310,7 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
 
       if (!schemaParam.isResolvedParam) {
         resolvedParamValue = deserialiseParamValue(schemaParam, uParam.value, PARAMETER_SOURCE.REQUEST,
-          components, schemaCache);
+          components, options, schemaCache);
       }
       // store value of transaction to use in mismatch object
       schemaParam.actualValue = uParam.value;
