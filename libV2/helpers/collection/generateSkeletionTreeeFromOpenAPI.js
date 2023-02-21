@@ -23,6 +23,10 @@ let _ = require('lodash'),
       // check for all the methods inside it and expand.
       if (pathSplit.length === 1) {
         _.forEach(methods, function (data, method) {
+          if (method === 'servers' || method === 'parameters') {
+            return;
+          }
+
           tree.setNode(`path:${pathSplit[0]}:${method}`, {
             type: 'request',
             meta: {
@@ -76,6 +80,10 @@ let _ = require('lodash'),
          */
 
         _.forEach(methods, function (data, method) {
+          if (method === 'servers' || method === 'parameters') {
+            return;
+          }
+
           // join till the last path i.e. the folder.
           let previousPathIdentified = pathSplit.slice(0, (pathSplit.length)).join('/'),
             pathIdentifier = `${pathSplit.join('/')}:${method}`;
@@ -109,6 +117,10 @@ let _ = require('lodash'),
 
     _.forEach(openapi.paths, function (methods, path) {
       _.forEach(methods, function (data, method) {
+        if (method === 'servers' || method === 'parameters') {
+          return;
+        }
+
         tree.setNode(`path:${path}:${method}`, {
           type: 'request',
           data: {},

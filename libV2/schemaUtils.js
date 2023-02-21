@@ -22,6 +22,13 @@ const schemaFaker = require('../assets/json-schema-faker'),
     [HEADER_TYPE.JSON]: 'json',
     [HEADER_TYPE.XML]: 'xml'
   },
+  // These headers are to be validated explicitly
+  // As these are not defined under usual parameters object and need special handling
+  IMPLICIT_HEADERS = [
+    'content-type', // 'content-type' is defined based on content/media-type of req/res body,
+    'accept',
+    'authorization'
+  ],
 
   /**
    * @param {*} rootObject - the object from which you're trying to read a property
@@ -1148,10 +1155,15 @@ let QUERYPARAM = 'query',
 
   resolveHeadersForPostmanRequest = (context, operationItem, method) => {
     const params = operationItem.parameters || operationItem[method].parameters,
-      pmParams = [];
+      pmParams = [],
+      { keepImplicitHeaders } = context.computedOptions;
 
     _.forEach(params, (param) => {
       if (param.in !== HEADER) {
+        return;
+      }
+
+      if (!keepImplicitHeaders && _.includes(IMPLICIT_HEADERS, _.toLower(_.get(param, 'name')))) {
         return;
       }
 
