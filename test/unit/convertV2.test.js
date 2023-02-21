@@ -84,7 +84,7 @@ const expect = require('chai').expect,
     path.join(__dirname, VALID_OPENAPI_PATH, '/schemaWithAdditionalProperties.yaml');
 
 
-describe.only('The convert Function', function() {
+describe('The convert Function', function() {
 
   it('Should add collection level auth with type as `bearer`' +
   securityTestCases, function(done) {
