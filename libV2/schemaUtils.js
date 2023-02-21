@@ -539,7 +539,7 @@ let QUERYPARAM = 'query',
         example = param.example;
       }
       else if (param.schema.example !== undefined) {
-        example = param.schema.example;
+        example = _.has(param.schema.example, 'value') ? param.schema.example.value : param.schema.example;
       }
       else {
         example = getExampleData(context, param.examples || param.schema.examples);
@@ -783,11 +783,47 @@ let QUERYPARAM = 'query',
       requestBodySchema = resolveRefFromSchema(context, requestBodySchema.$ref);
     }
 
+    /**
+     * We'll be picking up example data from `value` only if
+     * `value` is the only key present at the root level;
+     * e.g: {
+     *  example: {
+     *    value: {
+     *      a: 1,
+     *      b: 1
+     *    }
+     *  }
+     * }
+     * In the above case example should be :{
+     *      a: 1,
+     *      b: 1
+     *    }
+     * example: {
+     *    value: 1,
+     *    a: 1,
+     *    b: 2
+     *  }
+     * But for this example it should be {
+     *    value: 1,
+     *    a: 1,
+     *    b: 2
+     *  }
+     */
     if (requestBodySchema.example !== undefined) {
-      example = requestBodySchema.example;
+      const shouldResolveValueKey = _.has(requestBodySchema.example, 'value') &&
+        _.keys(requestBodySchema.example).length <= 1;
+
+      example = shouldResolveValueKey ?
+        requestBodySchema.example.value :
+        requestBodySchema.example;
     }
     else if (_.get(requestBodySchema, 'schema.example') !== undefined) {
-      example = requestBodySchema.schema.example;
+      const shouldResolveValueKey = _.has(requestBodySchema.schema.example, 'value') &&
+        _.keys(requestBodySchema.schema.example).length <= 1;
+
+      example = shouldResolveValueKey ?
+        requestBodySchema.schema.example.value :
+        requestBodySchema.schema.example;
     }
 
     examples = requestBodySchema.examples || _.get(requestBodySchema, 'schema.examples');
