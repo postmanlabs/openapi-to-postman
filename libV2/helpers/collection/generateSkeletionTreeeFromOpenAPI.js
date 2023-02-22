@@ -2,6 +2,17 @@ let _ = require('lodash'),
   Graph = require('graphlib').Graph,
 
   PATH_WEBHOOK = 'path~webhook',
+  ALLOWED_HTTP_METHODS = {
+    get: true,
+    head: true,
+    post: true,
+    put: true,
+    patch: true,
+    delete: true,
+    connect: true,
+    options: true,
+    trace: true
+  },
 
   _generateTreeFromPaths = function (openapi) {
     /**
@@ -23,7 +34,7 @@ let _ = require('lodash'),
       // check for all the methods inside it and expand.
       if (pathSplit.length === 1) {
         _.forEach(methods, function (data, method) {
-          if (method === 'servers' || method === 'parameters') {
+          if (!ALLOWED_HTTP_METHODS[method]) {
             return;
           }
 
@@ -80,7 +91,7 @@ let _ = require('lodash'),
          */
 
         _.forEach(methods, function (data, method) {
-          if (method === 'servers' || method === 'parameters') {
+          if (!ALLOWED_HTTP_METHODS[method]) {
             return;
           }
 
@@ -117,7 +128,7 @@ let _ = require('lodash'),
 
     _.forEach(openapi.paths, function (methods, path) {
       _.forEach(methods, function (data, method) {
-        if (method === 'servers' || method === 'parameters') {
+        if (!ALLOWED_HTTP_METHODS[method]) {
           return;
         }
 
