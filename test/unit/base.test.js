@@ -76,8 +76,6 @@ describe('CONVERT FUNCTION TESTS ', function() {
       specWithAuthDigest = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthDigest.yaml'),
       specWithAuthOauth1 = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthOauth1.yaml'),
       specWithAuthBasic = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthBasic.yaml'),
-      sujay_testing = path.join(__dirname, VALID_OPENAPI_PATH + '/sujay_testing.yaml'),
-      stripeAPI_testing = path.join(__dirname, VALID_OPENAPI_PATH + '/stripeAPISpec.yaml'),
       accountService = path.join(__dirname, VALID_OPENAPI_3_1_FOLDER_YAML + '/accountService.yaml'),
       schemaWithArrayTypeAndAdditionalProperties =
         path.join(__dirname, VALID_OPENAPI_PATH + '/schemaWithArrayTypeAndAdditionalProperties.yaml'),

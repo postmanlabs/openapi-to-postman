@@ -22,6 +22,13 @@ const schemaFaker = require('../assets/json-schema-faker'),
     [HEADER_TYPE.JSON]: 'json',
     [HEADER_TYPE.XML]: 'xml'
   },
+  // These headers are to be validated explicitly
+  // As these are not defined under usual parameters object and need special handling
+  IMPLICIT_HEADERS = [
+    'content-type', // 'content-type' is defined based on content/media-type of req/res body,
+    'accept',
+    'authorization'
+  ],
 
   /**
    * @param {*} rootObject - the object from which you're trying to read a property
@@ -294,12 +301,6 @@ let QUERYPARAM = 'query',
    * @returns {Object} Resolved schema
    */
   resolveAllOfSchema = (context, schema, seenRef = {}) => {
-    // Resolve all the non allOf properties first
-    _.forOwn(schema, (schema, property) => {
-      // eslint-disable-next-line no-use-before-define
-      schema[property] = resolveSchema(context, schema, 0, _.cloneDeep(seenRef));
-    });
-
     try {
       return mergeAllOf(_.assign(schema, {
         allOf: _.map(schema.allOf, (schema) => {
@@ -353,7 +354,7 @@ let QUERYPARAM = 'query',
     }
 
     if (schema.allOf) {
-      return resolveAllOfSchema(context, schema.allOf, _.cloneDeep(seenRef));
+      return resolveAllOfSchema(context, schema, _.cloneDeep(seenRef));
     }
 
     if (schema.$ref) {
@@ -372,10 +373,15 @@ let QUERYPARAM = 'query',
       let resolvedSchemaProps = {};
 
       _.forOwn(schema.properties, (property, propertyName) => {
+        if (property.format === 'decimal') {
+          delete property.format;
+        }
+
         resolvedSchemaProps[propertyName] = resolveSchema(context, property, stack, CONVERSION, _.cloneDeep(seenRef));
       });
 
       schema.properties = resolvedSchemaProps;
+      schema.type = schema.type || SCHEMA_TYPES.object;
     }
     // If schema is of type array
     else if (concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.array) && schema.items) {
@@ -397,6 +403,12 @@ let QUERYPARAM = 'query',
       schema.items = resolveSchema(context, schema.items, stack, CONVERSION, _.cloneDeep(seenRef));
     }
 
+    if (schema.hasOwnProperty('additionalProperties')) {
+      schema.additionalProperties = _.isBoolean(schema.additionalProperties) ? schema.additionalProperties :
+        resolveSchema(context, schema.additionalProperties, CONVERSION, _.cloneDeep(seenRef));
+      schema.type = schema.type || SCHEMA_TYPES.object;
+    }
+
     return schema;
   },
 
@@ -414,7 +426,7 @@ let QUERYPARAM = 'query',
    *  isExplodable - whether params can be exploded (serialised value can contain key and value)
    * }
    */
-  getParamSerialisationInfo = (param) => {
+  getParamSerialisationInfo = (context, param) => {
     let paramName = _.get(param, 'name'),
       paramSchema,
       style, // style property defined/inferred from schema
@@ -432,7 +444,7 @@ let QUERYPARAM = 'query',
     }
 
     // Resolve the ref and composite schemas
-    paramSchema = resolveSchema(param.schema);
+    paramSchema = resolveSchema(context, param.schema);
 
     isExplodable = paramSchema.type === 'object';
 
@@ -511,25 +523,33 @@ let QUERYPARAM = 'query',
       resolvedSchema = resolveSchema(context, param.schema),
       { requestParametersResolution } = context.computedOptions,
       shouldGenerateFromExample = requestParametersResolution === 'example',
-      hasExample = param.example ||
-        param.schema.example ||
-        param.examples ||
-        param.schema.examples;
+      hasExample = param.example !== undefined ||
+        param.schema.example !== undefined ||
+        param.examples !== undefined ||
+        param.schema.examples !== undefined;
 
     if (shouldGenerateFromExample && hasExample) {
       /**
        * Here it could be example or examples (plural)
        * For examples, we'll pick the first example
        */
-      const example = param.example ||
-        param.schema.example ||
-        getExampleData(context, param.examples || param.schema.examples);
+      let example;
+
+      if (param.example !== undefined) {
+        example = param.example;
+      }
+      else if (param.schema.example !== undefined) {
+        example = _.has(param.schema.example, 'value') ? param.schema.example.value : param.schema.example;
+      }
+      else {
+        example = getExampleData(context, param.examples || param.schema.examples);
+      }
 
       return example;
     }
 
     schemaFaker.option({
-      useExamplesValue: false
+      useExamplesValue: true
     });
 
     if (resolvedSchema.properties) {
@@ -539,7 +559,8 @@ let QUERYPARAM = 'query',
         if (resolvedSchema.properties.hasOwnProperty(prop)) {
           if (
             resolvedSchema.properties[prop].format === 'binary' ||
-            resolvedSchema.properties[prop].format === 'byte'
+            resolvedSchema.properties[prop].format === 'byte' ||
+            resolvedSchema.properties[prop].format === 'decimal'
           ) {
             delete resolvedSchema.properties[prop].format;
           }
@@ -612,14 +633,15 @@ let QUERYPARAM = 'query',
       (parameter.enum ? ' (This can only be one of ' + parameter.enum + ')' : '');
   },
 
-  serialiseParamsBasedOnStyle = (param, paramValue) => {
+  serialiseParamsBasedOnStyle = (context, param, paramValue) => {
     const { style, explode, startValue, propSeparator, keyValueSeparator, isExplodable } =
-      getParamSerialisationInfo(param);
+      getParamSerialisationInfo(context, param);
 
     let serialisedValue = '',
       description = getParameterDescription(param),
       paramName = _.get(param, 'name'),
-      pmParams = [];
+      pmParams = [],
+      isNotSerializable = false;
 
     // decide explodable params, starting value and separators between key-value and properties for serialisation
     // Ref: https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.2.md#style-examples
@@ -654,10 +676,21 @@ let QUERYPARAM = 'query',
 
           return pmParams;
         }
+        else if (_.isArray(paramValue)) {
+          isNotSerializable = true;
+          pmParams.push({
+            key: paramName,
+            value: 'Not supported in OAS'
+          });
+        }
 
         break;
       default:
         break;
+    }
+
+    if (isNotSerializable) {
+      return pmParams;
     }
 
     if (_.isObject(paramValue)) {
@@ -739,7 +772,8 @@ let QUERYPARAM = 'query',
     let { requestParametersResolution, indentCharacter } = context.computedOptions,
       bodyData = '',
       shouldGenerateFromExample = requestParametersResolution === 'example',
-      hasExample;
+      example,
+      examples;
 
     if (_.isEmpty(requestBodySchema)) {
       return bodyData;
@@ -749,18 +783,62 @@ let QUERYPARAM = 'query',
       requestBodySchema = resolveRefFromSchema(context, requestBodySchema.$ref);
     }
 
+    /**
+     * We'll be picking up example data from `value` only if
+     * `value` is the only key present at the root level;
+     * e.g: {
+     *  example: {
+     *    value: {
+     *      a: 1,
+     *      b: 1
+     *    }
+     *  }
+     * }
+     * In the above case example should be :{
+     *      a: 1,
+     *      b: 1
+     *    }
+     * example: {
+     *    value: 1,
+     *    a: 1,
+     *    b: 2
+     *  }
+     * But for this example it should be {
+     *    value: 1,
+     *    a: 1,
+     *    b: 2
+     *  }
+     */
+    if (requestBodySchema.example !== undefined) {
+      const shouldResolveValueKey = _.has(requestBodySchema.example, 'value') &&
+        _.keys(requestBodySchema.example).length <= 1;
+
+      example = shouldResolveValueKey ?
+        requestBodySchema.example.value :
+        requestBodySchema.example;
+    }
+    else if (_.get(requestBodySchema, 'schema.example') !== undefined) {
+      const shouldResolveValueKey = _.has(requestBodySchema.schema.example, 'value') &&
+        _.keys(requestBodySchema.schema.example).length <= 1;
+
+      example = shouldResolveValueKey ?
+        requestBodySchema.schema.example.value :
+        requestBodySchema.schema.example;
+    }
+
+    examples = requestBodySchema.examples || _.get(requestBodySchema, 'schema.examples');
+
     requestBodySchema = requestBodySchema.schema || requestBodySchema;
     requestBodySchema = resolveSchema(context, requestBodySchema);
-    hasExample = requestBodySchema.example || requestBodySchema.examples;
 
-    if (shouldGenerateFromExample && hasExample) {
+    if (shouldGenerateFromExample && (example !== undefined || examples)) {
       /**
        * Here it could be example or examples (plural)
        * For examples, we'll pick the first example
        */
-      const example = requestBodySchema.example || getExampleData(context, requestBodySchema.examples);
+      const exampleData = example || getExampleData(context, examples);
 
-      bodyData = example;
+      bodyData = exampleData;
     }
     else if (requestBodySchema) {
       requestBodySchema = requestBodySchema.schema || requestBodySchema;
@@ -823,6 +901,10 @@ let QUERYPARAM = 'query',
       return requestBodyData;
     }
 
+    if (_.has(requestBodyContent, 'schema.$ref')) {
+      requestBodyContent.schema = resolveRefFromSchema(context, requestBodyContent.schema.$ref);
+    }
+
     bodyData = resolveRequestBodyData(context, requestBodyContent.schema);
 
     const encoding = requestBodyContent.encoding || {};
@@ -834,7 +916,9 @@ let QUERYPARAM = 'query',
 
       if (requestBodyContent.schema) {
         description = _.get(requestBodyContent, ['schema', 'properties', key, 'description'], '');
-        required = _.get(requestBodyContent, ['schema', 'required'], true);
+        required = _.has(requestBodyContent.schema, 'required') ?
+          _.indexOf(requestBodyContent.schema.required, key) !== -1 :
+          _.get(requestBodyContent, ['schema.properties', key], false);
       }
 
       const param = encoding[key] || {};
@@ -847,7 +931,7 @@ let QUERYPARAM = 'query',
       param.description = description;
       param.required = required;
 
-      urlEncodedParams.push(...serialiseParamsBasedOnStyle(param, value));
+      urlEncodedParams.push(...serialiseParamsBasedOnStyle(context, param, value));
     });
 
     return {
@@ -874,9 +958,22 @@ let QUERYPARAM = 'query',
     bodyData = resolveRequestBodyData(context, requestBodyContent.schema);
 
     _.forOwn(bodyData, (value, key) => {
-      let paramSchema = _.get(requestBodyContent, ['schema', 'properties', key]),
-        description = getParameterDescription(paramSchema),
+      let requestBodySchema,
+        paramSchema,
+        description,
         param;
+
+      requestBodySchema = _.has(requestBodyContent, 'schema.$ref') ?
+        resolveRefFromSchema(context, requestBodyContent.schema.$ref) :
+        _.get(requestBodyContent, 'schema');
+
+      paramSchema = _.get(requestBodySchema, ['properties', key], {});
+
+      // Handle `required` array found the schema
+      paramSchema.required = _.has(paramSchema, 'required') ?
+        paramSchema.required :
+        _.indexOf(requestBodySchema.required, key) !== -1;
+      description = getParameterDescription(paramSchema);
 
       // TODO: Add handling for headers from encoding
 
@@ -1014,6 +1111,10 @@ let QUERYPARAM = 'query',
       pmParams = [];
 
     _.forEach(params, (param) => {
+      if (_.has(param, '$ref')) {
+        param = resolveRefFromSchema(context, param.$ref);
+      }
+
       if (param.in !== QUERYPARAM) {
         return;
       }
@@ -1028,7 +1129,7 @@ let QUERYPARAM = 'query',
         paramValue = paramValue.toString();
       }
 
-      const deserialisedParams = serialiseParamsBasedOnStyle(param, paramValue);
+      const deserialisedParams = serialiseParamsBasedOnStyle(context, param, paramValue);
 
       pmParams.push(...deserialisedParams);
     });
@@ -1059,7 +1160,7 @@ let QUERYPARAM = 'query',
         paramValue = paramValue.toString();
       }
 
-      const deserialisedParams = serialiseParamsBasedOnStyle(param, paramValue);
+      const deserialisedParams = serialiseParamsBasedOnStyle(context, param, paramValue);
 
       pmParams.push(...deserialisedParams);
     });
@@ -1094,7 +1195,8 @@ let QUERYPARAM = 'query',
 
   resolveHeadersForPostmanRequest = (context, operationItem, method) => {
     const params = operationItem.parameters || operationItem[method].parameters,
-      pmParams = [];
+      pmParams = [],
+      { keepImplicitHeaders } = context.computedOptions;
 
     _.forEach(params, (param) => {
       if (_.has(param, '$ref')) {
@@ -1102,6 +1204,10 @@ let QUERYPARAM = 'query',
       }
 
       if (param.in !== HEADER) {
+        return;
+      }
+
+      if (!keepImplicitHeaders && _.includes(IMPLICIT_HEADERS, _.toLower(_.get(param, 'name')))) {
         return;
       }
 
@@ -1115,7 +1221,7 @@ let QUERYPARAM = 'query',
         paramValue = paramValue.toString();
       }
 
-      const deserialisedParams = serialiseParamsBasedOnStyle(param, paramValue);
+      const deserialisedParams = serialiseParamsBasedOnStyle(context, param, paramValue);
 
       pmParams.push(...deserialisedParams);
     });
@@ -1157,12 +1263,39 @@ let QUERYPARAM = 'query',
 
     return {
       body: rawModeData,
-      headers: [{
+      contentHeader: [{
         key: 'Content-Type',
         value: bodyType
       }],
       bodyType
     };
+  },
+
+  resolveResponseHeaders = (context, responseHeaders) => {
+    const headers = [];
+
+    if (_.has(responseHeaders, '$ref')) {
+      responseHeaders = resolveRefFromSchema(context, responseHeaders.$ref);
+    }
+
+    _.forOwn(responseHeaders, (value, headerName) => {
+      let headerValue = resolveValueOfParameter(context, value);
+
+      if (typeof headerValue === 'number' || typeof headerValue === 'boolean') {
+        // the SDK will keep the number-ness,
+        // which will be rejected by the collection v2 schema
+        // converting to string to prevent issues like
+        // https://github.com/postmanlabs/postman-app-support/issues/6500
+        headerValue = headerValue.toString();
+      }
+
+      const headerData = Object.assign({}, value, { name: headerName }),
+        serialisedHeader = serialiseParamsBasedOnStyle(context, headerData, headerValue);
+
+      headers.push(...serialisedHeader);
+    });
+
+    return headers;
   },
 
   getPreviewLangugaForResponseBody = (bodyType) => {
@@ -1176,12 +1309,13 @@ let QUERYPARAM = 'query',
 
     _.forOwn(operationItem.responses, (responseSchema, code) => {
       let response,
-        { body, headers = [], bodyType } = resolveResponseBody(context, responseSchema) || {};
+        { body, contentHeader = [], bodyType } = resolveResponseBody(context, responseSchema) || {},
+        headers = resolveResponseHeaders(context, responseSchema.headers);
 
       response = {
         name: _.get(responseSchema, 'description'),
         body,
-        headers,
+        headers: _.concat(contentHeader, headers),
         code,
         originalRequest,
         _postman_previewlanguage: getPreviewLangugaForResponseBody(bodyType)

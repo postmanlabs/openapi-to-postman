@@ -1,6 +1,19 @@
 let _ = require('lodash'),
   Graph = require('graphlib').Graph,
 
+  PATH_WEBHOOK = 'path~webhook',
+  ALLOWED_HTTP_METHODS = {
+    get: true,
+    head: true,
+    post: true,
+    put: true,
+    patch: true,
+    delete: true,
+    connect: true,
+    options: true,
+    trace: true
+  },
+
   _generateTreeFromPaths = function (openapi) {
     /**
      * We will create a unidirectional graph
@@ -21,6 +34,10 @@ let _ = require('lodash'),
       // check for all the methods inside it and expand.
       if (pathSplit.length === 1) {
         _.forEach(methods, function (data, method) {
+          if (!ALLOWED_HTTP_METHODS[method]) {
+            return;
+          }
+
           tree.setNode(`path:${pathSplit[0]}:${method}`, {
             type: 'request',
             meta: {
@@ -74,6 +91,10 @@ let _ = require('lodash'),
          */
 
         _.forEach(methods, function (data, method) {
+          if (!ALLOWED_HTTP_METHODS[method]) {
+            return;
+          }
+
           // join till the last path i.e. the folder.
           let previousPathIdentified = pathSplit.slice(0, (pathSplit.length)).join('/'),
             pathIdentifier = `${pathSplit.join('/')}:${method}`;
@@ -107,6 +128,10 @@ let _ = require('lodash'),
 
     _.forEach(openapi.paths, function (methods, path) {
       _.forEach(methods, function (data, method) {
+        if (!ALLOWED_HTTP_METHODS[method]) {
+          return;
+        }
+
         tree.setNode(`path:${path}:${method}`, {
           type: 'request',
           data: {},
@@ -144,6 +169,32 @@ let _ = require('lodash'),
     });
 
     return tree;
+  },
+
+  _generateWebhookEndpoints = function (openapi, tree) {
+    if (!_.isEmpty(openapi.webhooks)) {
+      tree.setNode(`${PATH_WEBHOOK}:folder`, {
+        type: 'webhook~folder',
+        meta: { path: 'webhook~folder' },
+        data: {}
+      });
+
+      tree.setEdge('root:collection', `${PATH_WEBHOOK}:folder`);
+    }
+
+    _.forEach(openapi.webhooks, function (methodData, path) {
+      _.forEach(methodData, function (data, method) {
+        tree.setNode(`${PATH_WEBHOOK}:${path}:${method}`, {
+          type: 'webhook~request',
+          meta: { path: path, method: method },
+          data: {}
+        });
+
+        tree.setEdge(`${PATH_WEBHOOK}:folder`, `${PATH_WEBHOOK}:${path}:${method}`);
+      });
+    });
+
+    return tree;
   };
 
 /**
@@ -154,14 +205,25 @@ let _ = require('lodash'),
  *
  * @returns {Object} - tree format
  */
-module.exports = function (openapi, stratergy = 'paths') {
-  switch (stratergy) {
+module.exports = function (openapi, { folderStrategy, includeWebhooks }) {
+  let skeletonTree;
+
+  switch (folderStrategy) {
     case 'tags':
-      return _generateTreeFromTags(openapi);
+      skeletonTree = _generateTreeFromTags(openapi);
+      break;
 
     case 'paths':
-      return _generateTreeFromPaths(openapi);
+      skeletonTree = _generateTreeFromPaths(openapi);
+      break;
 
-    default: break;
+    default:
+      throw new Error('generateSkeletonTreeFromOpenAPI~folderStrategy not valid');
   }
+
+  if (includeWebhooks) {
+    skeletonTree = _generateWebhookEndpoints(openapi, skeletonTree);
+  }
+
+  return skeletonTree;
 };
