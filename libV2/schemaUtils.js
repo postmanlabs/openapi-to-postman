@@ -1041,6 +1041,10 @@ let QUERYPARAM = 'query',
       pmParams = [];
 
     _.forEach(params, (param) => {
+      if (_.has(param, '$ref')) {
+        param = resolveRefFromSchema(context, param.$ref);
+      }
+
       if (param.in !== PATHPARAM) {
         return;
       }
@@ -1093,6 +1097,10 @@ let QUERYPARAM = 'query',
       pmParams = [];
 
     _.forEach(params, (param) => {
+      if (_.has(param, '$ref')) {
+        param = resolveRefFromSchema(context, param.$ref);
+      }
+
       if (param.in !== HEADER) {
         return;
       }
