@@ -402,20 +402,27 @@ let QUERYPARAM = 'query',
     }
     // If schema is of type array
     else if (concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.array) && schema.items) {
-      // Add maxItem and minItem defintion since we want to enforce a limit on the number
-      // of items being faked by schema faker
+      /*
+        For VALIDATION - keep minItems and maxItems properties defined by user in schema as is
+        FOR CONVERSION -
+          Json schema faker fakes exactly maxItems # of elements in array
+          Hence keeping maxItems as minimum and valid as possible for schema faking (to lessen faked items)
+          We have enforced limit to maxItems as 100, set by Json schema faker option
+      */
+      if (resolveFor === 'CONVERSION') {
+        // Override minItems to default (2) if no minItems present
+        if (!_.has(schema, 'minItems') && _.has(schema, 'maxItems') && schema.maxItems >= 2) {
+          schema.minItems = 2;
+        }
 
-      if (!_.has(schema, 'minItems') && _.has(schema, 'maxItems') && schema.maxItems >= 2) {
-        schema.minItems = 2;
+        // Override maxItems to minItems if minItems is available
+        if (_.has(schema, 'minItems') && schema.minItems > 0) {
+          schema.maxItems = schema.minItems;
+        }
+
+        // If no maxItems is defined than override with default (2)
+        !_.has(schema, 'maxItems') && (schema.maxItems = 2);
       }
-
-      // Override maxItems to minItems if minItems is available
-      if (_.has(schema, 'minItems') && schema.minItems > 0) {
-        schema.maxItems = schema.minItems;
-      }
-
-      // If no maxItems is defined than override with default (2)
-      !_.has(schema, 'maxItems') && (schema.maxItems = 2);
 
       schema.items = resolveSchema(context, schema.items, stack, resolveFor, _.cloneDeep(seenRef));
     }
