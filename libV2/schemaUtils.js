@@ -43,7 +43,7 @@ const schemaFaker = require('../assets/json-schema-faker'),
       return null;
     }
 
-    if (!rootObject) {
+    if (rootObject === undefined) {
       return defValue;
     }
 
@@ -266,6 +266,92 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * Resolve a given ref from an example
+   * @param {Object} context - Global context object
+   * @param {Object} $ref - Ref that is to be resolved
+   * @param {Number} stackDepth - Depth of the current stack for Ref resolution
+   * @param {Object} seenRef - Seen Reference map
+   *
+   * @returns {Object} Returns the object that staisfies the schema
+   */
+  resolveRefForExamples = (context, $ref, stackDepth = 0, seenRef = {}) => {
+    const { specComponents } = context;
+
+    stackDepth++;
+
+    seenRef[$ref] = true;
+    if (stackDepth >= REF_STACK_LIMIT) {
+      return { value: ERR_TOO_MANY_LEVELS };
+    }
+
+    if (context.schemaCache[$ref]) {
+      return context.schemaCache[$ref];
+    }
+
+    if (!_.isFunction($ref.split)) {
+      return { value: `reference ${schema.$ref} not found in the OpenAPI spec` };
+    }
+
+    let splitRef = $ref.split('/'),
+      resolvedExample;
+
+    // .split should return [#, components, schemas, schemaName]
+    // So length should atleast be 4
+    if (splitRef.length < 4) {
+      // not throwing an error. We didn't find the reference - generate a dummy value
+      return { value: `reference ${$ref} not found in the OpenAPI spec` };
+    }
+
+    // something like #/components/schemas/PaginationEnvelope/properties/page
+    // will be resolved - we don't care about anything before the components part
+    // splitRef.slice(1) will return ['components', 'schemas', 'PaginationEnvelope', 'properties', 'page']
+    // not using _.get here because that fails if there's a . in the property name (Pagination.Envelope, for example)
+    splitRef = splitRef.slice(1).map((elem) => {
+      // https://swagger.io/docs/specification/using-ref#escape
+      // since / is the default delimiter, slashes are escaped with ~1
+      return decodeURIComponent(
+        elem
+          .replace(/~1/g, '/')
+          .replace(/~0/g, '~')
+      );
+    });
+
+    resolvedExample = _getEscaped(specComponents, splitRef);
+
+    if (resolvedExample === undefined) {
+      return { value: 'reference ' + $ref + ' not found in the OpenAPI spec' };
+    }
+
+    if (_.has(resolvedExample, '$ref')) {
+      if (seenRef[resolvedExample.$ref]) {
+        return {
+          value: `<Circular reference to ${resolvedExample.$ref} detected>`
+        };
+      }
+      return resolveRefFromSchema(context, resolvedExample.$ref, stackDepth, _.cloneDeep(seenRef));
+    }
+
+    // Add the resolved schema to the global schema cache
+    context.schemaCache[$ref] = resolvedExample;
+
+    return resolvedExample;
+  },
+
+  resolveExampleData = (context, exampleData) => {
+    if (_.has(exampleData, '$ref')) {
+      const resolvedRef = resolveRefForExamples(context, exampleData.$ref);
+      exampleData = resolveExampleData(context, resolvedRef);
+    }
+    else if (typeof exampleData === 'object') {
+      _.forOwn(exampleData, (data, key) => {
+        exampleData[key] = resolveExampleData(context, data);
+      });
+    }
+
+    return exampleData;
+  },
+
+  /**
    * returns first example in the input map
    * @param {Object} context - Global context object
    * @param {Object} exampleObj - Object defined in the schema
@@ -286,9 +372,11 @@ let QUERYPARAM = 'query',
       example = resolveRefFromSchema(context, example.$ref);
     }
 
-    // TODO: Check whether we should return whole example if value is not found
+    if (_.get(example, 'value')) {
+      example = resolveExampleData(context, example.value);
+    }
 
-    return example.value;
+    return example;
   },
 
   /**
