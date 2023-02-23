@@ -18,6 +18,10 @@ const schemaFaker = require('../assets/json-schema-faker'),
     XML: 'xml',
     INVALID: 'invalid'
   },
+  PARAMTER_RESOLUTION_TYPE = {
+    SCHEMA: 'schema',
+    VALUE: 'value'
+  },
   HEADER_TYPE_PREVIEW_LANGUAGE_MAP = {
     [HEADER_TYPE.JSON]: 'json',
     [HEADER_TYPE.XML]: 'xml'
@@ -202,7 +206,9 @@ let QUERYPARAM = 'query',
    *
    * @returns {Object} Returns the object that staisfies the schema
    */
-  resolveRefFromSchema = (context, $ref, stackDepth = 0, resolveFor = CONVERSION, seenRef = {}) => {
+  resolveRefFromSchema = (context, $ref, stackDepth = 0,
+    resolveFor = CONVERSION, seenRef = {}, resolveTo = PARAMTER_RESOLUTION_TYPE.SCHEMA
+  ) => {
     const { specComponents } = context;
 
     stackDepth++;
@@ -246,17 +252,21 @@ let QUERYPARAM = 'query',
 
     resolvedSchema = _getEscaped(specComponents, splitRef);
 
-    if (!resolvedSchema) {
+    if (resolvedSchema === undefined) {
       return { value: 'reference ' + $ref + ' not found in the OpenAPI spec' };
     }
 
-    if (resolvedSchema.$ref) {
+    if (_.has(resolvedSchema, '$ref')) {
       if (seenRef[resolvedSchema.$ref]) {
         return {
           value: `<Circular reference to ${resolvedSchema.$ref} detected>`
         };
       }
       return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth, resolveFor, _.cloneDeep(seenRef));
+    }
+
+    if (resolveTo === PARAMTER_RESOLUTION_TYPE.VALUE) {
+      return resolvedSchema;
     }
 
     // eslint-disable-next-line no-use-before-define
@@ -519,6 +529,18 @@ let QUERYPARAM = 'query',
       schema.additionalProperties = _.isBoolean(schema.additionalProperties) ? schema.additionalProperties :
         resolveSchema(context, schema.additionalProperties, stack, resolveFor, _.cloneDeep(seenRef));
       schema.type = schema.type || SCHEMA_TYPES.object;
+    }
+
+    // Resolve refs inside enums to value
+    if (schema.hasOwnProperty('enum')) {
+      _.forEach(schema.enum, (item, index) => {
+        if (item && item.hasOwnProperty('$ref')) {
+          schema.enum[index] = resolveRefFromSchema(
+            context, item.$ref, stack, resolveFor,
+            _.cloneDeep(seenRef), PARAMTER_RESOLUTION_TYPE.VALUE
+          );
+        }
+      });
     }
 
     return schema;
