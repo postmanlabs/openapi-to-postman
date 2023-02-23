@@ -655,8 +655,8 @@ let QUERYPARAM = 'query',
 
     const { indentCharacter } = context.computedOptions,
       resolvedSchema = resolveSchema(context, param.schema),
-      { requestParametersResolution } = context.computedOptions,
-      shouldGenerateFromExample = requestParametersResolution === 'example',
+      { parametersResolution } = context.computedOptions,
+      shouldGenerateFromExample = parametersResolution === 'example',
       hasExample = param.example !== undefined ||
         param.schema.example !== undefined ||
         param.examples !== undefined ||
@@ -903,9 +903,9 @@ let QUERYPARAM = 'query',
   },
 
   resolveRequestBodyData = (context, requestBodySchema, bodyType) => {
-    let { requestParametersResolution, indentCharacter } = context.computedOptions,
+    let { parametersResolution, indentCharacter } = context.computedOptions,
       bodyData = '',
-      shouldGenerateFromExample = requestParametersResolution === 'example',
+      shouldGenerateFromExample = parametersResolution === 'example',
       example,
       examples;
 
