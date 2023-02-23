@@ -35,6 +35,7 @@ const schemaFaker = require('../assets/json-schema-faker'),
   ],
 
   PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable'],
+  crypto = require('crypto'),
 
   /**
    * @param {*} rootObject - the object from which you're trying to read a property
@@ -643,6 +644,43 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   *
+   * @param {*} input - input string that needs to be hashed
+   * @returns {*} sha1 hash of the string
+   */
+  hash = (input) => {
+    return crypto.createHash('sha1').update(input).digest('base64');
+  },
+
+  fakeSchema = (context, schema, shouldGenerateFromExample = true) => {
+    try {
+      let key = hash(JSON.stringify(schema)),
+        fakedSchema;
+
+      if (context.schemaFakerCache[key]) {
+        return context.schemaFakerCache[key];
+      }
+
+      schemaFaker.option({
+        useExamplesValue: shouldGenerateFromExample
+      });
+
+      fakedSchema = schemaFaker(schema, null, context.schemaValidationCache || {});
+
+      context.schemaFakerCache[key] = fakedSchema;
+
+      return fakedSchema;
+    }
+    catch (error) {
+      console.warn(
+        'Error faking a schema. Not faking this schema. Schema:', schema,
+        'Error', error
+      );
+      return null;
+    }
+  },
+
+  /**
    * Resolve value of a given parameter
    *
    * @param {Object} param - Parameter that is to be resolved from schema
@@ -708,7 +746,7 @@ let QUERYPARAM = 'query',
       }
 
       // for JSON, the indentCharacter will be applied in the JSON.stringify step later on
-      return schemaFaker(resolvedSchema, null, context.schemaValidationCache || {});
+      return fakeSchema(context, resolvedSchema, shouldGenerateFromExample);
     }
     catch (e) {
       console.warn(
@@ -985,9 +1023,6 @@ let QUERYPARAM = 'query',
         return xmlFaker(null, requestBodySchema, indentCharacter);
       }
 
-      schemaFaker.option({
-        useExamplesValue: shouldGenerateFromExample
-      });
 
       if (requestBodySchema.properties) {
         // If any property exists with format:binary or byte schemaFaker crashes
@@ -1008,7 +1043,7 @@ let QUERYPARAM = 'query',
 
       // This is to handle cases when the jsf throws errors on finding unsupported types/formats
       try {
-        bodyData = schemaFaker(requestBodySchema, null, context.schemaValidationCache || {});
+        bodyData = fakeSchema(context, requestBodySchema, shouldGenerateFromExample);
       }
       catch (e) {
         console.warn(
@@ -1467,7 +1502,8 @@ module.exports = {
      * schemaCache object will be used to cache the already resolved refs
      * in the schema.
      */
-    context.schemaCache = {};
+    context.schemaCache = context.schemaCache || {};
+    context.schemaFakerCache = context.schemaFakerCache || {};
 
     let url = resolveUrlForPostmanRequest(path),
       baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[method]),
