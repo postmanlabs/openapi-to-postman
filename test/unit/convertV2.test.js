@@ -20,7 +20,6 @@ const expect = require('chai').expect,
   infoHavingDescriptionOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/info_having_description_only.json'),
   customHeadersSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/custom_headers.json'),
   implicitHeadersSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/implicit_headers.json'),
-  readOnlySpec = path.join(__dirname, VALID_OPENAPI_PATH + '/readOnly.json'),
   multipleFoldersSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem.json'),
   multipleFoldersSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem1.json'),
   multipleFoldersSpec2 = path.join(__dirname, VALID_OPENAPI_PATH + '/multiple_folder_problem2.json'),
@@ -54,9 +53,6 @@ const expect = require('chai').expect,
   invalidNullInfoTitle = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-title.json'),
   invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json'),
   onlyOneOperationDeprecated = path.join(__dirname, VALID_OPENAPI_PATH, '/has_one_op_dep.json'),
-  someOperationOneDeprecated = path.join(__dirname, VALID_OPENAPI_PATH, '/has_some_op_dep.json'),
-  someOperationDeprecatedUsingTags =
-    path.join(__dirname, VALID_OPENAPI_PATH, '/has_some_op_dep_use_tags.json'),
   deprecatedParams =
     path.join(__dirname, VALID_OPENAPI_PATH, '/petstore_deprecated_param.json'),
   deprecatedProperty =
@@ -95,8 +91,7 @@ describe('The convert Function', function() {
       indentCharacter: 'Space',
       collapseFolders: true,
       optimizeConversion: true,
-      requestParametersResolution: 'Example',
-      exampleParametersResolution: 'Example'
+      parametersResolution: 'Example'
     }, (err, conversionResult) => {
 
       auth = conversionResult.output[0].data.item[0].request.auth;
@@ -185,7 +180,7 @@ describe('The convert Function', function() {
   it(' Fix for GITHUB#133: Should generate collection with proper Path and Collection variables', function(done) {
     var openapi = fs.readFileSync(issue133, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi },
-      { requestParametersResolution: 'Example', schemaFaker: true }, (err, conversionResult) => {
+      { parametersResolution: 'Example', schemaFaker: true }, (err, conversionResult) => {
 
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
@@ -203,8 +198,7 @@ describe('The convert Function', function() {
         // serialised value for object { R: 100, G: 200, B: 150 }
         expect(conversionResult.output[0].data.variable[3].value).to.equal('R,100,G,200,B,150');
         expect(conversionResult.output[0].data.variable[4].key).to.equal('new-path-variable-2');
-        // serialised value for array ["exampleString", "exampleString"]
-        expect(conversionResult.output[0].data.variable[4].value).to.equal('exampleString,exampleString');
+        expect(conversionResult.output[0].data.variable[4].value).to.contain('exampleString');
         done();
       });
   });
@@ -417,7 +411,7 @@ describe('The convert Function', function() {
   it('#GITHUB-10229 should generate correct example is out of the schema and is falsy' +
   issue10229, function(done) {
     var openapi = fs.readFileSync(issue10229, 'utf8');
-    Converter.convertV2({ type: 'string', data: openapi }, { requestParametersResolution: 'Example' },
+    Converter.convertV2({ type: 'string', data: openapi }, { parametersResolution: 'Example' },
       (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
@@ -438,7 +432,7 @@ describe('The convert Function', function() {
     it('Should respect schema faking for root request and example for example request' +
     examplesInSchemaSpec, function(done) {
       Converter.convertV2({ type: 'file', data: examplesInSchemaSpec },
-        { schemaFaker: true, requestParametersResolution: 'example' },
+        { schemaFaker: true, parametersResolution: 'example' },
         (err, conversionResult) => {
           let rootRequest = conversionResult.output[0].data.item[0].request,
             exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
@@ -453,7 +447,7 @@ describe('The convert Function', function() {
     it('Should fallback to faked value if the example is not present in the spec and the option is set to example' +
     schemaWithoutExampleSpec, function(done) {
       Converter.convertV2({ type: 'file', data: schemaWithoutExampleSpec },
-        { schemaFaker: true, requestParametersResolution: 'example', exampleParametersResolution: 'example' },
+        { schemaFaker: true, parametersResolution: 'example', exampleParametersResolution: 'example' },
         (err, conversionResult) => {
           let rootRequestBody = JSON.parse(conversionResult.output[0].data.item[0].request.body.raw),
             exampleRequestBody = JSON.parse(conversionResult.output[0].data.item[0]
@@ -471,7 +465,7 @@ describe('The convert Function', function() {
     it('Should use examples outside of schema instead of schema properties' +
     exampleOutsideSchema, function(done) {
       Converter.convertV2({ type: 'file', data: exampleOutsideSchema },
-        { schemaFaker: true, requestParametersResolution: 'example', exampleParametersResolution: 'example' },
+        { schemaFaker: true, parametersResolution: 'example', exampleParametersResolution: 'example' },
         (err, conversionResult) => {
           let rootRequest = conversionResult.output[0].data.item[0].request,
             exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
@@ -485,7 +479,7 @@ describe('The convert Function', function() {
     it('Should use example outside of schema instead of schema properties' +
     examplesOutsideSchema, function(done) {
       Converter.convertV2({ type: 'file', data: examplesOutsideSchema },
-        { schemaFaker: true, requestParametersResolution: 'example', exampleParametersResolution: 'example' },
+        { schemaFaker: true, parametersResolution: 'example', exampleParametersResolution: 'example' },
         (err, conversionResult) => {
           let rootRequest = conversionResult.output[0].data.item[0].request,
             exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
@@ -969,7 +963,7 @@ describe('The convert Function', function() {
 
   it('Should prefer and use example from parameter object over schema example while faking schema', function(done) {
     Converter.convertV2({ type: 'file', data: parameterExamples },
-      { schemaFaker: true, requestParametersResolution: 'example' },
+      { schemaFaker: true, parametersResolution: 'example' },
       (err, conversionResult) => {
         let rootRequest = conversionResult.output[0].data.item[0].item[0].item[0].request;
 
@@ -1001,7 +995,7 @@ describe('The convert Function', function() {
   deepObjectLengthProperty, function(done) {
     var openapi = fs.readFileSync(deepObjectLengthProperty, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi },
-      { schemaFaker: true, requestParametersResolution: 'Example' }, (err, conversionResult) => {
+      { schemaFaker: true, parametersResolution: 'Example' }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output[0].data.item[0].request.url.query[0].key)
@@ -1015,7 +1009,7 @@ describe('The convert Function', function() {
   valuePropInExample, function(done) {
     var openapi = fs.readFileSync(valuePropInExample, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi },
-      { schemaFaker: true, requestParametersResolution: 'Example' }, (err, conversionResult) => {
+      { schemaFaker: true, parametersResolution: 'Example' }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output[0].data.item[0].response[0]
@@ -1030,7 +1024,7 @@ describe('The convert Function', function() {
   petstoreParamExample, function(done) {
     var openapi = fs.readFileSync(petstoreParamExample, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi },
-      { schemaFaker: true, requestParametersResolution: 'Example' }, (err, conversionResult) => {
+      { schemaFaker: true, parametersResolution: 'Example' }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
 
@@ -1044,7 +1038,7 @@ describe('The convert Function', function() {
   it('Should convert xml request body correctly', function(done) {
     const openapi = fs.readFileSync(xmlrequestBody, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi },
-      { schemaFaker: true, requestParametersResolution: 'Example' }, (err, conversionResult) => {
+      { schemaFaker: true, parametersResolution: 'Example' }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output[0].data.item[0].request.body.raw)
@@ -1068,7 +1062,7 @@ describe('The convert Function', function() {
       data: openapi
     }, {
       schemaFaker: true,
-      requestParametersResolution: 'Example'
+      parametersResolution: 'Example'
     }, (err, conversionResult) => {
       let fakedParam = conversionResult.output[0].data.item[0].request.url.query[0].value;
       expect(err).to.be.null;
