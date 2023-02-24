@@ -2019,8 +2019,13 @@ function checkRequestHeaders (headers, transactionPathPrefix, schemaPathPrefix, 
     securityHeaders = _.map(getSecurityParams(_.get(components, 'components'), 'header'), 'name'),
     // filter out headers for following cases
     reqHeaders = _.filter(headers, (header) => {
-      // 1. which need explicit handling according to schema (other than parameters object)
-      // 2. which are added by security schemes
+      // 1. If header is disabled
+      // 2. which need explicit handling according to schema (other than parameters object)
+      // 3. which are added by security schemes
+      if (options.disabledParametersValidation) {
+        return !header.disabled;
+      }
+
       return !_.includes(IMPLICIT_HEADERS, _.toLower(_.get(header, 'key'))) &&
         !_.includes(securityHeaders, header.key);
     }),
@@ -2132,6 +2137,10 @@ function checkResponseHeaders (schemaResponse, headers, transactionPathPrefix, s
   let schemaHeaders,
     // filter out headers which need explicit handling according to schema (other than parameters object)
     resHeaders = _.filter(headers, (header) => {
+      if (options.disabledParametersValidation) {
+        return !header.disabled;
+      }
+
       return !_.includes(IMPLICIT_HEADERS, _.toLower(_.get(header, 'key')));
     }),
     mismatchProperty = 'RESPONSE_HEADER';

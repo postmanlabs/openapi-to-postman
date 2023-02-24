@@ -96,7 +96,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
     securityTestCases, function(done) {
       var openapi = fs.readFileSync(accountService, 'utf8'),
         auth;
-      Converter.convertV2({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+      Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
 
         auth = conversionResult.output[0].data.item[0].request.auth;
 
