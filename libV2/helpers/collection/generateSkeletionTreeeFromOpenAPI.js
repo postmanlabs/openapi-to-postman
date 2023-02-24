@@ -27,7 +27,7 @@ let _ = require('lodash'),
     });
 
     _.forEach(openapi.paths, function (methods, path) {
-      let pathSplit = _.compact(path.split('/'));
+      let pathSplit = path === '/' ? [path] : _.compact(path.split('/'));
 
       // if after path split we just have one entry
       // that means no folders need to be generated.
