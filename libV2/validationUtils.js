@@ -2022,7 +2022,7 @@ function checkRequestHeaders (headers, transactionPathPrefix, schemaPathPrefix, 
       // 1. If header is disabled
       // 2. which need explicit handling according to schema (other than parameters object)
       // 3. which are added by security schemes
-      if (options.disabledParametersValidation) {
+      if (options.disabledParametersValidation && header.disabled) {
         return !header.disabled;
       }
 
@@ -2137,7 +2137,7 @@ function checkResponseHeaders (schemaResponse, headers, transactionPathPrefix, s
   let schemaHeaders,
     // filter out headers which need explicit handling according to schema (other than parameters object)
     resHeaders = _.filter(headers, (header) => {
-      if (options.disabledParametersValidation) {
+      if (options.disabledParametersValidation && header.disabled) {
         return !header.disabled;
       }
 
@@ -2286,6 +2286,10 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
       pathPrefix = `${schemaPathPrefix}.requestBody.content[${URLENCODED}].schema`,
       encodingObj = _.get(schemaPath, ['requestBody', 'content', URLENCODED, 'encoding']),
       filteredUrlEncodedBody = _.filter(requestBody.urlencoded, (param) => {
+        if (options.disabledParametersValidation && param.disabled) {
+          return !param.disabled;
+        }
+
         return param.value !== OAS_NOT_SUPPORTED;
       });
 
