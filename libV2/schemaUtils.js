@@ -383,7 +383,7 @@ let QUERYPARAM = 'query',
     example = exampleObj[exampleKey];
 
     if (example.$ref) {
-      example = resolveRefFromSchema(context, example.$ref);
+      example = resolveExampleData(context, example);
     }
 
     if (_.get(example, 'value')) {
@@ -508,7 +508,7 @@ let QUERYPARAM = 'query',
           Hence keeping maxItems as minimum and valid as possible for schema faking (to lessen faked items)
           We have enforced limit to maxItems as 100, set by Json schema faker option
       */
-      if (resolveFor === 'CONVERSION') {
+      if (resolveFor === CONVERSION) {
         // Override minItems to default (2) if no minItems present
         if (!_.has(schema, 'minItems') && _.has(schema, 'maxItems') && schema.maxItems >= 2) {
           schema.minItems = 2;

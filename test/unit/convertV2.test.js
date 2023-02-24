@@ -64,7 +64,6 @@ const expect = require('chai').expect,
   specWithAuthDigest = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthDigest.yaml'),
   specWithAuthOauth1 = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthOauth1.yaml'),
   specWithAuthBasic = path.join(__dirname, VALID_OPENAPI_PATH + '/specWithAuthBasic.yaml'),
-  stripeAPI_testing = path.join(__dirname, VALID_OPENAPI_PATH + '/stripeAPISpec.yaml'),
   schemaWithArrayTypeAndAdditionalProperties =
     path.join(__dirname, VALID_OPENAPI_PATH + '/schemaWithArrayTypeAndAdditionalProperties.yaml'),
   xmlRequestAndResponseBody = path.join(__dirname, VALID_OPENAPI_PATH, '/xmlRequestAndResponseBody.json'),
@@ -815,27 +814,29 @@ describe('The convert Function', function() {
 
   it('[Github #173] - should add headers correctly to sample request in examples(responses)', function (done) {
     var openapi = fs.readFileSync(issue173, 'utf8');
-    Converter.convertV2({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
-      let responseArray;
-      expect(err).to.be.null;
-      responseArray = conversionResult.output[0].data.item[0].response;
-      expect(responseArray).to.be.an('array');
-      responseArray.forEach((response) => {
-        let headerArray = response.originalRequest.header;
-        expect(headerArray).to.be.an('array').that.is.not.empty;
-        expect(headerArray).to.eql([
-          {
-            key: 'access_token',
-            value: 'X-access-token',
-            description: {
-              content: 'Access token',
-              type: 'text/plain'
+    Converter.convertV2({ type: 'string', data: openapi },
+      { parametersResolution: 'Example' },
+      (err, conversionResult) => {
+        let responseArray;
+        expect(err).to.be.null;
+        responseArray = conversionResult.output[0].data.item[0].response;
+        expect(responseArray).to.be.an('array');
+        responseArray.forEach((response) => {
+          let headerArray = response.originalRequest.header;
+          expect(headerArray).to.be.an('array').that.is.not.empty;
+          expect(headerArray).to.eql([
+            {
+              key: 'access_token',
+              value: 'X-access-token',
+              description: {
+                content: 'Access token',
+                type: 'text/plain'
+              }
             }
-          }
-        ]);
+          ]);
+        });
+        done();
       });
-      done();
-    });
   });
 
   it('[Github #193] - should handle minItems and maxItems props for (type: array) appropriately', function (done) {
@@ -1188,7 +1189,7 @@ describe('The convert Function', function() {
           expect(result.output[0].data.item[0].item[1].request.header[0].key).to.equal('limit_2');
         });
     });
-  
+
     it('Should convert and include deprecated params when option is set to true', function() {
       const fileData = fs.readFileSync(deprecatedParams, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData },
@@ -1204,7 +1205,7 @@ describe('The convert Function', function() {
           expect(result.output[0].data.item[0].item[0].request.header[2].key).to.equal('limit_Dep');
         });
     });
-  
+
     it('Should convert and include deprecated params when option is not present', function() {
       const fileData = fs.readFileSync(deprecatedParams, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData }, {},
@@ -1219,7 +1220,7 @@ describe('The convert Function', function() {
           expect(result.output[0].data.item[0].item[0].request.header[2].key).to.equal('limit_Dep');
         });
     });
-  
+
     it('Should convert and exclude deprecated property when option is set to false', function() {
       const fileData = fs.readFileSync(deprecatedProperty, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData },
@@ -1231,7 +1232,7 @@ describe('The convert Function', function() {
           expect(result.output[0].data.item[0].response[1].body.includes('errorCode')).to.be.false;
         });
     });
-  
+
     it('Should convert and include deprecated property when option is set to true', function() {
       const fileData = fs.readFileSync(deprecatedProperty, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData },
@@ -1243,7 +1244,7 @@ describe('The convert Function', function() {
           expect(result.output[0].data.item[0].response[1].body.includes('errorCode')).to.be.true;
         });
     });
-  
+
     it('Should convert and include deprecated property when option is set to true in query and path', function() {
       const fileData = fs.readFileSync(schemaParamDeprecated, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData },
@@ -1262,7 +1263,7 @@ describe('The convert Function', function() {
             .to.equal('deprecated,<boolean>,b,<string>');
         });
     });
-  
+
     it('Should convert and include deprecated property when option is set to false in query and path', function() {
       const fileData = fs.readFileSync(schemaParamDeprecated, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData },
