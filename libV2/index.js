@@ -2,7 +2,7 @@
 const _ = require('lodash'),
   sdk = require('postman-collection'),
   GraphLib = require('graphlib'),
-  generateSkeletonTreeFromOpenAPI = require('./helpers/collection/generateSkeletionTreeeFromOpenAPI'),
+  generateSkeletonTreeFromOpenAPI = require('./helpers/collection/generateSkeletionTreeFromOpenAPI'),
   generateCollectionFromOpenAPI = require('./helpers/collection/generateCollectionFromOpenAPI'),
   generateFolderFromOpenAPI = require('./helpers/folder/generateFolderForOpenAPI'),
 

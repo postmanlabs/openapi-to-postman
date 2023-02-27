@@ -14,7 +14,7 @@ let _ = require('lodash'),
     trace: true
   },
 
-  _generateTreeFromPaths = function (openapi) {
+  _generateTreeFromPaths = function (openapi, { includeDeprecated }) {
     /**
      * We will create a unidirectional graph
      */
@@ -35,6 +35,14 @@ let _ = require('lodash'),
       if (pathSplit.length === 1) {
         _.forEach(methods, function (data, method) {
           if (!ALLOWED_HTTP_METHODS[method]) {
+            return;
+          }
+
+          /**
+           * include deprecated handling.
+           * If true, add in the postman collection. If false ignore the request.
+           */
+          if (!includeDeprecated && data.deprecated) {
             return;
           }
 
@@ -95,6 +103,14 @@ let _ = require('lodash'),
             return;
           }
 
+          /**
+           * include deprecated handling.
+           * If true, add in the postman collection. If false ignore the request.
+           */
+          if (!includeDeprecated && data.deprecated) {
+            return;
+          }
+
           // join till the last path i.e. the folder.
           let previousPathIdentified = pathSplit.slice(0, (pathSplit.length)).join('/'),
             pathIdentifier = `${pathSplit.join('/')}:${method}`;
@@ -129,6 +145,14 @@ let _ = require('lodash'),
     _.forEach(openapi.paths, function (methods, path) {
       _.forEach(methods, function (data, method) {
         if (!ALLOWED_HTTP_METHODS[method]) {
+          return;
+        }
+
+        /**
+         * include deprecated handling.
+         * If true, add in the postman collection. If false ignore the request.
+         */
+        if (!includeDeprecated && data.deprecated) {
           return;
         }
 
@@ -171,7 +195,7 @@ let _ = require('lodash'),
     return tree;
   },
 
-  _generateWebhookEndpoints = function (openapi, tree) {
+  _generateWebhookEndpoints = function (openapi, tree, { includeDeprecated }) {
     if (!_.isEmpty(openapi.webhooks)) {
       tree.setNode(`${PATH_WEBHOOK}:folder`, {
         type: 'webhook~folder',
@@ -184,6 +208,14 @@ let _ = require('lodash'),
 
     _.forEach(openapi.webhooks, function (methodData, path) {
       _.forEach(methodData, function (data, method) {
+        /**
+         * include deprecated handling.
+         * If true, add in the postman collection. If false ignore the request.
+         */
+        if (!includeDeprecated && data.deprecated) {
+          return;
+        }
+
         tree.setNode(`${PATH_WEBHOOK}:${path}:${method}`, {
           type: 'webhook~request',
           meta: { path: path, method: method },
@@ -205,16 +237,16 @@ let _ = require('lodash'),
  *
  * @returns {Object} - tree format
  */
-module.exports = function (openapi, { folderStrategy, includeWebhooks }) {
+module.exports = function (openapi, { folderStrategy, includeWebhooks, includeDeprecated }) {
   let skeletonTree;
 
   switch (folderStrategy) {
     case 'tags':
-      skeletonTree = _generateTreeFromTags(openapi);
+      skeletonTree = _generateTreeFromTags(openapi, { includeDeprecated });
       break;
 
     case 'paths':
-      skeletonTree = _generateTreeFromPaths(openapi);
+      skeletonTree = _generateTreeFromPaths(openapi, { includeDeprecated });
       break;
 
     default:
@@ -222,7 +254,7 @@ module.exports = function (openapi, { folderStrategy, includeWebhooks }) {
   }
 
   if (includeWebhooks) {
-    skeletonTree = _generateWebhookEndpoints(openapi, skeletonTree);
+    skeletonTree = _generateWebhookEndpoints(openapi, skeletonTree, { includeDeprecated });
   }
 
   return skeletonTree;
