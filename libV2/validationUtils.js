@@ -1075,8 +1075,9 @@ function convertParamsWithStyle (param, paramValue, parameterSource, components,
             disabled
           }, _.get(param, 'in')));
         });
+        return pmParams;
       }
-      return pmParams;
+      break;
     default:
       break;
   }
@@ -1242,8 +1243,7 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
     required: _.get(metaInfo, 'required'),
     in: 'query', // serialization follows same behaviour as query params
     description: _.get(schema, 'description', _.get(metaInfo, 'description', '')),
-    pathPrefix: _.get(metaInfo, 'pathPrefix'),
-    isResolvedParam: true
+    pathPrefix: _.get(metaInfo, 'pathPrefix')
   };
   encodingValue = _.get(encodingObj, schemaKey);
 
@@ -1278,9 +1278,8 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
           name: resolvedPropName,
           schema: propSchema,
           in: 'query', // serialization follows same behaviour as query params
-          description: _.get(propSchema, 'description') || '',
-          required: _.get(metaInfo, 'required'),
-          isResolvedParam: true
+          description: _.get(propSchema, 'description') || _.get(metaInfo, 'description') || '',
+          required: _.get(metaInfo, 'required')
         },
         parentPropName = resolvedPropName.indexOf('[') === -1 ? resolvedPropName :
           resolvedPropName.slice(0, resolvedPropName.indexOf('[')),
@@ -1397,7 +1396,7 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
           resolvedSchemaParams.push({
             name: matchedRequestParamKey,
             schema: additionalPropSchema,
-            description: _.get(additionalPropSchema, 'description'),
+            description: _.get(additionalPropSchema, 'description') || _.get(metaInfo, 'description') || '',
             required: false,
             isResolvedParam: true
           });
@@ -2369,7 +2368,7 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
 
           if (schemaParam) {
             // serialize param value (to be used in suggested value)
-            serializedParamValue = _.get(convertParamsWithStyle(_.omit(schemaParam, ['style', 'explode']),
+            serializedParamValue = _.get(convertParamsWithStyle(schemaParam,
               _.get(mismatchObj, 'suggestedFix.suggestedValue'), PARAMETER_SOURCE.REQUEST, components, schemaCache,
               options), '[0].value');
             _.set(mismatchObj, 'suggestedFix.actualValue', schemaParam.actualValue);
