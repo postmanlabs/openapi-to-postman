@@ -141,6 +141,7 @@ function shouldAddDeprecatedOperation (operation, options) {
 /**
  * Safe wrapper for schemaFaker that resolves references and
  * removes things that might make schemaFaker crash
+ * @param {Object} context - Required context from related SchemaPack function
  * @param {*} oldSchema the schema to fake
  * @param {string} resolveTo The desired JSON-generation mechanism (schema: prefer using the JSONschema to
  * generate a fake object, example: use specified examples as-is). Default: schema
@@ -152,7 +153,7 @@ function shouldAddDeprecatedOperation (operation, options) {
  * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
  * @returns {object} fakedObject
  */
-function safeSchemaFaker (oldSchema, resolveTo, resolveFor, parameterSourceOption, components,
+function safeSchemaFaker (context, oldSchema, resolveTo, resolveFor, parameterSourceOption, components,
   schemaFormat, schemaCache, options) {
   var prop, key, resolvedSchema, fakedSchema,
     schemaFakerCache = _.get(schemaCache, 'schemaFakerCache', {});
@@ -162,14 +163,7 @@ function safeSchemaFaker (oldSchema, resolveTo, resolveFor, parameterSourceOptio
   const indentCharacter = options.indentCharacter,
     includeDeprecated = options.includeDeprecated;
 
-  // resolvedSchema = deref.resolveRefs(oldSchema, parameterSourceOption, components, {
-  //   resolveFor,
-  //   resolveTo,
-  //   stackLimit: options.stackLimit,
-  //   analytics: _.get(schemaCache, 'analytics', {})
-  // });
-
-  resolvedSchema = resolveSchema(getDefaultContext(options, components), oldSchema, 0, PROCESSING_TYPE.VALIDATION);
+  resolvedSchema = resolveSchema(context, oldSchema, 0, PROCESSING_TYPE.VALIDATION);
 
   resolvedSchema = concreteUtils.fixExamplesByVersion(resolvedSchema);
   key = JSON.stringify(resolvedSchema);
@@ -1410,6 +1404,7 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
 
 /**
  *
+ * @param {Object} context - Required context from related SchemaPack function
  * @param {String} property - one of QUERYPARAM, PATHVARIABLE, HEADER, BODY, RESPONSE_HEADER, RESPONSE_BODY
  * @param {String} jsonPathPrefix - this will be prepended to all JSON schema paths on the request
  * @param {String} txnParamName - Optional - The name of the param being validated (useful for query params,
@@ -1425,8 +1420,8 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
  * @param {Function} callback - For return
  * @returns {Array} array of mismatches
  */
-function checkValueAgainstSchema (property, jsonPathPrefix, txnParamName, value, schemaPathPrefix, openApiSchemaObj,
-  parameterSourceOption, components, options, schemaCache, jsonSchemaDialect, callback) {
+function checkValueAgainstSchema (context, property, jsonPathPrefix, txnParamName, value, schemaPathPrefix,
+  openApiSchemaObj, parameterSourceOption, components, options, schemaCache, jsonSchemaDialect, callback) {
 
   let mismatches = [],
     jsonValue,
@@ -1435,15 +1430,9 @@ function checkValueAgainstSchema (property, jsonPathPrefix, txnParamName, value,
     invalidJson = false,
     valueToUse = value,
 
-    // This is dereferenced schema (converted to JSON schema for validation)
-    // schema = deref.resolveRefs(openApiSchemaObj, parameterSourceOption, components, {
-    //   resolveFor: PROCESSING_TYPE.VALIDATION,
-    //   resolveTo: 'example',
-    //   stackLimit: options.stackLimit
-    // }),
-
-    schema = resolveSchema(getDefaultContext(options, components), openApiSchemaObj, 0, PROCESSING_TYPE.VALIDATION),
-    compositeSchema = schema.oneOf || schema.anyOf;
+    schema = resolveSchema(context, openApiSchemaObj, 0, PROCESSING_TYPE.VALIDATION),
+    compositeSchema = schema.oneOf || schema.anyOf,
+    compareTypes = _.get(context, 'concreteUtils.compareTypes') || concreteUtils.compareTypes;
 
   if (needJsonMatching) {
     try {
@@ -1463,7 +1452,7 @@ function checkValueAgainstSchema (property, jsonPathPrefix, txnParamName, value,
     // get mismatches of value against each schema
     async.map(compositeSchema, (elementSchema, cb) => {
       setTimeout(() => {
-        checkValueAgainstSchema(property, jsonPathPrefix, txnParamName, value,
+        checkValueAgainstSchema(context, property, jsonPathPrefix, txnParamName, value,
           `${schemaPathPrefix}.${schema.oneOf ? 'oneOf' : 'anyOf'}[${_.findIndex(compositeSchema, elementSchema)}]`,
           elementSchema, parameterSourceOption, components, options, schemaCache, jsonSchemaDialect, cb);
       }, 0);
@@ -1500,7 +1489,7 @@ function checkValueAgainstSchema (property, jsonPathPrefix, txnParamName, value,
         // exclude mismatch errors for nested objects in parameters (at this point simple objects and array should
         // be already converted to primitive schema and only nested objects remains as type object/array)
         if (_.includes(['QUERYPARAM', 'PATHVARIABLE', 'HEADER'], property) &&
-          (schema.type === 'object' || schema.type === 'array')) {
+          (compareTypes(schema.type, 'object') || compareTypes(schema.type, 'array'))) {
           return callback(null, []);
         }
 
@@ -1545,7 +1534,7 @@ function checkValueAgainstSchema (property, jsonPathPrefix, txnParamName, value,
           mismatchObj.suggestedFix = {
             key: txnParamName,
             actualValue: valueToUse,
-            suggestedValue: safeSchemaFaker(openApiSchemaObj || {}, 'example', PROCESSING_TYPE.VALIDATION,
+            suggestedValue: safeSchemaFaker(context, openApiSchemaObj || {}, 'example', PROCESSING_TYPE.VALIDATION,
               parameterSourceOption, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options.includeDeprecated)
           };
         }
@@ -1561,7 +1550,7 @@ function checkValueAgainstSchema (property, jsonPathPrefix, txnParamName, value,
         if (!_.isEmpty(filteredValidationError)) {
           let mismatchObj,
             suggestedValue,
-            fakedValue = safeSchemaFaker(openApiSchemaObj || {}, 'example', PROCESSING_TYPE.VALIDATION,
+            fakedValue = safeSchemaFaker(context, openApiSchemaObj || {}, 'example', PROCESSING_TYPE.VALIDATION,
               parameterSourceOption, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options);
 
           // Show detailed validation mismatches for only request/response body
@@ -1694,6 +1683,7 @@ function checkValueAgainstSchema (property, jsonPathPrefix, txnParamName, value,
 
 /**
  *
+ * @param {Object} context - Required context from related SchemaPack function
  * @param {*} matchedPathData the matchedPath data
  * @param {*} transactionPathPrefix the jsonpath for this validation (will be prepended to all identified mismatches)
  * @param {*} schemaPath the applicable pathItem defined at the schema level
@@ -1704,8 +1694,8 @@ function checkValueAgainstSchema (property, jsonPathPrefix, txnParamName, value,
  * @param {*} callback Callback
  * @returns {array} mismatches (in the callback)
  */
-function checkPathVariables (matchedPathData, transactionPathPrefix, schemaPath, components, options, schemaCache,
-  jsonSchemaDialect, callback) {
+function checkPathVariables (context, matchedPathData, transactionPathPrefix, schemaPath, components, options,
+  schemaCache, jsonSchemaDialect, callback) {
 
   // schema path should have all parameters needed
   // components need to be stored globally
@@ -1768,7 +1758,8 @@ function checkPathVariables (matchedPathData, transactionPathPrefix, schemaPath,
         return cb(null, []);
       }
 
-      checkValueAgainstSchema(mismatchProperty,
+      checkValueAgainstSchema(context,
+        mismatchProperty,
         transactionPathPrefix + `[${index}].value`,
         pathVar.key,
         resolvedParamValue,
@@ -1833,7 +1824,7 @@ function checkPathVariables (matchedPathData, transactionPathPrefix, schemaPath,
             actualValue,
             suggestedValue: {
               key: pathVar.name,
-              value: safeSchemaFaker(pathVar.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
+              value: safeSchemaFaker(context, pathVar.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
                 PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
               description: getParameterDescription(pathVar)
             }
@@ -1848,7 +1839,7 @@ function checkPathVariables (matchedPathData, transactionPathPrefix, schemaPath,
   });
 }
 
-function checkQueryParams (requestUrl, transactionPathPrefix, schemaPath, components, options,
+function checkQueryParams (context, requestUrl, transactionPathPrefix, schemaPath, components, options,
   schemaCache, jsonSchemaDialect, callback) {
   let parsedUrl = require('url').parse(requestUrl),
     schemaParams = _.filter(schemaPath.parameters, (param) => { return param.in === 'query'; }),
@@ -1904,13 +1895,7 @@ function checkQueryParams (requestUrl, transactionPathPrefix, schemaPath, compon
   // below will make sure for exploded params actual schema of property present in collection is present
   _.forEach(schemaParams, (param) => {
     let pathPrefix = param.pathPrefix,
-
-      // paramSchema = deref.resolveRefs(_.cloneDeep(param.schema), PARAMETER_SOURCE.REQUEST, components, {
-      //   resolveFor: PROCESSING_TYPE.VALIDATION,
-      //   stackLimit: options.stackLimit
-      // }),
-
-      paramSchema = resolveSchema(getDefaultContext(options, components), _.cloneDeep(param.schema),
+      paramSchema = resolveSchema(context, _.cloneDeep(param.schema),
         0, PROCESSING_TYPE.VALIDATION),
       { style, explode } = getParamSerialisationInfo(param, PARAMETER_SOURCE.REQUEST, components, options),
       encodingObj = { [param.name]: { style, explode } },
@@ -1962,7 +1947,8 @@ function checkQueryParams (requestUrl, transactionPathPrefix, schemaPath, compon
         // no errors to show if there's no schema present in the spec
         return cb(null, []);
       }
-      checkValueAgainstSchema(mismatchProperty,
+      checkValueAgainstSchema(context,
+        mismatchProperty,
         transactionPathPrefix + `[${index}].value`,
         pQuery.key,
         resolvedParamValue,
@@ -1998,7 +1984,7 @@ function checkQueryParams (requestUrl, transactionPathPrefix, schemaPath, compon
             actualValue: null,
             suggestedValue: {
               key: qp.name,
-              value: safeSchemaFaker(qp.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
+              value: safeSchemaFaker(context, qp.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
                 PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
               description: getParameterDescription(qp)
             }
@@ -2011,7 +1997,7 @@ function checkQueryParams (requestUrl, transactionPathPrefix, schemaPath, compon
   });
 }
 
-function checkRequestHeaders (headers, transactionPathPrefix, schemaPathPrefix, schemaPath,
+function checkRequestHeaders (context, headers, transactionPathPrefix, schemaPathPrefix, schemaPath,
   components, options, schemaCache, jsonSchemaDialect, callback) {
   let schemaHeaders = _.filter(schemaPath.parameters, (param) => { return param.in === 'header'; }),
     // key name of headers which are added by security schemes
@@ -2068,7 +2054,8 @@ function checkRequestHeaders (headers, transactionPathPrefix, schemaPathPrefix, 
         // no errors to show if there's no schema present in the spec
         return cb(null, []);
       }
-      checkValueAgainstSchema(mismatchProperty,
+      checkValueAgainstSchema(context,
+        mismatchProperty,
         transactionPathPrefix + `[${index}].value`,
         pHeader.key,
         resolvedParamValue,
@@ -2117,7 +2104,7 @@ function checkRequestHeaders (headers, transactionPathPrefix, schemaPathPrefix, 
             actualValue: null,
             suggestedValue: {
               key: header.name,
-              value: safeSchemaFaker(header.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
+              value: safeSchemaFaker(context, header.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
                 PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
               description: getParameterDescription(header)
             }
@@ -2130,7 +2117,7 @@ function checkRequestHeaders (headers, transactionPathPrefix, schemaPathPrefix, 
   });
 }
 
-function checkResponseHeaders (schemaResponse, headers, transactionPathPrefix, schemaPathPrefix,
+function checkResponseHeaders (context, schemaResponse, headers, transactionPathPrefix, schemaPathPrefix,
   components, options, schemaCache, jsonSchemaDialect, callback) {
   // 0. Need to find relevant response from schemaPath.responses
   let schemaHeaders,
@@ -2184,7 +2171,8 @@ function checkResponseHeaders (schemaResponse, headers, transactionPathPrefix, s
         // no errors to show if there's no schema present in the spec
         return cb(null, []);
       }
-      return checkValueAgainstSchema(mismatchProperty,
+      return checkValueAgainstSchema(context,
+        mismatchProperty,
         transactionPathPrefix + `[${index}].value`,
         pHeader.key,
         pHeader.value,
@@ -2228,7 +2216,7 @@ function checkResponseHeaders (schemaResponse, headers, transactionPathPrefix, s
             actualValue: null,
             suggestedValue: {
               key: header.name,
-              value: safeSchemaFaker(header.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
+              value: safeSchemaFaker(context, header.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
                 PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
               description: getParameterDescription(header)
             }
@@ -2242,7 +2230,7 @@ function checkResponseHeaders (schemaResponse, headers, transactionPathPrefix, s
 }
 
 // Only application/json and application/x-www-form-urlencoded is validated for now
-function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix, schemaPath,
+function checkRequestBody (context, requestBody, transactionPathPrefix, schemaPathPrefix, schemaPath,
   components, options, schemaCache, jsonSchemaDialect, callback) {
   // check for body modes
   let jsonSchemaBody,
@@ -2264,7 +2252,8 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
 
   if (requestBody && requestBody.mode === 'raw' && jsonSchemaBody) {
     setTimeout(() => {
-      return checkValueAgainstSchema(mismatchProperty,
+      return checkValueAgainstSchema(context,
+        mismatchProperty,
         transactionPathPrefix,
         null, // no param name for the request body
         requestBody.raw,
@@ -2292,12 +2281,7 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
         return param.value !== OAS_NOT_SUPPORTED;
       });
 
-    // urlencodedBodySchema = deref.resolveRefs(urlencodedBodySchema, PARAMETER_SOURCE.REQUEST, components, {
-    //   resolveFor: PROCESSING_TYPE.VALIDATION,
-    //   stackLimit: options.stackLimit
-    // });
-
-    urlencodedBodySchema = resolveSchema(getDefaultContext(options, components), urlencodedBodySchema,
+    urlencodedBodySchema = resolveSchema(context, urlencodedBodySchema,
       0, PROCESSING_TYPE.VALIDATION);
 
     resolvedSchemaParams = resolveFormParamSchema(urlencodedBodySchema, '', encodingObj,
@@ -2340,7 +2324,8 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
           // no errors to show if there's no schema present in the spec
           return cb(null, []);
         }
-        checkValueAgainstSchema(mismatchProperty,
+        checkValueAgainstSchema(context,
+          mismatchProperty,
           transactionPathPrefix + `.urlencoded[${index}].value`,
           uParam.key,
           resolvedParamValue,
@@ -2394,7 +2379,7 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
               actualValue: null,
               suggestedValue: {
                 key: uParam.name,
-                value: safeSchemaFaker(uParam.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
+                value: safeSchemaFaker(context, uParam.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
                   PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
                 description: getParameterDescription(uParam)
               }
@@ -2411,7 +2396,7 @@ function checkRequestBody (requestBody, transactionPathPrefix, schemaPathPrefix,
   }
 }
 
-function checkResponseBody (schemaResponse, body, transactionPathPrefix, schemaPathPrefix,
+function checkResponseBody (context, schemaResponse, body, transactionPathPrefix, schemaPathPrefix,
   components, options, schemaCache, jsonSchemaDialect, callback) {
   let schemaContent,
     jsonContentType,
@@ -2440,7 +2425,8 @@ function checkResponseBody (schemaResponse, body, transactionPathPrefix, schemaP
   }
 
   setTimeout(() => {
-    return checkValueAgainstSchema(mismatchProperty,
+    return checkValueAgainstSchema(context,
+      mismatchProperty,
       transactionPathPrefix,
       null, // no param name for the response body
       body,
@@ -2456,7 +2442,7 @@ function checkResponseBody (schemaResponse, body, transactionPathPrefix, schemaP
   }, 0);
 }
 
-function checkResponses (responses, transactionPathPrefix, schemaPathPrefix, schemaPath,
+function checkResponses (context, responses, transactionPathPrefix, schemaPathPrefix, schemaPath,
   components, options, schemaCache, jsonSchemaDialect, cb) {
   // responses is an array of responses recd. for one Postman request
   // we've already determined the schemaPath against which all responses need to be validated
@@ -2494,14 +2480,14 @@ function checkResponses (responses, transactionPathPrefix, schemaPathPrefix, sch
       // check headers and body
       async.parallel({
         headers: (cb) => {
-          checkResponseHeaders(thisSchemaResponse, response.header,
+          checkResponseHeaders(context, thisSchemaResponse, response.header,
             transactionPathPrefix + '[' + response.id + '].header',
             schemaPathPrefix + '.responses.' + responsePathPrefix,
             components, options, schemaCache, jsonSchemaDialect, cb);
         },
         body: (cb) => {
           // assume it's JSON at this point
-          checkResponseBody(thisSchemaResponse, response.body,
+          checkResponseBody(context, thisSchemaResponse, response.body,
             transactionPathPrefix + '[' + response.id + '].body',
             schemaPathPrefix + '.responses.' + responsePathPrefix,
             components, options, schemaCache, jsonSchemaDialect, cb);
@@ -2521,7 +2507,7 @@ function checkResponses (responses, transactionPathPrefix, schemaPathPrefix, sch
 }
 
 module.exports = {
-  validateTransaction: function (transaction, {
+  validateTransaction: function (context, transaction, {
     schema, options, componentsAndPaths, schemaCache, matchedEndpoints = []
   }, callback) {
     if (!transaction.id || !transaction.request) {
@@ -2610,23 +2596,23 @@ module.exports = {
             checkMetadata(transaction, '$', matchedPath.path, matchedPath.name, options, cb);
           },
           path: function(cb) {
-            checkPathVariables(matchedPath, '$.request.url.variable', matchedPath.path,
+            checkPathVariables(context, matchedPath, '$.request.url.variable', matchedPath.path,
               componentsAndPaths, options, schemaCache, jsonSchemaDialect, cb);
           },
           queryparams: function(cb) {
-            checkQueryParams(requestUrl, '$.request.url.query', matchedPath.path,
+            checkQueryParams(context, requestUrl, '$.request.url.query', matchedPath.path,
               componentsAndPaths, options, schemaCache, jsonSchemaDialect, cb);
           },
           headers: function(cb) {
-            checkRequestHeaders(transaction.request.header, '$.request.header', matchedPath.jsonPath,
+            checkRequestHeaders(context, transaction.request.header, '$.request.header', matchedPath.jsonPath,
               matchedPath.path, componentsAndPaths, options, schemaCache, jsonSchemaDialect, cb);
           },
           requestBody: function(cb) {
-            checkRequestBody(transaction.request.body, '$.request.body', matchedPath.jsonPath,
+            checkRequestBody(context, transaction.request.body, '$.request.body', matchedPath.jsonPath,
               matchedPath.path, componentsAndPaths, options, schemaCache, jsonSchemaDialect, cb);
           },
           responses: function (cb) {
-            checkResponses(transaction.response, '$.responses', matchedPath.jsonPath,
+            checkResponses(context, transaction.response, '$.responses', matchedPath.jsonPath,
               matchedPath.path, componentsAndPaths, options, schemaCache, jsonSchemaDialect, cb);
           }
         }, (err, result) => {

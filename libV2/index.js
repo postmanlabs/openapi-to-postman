@@ -229,12 +229,21 @@ module.exports = {
    * corresponding definition matching endpoint
    *
    * @param {Object} context - Required context from related SchemaPack function
+   * @param {Array} transactions - Transactions to be validated
    * @param {*} callback return
    * @returns {boolean} validation
    */
-  validateTransactionV2(context, callback) {
-    let { schema, options, transactions, componentsAndPaths, schemaCache } = context,
+  validateTransactionV2(context, transactions, callback) {
+    let schema = context.openapi,
+      options = context.computedOptions,
+      concreteUtils = context.concreteUtils,
+      componentsAndPaths = { concreteUtils },
+      schemaCache = context.schemaFakerCache,
       matchedEndpoints = [];
+
+    context.schemaCache = context.schemaCache || {};
+    context.schemaFakerCache = context.schemaFakerCache || {};
+    Object.assign(componentsAndPaths, concreteUtils.getRequiredData(schema));
 
     // create and sanitize basic spec
     schema.servers = _.isEmpty(schema.servers) ? [{ url: '/' }] : schema.servers;
@@ -269,7 +278,7 @@ module.exports = {
 
     return setTimeout(() => {
       async.map(transactions, (transaction, callback) => {
-        return validateTransaction(transaction, {
+        return validateTransaction(context, transaction, {
           schema, options, componentsAndPaths, schemaCache, matchedEndpoints
         }, callback);
       }, (err, result) => {

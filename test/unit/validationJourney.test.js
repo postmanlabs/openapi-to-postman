@@ -45,12 +45,14 @@ describe('validateTransactionV2() should be able to validate collections generat
           suggestAvailableFixes: true,
           detailedBlobValidation: false
         },
-        schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options, MODULE_VERSION.V2);
+        // Different schemaPack instances are used as conversion resolves schema differently then validation
+        schemaPackConversion = new Converter.SchemaPack({ type: 'string', data: fileData }, options, MODULE_VERSION.V2),
+        schemaPackValidation = new Converter.SchemaPack({ type: 'string', data: fileData }, options, MODULE_VERSION.V2);
 
       // Increase timeout for larger schema
       this.timeout(30000);
 
-      schemaPack.convertV2((err, conversionResult) => {
+      schemaPackConversion.convertV2((err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
 
@@ -58,7 +60,7 @@ describe('validateTransactionV2() should be able to validate collections generat
 
         getAllTransactions(conversionResult.output[0].data, historyRequest);
 
-        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
+        schemaPackValidation.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
 
