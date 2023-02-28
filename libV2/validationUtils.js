@@ -9,11 +9,9 @@ const _ = require('lodash'),
   xmlFaker = require('./xmlSchemaFaker.js'),
   utils = require('./utils'),
 
-  { resolveSchema } = require('./schemaUtils'),
+  { resolveSchema, resolvePostmanRequest } = require('./schemaUtils'),
   concreteUtils = require('../lib/30XUtils/schemaUtils30X'),
 
-  // lib v1 components
-  schemaUtilsV1 = require('../lib/schemaUtils'),
   ajvValidationError = require('../lib/ajValidation/ajvValidationError'),
   { validateSchema } = require('../lib/ajValidation/ajvValidation'),
   { formatDataPath, checkIsCorrectType, isKnownType,
@@ -2662,15 +2660,15 @@ module.exports = {
   },
 
   /**
+   * @param {Object} context - Required context from related SchemaPack function
    * @param {*} schema OpenAPI spec
    * @param {Array} matchedEndpoints - All matched endpoints
    * @param {object} components - components defined in the OAS spec. These are used to
    * resolve references while generating params.
    * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
-   * @param {object} schemaCache - object storing schemaFaker and schemaResolution caches
    * @returns {Array} - Array of all MISSING_ENDPOINT objects
    */
-  getMissingSchemaEndpoints: function (schema, matchedEndpoints, components, options, schemaCache) {
+  getMissingSchemaEndpoints: function (context, schema, matchedEndpoints, components, options) {
     let endpoints = [],
       schemaPaths = schema.paths,
       rootCollectionVariables,
@@ -2701,10 +2699,9 @@ module.exports = {
 
           if (options.suggestAvailableFixes) {
             let operationItem = _.get(schemaPathObj, pathKey) || {},
-              convertedRequest,
+              conversionResult,
               variables = rootCollectionVariables,
-              path = schemaPath,
-              request;
+              path = schemaPath;
 
             // add common parameters of path level
             operationItem.parameters = getRequestParams(operationItem.parameters,
@@ -2728,26 +2725,15 @@ module.exports = {
               );
             }
 
-            request = {
-              name: operationItem.summary || operationItem.description,
-              method: pathKey,
-              path: schemaPath[0] === '/' ? schemaPath.substring(1) : schemaPath,
-              properties: operationItem,
-              type: 'item',
-              servers: _.isEmpty(_.get(schemaPathObj, 'servers'))
-            };
-
-            // convert request to collection item and store collection variables
-            convertedRequest = schemaUtilsV1.convertRequestToItem(schema, request,
-              components, options, schemaCache, variables);
+            conversionResult = resolvePostmanRequest(context, schemaPathObj, schemaPath, pathKey);
 
             mismatchObj.suggestedFix = {
               key: pathKey,
               actualValue: null,
               // Not adding collection variables for now
               suggestedValue: {
-                request: convertedRequest,
-                variables: _.values(variables)
+                request: utils.generateRequestItemObject(conversionResult.request),
+                variables: _.concat(conversionResult.collectionVariables, _.values(variables))
               }
             };
           }

@@ -303,7 +303,7 @@ module.exports = {
 
         retVal = {
           requests: _.keyBy(result, 'requestId'),
-          missingEndpoints: getMissingSchemaEndpoints(schema, matchedEndpoints,
+          missingEndpoints: getMissingSchemaEndpoints(context, schema, matchedEndpoints,
             componentsAndPaths, options, schemaCache)
         };
 

@@ -77,6 +77,11 @@ const sdk = require('postman-collection'),
       requestItem.responses.add(generatePmResponseObject(response, requestItem));
     });
 
+    /**
+     * Following is added to make sure body pruning for request methods like GET, HEAD etc is disabled'.
+     * https://github.com/postmanlabs/postman-runtime/blob/develop/docs/protocol-profile-behavior.md
+     */
+    requestItem.protocolProfileBehavior = { disableBodyPruning: true };
 
     return requestItem.toJSON();
   };

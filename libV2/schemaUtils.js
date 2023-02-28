@@ -64,7 +64,7 @@ const schemaFaker = require('../assets/json-schema-faker'),
     const regExp = new RegExp('([<\\?xml]+[\\s{1,}]+[version="\\d.\\d"]+[\\sencoding="]+.{1,15}"\\?>)');
     let xmlBody = bodyContent;
 
-    if (!bodyContent.match(regExp)) {
+    if (_.isFunction(bodyContent.match) && !bodyContent.match(regExp)) {
       const versionContent = '<?xml version="1.0" encoding="UTF-8"?>\n';
       xmlBody = versionContent + xmlBody;
     }
@@ -1271,6 +1271,13 @@ let QUERYPARAM = 'query',
     }
 
     requestContent = requestBody.content;
+
+    if (!_.isObject(requestContent)) {
+      return {
+        body: '',
+        headers: []
+      };
+    }
 
     if (requestContent[URLENCODED]) {
       return resolveUrlEncodedRequestBodyForPostmanRequest(context, requestContent[URLENCODED]);
