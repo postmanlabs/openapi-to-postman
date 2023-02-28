@@ -6,7 +6,7 @@ var expect = require('chai').expect,
   path = require('path'),
   async = require('async'),
   _ = require('lodash'),
-  schemaUtils = require('../../libV2/schemaUtils'),
+  requestMatchingUtils = require('../../libV2/requestMatchingUtils'),
   VALIDATION_DATA_FOLDER_PATH = '../data/validationData',
   VALIDATION_DATA_OPTIONS_FOLDER_31_PATH = '../data/31CollectionTransactions/validateOptions',
   VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH = '../data/31CollectionTransactions/validate30Scenarios',
@@ -104,7 +104,6 @@ describe('Validate with servers', function () {
     });
   });
 });
-
 
 describe('Validation with different resolution parameters options', function () {
 
@@ -262,7 +261,6 @@ describe('Validation with different resolution parameters options', function () 
 
 
 });
-
 
 describe('The validator must validate generated collection from schema against schema itself', function (done) {
   var validOpenapiFolder = fs.readdirSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH)),
@@ -1236,7 +1234,8 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         schemaPath = ['pets', '{petId1}', '{petId2}', '{petId3}'],
         result;
 
-      result = schemaUtils.getPostmanUrlSuffixSchemaScore(pmSuffix, schemaPath, { strictRequestMatching: true });
+      result = requestMatchingUtils.getPostmanUrlSuffixSchemaScore(pmSuffix, schemaPath,
+        { strictRequestMatching: true });
 
       expect(result.match).to.be.true;
       expect(result.pathVars).to.have.lengthOf(3);
@@ -1541,7 +1540,7 @@ describe('validateTransaction method. Path variables matching validation (issue 
 });
 
 describe('validateTransaction convert and validate schemas with allOf', function () {
-  it('Should convert and validate allOf properties for string schema', function () {
+  it('Should convert and validate allOf properties for string schema', function (done) {
     const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/all_of_property.json'),
       openAPIData = fs.readFileSync(openAPI, 'utf8'),
       expectedRequestBody = '{\n  "id": "3",\n  "name": "Contract.pdf"\n}',
@@ -1575,6 +1574,8 @@ describe('validateTransaction convert and validate schemas with allOf', function
           expect(result.requests[requestId].endpoints[0]).to.not.be.undefined;
           expect(result.requests[requestId].endpoints[0].matched).to.be.true;
         });
+
+        done();
       });
     });
   });

@@ -386,5 +386,6 @@ module.exports = {
     return retVal;
   },
 
+  getPostmanUrlSuffixSchemaScore,
   isPmVariable
 };
