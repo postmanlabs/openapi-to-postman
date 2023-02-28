@@ -1283,8 +1283,57 @@ let QUERYPARAM = 'query',
     return resolveRawModeRequestBodyForPostmanRequest(context, requestContent);
   },
 
+  resolvePathItemParams = (context, operationParam, pathParam) => {
+    if (!Array.isArray(operationParam)) {
+      operationParam = [];
+    }
+    if (!Array.isArray(pathParam)) {
+      pathParam = [];
+    }
+
+    pathParam.forEach((param, index, arr) => {
+      if (_.has(param, '$ref')) {
+        arr[index] = resolveRefFromSchema(context, param.$ref);
+      }
+    });
+
+    operationParam.forEach((param, index, arr) => {
+      if (_.has(param, '$ref')) {
+        arr[index] = resolveRefFromSchema(context, param.$ref);
+      }
+    });
+
+    if (_.isEmpty(pathParam)) {
+      return operationParam;
+    }
+    else if (_.isEmpty(operationParam)) {
+      return pathParam;
+    }
+
+    // If both path and operation params exist,
+    // we need to de-duplicate
+    // A param with the same name and 'in' value from operationParam
+    // will get precedence
+    var reqParam = operationParam.slice();
+    pathParam.forEach((param) => {
+      var dupParam = operationParam.find(function(element) {
+        return element.name === param.name && element.in === param.in &&
+        // the below two conditions because undefined === undefined returns true
+          element.name && param.name &&
+          element.in && param.in;
+      });
+      if (!dupParam) {
+        // if there's no duplicate param in operationParam,
+        // use the one from the common pathParam list
+        // this ensures that operationParam is given precedence
+        reqParam.push(param);
+      }
+    });
+    return reqParam;
+  },
+
   resolveQueryParamsForPostmanRequest = (context, operationItem, method) => {
-    const params = operationItem.parameters || operationItem[method].parameters,
+    const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
       pmParams = [];
 
     _.forEach(params, (param) => {
@@ -1315,7 +1364,7 @@ let QUERYPARAM = 'query',
   },
 
   resolvePathParamsForPostmanRequest = (context, operationItem, method) => {
-    const params = operationItem.parameters || operationItem[method].parameters,
+    const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
       pmParams = [];
 
     _.forEach(params, (param) => {
@@ -1371,7 +1420,7 @@ let QUERYPARAM = 'query',
   },
 
   resolveHeadersForPostmanRequest = (context, operationItem, method) => {
-    const params = operationItem.parameters || operationItem[method].parameters,
+    const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
       pmParams = [],
       { keepImplicitHeaders } = context.computedOptions;
 
