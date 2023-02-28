@@ -105,7 +105,7 @@ describe('Validate with servers', function () {
 
 describe('Validation with different resolution parameters options', function () {
 
-  it('Should validate correctly with request and example parameters as Schema', function () {
+  it('Should validate correctly with request and example parameters as Schema', function (done) {
     let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
         '/issue#479_2.yaml'), 'utf8'),
       expectedRequestBody =
@@ -156,11 +156,12 @@ describe('Validation with different resolution parameters options', function () 
             expect(result.requests[requestId].endpoints[0].responses[responseId].matched).to.be.true;
           });
         });
+        done();
       });
     });
   });
 
-  it('Should validate correctly with request as schema and example parameters as Example', function () {
+  it('Should validate correctly with request as schema and example parameters as Example', function (done) {
     let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
         '/issue#479_2.yaml'), 'utf8'),
       expectedBody =
@@ -202,11 +203,12 @@ describe('Validation with different resolution parameters options', function () 
             expect(result.requests[requestId].endpoints[0].responses[responseId].matched).to.be.true;
           });
         });
+        done();
       });
     });
   });
 
-  it('Should validate correctly with request as Example and example parameters as Schema', function () {
+  it('Should validate correctly with request as Example and example parameters as Schema', function (done) {
     let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
         '/issue#479_2.yaml'), 'utf8'),
       expectedResponseBody =
@@ -250,6 +252,7 @@ describe('Validation with different resolution parameters options', function () 
             expect(result.requests[requestId].endpoints[0].responses[responseId].matched).to.be.true;
           });
         });
+        done();
       });
     });
   });

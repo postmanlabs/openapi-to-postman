@@ -54,6 +54,10 @@ describe('JSON SCHEMA FAKER TESTS', function () {
       }
     };
 
+    schemaFaker.option({
+      useExamplesValue: true
+    });
+
     var fakedData = schemaFaker(schema);
     expect(fakedData).to.deep.equal({
       default: 'This is actual property and not JSON schema defined "default" keyword'
@@ -71,6 +75,10 @@ describe('JSON SCHEMA FAKER TESTS', function () {
         }
       }
     };
+
+    schemaFaker.option({
+      useExamplesValue: true
+    });
 
     var fakedData = schemaFaker(schema);
     expect(fakedData).to.deep.equal({

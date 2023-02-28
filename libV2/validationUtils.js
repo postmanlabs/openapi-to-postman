@@ -171,7 +171,8 @@ function safeSchemaFaker (context, oldSchema, resolveTo, resolveFor, parameterSo
   if (resolveTo === 'schema') {
     key = 'resolveToSchema ' + key;
     schemaFaker.option({
-      useExamplesValue: false
+      useExamplesValue: false,
+      useDefaultValue: true
     });
   }
   else if (resolveTo === 'example') {

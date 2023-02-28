@@ -203,7 +203,10 @@ let QUERYPARAM = 'query',
    * @param {Object} context - Global context object
    * @param {Object} $ref - Ref that is to be resolved
    * @param {Number} stackDepth - Depth of the current stack for Ref resolution
+   * @param {*} resolveFor - resolve refs for flow validation/conversion (value to be one of VALIDATION/CONVERSION)
    * @param {Object} seenRef - Seen Reference map
+   * @param {string} resolveTo The desired JSON-generation mechanism (schema: prefer using the JSONschema to
+    generate a fake object, example: use specified examples as-is). Default: schema
    *
    * @returns {Object} Returns the object that staisfies the schema
    */
@@ -398,6 +401,8 @@ let QUERYPARAM = 'query',
    *
    * @param {Object} context - Global context object
    * @param {Object} schema - Schema to be resolved
+   * @param {Number} [stack] - Current recursion depth
+   * @param {*} resolveFor - resolve refs for flow validation/conversion (value to be one of VALIDATION/CONVERSION)
    * @param {Object} seenRef - Map of all the references that have been resolved
    *
    * @returns {Object} Resolved schema
@@ -550,6 +555,7 @@ let QUERYPARAM = 'query',
   /**
    * Provides information regarding serialisation of param
    *
+   * @param {Object} context - Required context from related SchemaPack function
    * @param {Object} param - OpenAPI Parameter object
    * @returns {Object} - Information regarding parameter serialisation. Contains following properties.
    * {
@@ -683,7 +689,9 @@ let QUERYPARAM = 'query',
   /**
    * Resolve value of a given parameter
    *
+   * @param {Object} context - Required context from related SchemaPack function
    * @param {Object} param - Parameter that is to be resolved from schema
+   * @param {String} schemaFormat - Corresponding schema format (can be one of xml/default)
    * @returns {*} Value of the parameter
    */
   resolveValueOfParameter = (context, param, schemaFormat = SCHEMA_FORMATS.DEFAULT) => {
