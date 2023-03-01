@@ -28,6 +28,7 @@ const optionIds = [
     'allowUrlPathVarMatching',
     'includeReferenceMap',
     'includeDeprecated',
+    'parametersResolution',
     'disabledParametersValidation'
   ],
   expectedOptions = {
@@ -199,6 +200,18 @@ const optionIds = [
       default: true,
       description: 'Select whether to include deprecated operations, parameters, and properties' +
         ' in generated collection or not',
+      external: true,
+      usage: ['CONVERSION']
+    },
+    parametersResolution: {
+      name: 'Parameter generation',
+      type: 'enum',
+      default: 'Schema',
+      availableOptions: ['Example', 'Schema'],
+      description: 'Select whether to generate the request and response parameters based on the' +
+      ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the' +
+      ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
+      ' in the schema.',
       external: true,
       usage: ['CONVERSION']
     },
