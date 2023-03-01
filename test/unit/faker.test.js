@@ -2,21 +2,35 @@ const _ = require('lodash'),
   expect = require('chai').expect,
   schemaFaker = require('../../assets/json-schema-faker.js');
 
-// define options used similar while faking in schemaUtils.safeSchemFaker()
-schemaFaker.option({
-  requiredOnly: false,
-  optionalsProbability: 1.0,
-  minLength: 4,
-  maxLength: 4,
-  minItems: 1,
-  maxItems: 20,
-  useDefaultValue: true,
-  useExamplesValue: true,
-  ignoreMissingRefs: true,
-  avoidExampleItemsLength: false
-});
-
 describe('JSON SCHEMA FAKER TESTS', function () {
+
+  before(function () {
+    schemaFaker.option({
+      requiredOnly: false,
+      optionalsProbability: 1.0,
+      minItems: 1,
+      maxItems: 20,
+      useDefaultValue: true,
+      useExamplesValue: true,
+      ignoreMissingRefs: true,
+      avoidExampleItemsLength: false
+    });
+  });
+
+  after(function () {
+    // Set default options that are used at global level
+    schemaFaker.option({
+      requiredOnly: false,
+      optionalsProbability: 1.0,
+      maxLength: 256,
+      minItems: 1,
+      maxItems: 20,
+      useDefaultValue: true,
+      ignoreMissingRefs: true,
+      avoidExampleItemsLength: true
+    });
+  });
+
   describe('Custom defined option "avoidExampleItemsLength"', function () {
     const schema = {
       type: 'array',
