@@ -27,7 +27,8 @@ const optionIds = [
     'includeWebhooks',
     'allowUrlPathVarMatching',
     'includeReferenceMap',
-    'includeDeprecated'
+    'includeDeprecated',
+    'disabledParametersValidation'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -200,6 +201,14 @@ const optionIds = [
         ' in generated collection or not',
       external: true,
       usage: ['CONVERSION']
+    },
+    disabledParametersValidation: {
+      name: 'Disabled Parameter validation',
+      type: 'boolean',
+      default: true,
+      description: 'Whether disabled parameters of collection should be validated',
+      external: false,
+      usage: ['VALIDATION']
     }
   };
 
