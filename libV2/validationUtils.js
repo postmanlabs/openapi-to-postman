@@ -2443,6 +2443,9 @@ function checkResponseBody (context, schemaResponse, body, transactionPathPrefix
 
 function checkResponses (context, responses, transactionPathPrefix, schemaPathPrefix, schemaPath,
   components, options, schemaCache, jsonSchemaDialect, cb) {
+  let matchedResponses = [],
+    mismatchProperty = 'RESPONSE';
+
   // responses is an array of responses recd. for one Postman request
   // we've already determined the schemaPath against which all responses need to be validated
   // loop through all responses
@@ -2451,6 +2454,15 @@ function checkResponses (context, responses, transactionPathPrefix, schemaPathPr
     let thisResponseCode = response.code,
       thisSchemaResponse = _.get(schemaPath, ['responses', thisResponseCode]),
       responsePathPrefix = thisResponseCode;
+
+    // X can be used as wild card character, so response code like 2XX in definition are valid
+    if (!thisSchemaResponse) {
+      let wildcardResponseCode = _.toString(thisResponseCode).charAt(0) + 'XX';
+
+      thisSchemaResponse = _.get(schemaPath, ['responses', wildcardResponseCode]);
+      responsePathPrefix = wildcardResponseCode;
+    }
+
     // find this code from the schemaPath
     if (!thisSchemaResponse) {
       // could not find an appropriate response for this code. check default?
@@ -2472,8 +2484,21 @@ function checkResponses (context, responses, transactionPathPrefix, schemaPathPr
     });
 
     if (!thisSchemaResponse) {
-      // still didn't find a response
-      responseCallback(null);
+      let mismatches = [];
+      if (options.showMissingInSchemaErrors) {
+        mismatches.push({
+          property: mismatchProperty,
+          transactionJsonPath: transactionPathPrefix + `[${response.id}]`,
+          schemaJsonPath: null,
+          reasonCode: 'MISSING_IN_SCHEMA',
+          reason: `The response "${thisResponseCode}" was not found in the schema`
+        });
+      }
+      return responseCallback(null, {
+        id: response.id,
+        matched: _.isEmpty(mismatches),
+        mismatches: mismatches
+      });
     }
     else {
       // check headers and body
