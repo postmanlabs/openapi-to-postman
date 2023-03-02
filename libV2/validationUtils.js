@@ -1229,7 +1229,7 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
     _.forEach(schema.anyOf || schema.oneOf, (schemaElement) => {
       // As for such schemas there can be multiple choices, keep them as non required
       resolvedSchemaParams = _.concat(resolvedSchemaParams, resolveFormParamSchema(schemaElement, schemaKey,
-        encodingObj, requestParams, _.assign(metaInfo, { required: false }),
+        encodingObj, requestParams, _.assign(metaInfo, { required: false, isComposite: true }),
         components, options, shouldIterateChildren));
     });
 
@@ -1242,7 +1242,8 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
     required: _.get(metaInfo, 'required'),
     in: 'query', // serialization follows same behaviour as query params
     description: _.get(schema, 'description', _.get(metaInfo, 'description', '')),
-    pathPrefix: _.get(metaInfo, 'pathPrefix')
+    pathPrefix: _.get(metaInfo, 'pathPrefix'),
+    isComposite: _.get(metaInfo, 'isComposite', false)
   };
   encodingValue = _.get(encodingObj, schemaKey);
 
@@ -1278,7 +1279,8 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
           schema: propSchema,
           in: 'query', // serialization follows same behaviour as query params
           description: _.get(propSchema, 'description') || _.get(metaInfo, 'description') || '',
-          required: _.get(metaInfo, 'required')
+          required: _.get(metaInfo, 'required'),
+          isComposite: _.get(metaInfo, 'isComposite', false)
         },
         parentPropName = resolvedPropName.indexOf('[') === -1 ? resolvedPropName :
           resolvedPropName.slice(0, resolvedPropName.indexOf('[')),
@@ -1304,7 +1306,7 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
           let nextSchemaKey = _.isEmpty(schemaKey) ? propName : `${schemaKey}[${propName}]`;
 
           resolvedSchemaParams = _.concat(resolvedSchemaParams, resolveFormParamSchema(schemaElement, nextSchemaKey,
-            encodingObj, requestParams, _.assign(metaInfo, { required: false }),
+            encodingObj, requestParams, _.assign(metaInfo, { required: false, isComposite: true }),
             components, options, pSerialisationInfo.style === 'deepObject'));
         });
 
@@ -1345,7 +1347,8 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
               schema: value,
               isResolvedParam: true,
               required: resolvedProp.required,
-              description: resolvedProp.description
+              description: resolvedProp.description,
+              isComposite: _.get(metaInfo, 'isComposite', false)
             });
           });
         }
@@ -1397,7 +1400,8 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
             schema: additionalPropSchema,
             description: _.get(additionalPropSchema, 'description') || _.get(metaInfo, 'description') || '',
             required: false,
-            isResolvedParam: true
+            isResolvedParam: true,
+            isComposite: true
           });
         }
       });
@@ -1966,11 +1970,16 @@ function checkQueryParams (context, requestUrl, transactionPathPrefix, schemaPat
   }, (err, res) => {
     let mismatches = [],
       mismatchObj,
-      filteredSchemaParams = resolvedSchemaParams;
-
-    if (!VALIDATE_OPTIONAL_QUERY_PARAMS) {
-      filteredSchemaParams = _.filter(resolvedSchemaParams, (q) => { return q.required; });
-    }
+      filteredSchemaParams = _.filter(resolvedSchemaParams, (q) => {
+        /**
+         * Filter out composite params. i.e. Params that contains anyOf/oneOf keyword in schema.
+         * For such params multiple keys are possible based on schema so they should not be reported as missing.
+         */
+        if (VALIDATE_OPTIONAL_QUERY_PARAMS) {
+          return !q.isComposite;
+        }
+        return q.required && !q.isComposite;
+      });
 
     _.each(filteredSchemaParams, (qp) => {
       if (!_.find(requestQueryParams, (param) => {
