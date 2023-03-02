@@ -2581,7 +2581,7 @@ function checkResponses (context, transaction, transactionPathPrefix, schemaPath
         if (options.suggestAvailableFixes) {
           let generatedResponse,
             resolvedResponse,
-            originalRequest = _.omit(transaction, 'response');
+            originalRequest = _.omit(_.get(transaction, 'request', {}), 'response');
 
           resolvedResponse = _.head(resolveResponseForPostmanRequest(context,
             { responses: { [responseCode]: responseObj } }, originalRequest));
