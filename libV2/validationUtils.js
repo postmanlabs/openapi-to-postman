@@ -64,7 +64,13 @@ const _ = require('lodash'),
   ],
   DEFAULT_SCHEMA_UTILS = require('../lib/30XUtils/schemaUtils30X'),
 
-  OAS_NOT_SUPPORTED = '<Error: Not supported in OAS>';
+  OAS_NOT_SUPPORTED = '<Error: Not supported in OAS>',
+
+  /**
+   * @sujay: this needs to be a better global level setting
+   * before we start using the v2 validations everywhere.
+   */
+  VALIDATE_OPTIONAL_QUERY_PARAMS = true;
 
 // See https://github.com/json-schema-faker/json-schema-faker/tree/master/docs#available-options
 schemaFaker.option({
@@ -1959,9 +1965,14 @@ function checkQueryParams (context, requestUrl, transactionPathPrefix, schemaPat
     }, 0);
   }, (err, res) => {
     let mismatches = [],
-      mismatchObj;
+      mismatchObj,
+      filteredSchemaParams = resolvedSchemaParams;
 
-    _.each(_.filter(resolvedSchemaParams, (q) => { return q.required; }), (qp) => {
+    if (!VALIDATE_OPTIONAL_QUERY_PARAMS) {
+      filteredSchemaParams = _.filter(resolvedSchemaParams, (q) => { return q.required; });
+    }
+
+    _.each(filteredSchemaParams, (qp) => {
       if (!_.find(requestQueryParams, (param) => {
         return param.key === qp.name;
       })) {
