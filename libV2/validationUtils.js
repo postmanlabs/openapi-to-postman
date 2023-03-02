@@ -2553,10 +2553,12 @@ function checkResponses (context, transaction, transactionPathPrefix, schemaPath
 
         if (options.suggestAvailableFixes) {
           let generatedResponse,
+            resolvedResponse,
             originalRequest = _.omit(transaction, 'response');
 
-          generatedResponse = _.head(resolveResponseForPostmanRequest(context,
+          resolvedResponse = _.head(resolveResponseForPostmanRequest(context,
             { responses: { [responseCode]: responseObj } }, originalRequest));
+          generatedResponse = utils.generatePmResponseObject(resolvedResponse);
 
           mismatchObj.suggestedFix = {
             key: responseCode,
