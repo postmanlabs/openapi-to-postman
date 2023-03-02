@@ -1848,55 +1848,26 @@ function checkPathVariables (context, matchedPathData, transactionPathPrefix, sc
   });
 }
 
-function checkQueryParams (context, requestUrl, transactionPathPrefix, schemaPath, components, options,
+function checkQueryParams (context, queryParams, transactionPathPrefix, schemaPath, components, options,
   schemaCache, jsonSchemaDialect, callback) {
-  let parsedUrl = require('url').parse(requestUrl),
-    schemaParams = _.filter(schemaPath.parameters, (param) => { return param.in === 'query'; }),
-    requestQueryArray = [],
+  let schemaParams = _.filter(schemaPath.parameters, (param) => { return param.in === 'query'; }),
     requestQueryParams = [],
     resolvedSchemaParams = [],
     mismatchProperty = 'QUERYPARAM',
-    securityParams,
-    urlMalformedError;
+    securityParams;
 
   if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
     return callback(null, []);
   }
 
-  if (!parsedUrl.query) {
-    // null query params should be treated as lack of any params
-    parsedUrl.query = '';
-  }
-  requestQueryArray = parsedUrl.query.split('&');
-
-  _.each(requestQueryArray, (rqp) => {
-    let parts = rqp.split('='),
-      qKey, qVal;
-
-    try {
-      qKey = decodeURIComponent(parts[0]);
-      qVal = decodeURIComponent(parts.slice(1).join('='));
-    }
-    catch (err) {
-      return (urlMalformedError = err);
-    }
-
-
-    if (qKey.length > 0) {
-      requestQueryParams.push({
-        key: qKey,
-        value: qVal
-      });
-    }
-  });
-
-  if (urlMalformedError) {
-    return callback(urlMalformedError);
-  }
-
   // filter out query params added by security schemes
   securityParams = _.map(getSecurityParams(_.get(components, 'components'), 'query'), 'name');
-  requestQueryParams = _.filter(requestQueryParams, (pQuery) => {
+  requestQueryParams = _.filter(queryParams, (pQuery) => {
+    // Ignoring the disabled query params
+    if (pQuery.disabled === true) {
+      return false;
+    }
+
     return !_.includes(securityParams, pQuery.key) && pQuery.value !== OAS_NOT_SUPPORTED;
   });
 
@@ -1920,7 +1891,7 @@ function checkQueryParams (context, requestUrl, transactionPathPrefix, schemaPat
 
   return async.map(requestQueryParams, (pQuery, cb) => {
     let mismatches = [],
-      index = _.findIndex(requestQueryParams, pQuery),
+      index = _.findIndex(queryParams, pQuery),
       resolvedParamValue = pQuery.value;
 
     const schemaParam = _.find(resolvedSchemaParams, (param) => { return param.name === pQuery.key; });
@@ -2616,7 +2587,8 @@ module.exports = {
     const jsonSchemaDialect = schema.jsonSchemaDialect;
 
     let requestUrl = transaction.request.url,
-      matchedPaths;
+      matchedPaths,
+      queryParams = [];
 
     if (typeof requestUrl === 'object') {
 
@@ -2627,6 +2599,8 @@ module.exports = {
           pathVar.value = ':' + pathVar.key;
         }
       });
+
+      queryParams = [...(requestUrl.query || [])];
 
       // SDK URL object. Get raw string representation.
       requestUrl = (new sdk.Url(requestUrl)).toString();
@@ -2699,7 +2673,7 @@ module.exports = {
               componentsAndPaths, options, schemaCache, jsonSchemaDialect, cb);
           },
           queryparams: function(cb) {
-            checkQueryParams(context, requestUrl, '$.request.url.query', matchedPath.path,
+            checkQueryParams(context, queryParams, '$.request.url.query', matchedPath.path,
               componentsAndPaths, options, schemaCache, jsonSchemaDialect, cb);
           },
           headers: function(cb) {
