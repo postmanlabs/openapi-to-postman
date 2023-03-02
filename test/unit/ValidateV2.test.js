@@ -267,7 +267,7 @@ describe('The validator must validate generated collection from schema against s
     suggestedFixProps = ['key', 'actualValue', 'suggestedValue'],
     checkMismatch = (mismatch) => {
       expect(['REQUEST_NAME', 'REQUEST_DESCRIPTION', 'PATHVARIABLE', 'QUERYPARAM', 'HEADER', 'RESPONSE_HEADER',
-        'BODY', 'RESPONSE_BODY', 'ENDPOINT']).to.include(mismatch.property);
+        'BODY', 'RESPONSE', 'RESPONSE_BODY', 'ENDPOINT']).to.include(mismatch.property);
       expect(mismatch).to.include.keys('transactionJsonPath');
       expect(mismatch).to.include.keys('schemaJsonPath');
       expect(mismatch.reason).to.be.a('string');

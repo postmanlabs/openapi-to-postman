@@ -9,7 +9,7 @@ const _ = require('lodash'),
   xmlFaker = require('./xmlSchemaFaker.js'),
   utils = require('./utils'),
 
-  { resolveSchema, resolvePostmanRequest } = require('./schemaUtils'),
+  { resolveSchema, resolvePostmanRequest, resolveResponseForPostmanRequest } = require('./schemaUtils'),
   concreteUtils = require('../lib/30XUtils/schemaUtils30X'),
 
   ajvValidationError = require('../lib/ajValidation/ajvValidationError'),
@@ -2441,9 +2441,10 @@ function checkResponseBody (context, schemaResponse, body, transactionPathPrefix
   }, 0);
 }
 
-function checkResponses (context, responses, transactionPathPrefix, schemaPathPrefix, schemaPath,
+function checkResponses (context, transaction, transactionPathPrefix, schemaPathPrefix, schemaPath,
   components, options, schemaCache, jsonSchemaDialect, cb) {
   let matchedResponses = [],
+    responses = transaction.response,
     mismatchProperty = 'RESPONSE';
 
   // responses is an array of responses recd. for one Postman request
@@ -2451,13 +2452,13 @@ function checkResponses (context, responses, transactionPathPrefix, schemaPathPr
   // loop through all responses
   // for each response, find the appropriate response from schemaPath, and then validate response body and headers
   async.map(responses, (response, responseCallback) => {
-    let thisResponseCode = response.code,
+    let thisResponseCode = _.toString(response.code),
       thisSchemaResponse = _.get(schemaPath, ['responses', thisResponseCode]),
       responsePathPrefix = thisResponseCode;
 
     // X can be used as wild card character, so response code like 2XX in definition are valid
     if (!thisSchemaResponse) {
-      let wildcardResponseCode = _.toString(thisResponseCode).charAt(0) + 'XX';
+      let wildcardResponseCode = thisResponseCode.charAt(0) + 'XX';
 
       thisSchemaResponse = _.get(schemaPath, ['responses', wildcardResponseCode]);
       responsePathPrefix = wildcardResponseCode;
@@ -2501,6 +2502,7 @@ function checkResponses (context, responses, transactionPathPrefix, schemaPathPr
       });
     }
     else {
+      matchedResponses.push(responsePathPrefix);
       // check headers and body
       async.parallel({
         headers: (cb) => {
@@ -2525,8 +2527,37 @@ function checkResponses (context, responses, transactionPathPrefix, schemaPathPr
       });
     }
   }, (err, result) => {
-    var retVal = _.keyBy(_.reject(result, (ai) => { return !ai; }), 'id');
-    return cb(null, retVal);
+    let retVal = _.keyBy(_.reject(result, (ai) => { return !ai; }), 'id'),
+      missingResponses = [];
+
+    _.each(_.get(schemaPath, 'responses'), (responseObj, responseCode) => {
+      if (!_.includes(matchedResponses, responseCode)) {
+        let mismatchObj = {
+          property: 'RESPONSE',
+          transactionJsonPath: transactionPathPrefix,
+          schemaJsonPath: schemaPathPrefix + '.responses.' + responseCode,
+          reasonCode: 'MISSING_IN_REQUEST',
+          reason: `The response "${responseCode}" was not found in the transaction`
+        };
+
+        if (options.suggestAvailableFixes) {
+          let generatedResponse,
+            originalRequest = _.omit(transaction, 'response');
+
+          generatedResponse = _.head(resolveResponseForPostmanRequest(context,
+            { responses: { [responseCode]: responseObj } }, originalRequest));
+
+          mismatchObj.suggestedFix = {
+            key: responseCode,
+            actualValue: null,
+            suggestedValue: generatedResponse
+          };
+        }
+
+        missingResponses.push(mismatchObj);
+      }
+    });
+    return cb(null, { mismatches: retVal, missingResponses });
   });
 }
 
@@ -2636,17 +2667,19 @@ module.exports = {
               matchedPath.path, componentsAndPaths, options, schemaCache, jsonSchemaDialect, cb);
           },
           responses: function (cb) {
-            checkResponses(context, transaction.response, '$.responses', matchedPath.jsonPath,
+            checkResponses(context, transaction, '$.responses', matchedPath.jsonPath,
               matchedPath.path, componentsAndPaths, options, schemaCache, jsonSchemaDialect, cb);
           }
         }, (err, result) => {
           let allMismatches = _.concat(result.metadata, result.queryparams, result.headers, result.path,
               result.requestBody),
             responseMismatchesPresent = false,
-            retVal;
+            retVal,
+            responsesResult = result.responses.mismatches,
+            missingResponses = result.responses.missingResponses || [];
 
           // adding mistmatches from responses
-          _.each(result.responses, (response) => {
+          _.each(responsesResult, (response) => {
             if (_.get(response, 'mismatches', []).length > 0) {
               responseMismatchesPresent = true;
               return false;
@@ -2654,11 +2687,12 @@ module.exports = {
           });
 
           retVal = {
-            matched: (allMismatches.length === 0 && !responseMismatchesPresent),
+            matched: (allMismatches.length === 0 && !responseMismatchesPresent && _.isEmpty(missingResponses)),
             endpointMatchScore: matchedPath.score,
             endpoint: matchedPath.name,
             mismatches: allMismatches,
-            responses: result.responses
+            responses: responsesResult,
+            missingResponses
           };
 
           pathsCallback(null, retVal);

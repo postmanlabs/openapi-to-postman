@@ -1615,5 +1615,6 @@ module.exports = {
     };
   },
 
+  resolveResponseForPostmanRequest,
   resolveSchema
 };
