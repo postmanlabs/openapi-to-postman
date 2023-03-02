@@ -70,7 +70,7 @@ const _ = require('lodash'),
    * @sujay: this needs to be a better global level setting
    * before we start using the v2 validations everywhere.
    */
-  VALIDATE_OPTIONAL_QUERY_PARAMS = true;
+  VALIDATE_OPTIONAL_PARAMS = true;
 
 // See https://github.com/json-schema-faker/json-schema-faker/tree/master/docs#available-options
 schemaFaker.option({
@@ -1975,7 +1975,7 @@ function checkQueryParams (context, requestUrl, transactionPathPrefix, schemaPat
          * Filter out composite params. i.e. Params that contains anyOf/oneOf keyword in schema.
          * For such params multiple keys are possible based on schema so they should not be reported as missing.
          */
-        if (VALIDATE_OPTIONAL_QUERY_PARAMS) {
+        if (VALIDATE_OPTIONAL_PARAMS) {
           return !q.isComposite;
         }
         return q.required && !q.isComposite;
@@ -2101,8 +2101,13 @@ function checkRequestHeaders (context, headers, transactionPathPrefix, schemaPat
         mismatchProperty, options);
     }
     _.each(_.filter(schemaHeaders, (h) => {
-      // exclude non-required and implicit header from further validation
-      return h.required && !_.includes(IMPLICIT_HEADERS, _.toLower(h.name));
+      // exclude non-required, non-composite and implicit header from further validation
+      const isImplicitHeader = _.includes(IMPLICIT_HEADERS, _.toLower(h.name));
+
+      if (VALIDATE_OPTIONAL_PARAMS) {
+        return !h.isComposite && !isImplicitHeader;
+      }
+      return h.required && !h.isComposite && !isImplicitHeader;
     }), (header) => {
       if (!_.find(reqHeaders, (param) => { return param.key === header.name; })) {
 
@@ -2213,8 +2218,14 @@ function checkResponseHeaders (context, schemaResponse, headers, transactionPath
         return false;
       }
       h.name = hName;
-      // exclude non-required and implicit header from further validation
-      return h.required && !_.includes(IMPLICIT_HEADERS, _.toLower(hName));
+
+      // exclude non-required, non-composite and implicit header from further validation
+      const isImplicitHeader = _.includes(IMPLICIT_HEADERS, _.toLower(hName));
+
+      if (VALIDATE_OPTIONAL_PARAMS) {
+        return !h.isComposite && !isImplicitHeader;
+      }
+      return h.required && !h.isComposite && !isImplicitHeader;
     }), (header) => {
       if (!_.find(resHeaders, (param) => { return param.key === header.name; })) {
 
@@ -2381,10 +2392,16 @@ function checkRequestBody (context, requestBody, transactionPathPrefix, schemaPa
         }
       });
 
-      _.each(resolvedSchemaParams, (uParam) => {
+      const filteredSchemaParams = _.filter(resolvedSchemaParams, (q) => {
+        if (VALIDATE_OPTIONAL_PARAMS) {
+          return !q.isComposite;
+        }
+        return q.required && !q.isComposite;
+      });
+
+      _.each(filteredSchemaParams, (uParam) => {
         // report mismatches only for required properties
-        if (!_.find(filteredUrlEncodedBody, (param) => { return param.key === uParam.name; }) &&
-          uParam.required && !uParam.isComposite) {
+        if (!_.find(filteredUrlEncodedBody, (param) => { return param.key === uParam.name; })) {
           mismatchObj = {
             property: mismatchProperty,
             transactionJsonPath: transactionPathPrefix + '.urlencoded',
