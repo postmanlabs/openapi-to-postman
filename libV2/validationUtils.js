@@ -2383,7 +2383,8 @@ function checkRequestBody (context, requestBody, transactionPathPrefix, schemaPa
 
       _.each(resolvedSchemaParams, (uParam) => {
         // report mismatches only for required properties
-        if (!_.find(filteredUrlEncodedBody, (param) => { return param.key === uParam.name; }) && uParam.required) {
+        if (!_.find(filteredUrlEncodedBody, (param) => { return param.key === uParam.name; }) &&
+          uParam.required && !uParam.isComposite) {
           mismatchObj = {
             property: mismatchProperty,
             transactionJsonPath: transactionPathPrefix + '.urlencoded',
@@ -2568,6 +2569,10 @@ function checkResponses (context, transaction, transactionPathPrefix, schemaPath
           resolvedResponse = _.head(resolveResponseForPostmanRequest(context,
             { responses: { [responseCode]: responseObj } }, originalRequest));
           generatedResponse = utils.generatePmResponseObject(resolvedResponse);
+
+          if (_.isFunction(generatedResponse.toJSON)) {
+            generatedResponse = generatedResponse.toJSON();
+          }
 
           mismatchObj.suggestedFix = {
             key: responseCode,
