@@ -8,7 +8,8 @@ const sdk = require('postman-collection'),
         method: response.originalRequest.method,
         url: requestItem.request.url
       },
-      originalRequestQueryParams = _.get(response, 'originalRequest.params.queryParams', []);
+      originalRequestQueryParams = _.get(response, 'originalRequest.params.queryParams',
+        _.get(response, 'originalRequest.url.query', []));
 
     /**
      * Setting variable
@@ -17,18 +18,6 @@ const sdk = require('postman-collection'),
      */
     originalRequest.url.variable = _.get(requestItem, 'request.url.variables.members', []);
     originalRequest.url.query = [];
-
-    // setting query params
-    if (originalRequestQueryParams.length) {
-      originalRequest.url.query = _.reduce(originalRequestQueryParams, (acc, param) => {
-        acc += `${param.key}=${param.value}&`;
-
-        return acc;
-      }, '');
-
-      // Removing the last `&`
-      originalRequest.url.query = originalRequest.url.query.slice(0, -1);
-    }
 
     // Setting headers
     originalRequest.header = _.get(response, 'originalRequest.headers', []);
@@ -45,6 +34,9 @@ const sdk = require('postman-collection'),
       body: response.body,
       originalRequest: originalRequest
     });
+
+    // Assimilate original query params as SDK doesn't handle query params well.
+    sdkResponse.originalRequest.url.query.assimilate(originalRequestQueryParams);
 
     /**
      * Adding it here because sdk converts
