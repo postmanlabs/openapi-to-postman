@@ -85,8 +85,6 @@ paths:
                   type: integer
                   description: This property is not available in matched collection.
                   example: 321
-              required:
-              - propMissingInReq
             encoding:
               propObjectExplodable:
                 style: form

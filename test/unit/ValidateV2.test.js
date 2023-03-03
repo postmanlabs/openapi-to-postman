@@ -1699,8 +1699,8 @@ describe('Bug fixes', function () {
   });
 
   it('should validate non required parameters in url encoded body', function (done) {
-    let collectionPath = path.join(__dirname, '../data/validationData/urlencodedBodyCollection.json'),
-      specPath = path.join(__dirname, '../data/validationData/urlencodedBodySpec.yaml'),
+    let collectionPath = path.join(__dirname, '../data/disabled_param_url_encoded_body/urlencodedBodyCollection.json'),
+      specPath = path.join(__dirname, '../data/disabled_param_url_encoded_body/urlencodedBodySpec.yaml'),
       collectionData = JSON.parse(fs.readFileSync(collectionPath, 'utf8')),
       spec = fs.readFileSync(specPath, 'utf8'),
       schemaPack = new Converter.SchemaPack({ type: 'string', data: spec }, {
