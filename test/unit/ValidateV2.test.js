@@ -34,6 +34,42 @@ function getAllTransactions (collection, allRequests) {
 }
 
 /**
+ * Generates random id for collection items
+ * @returns {String} Random Id
+ */
+function idstr () {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
+/**
+ * Extract all transaction from collection and appends them into array
+ * And adds id to each item object
+ *
+ * @param {*} collection - Postman Collection
+ * @param {*} allRequests - Array to which transactions are appended
+ * @returns {*} - null
+ */
+function getAllTransactionsInjectingId (collection, allRequests) {
+  if (!_.has(collection, 'item') || !_.isArray(collection.item)) {
+    return;
+  }
+  _.forEach(collection.item, (item) => {
+    if (_.has(item, 'request') || _.has(item, 'response')) {
+      // let idstr = _.get(item, 'request.method') + ' ' + _.join(_.get(item, 'request.url.path'), '/');
+      allRequests.push(_.assign({}, _.omit(item, ['id', 'response']), {
+        id: idstr(),
+        response: _.map(item.response, (res) => {
+          return _.assign({}, res, { id: idstr() });
+        })
+      }));
+    }
+    else {
+      getAllTransactionsInjectingId(item, allRequests);
+    }
+  });
+}
+
+/**
  * Gets an array of objects with the specification file path and the version
  * @param {array} foldersByVersion An array with the path of the folders that contain the validation test files
  * @param {*} fileName the name of the file (all scenarios must be in both folders)
@@ -1649,6 +1685,121 @@ describe('validateTransaction convert and validate schemas with allOf', function
 
         done();
       });
+    });
+  });
+});
+
+describe('Bug fixes', function () {
+  it('should send correct transaction json path for invalid params when there are disabled query params ' +
+  'in the request', function (done) {
+    let collectionPath = path.join(__dirname, '../data/disabled_query_param_test_data/collection.json'),
+      specPath = path.join(__dirname, '../data/disabled_query_param_test_data/spec.json'),
+      collectionData = JSON.parse(fs.readFileSync(collectionPath, 'utf8')),
+      spec = fs.readFileSync(specPath, 'utf8'),
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: spec }, {
+        strictRequestMatching: true,
+        detailedBlobValidation: true,
+        suggestAvailableFixes: true,
+        ignoreUnresolvedVariables: true,
+        showMissingInSchemaErrors: true,
+        validateMetadata: true,
+        parametersResolution: 'Example'
+      }),
+      requests = [];
+
+    getAllTransactionsInjectingId(collectionData, requests);
+
+    schemaPack.validateTransactionV2(requests, (err, result) => {
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+
+      // check for result.requests structure
+      const requestId = Object.keys(result.requests)[0],
+        mismatches = _.get(result, ['requests', requestId, 'endpoints', '0', 'mismatches']),
+        queryParamMissingInSchemaMismatch =
+          _.find(mismatches, { property: 'QUERYPARAM', reasonCode: 'MISSING_IN_SCHEMA' }),
+        headerMissingInSchemaMismatch =
+          _.find(mismatches, { property: 'HEADER', reasonCode: 'MISSING_IN_SCHEMA' });
+
+      expect(queryParamMissingInSchemaMismatch.transactionJsonPath).to.be.equal('$.request.url.query[1]');
+      expect(headerMissingInSchemaMismatch.transactionJsonPath).to.be.equal('$.request.header[2]');
+
+      return done();
+    });
+  });
+
+  it('should validate non required paramters', function (done) {
+    let collectionPath = path.join(__dirname, '../data/disabled_query_param_test_data/collection.json'),
+      specPath = path.join(__dirname, '../data/disabled_query_param_test_data/spec.json'),
+      collectionData = JSON.parse(fs.readFileSync(collectionPath, 'utf8')),
+      spec = fs.readFileSync(specPath, 'utf8'),
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: spec }, {
+        strictRequestMatching: true,
+        detailedBlobValidation: true,
+        suggestAvailableFixes: true,
+        ignoreUnresolvedVariables: true,
+        showMissingInSchemaErrors: true,
+        validateMetadata: true,
+        parametersResolution: 'Example'
+      }),
+      requests = [];
+
+    getAllTransactionsInjectingId(collectionData, requests);
+
+    schemaPack.validateTransactionV2(requests, (err, result) => {
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+
+      // check for result.requests structure
+      const requestId = Object.keys(result.requests)[0],
+        mismatches = _.get(result, ['requests', requestId, 'endpoints', '0', 'mismatches']),
+        queryParamMissingInRequestMismatch =
+          _.find(mismatches, { property: 'QUERYPARAM', reasonCode: 'MISSING_IN_REQUEST' }),
+        headerMissingInRequestMismatch =
+          _.find(mismatches, { property: 'HEADER', reasonCode: 'MISSING_IN_REQUEST' });
+
+      expect(queryParamMissingInRequestMismatch.suggestedFix.suggestedValue.key).to.be.equal('changed');
+      expect(headerMissingInRequestMismatch.suggestedFix.suggestedValue.key).to.be.equal('h1');
+
+      return done();
+    });
+  });
+
+  it('should validate non required parameters in url encoded body', function (done) {
+    let collectionPath = path.join(__dirname, '../data/validationData/urlencodedBodyCollection.json'),
+      specPath = path.join(__dirname, '../data/validationData/urlencodedBodySpec.yaml'),
+      collectionData = JSON.parse(fs.readFileSync(collectionPath, 'utf8')),
+      spec = fs.readFileSync(specPath, 'utf8'),
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: spec }, {
+        strictRequestMatching: true,
+        detailedBlobValidation: true,
+        suggestAvailableFixes: true,
+        ignoreUnresolvedVariables: true,
+        showMissingInSchemaErrors: true,
+        validateMetadata: true,
+        parametersResolution: 'Example'
+      }),
+      requests = [];
+
+    getAllTransactions(collectionData, requests);
+
+    schemaPack.validateTransactionV2(requests, (err, result) => {
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+
+      // check for result.requests structure
+      const requestId = Object.keys(result.requests)[0],
+        mismatches = _.get(result, ['requests', requestId, 'endpoints', '0', 'mismatches']),
+        nonRequiredParamMissingInRequest =
+          _.find(mismatches, { property: 'BODY', reasonCode: 'MISSING_IN_REQUEST' });
+
+      expect(nonRequiredParamMissingInRequest.schemaJsonPath).to.be.equal(
+        '$.paths[/pets/{petId}].post.requestBody.content[application/x-www-form-urlencoded].' +
+        'schema.properties[propMissingInReq]'
+      );
+      expect(nonRequiredParamMissingInRequest.suggestedFix.suggestedValue.key).to.be.equal('propMissingInReq');
+
+      return done();
     });
   });
 });
