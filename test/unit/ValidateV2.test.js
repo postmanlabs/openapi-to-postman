@@ -510,49 +510,24 @@ describe('The Validation option', function () {
         schemaPack = new Converter.SchemaPack({ type: 'string', data: schema },
           { validateMetadata: true, suggestAvailableFixes: true }),
         historyRequest = [],
-        resultObj1,
-        resultObj2;
+        resultObj1;
 
       before(function (done) {
         getAllTransactions(JSON.parse(collection), historyRequest);
         schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           resultObj1 = result.requests[historyRequest[0].id].endpoints[0];
-          resultObj2 = result.requests[historyRequest[1].id].endpoints[0];
           done();
         });
       });
 
       it('should validate request name and description according to schema - version: ' +
         specData.version, function () {
-        expect(resultObj1.mismatches).to.have.lengthOf(2);
-        _.forEach(resultObj1.mismatches, (mismatch) => {
-          // check for suggested value to be one in schema
-          if (mismatch.property === 'REQUEST_NAME') {
-            expect(mismatch.reasonCode).to.eql('INVALID_VALUE');
-            expect(mismatch.reason).to.eql('The request name didn\'t match with specified schema');
-            expect(mismatch.suggestedFix.suggestedValue).to.eql('List all pets Updated');
-          }
-          else if (mismatch.property === 'REQUEST_DESCRIPTION') {
-            expect(mismatch.reasonCode).to.eql('INVALID_VALUE');
-            expect(mismatch.reason).to.eql('The request description didn\'t match with specified schema');
-            expect(mismatch.suggestedFix.suggestedValue).to.eql('Description for GET /pets - List all pets');
-          }
-          else {
-            throw Error('Unhandled mismatch property in test');
-          }
-        });
-      });
-
-      it('should handle empty and null request name and description in request - version: ' +
-        specData.version, function () {
-        expect(resultObj2.mismatches).to.have.lengthOf(1);
-        expect(resultObj2.mismatches[0].property).to.eql('REQUEST_DESCRIPTION');
-        expect(resultObj2.mismatches[0].reasonCode).to.eql('INVALID_VALUE');
-        expect(resultObj2.mismatches[0].reason).to.eql('The request description didn\'t match with specified schema');
-        expect(resultObj2.mismatches[0].suggestedFix.actualValue).to.be.null;
-        expect(resultObj2.mismatches[0].suggestedFix.suggestedValue)
-          .to.eql('Description for POST /pets - Create a pet');
+        expect(resultObj1.mismatches).to.have.lengthOf(1);
+        expect(resultObj1.mismatches[0].property).to.eql('REQUEST_NAME');
+        expect(resultObj1.mismatches[0].reasonCode).to.eql('INVALID_VALUE');
+        expect(resultObj1.mismatches[0].reason).to.eql('The request name didn\'t match with specified schema');
+        expect(resultObj1.mismatches[0].suggestedFix.suggestedValue).to.eql('List all pets Updated');
       });
     });
   });

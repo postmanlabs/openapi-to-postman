@@ -342,11 +342,9 @@ function sanitizeUrlPathParams (reqUrl, pathVars) {
  */
 function checkMetadata (transaction, transactionPathPrefix, schemaPath, pathRoute, options, callback) {
   let expectedReqName,
-    expectedReqDesc,
     reqNameMismatch,
     actualReqName = _.get(transaction, 'name'),
     trimmedReqName,
-    actualReqDesc,
     mismatches = [],
     mismatchObj,
     reqUrl;
@@ -365,11 +363,6 @@ function checkMetadata (transaction, transactionPathPrefix, schemaPath, pathRout
   // convert all /{{one}}/{{two}} to /:one/:two
   // Doesn't touch /{{file}}.{{format}}
   reqUrl = sanitizeUrlPathParams(reqUrl, []).url;
-
-  // description can be one of following two
-  actualReqDesc = _.isObject(_.get(transaction, 'request.description')) ?
-    _.get(transaction, 'request.description.content') : _.get(transaction, 'request.description');
-  expectedReqDesc = schemaPath.description;
 
   switch (options.requestNameSource) {
     case 'fallback' : {
@@ -412,27 +405,8 @@ function checkMetadata (transaction, transactionPathPrefix, schemaPath, pathRout
   }
 
   /**
-   * Collection stores empty description as null, while OpenAPI spec can have empty string as description.
-   * Hence We need to treat null and empty string as match. So check first if both schema and collection description
-   * are not empty. _.isEmpty() returns true for null/undefined/''(empty string)
-   * i.e. collection desc = null and schema desc = '', for this case no mismatch will occurr
+   * Note: Request Description validation/syncing is removed with v2 interface
    */
-  if ((!_.isEmpty(actualReqDesc) || !_.isEmpty(expectedReqDesc)) && (actualReqDesc !== expectedReqDesc)) {
-    mismatchObj = {
-      property: 'REQUEST_DESCRIPTION',
-      transactionJsonPath: transactionPathPrefix + '.request.description',
-      schemaJsonPath: null,
-      reasonCode: 'INVALID_VALUE',
-      reason: 'The request description didn\'t match with specified schema'
-    };
-
-    options.suggestAvailableFixes && (mismatchObj.suggestedFix = {
-      key: 'description',
-      actualValue: actualReqDesc || null,
-      suggestedValue: expectedReqDesc
-    });
-    mismatches.push(mismatchObj);
-  }
   return callback(null, mismatches);
 }
 
