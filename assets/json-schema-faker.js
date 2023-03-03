@@ -23468,6 +23468,11 @@ function extend() {
           var context = {};
           while (length--) {
               var fn = keys[length].replace(/^x-/, '');
+
+              /**
+               * CHANGE: This Makes sure that we're not using Object's prototype properties,
+               * while accessing certain keys like 'constructor'
+               */
               var gen = this.support.hasOwnProperty(fn) && this.support[fn];
               if (typeof gen === 'function') {
                 if (typeof schema[fn] === 'object' && schema[fn].hasOwnProperty('type')) {
@@ -23830,6 +23835,10 @@ function extend() {
               var min = Math.max(params.minLength || 0, 0);
               var max = Math.min(params.maxLength || Infinity, Infinity);
               while (value.length < min) {
+                  /**
+                   * CHANGE: This Makes sure that we're not adding extra spaces in generated value,
+                   * As such behaviour generates invalid data when pattern is mentioned.
+                   */
                   value += (schema.pattern ? '' : ' ') + value;
               }
               if (value.length > max) {
@@ -24571,6 +24580,10 @@ function extend() {
 
       // types from draft-0[67] (?)
       'uri-reference': `${URI_PATTERN}${PARAM_PATTERN}`,
+      /**
+       * CHANGE: Corrected uri-template format to be inline with RFC-6570
+       * https://www.rfc-editor.org/rfc/rfc6570#section-2
+       */
       'uri-template': URI_PATTERN.replace('(?:', '(?:/\\{[a-z][a-zA-Z0-9]*\\}|'),
       'json-pointer': `(/(?:${FRAGMENT.replace(']*', '/]*')}|~[01]))+`,
 
