@@ -133,7 +133,7 @@ let _ = require('lodash'),
     return tree;
   },
 
-  _generateTreeFromTags = function (openapi) {
+  _generateTreeFromTags = function (openapi, { includeDeprecated }) {
     let tree = new Graph();
 
     tree.setNode('root:collection', {
