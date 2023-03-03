@@ -103,7 +103,6 @@ function getPostmanUrlSuffixSchemaScore (pmSuffix, schemaPath, options) {
 
   // start from the last segment of both
   // segments match if the schemaPath segment is {..} or the postmanPathStr is :<anything> or {{anything}}
-  // for (let i = pmSuffix.length - 1; i >= 0; i--) {
   for (let i = 0; i < minLength; i++) {
     let schemaFixedParts = getFixedPartsFromPathSegment(schemaPath[sMax - i], 'schema'),
       collectionFixedParts = getFixedPartsFromPathSegment(pmSuffix[pMax - i], 'collection');

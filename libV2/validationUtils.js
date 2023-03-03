@@ -1649,19 +1649,6 @@ function checkValueAgainstSchema (context, property, jsonPathPrefix, txnParamNam
   else {
     return callback(null, []);
   }
-  // if (!schemaTypeToJsValidator[schema.type](value)) {
-  //   callback(null, [{
-  //     property,
-  //     transactionJsonPath: jsonPathPrefix,
-  //     schemaJsonPath: schemaPathPrefix,
-  //     reasonCode: 'INVALID_TYPE',
-  //     reason: `Value must be a token of type ${schema.type}, found ${value}`
-  //   }]);
-  // }
-  // TODO: Further checks for object type
-  // else {
-  //   callback(null, []);
-  // }
 }
 
 /**

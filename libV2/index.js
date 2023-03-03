@@ -288,19 +288,6 @@ module.exports = {
           return callback(err);
         }
 
-        // determine if any endpoint for any request misatched
-        _.each(result, (reqRes) => {
-          let thisMismatch = false;
-          _.each(reqRes.endpoints, (ep) => {
-            if (!ep.matched) {
-              return false;
-            }
-          });
-          if (thisMismatch) {
-            return false;
-          }
-        });
-
         retVal = {
           requests: _.keyBy(result, 'requestId'),
           missingEndpoints: getMissingSchemaEndpoints(context, schema, matchedEndpoints,
