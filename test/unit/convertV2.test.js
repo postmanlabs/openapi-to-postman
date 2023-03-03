@@ -143,8 +143,6 @@ describe('The convert Function', function() {
     });
   });
 
-  // ---------- start ------------
-
   it('Should generate collection conforming to schema for and fail if not valid ' +
   issue152, function(done) {
     var openapi = fs.readFileSync(issue152, 'utf8'),
@@ -1637,6 +1635,20 @@ describe('The convert Function', function() {
         // json-schema-faker doesn't guarantee that there will always be additional properties generated
         expect(Object.keys(responseBodyWithAdditionalProperties).length).to.be.greaterThanOrEqual(1);
         done();
+      });
+  });
+
+  it('Should convert using tags as folder strategy', function () {
+    const someOperationDeprecatedUsingTags =
+      path.join(__dirname, VALID_OPENAPI_PATH, '/has_some_op_dep_use_tags.json'),
+      fileData = fs.readFileSync(someOperationDeprecatedUsingTags, 'utf8');
+    Converter.convert({ type: 'string', data: fileData },
+      { includeDeprecated: false, folderStrategy: 'tags' },
+      (err, result) => {
+        expect(err).to.be.null;
+        expect(result.result).to.be.true;
+        expect(result.output[0].data.item.length).to.equal(1);
+        expect(result.output[0].data.item[0].name).to.equal('pets');
       });
   });
 });
