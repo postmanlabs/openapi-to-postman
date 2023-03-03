@@ -2752,7 +2752,8 @@ module.exports = {
             let operationItem = _.get(schemaPathObj, pathKey) || {},
               conversionResult,
               variables = rootCollectionVariables,
-              path = schemaPath;
+              path = schemaPath,
+              requestItem;
 
             // add common parameters of path level
             operationItem.parameters = getRequestParams(operationItem.parameters,
@@ -2778,12 +2779,15 @@ module.exports = {
 
             conversionResult = resolvePostmanRequest(context, schemaPathObj, schemaPath, pathKey);
 
+            requestItem = utils.generateRequestItemObject(conversionResult.request);
+            _.set(requestItem, 'request.url.raw', conversionResult.request.request.url);
+
             mismatchObj.suggestedFix = {
               key: pathKey,
               actualValue: null,
               // Not adding collection variables for now
               suggestedValue: {
-                request: utils.generateRequestItemObject(conversionResult.request),
+                request: requestItem,
                 variables: _.concat(conversionResult.collectionVariables, _.values(variables))
               }
             };
