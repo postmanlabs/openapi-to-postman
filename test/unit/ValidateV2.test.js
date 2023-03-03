@@ -726,6 +726,13 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH
         ),
         '/oneOfChildNoTypeSpec.json'
+      ),
+      missingResponsesSpecs = getSpecsPathByVersion(
+        getFoldersByVersion(
+          VALIDATION_DATA_FOLDER_PATH,
+          VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH
+        ),
+        '/missingResponsesSpec.yaml'
       );
 
     emptyParameterSpecs.forEach((specData) => {
@@ -1176,6 +1183,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         });
       });
     });
+
     invalidTypeProperty.forEach((specData) => {
       it('Should correctly suggest value and report transactionJsonPath on a body property with incorrect value ' +
         specData.version, function (done) {
@@ -1227,6 +1235,65 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           const responseId = _.keys(resultObj.responses)[0],
             responseMissmatches = resultObj.responses[responseId].mismatches;
           expect(responseMissmatches).to.have.lengthOf(0);
+          done();
+        });
+      });
+    });
+
+    missingResponsesSpecs.forEach((specData) => {
+      it('Should correctly provide missing responses from schema and collection in result' +
+        specData.version, function (done) {
+        let missingResponsesSpec = fs.readFileSync(specData.path, 'utf-8'),
+          missingResponsesCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+            '/missingResponsesCollection.json'), 'utf-8'),
+          options = { suggestAvailableFixes: true, showMissingInSchemaErrors: true },
+          resultObj1,
+          resultObj2,
+          responseKey,
+          responseMissmatches,
+          historyRequest = [],
+          schemaPack = new Converter.SchemaPack({ type: 'string', data: missingResponsesSpec }, options);
+
+        getAllTransactions(JSON.parse(missingResponsesCollection), historyRequest);
+
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
+          expect(err).to.be.null;
+          expect(result).to.be.an('object');
+          resultObj1 = result.requests[historyRequest[0].id].endpoints[0];
+          resultObj2 = result.requests[historyRequest[1].id].endpoints[0];
+
+          expect(resultObj1.matched).to.be.false;
+          expect(resultObj1.mismatches).to.be.empty;
+          expect(resultObj1.missingResponses.length).to.eql(1);
+
+          expect(resultObj1.missingResponses[0].property).to.eql('RESPONSE');
+          expect(resultObj1.missingResponses[0].transactionJsonPath).to.eql('$.responses');
+          expect(resultObj1.missingResponses[0].schemaJsonPath).to.eql('$.paths[/pets].get.responses.200');
+          expect(resultObj1.missingResponses[0].reasonCode).to.eql('MISSING_IN_REQUEST');
+          expect(resultObj1.missingResponses[0].reason).to.eql(
+            'The response \"200\" was not found in the transaction');
+
+          expect(resultObj1.missingResponses[0].suggestedFix.key).to.eql('200');
+          const requiredResponseProps = ['id', 'name', 'originalRequest', 'status', 'code', 'header',
+              'body', 'cookie', '_postman_previewlanguage'],
+            suggestedResponseProps = _.keys(resultObj1.missingResponses[0].suggestedFix.suggestedValue);
+
+          expect(_.difference(requiredResponseProps, suggestedResponseProps)).to.be.empty;
+
+          expect(resultObj2.matched).to.be.false;
+          expect(resultObj2.mismatches).to.be.empty;
+          expect(resultObj2.missingResponses.length).to.eql(1);
+
+          responseKey = _.keys(resultObj2.responses)[0];
+          responseMissmatches = resultObj2.responses[responseKey].mismatches;
+
+          expect(responseMissmatches.length).to.eql(1);
+          expect(responseMissmatches[0].property).to.eql('RESPONSE');
+          expect(responseMissmatches[0].transactionJsonPath).to.eql(`$.responses[${responseKey}]`);
+          expect(responseMissmatches[0].schemaJsonPath).to.be.null;
+          expect(responseMissmatches[0].reasonCode).to.eql('MISSING_IN_SCHEMA');
+          expect(responseMissmatches[0].reason).to.eql(
+            'The response \"200\" was not found in the schema');
           done();
         });
       });
