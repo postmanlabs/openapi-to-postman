@@ -56,7 +56,7 @@ const schemaFaker = require('../assets/json-schema-faker'),
     'double'
   ],
 
-  PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable'],
+  PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable', 'properties'],
   crypto = require('crypto'),
 
   /**
@@ -457,21 +457,26 @@ let QUERYPARAM = 'query',
 
     stack++;
 
-    const compositeSchema = schema.anyOf || schema.oneOf,
-      compositeKeyword = schema.anyOf ? 'anyOf' : 'oneOf',
+    const compositeKeyword = schema.anyOf ? 'anyOf' : 'oneOf',
       { concreteUtils } = context;
 
-    if (compositeSchema) {
-      if (resolveFor === CONVERSION) {
-        return resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef));
-      }
+    let compositeSchema = schema.anyOf || schema.oneOf;
 
-      return { [compositeKeyword]: _.map(compositeSchema, (schemaElement) => {
+    if (compositeSchema) {
+      compositeSchema = _.map(compositeSchema, (schemaElement) => {
         PROPERTIES_TO_ASSIGN_ON_CASCADE.forEach((prop) => {
           if (_.isNil(schemaElement[prop]) && !_.isNil(schema[prop])) {
             schemaElement[prop] = schema[prop];
           }
         });
+        return schemaElement;
+      });
+
+      if (resolveFor === CONVERSION) {
+        return resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef));
+      }
+
+      return { [compositeKeyword]: _.map(compositeSchema, (schemaElement) => {
         return resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef));
       }) };
     }
