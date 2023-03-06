@@ -6,8 +6,8 @@ const expect = require('chai').expect,
   _ = require('lodash'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
   INVALID_OPENAPI_PATH = '../data/invalid_openapi',
-  // SWAGGER_20_FOLDER_YAML = '../data/valid_swagger/yaml/',
-  // SWAGGER_20_FOLDER_JSON = '../data/valid_swagger/json/',
+  SWAGGER_20_FOLDER_YAML = '../data/valid_swagger/yaml/',
+  SWAGGER_20_FOLDER_JSON = '../data/valid_swagger/json/',
   // VALID_OPENAPI_3_1_FOLDER_JSON = '../data/valid_openapi31X/json',
   testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
   tagsFolderSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed.yaml'),
@@ -1751,6 +1751,153 @@ describe('The convert Function', function() {
         getAllRequestsFromCollection(pathsCollection, allPathsRequest);
         getAllRequestsFromCollection(tagsCollection, allTagsRequest);
         expect(_.size(allTagsRequest)).to.deep.equal(_.size(allPathsRequest));
+      });
+    });
+  });
+
+  describe('Converting swagger 2.0 files', function() {
+    it('should convert path paramters to postman-compatible paramters', function (done) {
+      const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger2-with-params.json'),
+        input = {
+          type: 'file',
+          data: fileData
+        };
+
+      Converter.convertV2(input, {}, function(err, convertResult) {
+        expect(err).to.be.null;
+        // Make sure that path params are updated and their respective default values
+        convertResult.output.forEach(function(element) {
+          expect(element.type).to.equal('collection');
+          expect(element.data.item[0].item[0].item[0]
+            .item[0].item[0].request.url.path.indexOf(':ownerId') > -1)
+            .to.equal(true);
+          expect(element.data.item[0].item[0].item[0]
+            .item[0].item[0].request.url.path.indexOf(':petId') > -1)
+            .to.equal(true);
+
+          let thisVar = element.data.item[0].item[0].item[0].item[0].item[0].request.url.variable[0];
+
+          expect(thisVar.type).to.equal('any');
+
+          expect(thisVar.value).to.equal('42');
+          expect(thisVar.key).to.equal('ownerId');
+        });
+        done();
+      });
+    });
+
+    it('Should convert a swagger document with YAML anchors', function(done) {
+      const fileData = fs.readFileSync(path.join(__dirname, SWAGGER_20_FOLDER_YAML, 'yaml_anchor.yaml'), 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+      Converter.convertV2(input, {}, (error, result) => {
+        expect(error).to.be.null;
+        expect(result.result).to.equal(true);
+        expect(result.output.length).to.equal(1);
+        expect(result.output[0].type).to.have.equal('collection');
+        expect(result.output[0].data).to.have.property('info');
+        expect(result.output[0].data).to.have.property('item');
+      });
+      done();
+    });
+
+    it('must read values consumes', function (done) {
+      const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger_aws_2.json'),
+        input = {
+          type: 'file',
+          data: fileData
+        };
+
+      Converter.convertV2(input, { requestName: 'url' }, (err, convertResult) => {
+        expect(err).to.be.null;
+        // Make sure that consumes and produces are processed
+        convertResult.output.forEach(function(element) {
+          expect(element.type).to.equal('collection');
+          expect(JSON.stringify(element.data.item[0].request.header[0])).to
+            .equal('{"key":"Content-Type","value":"application/json"}');
+        });
+        done();
+      });
+    });
+
+    it('should convert a swagger object which only have a root path.', function(done) {
+      const fileData = JSON.parse(
+          fs.readFileSync(path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger3.json'), 'utf8')
+        ),
+        input = {
+          type: 'json',
+          data: fileData
+        };
+
+      Converter.convertV2(input, {}, (err, result) => {
+        expect(result.result).to.equal(true);
+        expect(result.output.length).to.equal(1);
+        expect(result.output[0].type).to.have.equal('collection');
+        expect(result.output[0].data).to.have.property('info');
+        expect(result.output[0].data).to.have.property('item');
+
+        done();
+      });
+    });
+
+    it('should name the requests based on requestNameSource parameter, value=`URL`', function (done) {
+      const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger3.json'),
+        input = {
+          type: 'file',
+          data: fileData
+        };
+
+      Converter.convertV2(input, { requestNameSource: 'URL' }, (err, convertResult) => {
+        let request = convertResult.output[0].data.item[0].request;
+
+        expect(err).to.be.null;
+        expect(request.name).to.equal('/');
+        done();
+      });
+    });
+
+    it('should name the requests based on requestNameSource parameter, value=`Fallback`', function (done) {
+      const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger3.json'),
+        input = {
+          type: 'file',
+          data: fileData
+        };
+
+      Converter.convertV2(input, { requestNameSource: 'Fallback' }, (err, convertResult) => {
+        let request = convertResult.output[0].data.item[0].request;
+
+        expect(err).to.be.null;
+        expect(request.name).to.equal('List API versions');
+        done();
+      });
+    });
+
+    it('[GITHUB #10710] - should convert file with all of merging properties. ' +
+      'One ocurrence is an empty object and the other is a boolean type', function() {
+      const fileSource = path.join(__dirname, SWAGGER_20_FOLDER_YAML, 'allOfConflicted.yaml'),
+        fileData = fs.readFileSync(fileSource, 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+
+      Converter.convertV2(input, {
+        optimizeConversion: false, stackLimit: 50
+      }, (err, result) => {
+        const expectedResponseBody1 = JSON.parse(
+            result.output[0].data.item[0].item[0].item[0].item[0]
+              .item[0].response[0].body
+          ),
+          expectedResponseBody2 = JSON.parse(
+            result.output[0].data.item[0].item[0].item[1].item[0].response[0].body
+          );
+        expect(err).to.be.null;
+        expect(result.result).to.be.true;
+        expect(expectedResponseBody1.payload).to.be.a('boolean');
+        expect(expectedResponseBody2.payload).to.be.an('object')
+          .and.to.have.all.keys('content', 'paging');
       });
     });
   });
