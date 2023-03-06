@@ -77,6 +77,7 @@ let _ = require('lodash'),
             tree.setNode(`path:${pathIdentifier}`, {
               type: 'folder',
               meta: {
+                name: p,
                 path: p,
                 pathIdentifier: pathIdentifier
               },
@@ -134,12 +135,42 @@ let _ = require('lodash'),
   },
 
   _generateTreeFromTags = function (openapi, { includeDeprecated }) {
-    let tree = new Graph();
+    let tree = new Graph(),
+
+      tagDescMap = _.reduce(openapi.tags, function (acc, data) {
+        acc[data.name] = data.description;
+
+        return acc;
+      }, {});
 
     tree.setNode('root:collection', {
       type: 'collection',
       data: {},
       meta: {}
+    });
+
+    /**
+     * Create folders for all the tags present.
+     */
+    _.forEach(tagDescMap, function (desc, tag) {
+      if (tree.hasNode(`path:${tag}`)) {
+        return;
+      }
+
+      /**
+       * Generate a folder node and attach to root of collection.
+       */
+      tree.setNode(`path:${tag}`, {
+        type: 'folder',
+        meta: {
+          path: '',
+          name: tag,
+          description: tagDescMap[tag]
+        },
+        data: {}
+      });
+
+      tree.setEdge('root:collection', `path:${tag}`);
     });
 
     _.forEach(openapi.paths, function (methods, path) {
@@ -156,37 +187,51 @@ let _ = require('lodash'),
           return;
         }
 
-        tree.setNode(`path:${path}:${method}`, {
-          type: 'request',
-          data: {},
-          meta: {
-            path: path,
-            method: method
-          }
-        });
-
         /**
-         * Pick the first tag. That needs to become a folder.
-         * If the folder does not exist, create and set the edge b/w folder and request
-         *
-         * else if tags not present set the edge b/w collection and request
+         * For all the tags present. Make that request to be
+         * referenced in all the folder which are applicable.
          */
         if (data.tags && data.tags.length > 0) {
-          let tag = data.tags[0];
-
-          if (!tree.hasNode(`path:${tag}`)) {
-            tree.setNode(`path:${tag}`, {
-              type: 'folder',
-              meta: { path: path },
-              data: {}
+          _.forEach(data.tags, function (tag) {
+            tree.setNode(`path:${tag}:${path}:${method}`, {
+              type: 'request',
+              data: {},
+              meta: {
+                tag: tag,
+                path: path,
+                method: method
+              }
             });
 
-            tree.setEdge('root:collection', `path:${tag}`);
-          }
+            // safeguard just in case there is no folder created for this tag.
+            if (!tree.hasNode(`path:${tag}`)) {
+              tree.setNode(`path:${tag}`, {
+                type: 'folder',
+                meta: {
+                  path: path,
+                  name: tag,
+                  description: tagDescMap[tag]
+                },
+                data: {}
+              });
 
-          tree.setEdge(`path:${tag}`, `path:${path}:${method}`);
+              tree.setEdge('root:collection', `path:${tag}`);
+            }
+
+            tree.setEdge(`path:${tag}`, `path:${tag}:${path}:${method}`);
+          });
         }
+
         else {
+          tree.setNode(`path:${path}:${method}`, {
+            type: 'request',
+            data: {},
+            meta: {
+              path: path,
+              method: method
+            }
+          });
+
           tree.setEdge('root:collection', `path:${path}:${method}`);
         }
       });
@@ -199,7 +244,11 @@ let _ = require('lodash'),
     if (!_.isEmpty(openapi.webhooks)) {
       tree.setNode(`${PATH_WEBHOOK}:folder`, {
         type: 'webhook~folder',
-        meta: { path: 'webhook~folder' },
+        meta: {
+          path: 'webhook~folder',
+          name: 'webhook~folder',
+          description: ''
+        },
         data: {}
       });
 

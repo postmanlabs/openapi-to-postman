@@ -1,5 +1,6 @@
 const expect = require('chai').expect,
   Converter = require('../../index.js'),
+  async = require('async'),
   fs = require('fs'),
   path = require('path'),
   _ = require('lodash'),
@@ -9,6 +10,7 @@ const expect = require('chai').expect,
   // SWAGGER_20_FOLDER_JSON = '../data/valid_swagger/json/',
   // VALID_OPENAPI_3_1_FOLDER_JSON = '../data/valid_openapi31X/json',
   testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
+  tagsFolderSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed.yaml'),
   testSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/test1.json'),
   test31SpecDir = path.join(__dirname, '../data/valid_openapi31X/'),
   issue133 = path.join(__dirname, VALID_OPENAPI_PATH + '/issue#133.json'),
@@ -1650,5 +1652,104 @@ describe('The convert Function', function() {
         expect(result.output[0].data.item.length).to.equal(1);
         expect(result.output[0].data.item[0].name).to.equal('pets');
       });
+  });
+
+  describe('[Github #57] - folderStrategy option (value: Tags) ' + tagsFolderSpec, function() {
+    async.series({
+      pathsOutput: (cb) => {
+        Converter.convertV2({ type: 'file', data: tagsFolderSpec },
+          { folderStrategy: 'Paths', exampleParametersResolution: 'schema' }, cb);
+      },
+      tagsOutput: (cb) => {
+        Converter.convertV2({ type: 'file', data: tagsFolderSpec },
+          { folderStrategy: 'Tags', exampleParametersResolution: 'schema' }, cb);
+      }
+    }, (err, res) => {
+      var collectionItems,
+        pathsCollection,
+        tagsCollection,
+        allPathsRequest = {},
+        allTagsRequest = {};
+
+      // Creates an object with key being request name and value being collection item (request)
+      const getAllRequestsFromCollection = function (collection, allRequests) {
+        if (!_.has(collection, 'item') || !_.isArray(collection.item)) {
+          return;
+        }
+        _.forEach(collection.item, (item) => {
+          if (_.has(item, 'request') || _.has(item, 'response')) {
+            allRequests[item.name] = _.omit(item, ['id', 'response']);
+            allRequests[item.name].response = _.map(item.response, (res) => {
+              return _.omit(res, ['id']);
+            });
+          }
+          else {
+            getAllRequestsFromCollection(item, allRequests);
+          }
+        });
+      };
+
+      // check for successful conversion
+      expect(err).to.be.null;
+      expect(res.pathsOutput.result).to.be.true;
+      expect(res.tagsOutput.result).to.be.true;
+
+      // Collection item object of conversion for option value Tags
+      collectionItems = res.tagsOutput.output[0].data.item;
+      pathsCollection = res.pathsOutput.output[0].data;
+      tagsCollection = res.tagsOutput.output[0].data;
+
+      it('should maintain the sorted order of folder according to the global tags ', function() {
+        // checking for the global tags that are used in operations
+        expect(collectionItems[0].name).to.equal('pet');
+        expect(collectionItems[1].name).to.equal('store');
+        expect(collectionItems[2].name).to.equal('user');
+      });
+
+      it('should create empty folders on the basis of tags defined in global tags, ' +
+      'even though they are not used in any operation', function () {
+        // checking for the global tags that are not used in operations
+        expect(collectionItems[3].name).to.equal('pet_model');
+        expect(collectionItems[4].name).to.equal('store_model');
+      });
+
+      it('should create the folder when tag is only given in the operation and not in the root level', function() {
+        // checking for the local tags that are used in operations but not defined in global tags object
+        expect(collectionItems[5].name).to.equal('cat');
+        expect(collectionItems[6].name).to.equal('dog');
+      });
+
+      it('should add the requests that doesn\'t have any tags to the collection at root level', function() {
+        // skipping the first seven items as they are tag folders.
+        expect(collectionItems[7].name).to.equal('Finds Pets by tags');
+        expect(collectionItems[7]).to.contain.keys(['request', 'response']);
+        expect(collectionItems[8].name).to.equal('Subscribe to the Store events');
+        expect(collectionItems[8]).to.contain.keys(['request', 'response']);
+        expect(collectionItems[9].name).to.equal('Logs out current logged in user session');
+        expect(collectionItems[9]).to.contain.keys(['request', 'response']);
+      });
+
+      it('should add request with multiple tags in all mentioned tag folder', function() {
+        // Path '/pet/{petId}/uploadImage' contained post operation (uploads an image) contains tags 'pet' and 'cat'
+        expect(_.map(collectionItems[0].item, 'name')).to.contain('uploads an image');
+        expect(_.map(collectionItems[5].item, 'name')).to.contain('uploads an image');
+
+        // Path '/pet/findByStatus' contained get operation (Finds Pets by status) contains tags 'pet' and 'dog'
+        expect(_.map(collectionItems[0].item, 'name')).to.contain('Finds Pets by status');
+        expect(_.map(collectionItems[6].item, 'name')).to.contain('Finds Pets by status');
+      });
+
+      it('should contain all collection data that default folderStrategy option ' +
+        '(value: Paths) contains', function() {
+        // Check for collection variables and info
+        expect(tagsCollection.variable).to.deep.equal(pathsCollection.variable);
+        expect(_.omit(tagsCollection.info, '_postman_id')).to.deep.equal(_.omit(pathsCollection.info, '_postman_id'));
+
+        // Check for all requests
+        getAllRequestsFromCollection(pathsCollection, allPathsRequest);
+        getAllRequestsFromCollection(tagsCollection, allTagsRequest);
+        expect(_.size(allTagsRequest)).to.deep.equal(_.size(allPathsRequest));
+      });
+    });
   });
 });
