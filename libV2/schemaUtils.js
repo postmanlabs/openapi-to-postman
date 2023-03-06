@@ -204,20 +204,25 @@ let QUERYPARAM = 'query',
    * @param {Object} $ref - Ref that is to be resolved
    * @param {Number} stackDepth - Depth of the current stack for Ref resolution
    * @param {Object} seenRef - Seen Reference map
-   * @param {string} resolveTo The desired JSON-generation mechanism (schema: prefer using the JSONschema to
-    generate a fake object, example: use specified examples as-is). Default: schema
    *
    * @returns {Object} Returns the object that staisfies the schema
    */
-  resolveRefFromSchema = (context, $ref) => {
+  resolveRefFromSchema = (context, $ref, stackDepth = 0, seenRef = {}) => {
     const { specComponents } = context;
+
+    if (stackDepth >= REF_STACK_LIMIT) {
+      return { value: ERR_TOO_MANY_LEVELS };
+    }
+
+    stackDepth++;
+    seenRef[$ref] = true;
 
     if (context.schemaCache[$ref]) {
       return context.schemaCache[$ref];
     }
 
     if (!_.isFunction($ref.split)) {
-      return { value: `reference ${schema.$ref} not found in the OpenAPI spec` };
+      return { value: `reference ${$ref} not found in the OpenAPI spec` };
     }
 
     let splitRef = $ref.split('/'),
@@ -250,6 +255,15 @@ let QUERYPARAM = 'query',
       return { value: 'reference ' + $ref + ' not found in the OpenAPI spec' };
     }
 
+    if (_.get(resolvedSchema, '$ref')) {
+      if (seenRef[resolvedSchema.$ref]) {
+        return {
+          value: '<Circular reference to ' + resolvedSchema.$ref + ' detected>'
+        };
+      }
+      return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth, _.cloneDeep(seenRef));
+    }
+
     return resolvedSchema;
   },
 
@@ -265,12 +279,12 @@ let QUERYPARAM = 'query',
   resolveRefForExamples = (context, $ref, stackDepth = 0, seenRef = {}) => {
     const { specComponents } = context;
 
-    stackDepth++;
-
-    seenRef[$ref] = true;
     if (stackDepth >= REF_STACK_LIMIT) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
+
+    stackDepth++;
+    seenRef[$ref] = true;
 
     if (context.schemaCache[$ref]) {
       return context.schemaCache[$ref];
@@ -457,7 +471,7 @@ let QUERYPARAM = 'query',
         schema = context.schemaCache[schema.$ref];
       }
       else {
-        schema = resolveRefFromSchema(context, schema.$ref);
+        schema = resolveRefFromSchema(context, schema.$ref, stack, _.cloneDeep(seenRef));
         schema = resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef));
 
         // Add the resolved schema to the global schema cache
@@ -526,8 +540,7 @@ let QUERYPARAM = 'query',
       _.forEach(schema.enum, (item, index) => {
         if (item && item.hasOwnProperty('$ref')) {
           schema.enum[index] = resolveRefFromSchema(
-            context, item.$ref, stack, resolveFor,
-            _.cloneDeep(seenRef), PARAMTER_RESOLUTION_TYPE.VALUE
+            context, item.$ref, stack, _.cloneDeep(seenRef)
           );
         }
       });
@@ -1600,5 +1613,6 @@ module.exports = {
   },
 
   resolveResponseForPostmanRequest,
+  resolveRefFromSchema,
   resolveSchema
 };

@@ -8,8 +8,12 @@ const _ = require('lodash'),
   schemaFaker = require('../assets/json-schema-faker.js'),
   xmlFaker = require('./xmlSchemaFaker.js'),
   utils = require('./utils'),
-
-  { resolveSchema, resolvePostmanRequest, resolveResponseForPostmanRequest } = require('./schemaUtils'),
+  {
+    resolveSchema,
+    resolveRefFromSchema,
+    resolvePostmanRequest,
+    resolveResponseForPostmanRequest
+  } = require('./schemaUtils'),
   concreteUtils = require('../lib/30XUtils/schemaUtils30X'),
 
   ajvValidationError = require('../lib/ajValidation/ajvValidationError'),
@@ -17,7 +21,6 @@ const _ = require('lodash'),
   { formatDataPath, checkIsCorrectType, isKnownType,
     getServersPathVars } = require('../lib/common/schemaUtilsCommon.js'),
 
-  defaultOptions = require('../lib/options.js').getOptions('use'),
   { findMatchingRequestFromSchema, isPmVariable } = require('./requestMatchingUtils'),
   traverseUtility = require('traverse'),
 
@@ -236,59 +239,6 @@ function safeSchemaFaker (context, oldSchema, resolveTo, resolveFor, parameterSo
     );
     return null;
   }
-}
-
-/**
- * @param {*} $ref reference object
- * @param {object} components - components defined in the OAS spec. These are used to
- * resolve references while generating params.
- * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
- * @returns {Object} reference object from the saved components
- * @no-unit-tests
- */
-function getRefObject ($ref, components, options) {
-  options = _.merge({}, defaultOptions, options);
-  var refObj, savedSchema;
-
-  if (typeof $ref !== 'string') {
-    return { value: `Invalid $ref: ${$ref} was found` };
-  }
-
-  savedSchema = $ref.split('/').slice(1).map((elem) => {
-    // https://swagger.io/docs/specification/using-ref#escape
-    // since / is the default delimiter, slashes are escaped with ~1
-    return decodeURIComponent(
-      elem
-        .replace(/~1/g, '/')
-        .replace(/~0/g, '~')
-    );
-  });
-  // at this stage, savedSchema is [components, part1, parts]
-  // must have min. 2 segments after "#/components"
-  if (savedSchema.length < 3) {
-    console.warn(`ref ${$ref} not found.`);
-    return { value: `reference ${$ref} not found in the given specification` };
-  }
-
-  if (savedSchema[0] !== 'components' && savedSchema[0] !== 'paths') {
-    console.warn(`Error reading ${$ref}. Can only use references from components and paths`);
-    return { value: `Error reading ${$ref}. Can only use references from components and paths` };
-  }
-
-  // at this point, savedSchema is similar to ['components', 'schemas','Address']
-  // components is actually components and paths (an object with components + paths as 1st-level-props)
-  refObj = _.get(components, savedSchema);
-
-  if (!refObj) {
-    console.warn(`ref ${$ref} not found.`);
-    return { value: `reference ${$ref} not found in the given specification` };
-  }
-
-  if (refObj.$ref) {
-    return getRefObject(refObj.$ref, components, options);
-  }
-
-  return refObj;
 }
 
 /** Separates out collection and path variables from the reqUrl
@@ -1118,15 +1068,13 @@ function convertToPmCollectionVariables (serverVariables, keyName, serverUrl = '
  * Returns params applied to specific operation with resolved references. Params from parent
  * blocks (collection/folder) are merged, so that the request has a flattened list of params needed.
  * OperationParams take precedence over pathParams
+ *
+ * @param {Object} context - Required context from related SchemaPack function
  * @param {array} operationParam operation (Postman request)-level params.
  * @param {array} pathParam are path parent-level params.
- * @param {object} components - components defined in the OAS spec. These are used to
- * resolve references while generating params.
- * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
  * @returns {*} combined requestParams from operation and path params.
  */
-function getRequestParams (operationParam, pathParam, components, options) {
-  options = _.merge({}, defaultOptions, options);
+function getRequestParams (context, operationParam, pathParam) {
   if (!Array.isArray(operationParam)) {
     operationParam = [];
   }
@@ -1135,13 +1083,13 @@ function getRequestParams (operationParam, pathParam, components, options) {
   }
   pathParam.forEach((param, index, arr) => {
     if (_.has(param, '$ref')) {
-      arr[index] = getRefObject(param.$ref, components, options);
+      arr[index] = resolveRefFromSchema(context, param.$ref);
     }
   });
 
   operationParam.forEach((param, index, arr) => {
     if (_.has(param, '$ref')) {
-      arr[index] = getRefObject(param.$ref, components, options);
+      arr[index] = resolveRefFromSchema(context, param.$ref);
     }
   });
 
@@ -2025,7 +1973,7 @@ function checkRequestHeaders (context, headers, transactionPathPrefix, schemaPat
     // resolve $ref in request body if present
     if (reqBody) {
       if (_.has(reqBody, '$ref')) {
-        reqBody = getRefObject(reqBody.$ref, components, options);
+        reqBody = resolveRefFromSchema(context, reqBody.$ref);
       }
 
       contentHeaderMismatches = checkContentTypeHeader(headers, transactionPathPrefix,
@@ -2205,7 +2153,7 @@ function checkRequestBody (context, requestBody, transactionPathPrefix, schemaPa
 
   // resolve $ref in requestBody object if present
   if (!_.isEmpty(_.get(schemaPath, 'requestBody.$ref'))) {
-    schemaPath.requestBody = getRefObject(schemaPath.requestBody.$ref, components, options);
+    schemaPath.requestBody = resolveRefFromSchema(context, schemaPath.requestBody.$ref);
   }
 
   // get valid json content type
@@ -2443,13 +2391,13 @@ function checkResponses (context, transaction, transactionPathPrefix, schemaPath
 
     // resolve $ref in response object if present
     if (!_.isEmpty(_.get(thisSchemaResponse, '$ref'))) {
-      thisSchemaResponse = getRefObject(thisSchemaResponse.$ref, components, options);
+      thisSchemaResponse = resolveRefFromSchema(context, thisSchemaResponse.$ref);
     }
 
     // resolve $ref in all header objects if present
     _.forEach(_.get(thisSchemaResponse, 'headers'), (header) => {
       if (_.has(header, '$ref')) {
-        _.assign(header, getRefObject(header.$ref, components, options));
+        _.assign(header, resolveRefFromSchema(context, header.$ref));
         _.unset(header, '$ref');
       }
     });
@@ -2617,7 +2565,7 @@ module.exports = {
       // resolve $ref in all parameter objects if present
       _.forEach(_.get(matchedPath, 'path.parameters'), (param) => {
         if (param.hasOwnProperty('$ref')) {
-          _.assign(param, getRefObject(param.$ref, componentsAndPaths, options));
+          _.assign(param, resolveRefFromSchema(context, param.$ref));
           _.unset(param, '$ref');
         }
       });
@@ -2741,8 +2689,8 @@ module.exports = {
               requestItem;
 
             // add common parameters of path level
-            operationItem.parameters = getRequestParams(operationItem.parameters,
-              _.get(schemaPathObj, 'parameters'), components, options);
+            operationItem.parameters = getRequestParams(context, operationItem.parameters,
+              _.get(schemaPathObj, 'parameters'));
 
             // discard the leading slash, if it exists
             if (path[0] === '/') {
