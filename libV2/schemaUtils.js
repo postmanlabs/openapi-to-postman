@@ -203,24 +203,14 @@ let QUERYPARAM = 'query',
    * @param {Object} context - Global context object
    * @param {Object} $ref - Ref that is to be resolved
    * @param {Number} stackDepth - Depth of the current stack for Ref resolution
-   * @param {*} resolveFor - resolve refs for flow validation/conversion (value to be one of VALIDATION/CONVERSION)
    * @param {Object} seenRef - Seen Reference map
    * @param {string} resolveTo The desired JSON-generation mechanism (schema: prefer using the JSONschema to
     generate a fake object, example: use specified examples as-is). Default: schema
    *
    * @returns {Object} Returns the object that staisfies the schema
    */
-  resolveRefFromSchema = (context, $ref, stackDepth = 0,
-    resolveFor = CONVERSION, seenRef = {}, resolveTo = PARAMTER_RESOLUTION_TYPE.SCHEMA
-  ) => {
+  resolveRefFromSchema = (context, $ref) => {
     const { specComponents } = context;
-
-    stackDepth++;
-
-    seenRef[$ref] = true;
-    if (stackDepth >= REF_STACK_LIMIT) {
-      return { value: ERR_TOO_MANY_LEVELS };
-    }
 
     if (context.schemaCache[$ref]) {
       return context.schemaCache[$ref];
@@ -259,25 +249,6 @@ let QUERYPARAM = 'query',
     if (resolvedSchema === undefined) {
       return { value: 'reference ' + $ref + ' not found in the OpenAPI spec' };
     }
-
-    if (_.has(resolvedSchema, '$ref')) {
-      if (seenRef[resolvedSchema.$ref]) {
-        return {
-          value: `<Circular reference to ${resolvedSchema.$ref} detected>`
-        };
-      }
-      return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth, resolveFor, _.cloneDeep(seenRef));
-    }
-
-    if (resolveTo === PARAMTER_RESOLUTION_TYPE.VALUE) {
-      return resolvedSchema;
-    }
-
-    // eslint-disable-next-line no-use-before-define
-    resolvedSchema = resolveSchema(context, resolvedSchema, stackDepth, resolveFor, _.cloneDeep(seenRef));
-
-    // Add the resolved schema to the global schema cache
-    context.schemaCache[$ref] = resolvedSchema;
 
     return resolvedSchema;
   },
@@ -478,7 +449,19 @@ let QUERYPARAM = 'query',
           value: '<Circular reference to ' + schema.$ref + ' detected>'
         };
       }
-      schema = resolveRefFromSchema(context, schema.$ref, stack, resolveFor, _.cloneDeep(seenRef));
+
+      seenRef[schema.$ref] = true;
+
+      if (context.schemaCache[schema.$ref]) {
+        schema = context.schemaCache[schema.$ref];
+      }
+      else {
+        schema = resolveRefFromSchema(context, schema.$ref);
+        schema = resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef));
+
+        // Add the resolved schema to the global schema cache
+        context.schemaCache[schema.$ref] = schema;
+      }
     }
 
     if (
@@ -960,7 +943,7 @@ let QUERYPARAM = 'query',
     }
 
     if (requestBodySchema.$ref) {
-      requestBodySchema = resolveRefFromSchema(context, requestBodySchema.$ref);
+      requestBodySchema = resolveSchema(context, requestBodySchema);
     }
 
     /**
@@ -1024,7 +1007,7 @@ let QUERYPARAM = 'query',
       requestBodySchema = requestBodySchema.schema || requestBodySchema;
 
       if (requestBodySchema.$ref) {
-        requestBodySchema = resolveRefFromSchema(context, requestBodySchema.$ref);
+        requestBodySchema = resolveSchema(context, requestBodySchema);
       }
 
       if (bodyType === APP_XML || bodyType === TEXT_XML) {
@@ -1079,7 +1062,7 @@ let QUERYPARAM = 'query',
     }
 
     if (_.has(requestBodyContent, 'schema.$ref')) {
-      requestBodyContent.schema = resolveRefFromSchema(context, requestBodyContent.schema.$ref);
+      requestBodyContent.schema = resolveSchema(context, requestBodyContent.schema);
     }
 
     bodyData = resolveRequestBodyData(context, requestBodyContent.schema);
@@ -1141,7 +1124,7 @@ let QUERYPARAM = 'query',
         param;
 
       requestBodySchema = _.has(requestBodyContent, 'schema.$ref') ?
-        resolveRefFromSchema(context, requestBodyContent.schema.$ref) :
+        resolveSchema(context, requestBodyContent.schema) :
         _.get(requestBodyContent, 'schema');
 
       paramSchema = _.get(requestBodySchema, ['properties', key], {});
@@ -1267,7 +1250,7 @@ let QUERYPARAM = 'query',
     }
 
     if (requestBody.$ref) {
-      requestBody = resolveRefFromSchema(context, requestBody.$ref);
+      requestBody = resolveSchema(context, requestBody);
     }
 
     requestContent = requestBody.content;
@@ -1300,13 +1283,13 @@ let QUERYPARAM = 'query',
 
     pathParam.forEach((param, index, arr) => {
       if (_.has(param, '$ref')) {
-        arr[index] = resolveRefFromSchema(context, param.$ref);
+        arr[index] = resolveSchema(context, param);
       }
     });
 
     operationParam.forEach((param, index, arr) => {
       if (_.has(param, '$ref')) {
-        arr[index] = resolveRefFromSchema(context, param.$ref);
+        arr[index] = resolveSchema(context, param);
       }
     });
 
@@ -1345,7 +1328,7 @@ let QUERYPARAM = 'query',
 
     _.forEach(params, (param) => {
       if (_.has(param, '$ref')) {
-        param = resolveRefFromSchema(context, param.$ref);
+        param = resolveSchema(context, param);
       }
 
       if (param.in !== QUERYPARAM) {
@@ -1376,7 +1359,7 @@ let QUERYPARAM = 'query',
 
     _.forEach(params, (param) => {
       if (_.has(param, '$ref')) {
-        param = resolveRefFromSchema(context, param.$ref);
+        param = resolveSchema(context, param);
       }
 
       if (param.in !== PATHPARAM) {
@@ -1433,7 +1416,7 @@ let QUERYPARAM = 'query',
 
     _.forEach(params, (param) => {
       if (_.has(param, '$ref')) {
-        param = resolveRefFromSchema(context, param.$ref);
+        param = resolveSchema(context, param);
       }
 
       if (param.in !== HEADER) {
@@ -1470,7 +1453,7 @@ let QUERYPARAM = 'query',
     }
 
     if (responseBody.$ref) {
-      responseBody = resolveRefFromSchema(context, responseBody.$ref);
+      responseBody = resolveSchema(context, responseBody);
     }
 
     responseContent = responseBody.content;
@@ -1508,7 +1491,7 @@ let QUERYPARAM = 'query',
     const headers = [];
 
     if (_.has(responseHeaders, '$ref')) {
-      responseHeaders = resolveRefFromSchema(context, responseHeaders.$ref);
+      responseHeaders = resolveSchema(context, responseHeaders);
     }
 
     _.forOwn(responseHeaders, (value, headerName) => {
