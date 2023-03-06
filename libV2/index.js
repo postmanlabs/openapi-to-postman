@@ -276,26 +276,24 @@ module.exports = {
       return callback(new OpenApiErr('Invalid syntax provided for requestList', e));
     }
 
-    return setTimeout(() => {
-      async.map(transactions, (transaction, callback) => {
-        return validateTransaction(context, transaction, {
-          schema, options, componentsAndPaths, schemaCache, matchedEndpoints
-        }, callback);
-      }, (err, result) => {
-        var retVal;
+    return async.map(transactions, (transaction, callback) => {
+      return validateTransaction(context, transaction, {
+        schema, options, componentsAndPaths, schemaCache, matchedEndpoints
+      }, callback);
+    }, (err, result) => {
+      var retVal;
 
-        if (err) {
-          return callback(err);
-        }
+      if (err) {
+        return callback(err);
+      }
 
-        retVal = {
-          requests: _.keyBy(result, 'requestId'),
-          missingEndpoints: getMissingSchemaEndpoints(context, schema, matchedEndpoints,
-            componentsAndPaths, options, schemaCache)
-        };
+      retVal = {
+        requests: _.keyBy(result, 'requestId'),
+        missingEndpoints: getMissingSchemaEndpoints(context, schema, matchedEndpoints,
+          componentsAndPaths, options, schemaCache)
+      };
 
-        callback(null, retVal);
-      });
-    }, 0);
+      return callback(null, retVal);
+    });
   }
 };
