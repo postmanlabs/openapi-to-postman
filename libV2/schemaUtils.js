@@ -3,6 +3,7 @@ const utils = require('./utils');
 
 const schemaFaker = require('../assets/json-schema-faker'),
   _ = require('lodash'),
+  { typesMap } = require('../lib/common/schemaUtilsCommon'),
   mergeAllOf = require('json-schema-merge-allof'),
   xmlFaker = require('./xmlSchemaFaker.js'),
   URLENCODED = 'application/x-www-form-urlencoded',
@@ -32,6 +33,21 @@ const schemaFaker = require('../assets/json-schema-faker'),
     'content-type', // 'content-type' is defined based on content/media-type of req/res body,
     'accept',
     'authorization'
+  ],
+
+  // All formats supported by both ajv and json-schema-faker
+  SUPPORTED_FORMATS = [
+    'date', 'time', 'date-time',
+    'uri', 'uri-reference', 'uri-template',
+    'email',
+    'hostname',
+    'ipv4', 'ipv6',
+    'regex',
+    'uuid',
+    'json-pointer',
+    'int64',
+    'float',
+    'double'
   ],
 
   PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable'],
@@ -527,6 +543,39 @@ let QUERYPARAM = 'query',
       }
 
       schema.items = resolveSchema(context, schema.items, stack, resolveFor, _.cloneDeep(seenRef));
+    }
+    else if (!schema.hasOwnProperty('default')) {
+      if (schema.hasOwnProperty('type')) {
+        let { parametersResolution } = context.computedOptions;
+
+        // Override default value to schema for CONVERSION only for parmeter resolution set to schema
+        if (resolveFor === CONVERSION && parametersResolution === 'schema') {
+          if (!schema.hasOwnProperty('format')) {
+            schema.default = '<' + schema.type + '>';
+          }
+          else if (typesMap.hasOwnProperty(schema.type)) {
+            schema.default = typesMap[schema.type][schema.format];
+
+            // in case the format is a custom format (email, hostname etc.)
+            // https://swagger.io/docs/specification/data-models/data-types/#string
+            // eslint-disable-next-line max-depth
+            if (!schema.default && schema.format) {
+              schema.default = '<' + schema.format + '>';
+            }
+          }
+          else {
+            schema.default = '<' + schema.type + (schema.format ? ('-' + schema.format) : '') + '>';
+          }
+        }
+      }
+      if (!schema.type) {
+        schema.type = SCHEMA_TYPES.string;
+      }
+
+      // Discard format if not supported by both json-schema-faker and ajv or pattern is also defined
+      if (!_.includes(SUPPORTED_FORMATS, schema.format) || (schema.pattern && schema.format)) {
+        return _.omit(schema, 'format');
+      }
     }
 
     if (schema.hasOwnProperty('additionalProperties')) {
