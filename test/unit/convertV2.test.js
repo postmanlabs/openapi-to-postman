@@ -985,7 +985,9 @@ describe('The convert Function', function() {
       (err, conversionResult) => {
         expect(err).to.be.null;
         let request = conversionResult.output[0].data.item[0].request;
-        expect(request.auth).to.be.null;
+        expect(request.auth).to.be.eql({
+          type: 'noauth'
+        });
         done();
       });
   });

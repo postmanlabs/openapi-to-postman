@@ -406,6 +406,7 @@ let QUERYPARAM = 'query',
    * @param {Number} [stack] - Current recursion depth
    * @param {String} resolveFor - For which action this resoltion is to be done
    * @param {Object} seenRef - Map of all the references that have been resolved
+   * @todo: Explore using a directed graph/tree for maintaining seen ref
    *
    * @returns {Object} Returns the object that staisfies the schema
    */
@@ -1562,7 +1563,7 @@ module.exports = {
       requestBody = resolveRequestBodyForPostmanRequest(context, operationItem[method]),
       request,
       responses,
-      securitySchema = _.get(operationItem, [method, 'properties.security']),
+      securitySchema = _.get(operationItem, [method, 'security']),
       authHelper = generateAuthForCollectionFromOpenAPI(context.openapi, securitySchema);
 
     headers.push(..._.get(requestBody, 'headers', []));
