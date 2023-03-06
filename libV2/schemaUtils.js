@@ -35,6 +35,12 @@ const schemaFaker = require('../assets/json-schema-faker'),
     'authorization'
   ],
 
+  SCHEMA_PROPERTIES_TO_EXCLUDE = [
+    'default',
+    'enum',
+    'pattern'
+  ],
+
   // All formats supported by both ajv and json-schema-faker
   SUPPORTED_FORMATS = [
     'date', 'time', 'date-time',
@@ -544,7 +550,8 @@ let QUERYPARAM = 'query',
 
       schema.items = resolveSchema(context, schema.items, stack, resolveFor, _.cloneDeep(seenRef));
     }
-    else if (!schema.hasOwnProperty('default')) {
+    // Any properties to ignored should not be available in schema
+    else if (_.every(SCHEMA_PROPERTIES_TO_EXCLUDE, (schemaKey) => { return !schema.hasOwnProperty(schemaKey); })) {
       if (schema.hasOwnProperty('type')) {
         let { parametersResolution } = context.computedOptions;
 
