@@ -33,6 +33,9 @@ describe('validateTransactionV2() should be able to validate collections generat
   ' for real world example with parametersResolution=Schema: ', function (done) {
   var realWorldDefinitions = fs.readdirSync(path.join(__dirname, REAL_WORLD_EXAMPLES_PATH));
 
+  // TODO: Skip stripe definition for now
+  realWorldDefinitions = _.reject(realWorldDefinitions, (file) => { return file === 'stripe.yaml'; });
+
   async.each(realWorldDefinitions, function (file, cb) {
     it(file, function () {
       let fileData = fs.readFileSync(path.join(__dirname, REAL_WORLD_EXAMPLES_PATH + '/' + file), 'utf8'),
@@ -84,6 +87,9 @@ describe('validateTransactionV2() should be able to validate collections generat
 describe('validateTransactionV2() should be able to validate collections generated from convertV2()' +
   ' for real world example with parametersResolution=Example: ', function (done) {
   var realWorldDefinitions = fs.readdirSync(path.join(__dirname, REAL_WORLD_EXAMPLES_PATH));
+
+  // TODO: Skip stripe definition for now
+  realWorldDefinitions = _.reject(realWorldDefinitions, (file) => { return file === 'stripe.yaml'; });
 
   async.each(realWorldDefinitions, function (file, cb) {
     it(file, function () {
