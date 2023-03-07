@@ -23819,14 +23819,6 @@ function extend() {
       }
       // execute generator
       var value = callback(params);
-
-      /**
-       * CHANGE: This Makes sure that we're not typecasting null to "null"
-       */
-      if (_.get(schema, 'nullable') && value === null) {
-        return value;
-      }
-
       // normalize output value
       switch (schema.type) {
           case 'number':
