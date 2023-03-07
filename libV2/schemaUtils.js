@@ -1698,7 +1698,6 @@ let QUERYPARAM = 'query',
       let response,
         { includeAuthInfoInExample } = context.computedOptions,
         responseAuthHelper,
-        authQueryParams = [],
         auth = originalRequest.auth,
         { body, contentHeader = [], bodyType } = resolveResponseBody(context, responseSchema) || {},
         headers = resolveResponseHeaders(context, responseSchema.headers);
@@ -1710,13 +1709,11 @@ let QUERYPARAM = 'query',
 
         responseAuthHelper = getResponseAuthHelper(auth);
 
-        authQueryParams = _.map(responseAuthHelper.query, (queryParam) => {
-          // key-value pair will be added as transformed query string
-          return queryParam.key + '=' + queryParam.value;
-        });
-
+        originalRequest.headers = originalRequest.headers || [];
         originalRequest.headers.push(...responseAuthHelper.header);
-        originalRequest.params.queryParams.push(...authQueryParams);
+
+        _.set(originalRequest, 'params.queryParams', _.get(originalRequest, 'params.queryParams', []));
+        originalRequest.params.queryParams.push(...responseAuthHelper.query);
       }
 
       response = {
