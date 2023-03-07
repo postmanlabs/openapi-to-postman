@@ -35,6 +35,12 @@ const schemaFaker = require('../assets/json-schema-faker'),
     'authorization'
   ],
 
+  SCHEMA_PROPERTIES_TO_EXCLUDE = [
+    'default',
+    'enum',
+    'pattern'
+  ],
+
   // All formats supported by both ajv and json-schema-faker
   SUPPORTED_FORMATS = [
     'date', 'time', 'date-time',
@@ -50,7 +56,7 @@ const schemaFaker = require('../assets/json-schema-faker'),
     'double'
   ],
 
-  PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable'],
+  PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable', 'properties'],
   crypto = require('crypto'),
 
   /**
@@ -451,21 +457,26 @@ let QUERYPARAM = 'query',
 
     stack++;
 
-    const compositeSchema = schema.anyOf || schema.oneOf,
-      compositeKeyword = schema.anyOf ? 'anyOf' : 'oneOf',
+    const compositeKeyword = schema.anyOf ? 'anyOf' : 'oneOf',
       { concreteUtils } = context;
 
-    if (compositeSchema) {
-      if (resolveFor === CONVERSION) {
-        return resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef));
-      }
+    let compositeSchema = schema.anyOf || schema.oneOf;
 
-      return { [compositeKeyword]: _.map(compositeSchema, (schemaElement) => {
+    if (compositeSchema) {
+      compositeSchema = _.map(compositeSchema, (schemaElement) => {
         PROPERTIES_TO_ASSIGN_ON_CASCADE.forEach((prop) => {
           if (_.isNil(schemaElement[prop]) && !_.isNil(schema[prop])) {
             schemaElement[prop] = schema[prop];
           }
         });
+        return schemaElement;
+      });
+
+      if (resolveFor === CONVERSION) {
+        return resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef));
+      }
+
+      return { [compositeKeyword]: _.map(compositeSchema, (schemaElement) => {
         return resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef));
       }) };
     }
@@ -544,7 +555,8 @@ let QUERYPARAM = 'query',
 
       schema.items = resolveSchema(context, schema.items, stack, resolveFor, _.cloneDeep(seenRef));
     }
-    else if (!schema.hasOwnProperty('default')) {
+    // Any properties to ignored should not be available in schema
+    else if (_.every(SCHEMA_PROPERTIES_TO_EXCLUDE, (schemaKey) => { return !schema.hasOwnProperty(schemaKey); })) {
       if (schema.hasOwnProperty('type')) {
         let { parametersResolution } = context.computedOptions;
 
