@@ -3,7 +3,6 @@ const utils = require('./utils');
 
 const schemaFaker = require('../assets/json-schema-faker'),
   _ = require('lodash'),
-  { typesMap } = require('../lib/common/schemaUtilsCommon'),
   mergeAllOf = require('json-schema-merge-allof'),
   xmlFaker = require('./xmlSchemaFaker.js'),
   URLENCODED = 'application/x-www-form-urlencoded',
@@ -18,10 +17,6 @@ const schemaFaker = require('../assets/json-schema-faker'),
     JSON: 'json',
     XML: 'xml',
     INVALID: 'invalid'
-  },
-  PARAMTER_RESOLUTION_TYPE = {
-    SCHEMA: 'schema',
-    VALUE: 'value'
   },
   HEADER_TYPE_PREVIEW_LANGUAGE_MAP = {
     [HEADER_TYPE.JSON]: 'json',
@@ -55,6 +50,27 @@ const schemaFaker = require('../assets/json-schema-faker'),
     'float',
     'double'
   ],
+
+  typesMap = {
+    integer: {
+      int32: '<integer>',
+      int64: '<long>'
+    },
+    number: {
+      float: '<float>',
+      double: '<double>'
+    },
+    string: {
+      byte: '<byte>',
+      binary: '<binary>',
+      date: '<date>',
+      'date-time': '<dateTime>',
+      password: '<password>'
+    },
+    boolean: '<boolean>',
+    array: '<array>',
+    object: '<object>'
+  },
 
   PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable', 'properties'],
   crypto = require('crypto'),
@@ -464,8 +480,15 @@ let QUERYPARAM = 'query',
 
     if (compositeSchema) {
       compositeSchema = _.map(compositeSchema, (schemaElement) => {
+        const isSchemaFullyResolved = _.get(schemaElement, 'value') === ERR_TOO_MANY_LEVELS &&
+          !_.startsWith(_.get(schemaElement, 'value', ''), '<Circular reference to ');
+
+        /**
+         * elements of composite schema may not have resolved fully,
+         * we want to avoid assigning these properties to schema element in such cases
+         */
         PROPERTIES_TO_ASSIGN_ON_CASCADE.forEach((prop) => {
-          if (_.isNil(schemaElement[prop]) && !_.isNil(schema[prop])) {
+          if (_.isNil(schemaElement[prop]) && !_.isNil(schema[prop]) && isSchemaFullyResolved) {
             schemaElement[prop] = schema[prop];
           }
         });
@@ -504,6 +527,12 @@ let QUERYPARAM = 'query',
         // Add the resolved schema to the global schema cache
         context.schemaCache[schema.$ref] = schema;
       }
+      return schema;
+    }
+
+    // Discard format if not supported by both json-schema-faker and ajv or pattern is also defined
+    if (!_.includes(SUPPORTED_FORMATS, schema.format) || (schema.pattern && schema.format)) {
+      schema.format && (delete schema.format);
     }
 
     if (
@@ -572,18 +601,14 @@ let QUERYPARAM = 'query',
             // https://swagger.io/docs/specification/data-models/data-types/#string
             // eslint-disable-next-line max-depth
             if (!schema.default && schema.format) {
-              schema.default = '<' + schema.format + '>';
+              // Use non defined format only for schema of type string
+              schema.default = '<' + (schema.type === SCHEMA_TYPES.string ? schema.format : schema.type) + '>';
             }
           }
           else {
             schema.default = '<' + schema.type + (schema.format ? ('-' + schema.format) : '') + '>';
           }
         }
-      }
-
-      // Discard format if not supported by both json-schema-faker and ajv or pattern is also defined
-      if (!_.includes(SUPPORTED_FORMATS, schema.format) || (schema.pattern && schema.format)) {
-        return _.omit(schema, 'format');
       }
     }
 
