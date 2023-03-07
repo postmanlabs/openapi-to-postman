@@ -14,7 +14,8 @@ let _ = require('lodash'),
     trace: true
   },
 
-  _generateTreeFromPaths = function (openapi, { includeDeprecated }) {
+
+  _generateTreeFromPathsV2 = function (openapi, { includeDeprecated }) {
     /**
      * We will create a unidirectional graph
      */
@@ -26,13 +27,23 @@ let _ = require('lodash'),
       meta: {}
     });
 
-    _.forEach(openapi.paths, function (methods, path) {
-      let pathSplit = path === '/' ? [path] : _.compact(path.split('/'));
+    /**
+     * Get all the paths sorted in desc order.
+     */
+    const paths = Object.keys(openapi.paths).sort((a, b) => {
+      return (a > b ? -1 : 1);
+    });
 
-      // if after path split we just have one entry
-      // that means no folders need to be generated.
-      // check for all the methods inside it and expand.
+    if (_.isEmpty(paths)) {
+      return tree;
+    }
+
+    _.forEach(paths, function (completePath) {
+      let pathSplit = completePath === '/' ? [completePath] : _.compact(completePath.split('/'));
+
       if (pathSplit.length === 1) {
+        let methods = openapi.paths[completePath];
+
         _.forEach(methods, function (data, method) {
           if (!ALLOWED_HTTP_METHODS[method]) {
             return;
@@ -46,93 +57,236 @@ let _ = require('lodash'),
             return;
           }
 
-          tree.setNode(`path:${pathSplit[0]}:${method}`, {
+          tree.setNode(`path:request:${pathSplit[0]}:${method}`, {
             type: 'request',
+            data: {},
             meta: {
-              path: path,
+              path: completePath,
               method: method,
               pathIdentifier: pathSplit[0]
-            },
-            data: {}
+            }
           });
 
-          tree.setEdge('root:collection', `path:${pathSplit[0]}:${method}`);
+          if (tree.hasNode(`path:folder:${pathSplit[0]}`)) {
+            tree.setEdge(`path:folder:${pathSplit[0]}`, `path:request:${pathSplit[0]}:${method}`);
+          }
+
+          else {
+            tree.setEdge('root:collection', `path:request:${pathSplit[0]}:${method}`);
+          }
         });
       }
 
       else {
-        _.forEach(pathSplit, function (p, index) {
+        _.forEach(pathSplit, function (path, index) {
           let previousPathIdentified = pathSplit.slice(0, index).join('/'),
             pathIdentifier = pathSplit.slice(0, index + 1).join('/');
 
-          /**
-           * Always first try to find the node if it already exists.
-           * if yes, bail out nothing is needed to be done.
-           */
-          if (tree.hasNode(`path:${pathIdentifier}`)) {
-            return;
+          if ((index + 1) === pathSplit.length) {
+            let methods = openapi.paths[completePath];
+
+            _.forEach(methods, function (data, method) {
+              if (!ALLOWED_HTTP_METHODS[method]) {
+                return;
+              }
+
+              /**
+               * include deprecated handling.
+               * If true, add in the postman collection. If false ignore the request.
+               */
+              if (!includeDeprecated && data.deprecated) {
+                return;
+              }
+
+              tree.setNode(`path:request:${pathIdentifier}:${method}`, {
+                type: 'request',
+                data: {},
+                meta: {
+                  path: completePath,
+                  method: method,
+                  pathIdentifier: pathIdentifier
+                }
+              });
+
+              /**
+               * If it is the last node,
+               * it might happen that this exists as a folder.
+               *
+               * If yes add a request inside that folder else
+               * add as a request on the previous path idendified which will be a folder.
+               */
+              if (tree.hasNode(`path:folder:${pathIdentifier}`)) {
+                tree.setEdge(`path:folder:${pathIdentifier}`, `path:request:${pathIdentifier}:${method}`);
+              }
+
+              else {
+                tree.setEdge(`path:folder:${previousPathIdentified}`, `path:request:${pathIdentifier}:${method}`);
+              }
+            });
           }
 
           else {
-            tree.setNode(`path:${pathIdentifier}`, {
+            tree.setNode(`path:folder:${pathIdentifier}`, {
               type: 'folder',
               meta: {
-                name: p,
-                path: p,
+                name: path,
+                path: path,
                 pathIdentifier: pathIdentifier
               },
               data: {}
             });
 
-            /**
-             * If index is 0, this means that we are on the first level.
-             * Hence it is folder/request to be added on the first level
-             *
-             * If after the split we have more than one paths, then we need
-             * to add to the previous node.
-             */
-            tree.setEdge(index === 0 ? 'root:collection' : `path:${previousPathIdentified}`, `path:${pathIdentifier}`);
+            tree.setEdge(index === 0 ? 'root:collection' : `path:folder:${previousPathIdentified}`,
+              `path:folder:${pathIdentifier}`);
           }
-        });
-
-        /**
-         * Now for all the methods present in the path, add the request nodes.
-         */
-
-        _.forEach(methods, function (data, method) {
-          if (!ALLOWED_HTTP_METHODS[method]) {
-            return;
-          }
-
-          /**
-           * include deprecated handling.
-           * If true, add in the postman collection. If false ignore the request.
-           */
-          if (!includeDeprecated && data.deprecated) {
-            return;
-          }
-
-          // join till the last path i.e. the folder.
-          let previousPathIdentified = pathSplit.slice(0, (pathSplit.length)).join('/'),
-            pathIdentifier = `${pathSplit.join('/')}:${method}`;
-
-          tree.setNode(`path:${pathIdentifier}`, {
-            type: 'request',
-            data: {},
-            meta: {
-              path: path,
-              method: method,
-              pathIdentifier: pathIdentifier
-            }
-          });
-
-          tree.setEdge(`path:${previousPathIdentified}`, `path:${pathIdentifier}`);
         });
       }
     });
 
     return tree;
   },
+
+  // _generateTreeFromPaths = function (openapi, { includeDeprecated }) {
+  //   /**
+  //    * We will create a unidirectional graph
+  //    */
+  //   let tree = new Graph();
+
+  //   tree.setNode('root:collection', {
+  //     type: 'collection',
+  //     data: {},
+  //     meta: {}
+  //   });
+
+  //   _.forEach(openapi.paths, function (methods, path) {
+  //     let pathSplit = path === '/' ? [path] : _.compact(path.split('/'));
+
+  //     // if after path split we just have one entry
+  //     // that means no folders need to be generated.
+  //     // check for all the methods inside it and expand.
+  //     if (pathSplit.length === 1) {
+  //       /**
+  //        * Always first try to find the node if it already exists.
+  //        * if yes, bail out nothing is needed to be done.
+  //        *
+  //        * if the path length is 1, then also generate
+  //        * the folder otherwise /pet and /pet/:id will never be in same folder.
+  //        */
+  //       // if (!tree.hasNode(`path:${pathSplit[0]}`)) {
+  //       //   tree.setNode(`path:${pathSplit[0]}`, {
+  //       //     type: 'folder',
+  //       //     meta: {
+  //       //       name: pathSplit[0],
+  //       //       path: pathSplit[0],
+  //       //       pathIdentifier: pathIdentifier
+  //       //     },
+  //       //     data: {}
+  //       //   });
+
+  //       //   tree.setEdge('root:collection', `path:${pathSplit[0]}`);
+  //       // }
+
+
+  //       _.forEach(methods, function (data, method) {
+  //         if (!ALLOWED_HTTP_METHODS[method]) {
+  //           return;
+  //         }
+
+  //         /**
+  //          * include deprecated handling.
+  //          * If true, add in the postman collection. If false ignore the request.
+  //          */
+  //         if (!includeDeprecated && data.deprecated) {
+  //           return;
+  //         }
+
+  //         tree.setNode(`path:${pathSplit[0]}:${method}`, {
+  //           type: 'request',
+  //           meta: {
+  //             path: path,
+  //             method: method,
+  //             pathIdentifier: pathSplit[0]
+  //           },
+  //           data: {}
+  //         });
+
+  //         tree.setEdge(`path:${pathSplit[0]}`, `path:${pathSplit[0]}:${method}`);
+  //       });
+  //     }
+
+  //     else {
+  //       _.forEach(pathSplit, function (p, index) {
+  //         let previousPathIdentified = pathSplit.slice(0, index).join('/'),
+  //           pathIdentifier = pathSplit.slice(0, index + 1).join('/');
+
+  //         /**
+  //          * Always first try to find the node if it already exists.
+  //          * if yes, bail out nothing is needed to be done.
+  //          */
+  //         if (tree.hasNode(`path:${pathIdentifier}`)) {
+  //           return;
+  //         }
+
+  //         else {
+  //           tree.setNode(`path:${pathIdentifier}`, {
+  //             type: 'folder',
+  //             meta: {
+  //               name: p,
+  //               path: p,
+  //               pathIdentifier: pathIdentifier
+  //             },
+  //             data: {}
+  //           });
+
+  //           /**
+  //            * If index is 0, this means that we are on the first level.
+  //            * Hence it is folder/request to be added on the first level
+  //            *
+  //            * If after the split we have more than one paths, then we need
+  //            * to add to the previous node.
+  //            */
+  //           tree.setEdge(index === 0 ? 'root:collection' : `path:${previousPathIdentified}`, `path:${pathIdentifier}`);
+  //         }
+  //       });
+
+  //       /**
+  //        * Now for all the methods present in the path, add the request nodes.
+  //        */
+
+  //       _.forEach(methods, function (data, method) {
+  //         if (!ALLOWED_HTTP_METHODS[method]) {
+  //           return;
+  //         }
+
+  //         /**
+  //          * include deprecated handling.
+  //          * If true, add in the postman collection. If false ignore the request.
+  //          */
+  //         if (!includeDeprecated && data.deprecated) {
+  //           return;
+  //         }
+
+  //         // join till the last path i.e. the folder.
+  //         let previousPathIdentified = pathSplit.slice(0, (pathSplit.length)).join('/'),
+  //           pathIdentifier = `${pathSplit.join('/')}:${method}`;
+
+  //         tree.setNode(`path:${pathIdentifier}`, {
+  //           type: 'request',
+  //           data: {},
+  //           meta: {
+  //             path: path,
+  //             method: method,
+  //             pathIdentifier: pathIdentifier
+  //           }
+  //         });
+
+  //         tree.setEdge(`path:${previousPathIdentified}`, `path:${pathIdentifier}`);
+  //       });
+  //     }
+  //   });
+
+  //   return tree;
+  // },
 
   _generateTreeFromTags = function (openapi, { includeDeprecated }) {
     let tree = new Graph(),
@@ -295,7 +449,7 @@ module.exports = function (openapi, { folderStrategy, includeWebhooks, includeDe
       break;
 
     case 'paths':
-      skeletonTree = _generateTreeFromPaths(openapi, { includeDeprecated });
+      skeletonTree = _generateTreeFromPathsV2(openapi, { includeDeprecated });
       break;
 
     default:
