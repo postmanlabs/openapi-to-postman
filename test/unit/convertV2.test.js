@@ -1895,7 +1895,7 @@ describe('The convert Function', function() {
           );
         expect(err).to.be.null;
         expect(result.result).to.be.true;
-        expect(expectedResponseBody1.payload).to.be.a('boolean');
+        expect(expectedResponseBody1.payload).to.be.eql('<boolean>');
         expect(expectedResponseBody2.payload).to.be.an('object')
           .and.to.have.all.keys('content', 'paging');
       });

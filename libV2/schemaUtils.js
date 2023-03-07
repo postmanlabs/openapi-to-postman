@@ -568,9 +568,6 @@ let QUERYPARAM = 'query',
           }
         }
       }
-      if (!schema.type) {
-        schema.type = SCHEMA_TYPES.string;
-      }
 
       // Discard format if not supported by both json-schema-faker and ajv or pattern is also defined
       if (!_.includes(SUPPORTED_FORMATS, schema.format) || (schema.pattern && schema.format)) {
