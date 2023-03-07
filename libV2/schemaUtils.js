@@ -1691,16 +1691,19 @@ let QUERYPARAM = 'query',
     return responseAuthHelper;
   },
 
-  resolveResponseForPostmanRequest = (context, operationItem, originalRequest) => {
+  resolveResponseForPostmanRequest = (context, operationItem, request) => {
     let responses = [];
 
     _.forOwn(operationItem.responses, (responseSchema, code) => {
       let response,
         { includeAuthInfoInExample } = context.computedOptions,
         responseAuthHelper,
-        auth = originalRequest.auth,
+        auth = request.auth,
         { body, contentHeader = [], bodyType } = resolveResponseBody(context, responseSchema) || {},
-        headers = resolveResponseHeaders(context, responseSchema.headers);
+        headers = resolveResponseHeaders(context, responseSchema.headers),
+        originalRequest = request,
+        reqHeaders = _.clone(request.headers) || [],
+        reqQueryParams = _.clone(_.get(request, 'params.queryParams', []));
 
       if (includeAuthInfoInExample) {
         if (!auth) {
@@ -1709,11 +1712,13 @@ let QUERYPARAM = 'query',
 
         responseAuthHelper = getResponseAuthHelper(auth);
 
-        originalRequest.headers = originalRequest.headers || [];
-        originalRequest.headers.push(...responseAuthHelper.header);
+        reqHeaders.push(...responseAuthHelper.header);
+        reqQueryParams.push(...responseAuthHelper.query);
 
-        _.set(originalRequest, 'params.queryParams', _.get(originalRequest, 'params.queryParams', []));
-        originalRequest.params.queryParams.push(...responseAuthHelper.query);
+        originalRequest = _.assign({}, request, {
+          headers: reqHeaders,
+          params: _.assign({}, request.params, { queryParams: reqQueryParams })
+        });
       }
 
       response = {

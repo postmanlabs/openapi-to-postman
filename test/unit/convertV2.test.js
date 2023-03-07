@@ -1946,14 +1946,7 @@ describe('The convert Function', function() {
         expect(conversionResult.output[0].data.auth.apikey[1].value).to.equal('{{apiKey}}');
 
         const item = conversionResult.output[0].data.item[0].item[0].item[0];
-        expect(item.request.header[0]).to.be.eql({
-          description: {
-            content: 'Added as a part of security scheme: apikey',
-            type: 'text/plain'
-          },
-          key: '{{apiKeyName}}',
-          value: '<API Key>'
-        });
+        expect(item.request.header).to.not.be.ok;
         expect(item.response[0].originalRequest.header[0]).to.be.eql({
           description: {
             content: 'Added as a part of security scheme: apikey',
@@ -1998,14 +1991,7 @@ describe('The convert Function', function() {
 
         const item = conversionResult.output[0].data.item[0].item[0].item[0];
 
-        expect(item.request.header[0]).to.be.eql({
-          description: {
-            content: 'Added as a part of security scheme: oauth1',
-            type: 'text/plain'
-          },
-          key: 'Authorization',
-          value: 'OAuth <credentials>'
-        });
+        expect(item.request.header).to.not.be.ok;
         expect(item.response[0].originalRequest.header[0]).to.be.eql({
           description: {
             content: 'Added as a part of security scheme: oauth1',
