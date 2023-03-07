@@ -6,8 +6,8 @@ const expect = require('chai').expect,
   _ = require('lodash'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
   INVALID_OPENAPI_PATH = '../data/invalid_openapi',
-  // SWAGGER_20_FOLDER_YAML = '../data/valid_swagger/yaml/',
-  // SWAGGER_20_FOLDER_JSON = '../data/valid_swagger/json/',
+  SWAGGER_20_FOLDER_YAML = '../data/valid_swagger/yaml/',
+  SWAGGER_20_FOLDER_JSON = '../data/valid_swagger/json/',
   // VALID_OPENAPI_3_1_FOLDER_JSON = '../data/valid_openapi31X/json',
   testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
   tagsFolderSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed.yaml'),
@@ -55,6 +55,9 @@ const expect = require('chai').expect,
   invalidNullInfoTitle = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-title.json'),
   invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json'),
   onlyOneOperationDeprecated = path.join(__dirname, VALID_OPENAPI_PATH, '/has_one_op_dep.json'),
+  someOperationOneDeprecated = path.join(__dirname, VALID_OPENAPI_PATH, '/has_some_op_dep.json'),
+  someOperationDeprecatedUsingTags =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/has_some_op_dep_use_tags.json'),
   deprecatedParams =
     path.join(__dirname, VALID_OPENAPI_PATH, '/petstore_deprecated_param.json'),
   deprecatedProperty =
@@ -1165,31 +1168,68 @@ describe('The convert v2 Function', function() {
       });
   });
 
-  it('Should convert and include deprecated operations when option is not present' +
-  '- has only one op and is deprecated', function () {
-    const fileData = fs.readFileSync(onlyOneOperationDeprecated, 'utf8');
-    Converter.convertV2({ type: 'string', data: fileData }, undefined,
-      (err, result) => {
-        expect(err).to.be.null;
-        expect(result.result).to.be.true;
-        expect(result.output[0].data.item.length).to.equal(1);
-      });
-  });
-
   // TODO: Handle deprecated property config option
-  describe.skip('Deprecated property', function () {
+  describe('Deprecated property', function () {
+    it('Should convert and exclude deprecated operations - has only one op and is deprecated', function () {
+      const fileData = fs.readFileSync(onlyOneOperationDeprecated, 'utf8');
+      Converter.convertV2({ type: 'string', data: fileData }, { includeDeprecated: false },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+          expect(result.output[0].data.item).to.be.empty;
+        });
+    });
+
+    it('Should convert and exclude deprecated operations - has some deprecated', function () {
+      const fileData = fs.readFileSync(someOperationOneDeprecated, 'utf8');
+      Converter.convertV2({ type: 'string', data: fileData },
+        { includeDeprecated: false },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+          expect(result.output[0].data.item.length).to.equal(1);
+        });
+    });
+
+    it('Should convert and exclude deprecated operations - has only one op and is deprecated' +
+      'using tags as folder strategy operation has not tag', function () {
+      const fileData = fs.readFileSync(onlyOneOperationDeprecated, 'utf8');
+      Converter.convertV2({ type: 'string', data: fileData },
+        { includeDeprecated: false, folderStrategy: 'tags' },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+          expect(result.output[0].data.item).to.be.empty;
+        });
+    });
+
+    it('Should convert and exclude deprecated operations - has some deprecated' +
+      'using tags as folder strategy', function () {
+      const fileData = fs.readFileSync(someOperationDeprecatedUsingTags, 'utf8');
+      Converter.convertV2({ type: 'string', data: fileData },
+        { includeDeprecated: false, folderStrategy: 'tags' },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+          expect(result.output[0].data.item.length).to.equal(1);
+          expect(result.output[0].data.item[0].name).to.equal('pets');
+        });
+    });
+
     it('Should convert and exclude deprecated params when option is set to false', function() {
       const fileData = fs.readFileSync(deprecatedParams, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData },
         { includeDeprecated: false },
         (err, result) => {
+          const req1 = result.output[0].data.item[0],
+            req2 = result.output[0].data.item[1];
+
           expect(err).to.be.null;
-          expect(result.output[0].data.item[0].item[0].request.url.query.length).to.equal(1);
-          expect(result.output[0].data.item[0].item[0].request.url.query[0].key).to.equal('variable');
-          expect(result.output[0].data.item[0].item[0].request.header.length).to.equal(3);
-          expect(result.output[0].data.item[0].item[0].request.header[0].key).to.equal('limit');
-          expect(result.output[0].data.item[0].item[0].request.header[1].key).to.equal('limit_2');
-          expect(result.output[0].data.item[0].item[1].request.header[0].key).to.equal('limit_2');
+          expect(req1.request.url.query.length).to.equal(1);
+          expect(req1.request.url.query[0].key).to.equal('variable');
+          expect(req1.request.header[0].key).to.equal('limit');
+          expect(req1.request.header[1].key).to.equal('limit_2');
+          expect(req2.request.header[0].key).to.equal('limit_2');
         });
     });
 
@@ -1198,14 +1238,15 @@ describe('The convert v2 Function', function() {
       Converter.convertV2({ type: 'string', data: fileData },
         { includeDeprecated: true },
         (err, result) => {
+          const req = result.output[0].data.item[0];
+
           expect(err).to.be.null;
-          expect(result.output[0].data.item[0].item[0].request.url.query.length).to.equal(2);
-          expect(result.output[0].data.item[0].item[0].request.url.query[0].key).to.equal('variable');
-          expect(result.output[0].data.item[0].item[0].request.url.query[1].key).to.equal('variable2');
-          expect(result.output[0].data.item[0].item[0].request.header.length).to.equal(4);
-          expect(result.output[0].data.item[0].item[0].request.header[0].key).to.equal('limit');
-          expect(result.output[0].data.item[0].item[0].request.header[1].key).to.equal('limit_2');
-          expect(result.output[0].data.item[0].item[0].request.header[2].key).to.equal('limit_Dep');
+          expect(req.request.url.query.length).to.equal(2);
+          expect(req.request.url.query[0].key).to.equal('variable');
+          expect(req.request.url.query[1].key).to.equal('variable2');
+          expect(req.request.header[0].key).to.equal('limit');
+          expect(req.request.header[1].key).to.equal('limit_2');
+          expect(req.request.header[2].key).to.equal('limit_Dep');
         });
     });
 
@@ -1213,14 +1254,15 @@ describe('The convert v2 Function', function() {
       const fileData = fs.readFileSync(deprecatedParams, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData }, {},
         (err, result) => {
+          const req = result.output[0].data.item[0];
+
           expect(err).to.be.null;
-          expect(result.output[0].data.item[0].item[0].request.url.query.length).to.equal(2);
-          expect(result.output[0].data.item[0].item[0].request.url.query[0].key).to.equal('variable');
-          expect(result.output[0].data.item[0].item[0].request.url.query[1].key).to.equal('variable2');
-          expect(result.output[0].data.item[0].item[0].request.header.length).to.equal(4);
-          expect(result.output[0].data.item[0].item[0].request.header[0].key).to.equal('limit');
-          expect(result.output[0].data.item[0].item[0].request.header[1].key).to.equal('limit_2');
-          expect(result.output[0].data.item[0].item[0].request.header[2].key).to.equal('limit_Dep');
+          expect(req.request.url.query.length).to.equal(2);
+          expect(req.request.url.query[0].key).to.equal('variable');
+          expect(req.request.url.query[1].key).to.equal('variable2');
+          expect(req.request.header[0].key).to.equal('limit');
+          expect(req.request.header[1].key).to.equal('limit_2');
+          expect(req.request.header[2].key).to.equal('limit_Dep');
         });
     });
 
@@ -1258,8 +1300,6 @@ describe('The convert v2 Function', function() {
             .to.equal('deprecated');
           expect(result.output[0].data.item[0].request.url.query[1].key)
             .to.equal('b');
-          expect(result.output[0].data.item[0].request.url.query[1].value)
-            .to.equal('{"c":"<string>","d":"<string>","deprecated":"<string>"}');
           expect(result.output[0].data.item[0].request.url.variable[0].value)
             .to.equal(';limitPath=deprecated,<boolean>,b,<string>');
           expect(result.output[0].data.item[0].request.header[0].value)
@@ -1277,8 +1317,6 @@ describe('The convert v2 Function', function() {
             .to.equal('deprecated');
           expect(result.output[0].data.item[0].request.url.query[1].key)
             .to.equal('b');
-          expect(result.output[0].data.item[0].request.url.query[1].value)
-            .to.equal('{"d":"<string>","deprecated":"<string>"}');
           expect(result.output[0].data.item[0].request.url.variable[0].value)
             .to.equal(';limitPath=b,<string>');
           expect(result.output[0].data.item[0].request.header[0].value)
@@ -1754,5 +1792,254 @@ describe('The convert v2 Function', function() {
         expect(_.size(allTagsRequest)).to.deep.equal(_.size(allPathsRequest));
       });
     });
+  });
+
+  describe('Converting swagger 2.0 files', function() {
+    it('should convert path paramters to postman-compatible paramters', function (done) {
+      const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger2-with-params.json'),
+        input = {
+          type: 'file',
+          data: fileData
+        };
+
+      Converter.convertV2(input, {}, function(err, convertResult) {
+        expect(err).to.be.null;
+        // Make sure that path params are updated and their respective default values
+        convertResult.output.forEach(function(element) {
+          expect(element.type).to.equal('collection');
+          expect(element.data.item[0].item[0].item[0]
+            .item[0].item[0].request.url.path.indexOf(':ownerId') > -1)
+            .to.equal(true);
+          expect(element.data.item[0].item[0].item[0]
+            .item[0].item[0].request.url.path.indexOf(':petId') > -1)
+            .to.equal(true);
+
+          let thisVar = element.data.item[0].item[0].item[0].item[0].item[0].request.url.variable[0];
+
+          expect(thisVar.type).to.equal('any');
+
+          expect(thisVar.value).to.equal('42');
+          expect(thisVar.key).to.equal('ownerId');
+        });
+        done();
+      });
+    });
+
+    it('Should convert a swagger document with YAML anchors', function(done) {
+      const fileData = fs.readFileSync(path.join(__dirname, SWAGGER_20_FOLDER_YAML, 'yaml_anchor.yaml'), 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+      Converter.convertV2(input, {}, (error, result) => {
+        expect(error).to.be.null;
+        expect(result.result).to.equal(true);
+        expect(result.output.length).to.equal(1);
+        expect(result.output[0].type).to.have.equal('collection');
+        expect(result.output[0].data).to.have.property('info');
+        expect(result.output[0].data).to.have.property('item');
+      });
+      done();
+    });
+
+    it('must read values consumes', function (done) {
+      const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger_aws_2.json'),
+        input = {
+          type: 'file',
+          data: fileData
+        };
+
+      Converter.convertV2(input, { requestName: 'url' }, (err, convertResult) => {
+        expect(err).to.be.null;
+        // Make sure that consumes and produces are processed
+        convertResult.output.forEach(function(element) {
+          expect(element.type).to.equal('collection');
+          expect(JSON.stringify(element.data.item[0].request.header[0])).to
+            .equal('{"key":"Content-Type","value":"application/json"}');
+        });
+        done();
+      });
+    });
+
+    it('should convert a swagger object which only have a root path.', function(done) {
+      const fileData = JSON.parse(
+          fs.readFileSync(path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger3.json'), 'utf8')
+        ),
+        input = {
+          type: 'json',
+          data: fileData
+        };
+
+      Converter.convertV2(input, {}, (err, result) => {
+        expect(result.result).to.equal(true);
+        expect(result.output.length).to.equal(1);
+        expect(result.output[0].type).to.have.equal('collection');
+        expect(result.output[0].data).to.have.property('info');
+        expect(result.output[0].data).to.have.property('item');
+
+        done();
+      });
+    });
+
+    it('should name the requests based on requestNameSource parameter, value=`URL`', function (done) {
+      const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger3.json'),
+        input = {
+          type: 'file',
+          data: fileData
+        };
+
+      Converter.convertV2(input, { requestNameSource: 'URL' }, (err, convertResult) => {
+        let request = convertResult.output[0].data.item[0].request;
+
+        expect(err).to.be.null;
+        expect(request.name).to.equal('/');
+        done();
+      });
+    });
+
+    it('should name the requests based on requestNameSource parameter, value=`Fallback`', function (done) {
+      const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger3.json'),
+        input = {
+          type: 'file',
+          data: fileData
+        };
+
+      Converter.convertV2(input, { requestNameSource: 'Fallback' }, (err, convertResult) => {
+        let request = convertResult.output[0].data.item[0].request;
+
+        expect(err).to.be.null;
+        expect(request.name).to.equal('List API versions');
+        done();
+      });
+    });
+
+    it('[GITHUB #10710] - should convert file with all of merging properties. ' +
+      'One ocurrence is an empty object and the other is a boolean type', function() {
+      const fileSource = path.join(__dirname, SWAGGER_20_FOLDER_YAML, 'allOfConflicted.yaml'),
+        fileData = fs.readFileSync(fileSource, 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+
+      Converter.convertV2(input, {
+        optimizeConversion: false, stackLimit: 50
+      }, (err, result) => {
+        const expectedResponseBody1 = JSON.parse(
+            result.output[0].data.item[0].item[0].item[0].item[0]
+              .item[0].response[0].body
+          ),
+          expectedResponseBody2 = JSON.parse(
+            result.output[0].data.item[0].item[0].item[1].item[0].response[0].body
+          );
+        expect(err).to.be.null;
+        expect(result.result).to.be.true;
+        expect(expectedResponseBody1.payload).to.be.eql('<boolean>');
+        expect(expectedResponseBody2.payload).to.be.an('object')
+          .and.to.have.all.keys('content', 'paging');
+      });
+    });
+  });
+
+  it('Should honor indent character option', function(done) {
+    var openapi = fs.readFileSync(petstoreParamExample, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi },
+      { parametersResolution: 'Schema', indentCharacter: 'Tab' }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+
+        const response = conversionResult.output[0].data.item[0].item[0].item[0].response[0];
+        expect(response.body).to.equal('[\n\t{\n\t\t"id": "<long>",\n\t\t"name": "<string>",\n\t\t"tag": "<string>"' +
+          '\n\t},\n\t{\n\t\t"id": "<long>",\n\t\t"name": "<string>",\n\t\t"tag": "<string>"' +
+          '\n\t}\n]');
+        done();
+      });
+  });
+
+  it('Should honor indent character option set as space', function(done) {
+    var openapi = fs.readFileSync(petstoreParamExample, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi },
+      { parametersResolution: 'Schema', indentCharacter: 'Space' }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+
+        const response = conversionResult.output[0].data.item[0].item[0].item[0].response[0];
+        expect(response.body).to.equal('[\n  {\n    "id": "<long>",\n    "name": "<string>",\n    "tag": "<string>' +
+          '"\n  },\n  {\n    "id": "<long>",\n    "name": "<string>",\n    "tag": "<string>"\n  }\n]');
+        done();
+      });
+  });
+
+  it('Should add auth information in responses when includeAuthInfoInExample option is set', function(done) {
+    var openapi = fs.readFileSync(specWithAuthApiKey, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, { includeAuthInfoInExample: true },
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item.length).to.equal(1);
+        expect(conversionResult.output[0].data.auth.apikey[0].value).to.equal('{{apiKeyName}}');
+        expect(conversionResult.output[0].data.auth.apikey[1].value).to.equal('{{apiKey}}');
+
+        const item = conversionResult.output[0].data.item[0].item[0].item[0];
+        expect(item.request.header).to.not.be.ok;
+        expect(item.response[0].originalRequest.header[0]).to.be.eql({
+          description: {
+            content: 'Added as a part of security scheme: apikey',
+            type: 'text/plain'
+          },
+          key: '{{apiKeyName}}',
+          value: '<API Key>'
+        });
+        done();
+      });
+  });
+
+  it('Should not add auth information in responses when includeAuthInfoInExample option is false',
+    function(done) {
+      var openapi = fs.readFileSync(specWithAuthApiKey, 'utf8');
+      Converter.convertV2({ type: 'string', data: openapi }, { includeAuthInfoInExample: false },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+
+          const item = conversionResult.output[0].data.item[0].item[0].item[0];
+          expect(item.request.header).to.not.be.ok;
+          expect(item.response[0].originalRequest.header).to.not.be.ok;
+
+          done();
+        });
+    });
+
+  it('Should convert a collection and set oauth1 header in response', function(done) {
+    var openapi = fs.readFileSync(specWithAuthOauth1, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, { includeAuthInfoInExample: true },
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item.length).to.equal(1);
+        expect(conversionResult.output[0].data.auth.oauth1[0].value).to.equal('{{consumerSecret}}');
+        expect(conversionResult.output[0].data.auth.oauth1[1].value).to.equal('{{consumerKey}}');
+
+        const item = conversionResult.output[0].data.item[0].item[0].item[0];
+
+        expect(item.request.header).to.not.be.ok;
+        expect(item.response[0].originalRequest.header[0]).to.be.eql({
+          description: {
+            content: 'Added as a part of security scheme: oauth1',
+            type: 'text/plain'
+          },
+          key: 'Authorization',
+          value: 'OAuth <credentials>'
+        });
+        done();
+      });
   });
 });

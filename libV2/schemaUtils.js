@@ -18,10 +18,6 @@ const schemaFaker = require('../assets/json-schema-faker'),
     XML: 'xml',
     INVALID: 'invalid'
   },
-  PARAMTER_RESOLUTION_TYPE = {
-    SCHEMA: 'schema',
-    VALUE: 'value'
-  },
   HEADER_TYPE_PREVIEW_LANGUAGE_MAP = {
     [HEADER_TYPE.JSON]: 'json',
     [HEADER_TYPE.XML]: 'xml'
@@ -34,7 +30,49 @@ const schemaFaker = require('../assets/json-schema-faker'),
     'authorization'
   ],
 
-  PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable'],
+  SCHEMA_PROPERTIES_TO_EXCLUDE = [
+    'default',
+    'enum',
+    'pattern'
+  ],
+
+  // All formats supported by both ajv and json-schema-faker
+  SUPPORTED_FORMATS = [
+    'date', 'time', 'date-time',
+    'uri', 'uri-reference', 'uri-template',
+    'email',
+    'hostname',
+    'ipv4', 'ipv6',
+    'regex',
+    'uuid',
+    'json-pointer',
+    'int64',
+    'float',
+    'double'
+  ],
+
+  typesMap = {
+    integer: {
+      int32: '<integer>',
+      int64: '<long>'
+    },
+    number: {
+      float: '<float>',
+      double: '<double>'
+    },
+    string: {
+      byte: '<byte>',
+      binary: '<binary>',
+      date: '<date>',
+      'date-time': '<dateTime>',
+      password: '<password>'
+    },
+    boolean: '<boolean>',
+    array: '<array>',
+    object: '<object>'
+  },
+
+  PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable', 'properties'],
   crypto = require('crypto'),
 
   /**
@@ -435,21 +473,33 @@ let QUERYPARAM = 'query',
 
     stack++;
 
-    const compositeSchema = schema.anyOf || schema.oneOf,
-      compositeKeyword = schema.anyOf ? 'anyOf' : 'oneOf',
+    const compositeKeyword = schema.anyOf ? 'anyOf' : 'oneOf',
       { concreteUtils } = context;
 
+    let compositeSchema = schema.anyOf || schema.oneOf;
+
     if (compositeSchema) {
+      compositeSchema = _.map(compositeSchema, (schemaElement) => {
+        const isSchemaFullyResolved = _.get(schemaElement, 'value') === ERR_TOO_MANY_LEVELS &&
+          !_.startsWith(_.get(schemaElement, 'value', ''), '<Circular reference to ');
+
+        /**
+         * elements of composite schema may not have resolved fully,
+         * we want to avoid assigning these properties to schema element in such cases
+         */
+        PROPERTIES_TO_ASSIGN_ON_CASCADE.forEach((prop) => {
+          if (_.isNil(schemaElement[prop]) && !_.isNil(schema[prop]) && isSchemaFullyResolved) {
+            schemaElement[prop] = schema[prop];
+          }
+        });
+        return schemaElement;
+      });
+
       if (resolveFor === CONVERSION) {
         return resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef));
       }
 
       return { [compositeKeyword]: _.map(compositeSchema, (schemaElement) => {
-        PROPERTIES_TO_ASSIGN_ON_CASCADE.forEach((prop) => {
-          if (_.isNil(schemaElement[prop]) && !_.isNil(schema[prop])) {
-            schemaElement[prop] = schema[prop];
-          }
-        });
         return resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef));
       }) };
     }
@@ -477,13 +527,20 @@ let QUERYPARAM = 'query',
         // Add the resolved schema to the global schema cache
         context.schemaCache[schema.$ref] = schema;
       }
+      return schema;
+    }
+
+    // Discard format if not supported by both json-schema-faker and ajv or pattern is also defined
+    if (!_.includes(SUPPORTED_FORMATS, schema.format) || (schema.pattern && schema.format)) {
+      schema.format && (delete schema.format);
     }
 
     if (
       concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.object) ||
       schema.hasOwnProperty('properties')
     ) {
-      let resolvedSchemaProps = {};
+      let resolvedSchemaProps = {},
+        { includeDeprecated } = context.computedOptions;
 
       _.forOwn(schema.properties, (property, propertyName) => {
         if (
@@ -494,6 +551,11 @@ let QUERYPARAM = 'query',
           property.format === 'unix-time'
         ) {
           delete property.format;
+        }
+
+        // Skip addition of deprecated properties based on provided options
+        if (!includeDeprecated && property.deprecated) {
+          return;
         }
 
         resolvedSchemaProps[propertyName] = resolveSchema(context, property, stack, resolveFor, _.cloneDeep(seenRef));
@@ -527,6 +589,33 @@ let QUERYPARAM = 'query',
       }
 
       schema.items = resolveSchema(context, schema.items, stack, resolveFor, _.cloneDeep(seenRef));
+    }
+    // Any properties to ignored should not be available in schema
+    else if (_.every(SCHEMA_PROPERTIES_TO_EXCLUDE, (schemaKey) => { return !schema.hasOwnProperty(schemaKey); })) {
+      if (schema.hasOwnProperty('type')) {
+        let { parametersResolution } = context.computedOptions;
+
+        // Override default value to schema for CONVERSION only for parmeter resolution set to schema
+        if (resolveFor === CONVERSION && parametersResolution === 'schema') {
+          if (!schema.hasOwnProperty('format')) {
+            schema.default = '<' + schema.type + '>';
+          }
+          else if (typesMap.hasOwnProperty(schema.type)) {
+            schema.default = typesMap[schema.type][schema.format];
+
+            // in case the format is a custom format (email, hostname etc.)
+            // https://swagger.io/docs/specification/data-models/data-types/#string
+            // eslint-disable-next-line max-depth
+            if (!schema.default && schema.format) {
+              // Use non defined format only for schema of type string
+              schema.default = '<' + (schema.type === SCHEMA_TYPES.string ? schema.format : schema.type) + '>';
+            }
+          }
+          else {
+            schema.default = '<' + schema.type + (schema.format ? ('-' + schema.format) : '') + '>';
+          }
+        }
+      }
     }
 
     if (schema.hasOwnProperty('additionalProperties')) {
@@ -1338,14 +1427,15 @@ let QUERYPARAM = 'query',
 
   resolveQueryParamsForPostmanRequest = (context, operationItem, method) => {
     const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
-      pmParams = [];
+      pmParams = [],
+      { includeDeprecated } = context.computedOptions;
 
     _.forEach(params, (param) => {
       if (_.has(param, '$ref')) {
         param = resolveSchema(context, param);
       }
 
-      if (param.in !== QUERYPARAM) {
+      if (param.in !== QUERYPARAM || (!includeDeprecated && param.deprecated)) {
         return;
       }
 
@@ -1426,14 +1516,14 @@ let QUERYPARAM = 'query',
   resolveHeadersForPostmanRequest = (context, operationItem, method) => {
     const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
       pmParams = [],
-      { keepImplicitHeaders } = context.computedOptions;
+      { keepImplicitHeaders, includeDeprecated } = context.computedOptions;
 
     _.forEach(params, (param) => {
       if (_.has(param, '$ref')) {
         param = resolveSchema(context, param);
       }
 
-      if (param.in !== HEADER) {
+      if (param.in !== HEADER || (!includeDeprecated && param.deprecated)) {
         return;
       }
 
@@ -1502,13 +1592,18 @@ let QUERYPARAM = 'query',
   },
 
   resolveResponseHeaders = (context, responseHeaders) => {
-    const headers = [];
+    const headers = [],
+      { includeDeprecated } = context.computedOptions;
 
     if (_.has(responseHeaders, '$ref')) {
       responseHeaders = resolveSchema(context, responseHeaders);
     }
 
     _.forOwn(responseHeaders, (value, headerName) => {
+      if (!includeDeprecated && value.deprecated) {
+        return;
+      }
+
       let headerValue = resolveValueOfParameter(context, value);
 
       if (typeof headerValue === 'number' || typeof headerValue === 'boolean') {
@@ -1534,13 +1629,109 @@ let QUERYPARAM = 'query',
     return HEADER_TYPE_PREVIEW_LANGUAGE_MAP[headerFamily] || 'text';
   },
 
-  resolveResponseForPostmanRequest = (context, operationItem, originalRequest) => {
+  /**
+   * Generates Auth helper for response, params (query, headers) in helper object is added in
+   * request (originalRequest) part of example.
+   *
+   * @param {*} requestAuthHelper - Auth helper object of corresponding request
+   * @returns {Object} - Response Auth helper object containing params to be added
+   */
+  getResponseAuthHelper = (requestAuthHelper) => {
+    var responseAuthHelper = {
+        query: [],
+        header: []
+      },
+      getValueFromHelper = function (authParams, keyName) {
+        return _.find(authParams, { key: keyName }).value;
+      },
+      paramLocation,
+      description;
+
+    if (!_.isObject(requestAuthHelper)) {
+      return responseAuthHelper;
+    }
+    description = 'Added as a part of security scheme: ' + requestAuthHelper.type;
+
+    switch (requestAuthHelper.type) {
+      case 'apikey':
+        // find location of parameter from auth helper
+        paramLocation = getValueFromHelper(requestAuthHelper.apikey, 'in');
+        responseAuthHelper[paramLocation].push({
+          key: getValueFromHelper(requestAuthHelper.apikey, 'key'),
+          value: '<API Key>',
+          description
+        });
+        break;
+      case 'basic':
+        responseAuthHelper.header.push({
+          key: 'Authorization',
+          value: 'Basic <credentials>',
+          description
+        });
+        break;
+      case 'bearer':
+        responseAuthHelper.header.push({
+          key: 'Authorization',
+          value: 'Bearer <token>',
+          description
+        });
+        break;
+      case 'digest':
+        responseAuthHelper.header.push({
+          key: 'Authorization',
+          value: 'Digest <credentials>',
+          description
+        });
+        break;
+      case 'oauth1':
+        responseAuthHelper.header.push({
+          key: 'Authorization',
+          value: 'OAuth <credentials>',
+          description
+        });
+        break;
+      case 'oauth2':
+        responseAuthHelper.header.push({
+          key: 'Authorization',
+          value: '<token>',
+          description
+        });
+        break;
+      default:
+        break;
+    }
+    return responseAuthHelper;
+  },
+
+  resolveResponseForPostmanRequest = (context, operationItem, request) => {
     let responses = [];
 
     _.forOwn(operationItem.responses, (responseSchema, code) => {
       let response,
+        { includeAuthInfoInExample } = context.computedOptions,
+        responseAuthHelper,
+        auth = request.auth,
         { body, contentHeader = [], bodyType } = resolveResponseBody(context, responseSchema) || {},
-        headers = resolveResponseHeaders(context, responseSchema.headers);
+        headers = resolveResponseHeaders(context, responseSchema.headers),
+        originalRequest = request,
+        reqHeaders = _.clone(request.headers) || [],
+        reqQueryParams = _.clone(_.get(request, 'params.queryParams', []));
+
+      if (includeAuthInfoInExample) {
+        if (!auth) {
+          auth = generateAuthForCollectionFromOpenAPI(context.openapi, context.openapi.security);
+        }
+
+        responseAuthHelper = getResponseAuthHelper(auth);
+
+        reqHeaders.push(...responseAuthHelper.header);
+        reqQueryParams.push(...responseAuthHelper.query);
+
+        originalRequest = _.assign({}, request, {
+          headers: reqHeaders,
+          params: _.assign({}, request.params, { queryParams: reqQueryParams })
+        });
+      }
 
       response = {
         name: _.get(responseSchema, 'description'),
