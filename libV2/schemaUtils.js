@@ -539,7 +539,8 @@ let QUERYPARAM = 'query',
       concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.object) ||
       schema.hasOwnProperty('properties')
     ) {
-      let resolvedSchemaProps = {};
+      let resolvedSchemaProps = {},
+        { includeDeprecated } = context.computedOptions;
 
       _.forOwn(schema.properties, (property, propertyName) => {
         if (
@@ -550,6 +551,11 @@ let QUERYPARAM = 'query',
           property.format === 'unix-time'
         ) {
           delete property.format;
+        }
+
+        // Skip addition of deprecated properties based on provided options
+        if (!includeDeprecated && property.deprecated) {
+          return;
         }
 
         resolvedSchemaProps[propertyName] = resolveSchema(context, property, stack, resolveFor, _.cloneDeep(seenRef));
@@ -1421,14 +1427,15 @@ let QUERYPARAM = 'query',
 
   resolveQueryParamsForPostmanRequest = (context, operationItem, method) => {
     const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
-      pmParams = [];
+      pmParams = [],
+      { includeDeprecated } = context.computedOptions;
 
     _.forEach(params, (param) => {
       if (_.has(param, '$ref')) {
         param = resolveSchema(context, param);
       }
 
-      if (param.in !== QUERYPARAM) {
+      if (param.in !== QUERYPARAM || (!includeDeprecated && param.deprecated)) {
         return;
       }
 
@@ -1509,14 +1516,14 @@ let QUERYPARAM = 'query',
   resolveHeadersForPostmanRequest = (context, operationItem, method) => {
     const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
       pmParams = [],
-      { keepImplicitHeaders } = context.computedOptions;
+      { keepImplicitHeaders, includeDeprecated } = context.computedOptions;
 
     _.forEach(params, (param) => {
       if (_.has(param, '$ref')) {
         param = resolveSchema(context, param);
       }
 
-      if (param.in !== HEADER) {
+      if (param.in !== HEADER || (!includeDeprecated && param.deprecated)) {
         return;
       }
 
@@ -1585,13 +1592,18 @@ let QUERYPARAM = 'query',
   },
 
   resolveResponseHeaders = (context, responseHeaders) => {
-    const headers = [];
+    const headers = [],
+      { includeDeprecated } = context.computedOptions;
 
     if (_.has(responseHeaders, '$ref')) {
       responseHeaders = resolveSchema(context, responseHeaders);
     }
 
     _.forOwn(responseHeaders, (value, headerName) => {
+      if (!includeDeprecated && value.deprecated) {
+        return;
+      }
+
       let headerValue = resolveValueOfParameter(context, value);
 
       if (typeof headerValue === 'number' || typeof headerValue === 'boolean') {

@@ -22,7 +22,6 @@ const _ = require('lodash'),
     getServersPathVars } = require('../lib/common/schemaUtilsCommon.js'),
 
   { findMatchingRequestFromSchema, isPmVariable } = require('./requestMatchingUtils'),
-  traverseUtility = require('traverse'),
 
   // common global constants
   SCHEMA_FORMATS = {
@@ -115,22 +114,6 @@ function getDefaultContext (options, components = {}) {
 }
 
 /**
- * Remove or keep the deprecated properties according to the option
- * @param {object} resolvedSchema - the schema to verify properties
- * @param {boolean} includeDeprecated - Whether to include the deprecated properties
- * @returns {undefined} undefined
- */
-function verifyDeprecatedProperties(resolvedSchema, includeDeprecated) {
-  traverseUtility(resolvedSchema.properties).forEach(function (property) {
-    if (property && typeof property === 'object') {
-      if (property.deprecated === true && includeDeprecated === false) {
-        this.delete();
-      }
-    }
-  });
-}
-
-/**
  * Verifies if the deprecated operations should be added
  *
  * @param {object} operation - openAPI operation object
@@ -167,8 +150,7 @@ function safeSchemaFaker (context, oldSchema, resolveTo, resolveFor, parameterSo
   let concreteUtils = components && components.hasOwnProperty('concreteUtils') ?
     components.concreteUtils :
     DEFAULT_SCHEMA_UTILS;
-  const indentCharacter = options.indentCharacter,
-    includeDeprecated = options.includeDeprecated;
+  const indentCharacter = options.indentCharacter;
 
   resolvedSchema = resolveSchema(context, oldSchema, 0, PROCESSING_TYPE.VALIDATION);
 
@@ -218,7 +200,6 @@ function safeSchemaFaker (context, oldSchema, resolveTo, resolveFor, parameterSo
         }
       }
     }
-    verifyDeprecatedProperties(resolvedSchema, includeDeprecated);
   }
 
   try {
@@ -644,26 +625,6 @@ function getSuggestedValue (fakedValue, actualValue, ajvValidationErrorObj) {
   }
 
   return suggestedValue;
-}
-
-/**
- * Returns all security params that can be applied during converion.
- *
- * @param {Object} components - OpenAPI components
- * @param {String} location - location for which we want to get security params (i.e. 'header' | 'query')
- * @returns {Array} applicable security params
- */
-function getSecurityParams (components, location) {
-  let securityDefs = _.get(components, 'securitySchemes', {}),
-    securityParams = [];
-
-  _.forEach(securityDefs, (securityDef) => {
-    // Currently we only apply header and query for apiKey type of security param during conversion
-    if (_.get(securityDef, 'type') === 'apiKey' && _.get(securityDef, 'in') === location) {
-      securityParams.push(securityDef);
-    }
-  });
-  return securityParams;
 }
 
 /**
@@ -1762,22 +1723,19 @@ function checkQueryParams (context, queryParams, transactionPathPrefix, schemaPa
   let schemaParams = _.filter(schemaPath.parameters, (param) => { return param.in === 'query'; }),
     requestQueryParams = [],
     resolvedSchemaParams = [],
-    mismatchProperty = 'QUERYPARAM',
-    securityParams;
+    mismatchProperty = 'QUERYPARAM';
 
   if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
     return callback(null, []);
   }
 
-  // filter out query params added by security schemes
-  securityParams = _.map(getSecurityParams(_.get(components, 'components'), 'query'), 'name');
   requestQueryParams = _.filter(queryParams, (pQuery) => {
     // Ignoring the disabled query params
     if (pQuery.disabled === true) {
       return false;
     }
 
-    return !_.includes(securityParams, pQuery.key) && pQuery.value !== OAS_NOT_SUPPORTED;
+    return pQuery.value !== OAS_NOT_SUPPORTED;
   });
 
   // resolve schema params
@@ -1899,8 +1857,6 @@ function checkQueryParams (context, queryParams, transactionPathPrefix, schemaPa
 function checkRequestHeaders (context, headers, transactionPathPrefix, schemaPathPrefix, schemaPath,
   components, options, schemaCache, jsonSchemaDialect, callback) {
   let schemaHeaders = _.filter(schemaPath.parameters, (param) => { return param.in === 'header'; }),
-    // key name of headers which are added by security schemes
-    securityHeaders = _.map(getSecurityParams(_.get(components, 'components'), 'header'), 'name'),
     // filter out headers for following cases
     reqHeaders = _.filter(headers, (header) => {
       // 1. If header is disabled
@@ -1910,8 +1866,7 @@ function checkRequestHeaders (context, headers, transactionPathPrefix, schemaPat
         return !header.disabled;
       }
 
-      return !_.includes(IMPLICIT_HEADERS, _.toLower(_.get(header, 'key'))) &&
-        !_.includes(securityHeaders, header.key);
+      return !_.includes(IMPLICIT_HEADERS, _.toLower(_.get(header, 'key')));
     }),
     mismatchProperty = 'HEADER';
 
