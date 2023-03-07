@@ -130,6 +130,5 @@ describe('validateTransactionV2() should be able to validate collections generat
         });
       });
     });
-  }
-, done);
+  }, done);
 });
