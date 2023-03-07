@@ -1617,13 +1617,107 @@ let QUERYPARAM = 'query',
     return HEADER_TYPE_PREVIEW_LANGUAGE_MAP[headerFamily] || 'text';
   },
 
+  /**
+   * Generates Auth helper for response, params (query, headers) in helper object is added in
+   * request (originalRequest) part of example.
+   *
+   * @param {*} requestAuthHelper - Auth helper object of corresponding request
+   * @returns {Object} - Response Auth helper object containing params to be added
+   */
+  getResponseAuthHelper = (requestAuthHelper) => {
+    var responseAuthHelper = {
+        query: [],
+        header: []
+      },
+      getValueFromHelper = function (authParams, keyName) {
+        return _.find(authParams, { key: keyName }).value;
+      },
+      paramLocation,
+      description;
+
+    if (!_.isObject(requestAuthHelper)) {
+      return responseAuthHelper;
+    }
+    description = 'Added as a part of security scheme: ' + requestAuthHelper.type;
+
+    switch (requestAuthHelper.type) {
+      case 'apikey':
+        // find location of parameter from auth helper
+        paramLocation = getValueFromHelper(requestAuthHelper.apikey, 'in');
+        responseAuthHelper[paramLocation].push({
+          key: getValueFromHelper(requestAuthHelper.apikey, 'key'),
+          value: '<API Key>',
+          description
+        });
+        break;
+      case 'basic':
+        responseAuthHelper.header.push({
+          key: 'Authorization',
+          value: 'Basic <credentials>',
+          description
+        });
+        break;
+      case 'bearer':
+        responseAuthHelper.header.push({
+          key: 'Authorization',
+          value: 'Bearer <token>',
+          description
+        });
+        break;
+      case 'digest':
+        responseAuthHelper.header.push({
+          key: 'Authorization',
+          value: 'Digest <credentials>',
+          description
+        });
+        break;
+      case 'oauth1':
+        responseAuthHelper.header.push({
+          key: 'Authorization',
+          value: 'OAuth <credentials>',
+          description
+        });
+        break;
+      case 'oauth2':
+        responseAuthHelper.header.push({
+          key: 'Authorization',
+          value: '<token>',
+          description
+        });
+        break;
+      default:
+        break;
+    }
+    return responseAuthHelper;
+  },
+
   resolveResponseForPostmanRequest = (context, operationItem, originalRequest) => {
     let responses = [];
 
     _.forOwn(operationItem.responses, (responseSchema, code) => {
       let response,
+        { includeAuthInfoInExample } = context.computedOptions,
+        responseAuthHelper,
+        authQueryParams = [],
+        auth = originalRequest.auth,
         { body, contentHeader = [], bodyType } = resolveResponseBody(context, responseSchema) || {},
         headers = resolveResponseHeaders(context, responseSchema.headers);
+
+      if (includeAuthInfoInExample) {
+        if (!auth) {
+          auth = generateAuthForCollectionFromOpenAPI(context.openapi, context.openapi.security);
+        }
+
+        responseAuthHelper = getResponseAuthHelper(auth);
+
+        authQueryParams = _.map(responseAuthHelper.query, (queryParam) => {
+          // key-value pair will be added as transformed query string
+          return queryParam.key + '=' + queryParam.value;
+        });
+
+        originalRequest.headers.push(...responseAuthHelper.header);
+        originalRequest.params.queryParams.push(...authQueryParams);
+      }
 
       response = {
         name: _.get(responseSchema, 'description'),

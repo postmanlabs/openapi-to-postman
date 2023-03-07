@@ -1930,4 +1930,91 @@ describe('The convert Function', function() {
         done();
       });
   });
+
+  it('Should add auth information in responses when includeAuthInfoInExample option is set', function(done) {
+    var openapi = fs.readFileSync(specWithAuthApiKey, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, { includeAuthInfoInExample: true },
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item.length).to.equal(1);
+        expect(conversionResult.output[0].data.auth.apikey[0].value).to.equal('{{apiKeyName}}');
+        expect(conversionResult.output[0].data.auth.apikey[1].value).to.equal('{{apiKey}}');
+
+        const item = conversionResult.output[0].data.item[0].item[0].item[0];
+        expect(item.request.header[0]).to.be.eql({
+          description: {
+            content: 'Added as a part of security scheme: apikey',
+            type: 'text/plain'
+          },
+          key: '{{apiKeyName}}',
+          value: '<API Key>'
+        });
+        expect(item.response[0].originalRequest.header[0]).to.be.eql({
+          description: {
+            content: 'Added as a part of security scheme: apikey',
+            type: 'text/plain'
+          },
+          key: '{{apiKeyName}}',
+          value: '<API Key>'
+        });
+        done();
+      });
+  });
+
+  it('Should not add auth information in responses when includeAuthInfoInExample option is false',
+    function(done) {
+      var openapi = fs.readFileSync(specWithAuthApiKey, 'utf8');
+      Converter.convertV2({ type: 'string', data: openapi }, { includeAuthInfoInExample: false },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+
+          const item = conversionResult.output[0].data.item[0].item[0].item[0];
+          expect(item.request.header).to.not.be.ok;
+          expect(item.response[0].originalRequest.header).to.not.be.ok;
+
+          done();
+        });
+    });
+
+  it('Should convert a collection and set oauth1 header in response', function(done) {
+    var openapi = fs.readFileSync(specWithAuthOauth1, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, { includeAuthInfoInExample: true },
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item.length).to.equal(1);
+        expect(conversionResult.output[0].data.auth.oauth1[0].value).to.equal('{{consumerSecret}}');
+        expect(conversionResult.output[0].data.auth.oauth1[1].value).to.equal('{{consumerKey}}');
+
+        const item = conversionResult.output[0].data.item[0].item[0].item[0];
+
+        expect(item.request.header[0]).to.be.eql({
+          description: {
+            content: 'Added as a part of security scheme: oauth1',
+            type: 'text/plain'
+          },
+          key: 'Authorization',
+          value: 'OAuth <credentials>'
+        });
+        expect(item.response[0].originalRequest.header[0]).to.be.eql({
+          description: {
+            content: 'Added as a part of security scheme: oauth1',
+            type: 'text/plain'
+          },
+          key: 'Authorization',
+          value: 'OAuth <credentials>'
+        });
+        done();
+      });
+  });
 });
