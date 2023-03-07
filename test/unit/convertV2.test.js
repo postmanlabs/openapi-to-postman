@@ -1901,4 +1901,33 @@ describe('The convert Function', function() {
       });
     });
   });
+
+  it('Should honor indent character option', function(done) {
+    var openapi = fs.readFileSync(petstoreParamExample, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi },
+      { parametersResolution: 'Schema', indentCharacter: 'Tab' }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+
+        const response = conversionResult.output[0].data.item[0].item[0].item[0].response[0];
+        expect(response.body).to.equal('[\n\t{\n\t\t"id": "<long>",\n\t\t"name": "<string>",\n\t\t"tag": "<string>"' +
+          '\n\t},\n\t{\n\t\t"id": "<long>",\n\t\t"name": "<string>",\n\t\t"tag": "<string>"' +
+          '\n\t}\n]');
+        done();
+      });
+  });
+
+  it('Should honor indent character option set as space', function(done) {
+    var openapi = fs.readFileSync(petstoreParamExample, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi },
+      { parametersResolution: 'Schema', indentCharacter: 'Space' }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+
+        const response = conversionResult.output[0].data.item[0].item[0].item[0].response[0];
+        expect(response.body).to.equal('[\n  {\n    "id": "<long>",\n    "name": "<string>",\n    "tag": "<string>' +
+          '"\n  },\n  {\n    "id": "<long>",\n    "name": "<string>",\n    "tag": "<string>"\n  }\n]');
+        done();
+      });
+  });
 });
