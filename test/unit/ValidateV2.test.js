@@ -537,7 +537,7 @@ describe('The Validation option', function () {
       let schema = fs.readFileSync(specData.path, 'utf8'),
         collection = fs.readFileSync(suggestAvailableFixesCollection, 'utf8'),
         schemaPack = new Converter.SchemaPack({ type: 'string', data: schema },
-          { suggestAvailableFixes: true }),
+          { suggestAvailableFixes: true, parametersResolution: 'Example' }),
         historyRequest = [],
         resultObj,
         responseResult,
@@ -980,7 +980,8 @@ describe('VALIDATE FUNCTION TESTS ', function () {
             ignoreUnresolvedVariables: true,
             validateMetadata: true,
             suggestAvailableFixes: true,
-            detailedBlobValidation: true
+            detailedBlobValidation: true,
+            parametersResolution: 'Example'
           },
           schemaPack = new Converter.SchemaPack({ type: 'string', data: primitiveDataTypeBodySpec }, options);
 

@@ -150,7 +150,12 @@ function safeSchemaFaker (context, oldSchema, resolveFor, parameterSourceOption,
     resolveTo = _.get(options, 'parametersResolution', 'example'),
     indentCharacter = options.indentCharacter;
 
-  resolvedSchema = resolveSchema(context, oldSchema, 0, PROCESSING_TYPE.VALIDATION);
+  /**
+   * Schema is cloned here as resolveSchema() when called for CONVERSION use cases, will mutate schema in certain way.
+   * i.e. For array it'll add maxItems = 2. This should be avoided as we'll again be needing non-mutated schema
+   * in further VALIDATION use cases as needed.
+   */
+  resolvedSchema = resolveSchema(context, _.cloneDeep(oldSchema), 0, _.toLower(PROCESSING_TYPE.CONVERSION));
 
   resolvedSchema = concreteUtils.fixExamplesByVersion(resolvedSchema);
   key = JSON.stringify(resolvedSchema);
@@ -171,7 +176,6 @@ function safeSchemaFaker (context, oldSchema, resolveFor, parameterSourceOption,
 
   if (resolveFor === PROCESSING_TYPE.VALIDATION) {
     schemaFaker.option({
-      useDefaultValue: false,
       avoidExampleItemsLength: false
     });
   }
