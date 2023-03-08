@@ -1640,7 +1640,7 @@ describe('validateTransaction convert and validate schemas with allOf', function
     schemaPack.convertV2((err, conversionResult) => {
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
-      expect(conversionResult.output[0].data.item[0].response[0].body).to.equal(expectedRequestBody);
+      expect(conversionResult.output[0].data.item[0].item[0].response[0].body).to.equal(expectedRequestBody);
 
       let historyRequest = [];
 

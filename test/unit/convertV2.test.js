@@ -84,7 +84,7 @@ const expect = require('chai').expect,
     path.join(__dirname, VALID_OPENAPI_PATH, '/schemaWithAdditionalProperties.yaml');
 
 
-describe('The convert Function', function() {
+describe('The convert v2 Function', function() {
 
   it('Should add collection level auth with type as `bearer`' +
   securityTestCases, function(done) {
@@ -98,7 +98,7 @@ describe('The convert Function', function() {
       parametersResolution: 'Example'
     }, (err, conversionResult) => {
 
-      auth = conversionResult.output[0].data.item[0].request.auth;
+      auth = conversionResult.output[0].data.item[0].item[0].request.auth;
 
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
@@ -132,8 +132,7 @@ describe('The convert Function', function() {
 
   it('Should generate collection conforming to schema for and fail if not valid ' +
   tooManyRefs, function(done) {
-    var openapi = fs.readFileSync(tooManyRefs, 'utf8'),
-      body;
+    var openapi = fs.readFileSync(tooManyRefs, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
 
       expect(err).to.be.null;
@@ -142,7 +141,8 @@ describe('The convert Function', function() {
       expect(conversionResult.output[0].type).to.equal('collection');
       expect(conversionResult.output[0].data).to.have.property('info');
       expect(conversionResult.output[0].data).to.have.property('item');
-      body = conversionResult.output[0].data.item[1].response[0].body;
+      let body = conversionResult.output[0].data.item[1].item[0].response[0].body;
+
       expect(body).to.contain('<Error: Too many levels of nesting to fake this schema>');
       done();
     });
@@ -160,7 +160,7 @@ describe('The convert Function', function() {
       expect(conversionResult.output[0].type).to.equal('collection');
       expect(conversionResult.output[0].data).to.have.property('info');
       expect(conversionResult.output[0].data).to.have.property('item');
-      expect(conversionResult.output[0].data.item[0].response[1].body).to.not.contain(refNotFound);
+      expect(conversionResult.output[0].data.item[0].item[0].response[1].body).to.not.contain(refNotFound);
       done();
     });
   });
@@ -192,15 +192,15 @@ describe('The convert Function', function() {
         expect(conversionResult.output[0].data).to.have.property('item');
         expect(conversionResult.output[0].data).to.have.property('variable');
         expect(conversionResult.output[0].data.variable).to.be.an('array');
-        expect(conversionResult.output[0].data.variable[1].key).to.equal('format');
-        expect(conversionResult.output[0].data.variable[1].value).to.equal('json');
-        expect(conversionResult.output[0].data.variable[2].key).to.equal('path');
-        expect(conversionResult.output[0].data.variable[2].value).to.equal('send-email');
-        expect(conversionResult.output[0].data.variable[3].key).to.equal('new-path-variable-1');
+        expect(conversionResult.output[0].data.variable[4].key).to.equal('format');
+        expect(conversionResult.output[0].data.variable[4].value).to.equal('json');
+        expect(conversionResult.output[0].data.variable[5].key).to.equal('path');
+        expect(conversionResult.output[0].data.variable[5].value).to.equal('send-email');
+        expect(conversionResult.output[0].data.variable[6].key).to.equal('new-path-variable-1');
         // serialised value for object { R: 100, G: 200, B: 150 }
-        expect(conversionResult.output[0].data.variable[3].value).to.equal('R,100,G,200,B,150');
-        expect(conversionResult.output[0].data.variable[4].key).to.equal('new-path-variable-2');
-        expect(conversionResult.output[0].data.variable[4].value).to.contain('exampleString');
+        expect(conversionResult.output[0].data.variable[6].value).to.equal('R,100,G,200,B,150');
+        expect(conversionResult.output[0].data.variable[7].key).to.equal('new-path-variable-2');
+        expect(conversionResult.output[0].data.variable[7].value).to.contain('exampleString');
         done();
       });
   });
@@ -229,7 +229,7 @@ describe('The convert Function', function() {
       expect(conversionResult.output[0].type).to.equal('collection');
       expect(conversionResult.output[0].data).to.have.property('info');
       expect(conversionResult.output[0].data).to.have.property('item');
-      expect(conversionResult.output[0].data.item[0].request.url.host[0]).to.equal('{{baseUrl}}');
+      expect(conversionResult.output[0].data.item[0].item[0].request.url.host[0]).to.equal('{{baseUrl}}');
       done();
     });
   });
@@ -317,14 +317,14 @@ describe('The convert Function', function() {
       (err, conversionResult) => {
       // Combining protocol, host, path to create a request
       // Ex https:// + example.com + /example = https://example.com/example
-        let request = conversionResult.output[0].data.item[1].item[0].item[0].request,
+        let request = conversionResult.output[0].data.item[0].item[0].item[0].request,
           protocol = request.url.protocol,
           host = request.url.host.join('.'),
           port = request.url.port,
           path = request.url.path.join('/'),
           endPoint = protocol + '://' + host + ':' + port + '/' + path,
           host1 = conversionResult.output[0].data.variable[0].value,
-          path1 = conversionResult.output[0].data.item[0].item[0].item[0].request.url.path.join('/'),
+          path1 = conversionResult.output[0].data.item[1].item[0].item[0].request.url.path.join('/'),
           endPoint1 = host1 + '/' + path1;
         expect(endPoint).to.equal('http://petstore.swagger.io:{{port}}/:basePath/secondary-domain/fails');
         expect(endPoint1).to.equal('https://api.example.com/primary-domain/works');
@@ -333,13 +333,13 @@ describe('The convert Function', function() {
   });
 
   // Need to handle xml body properly
-  it.skip('convertor should add custom header in the response' +
+  it('convertor should add custom header in the response' +
   customHeadersSpec, function(done) {
     var openapi = fs.readFileSync(customHeadersSpec, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
       expect(err).to.be.null;
-      expect(conversionResult.output[0].data.item[0].response[0].header[0].value)
-        .to.equal('application/vnd.retailer.v3+json');
+      expect(conversionResult.output[0].data.item[0].item[0].item[0].response[0].header[0].value)
+        .to.equal('application/vnd.retailer.v3+xml');
       done();
     });
   });
@@ -352,21 +352,21 @@ describe('The convert Function', function() {
       keepImplicitHeaders: true
     }, (err, conversionResult) => {
       expect(err).to.be.null;
-      expect(conversionResult.output[0].data.item[0].request.header[0].key)
+      expect(conversionResult.output[0].data.item[0].item[0].request.header[0].key)
         .to.equal('Authorization');
-      expect(conversionResult.output[0].data.item[0].request.header[0].value)
+      expect(conversionResult.output[0].data.item[0].item[0].request.header[0].value)
         .to.equal('Bearer {{oauth_access_token}}');
-      expect(conversionResult.output[0].data.item[0].request.header[1].key)
+      expect(conversionResult.output[0].data.item[0].item[0].request.header[1].key)
         .to.equal('Content-Type');
-      expect(conversionResult.output[0].data.item[0].request.header[1].value)
+      expect(conversionResult.output[0].data.item[0].item[0].request.header[1].value)
         .to.equal('application/json');
-      expect(conversionResult.output[0].data.item[1].request.header[0].key)
+      expect(conversionResult.output[0].data.item[0].item[1].request.header[0].key)
         .to.equal('Authorization');
-      expect(conversionResult.output[0].data.item[1].request.header[0].value)
+      expect(conversionResult.output[0].data.item[0].item[1].request.header[0].value)
         .to.equal('Bearer {{oauth_access_token}}');
-      expect(conversionResult.output[0].data.item[1].request.header[1].key)
+      expect(conversionResult.output[0].data.item[0].item[1].request.header[1].key)
         .to.equal('Content-Type');
-      expect(conversionResult.output[0].data.item[1].request.header[1].value)
+      expect(conversionResult.output[0].data.item[0].item[1].request.header[1].value)
         .to.equal('application/json');
       done();
     });
@@ -380,7 +380,7 @@ describe('The convert Function', function() {
       keepImplicitHeaders: false
     }, (err, conversionResult) => {
       expect(err).to.be.null;
-      expect(conversionResult.output[0].data.item[0].request.header).to.not.ok;
+      expect(conversionResult.output[0].data.item[0].item[0].request.header).to.not.ok;
       done();
     });
   });
@@ -421,11 +421,11 @@ describe('The convert Function', function() {
         expect(conversionResult.output[0].type).to.equal('collection');
         expect(conversionResult.output[0].data).to.have.property('info');
         expect(conversionResult.output[0].data).to.have.property('item');
-        expect(conversionResult.output[0].data.item[0].request.url.query[0].value).to.equal('0');
-        expect(conversionResult.output[0].data.item[0].request.url.query[1].value).to.equal('');
-        expect(conversionResult.output[0].data.item[0].request.url.query[2].value).to.equal('false');
-        expect(conversionResult.output[0].data.item[1].request.body.raw).to.equal('{\n  "a": null\n}');
-        expect(conversionResult.output[0].data.item[1].response[1].body).to.equal('{\n  "a": null\n}');
+        expect(conversionResult.output[0].data.item[0].item[0].request.url.query[0].value).to.equal('0');
+        expect(conversionResult.output[0].data.item[0].item[0].request.url.query[1].value).to.equal('');
+        expect(conversionResult.output[0].data.item[0].item[0].request.url.query[2].value).to.equal('false');
+        expect(conversionResult.output[0].data.item[0].item[1].request.body.raw).to.equal('{\n  "a": null\n}');
+        expect(conversionResult.output[0].data.item[0].item[1].response[1].body).to.equal('{\n  "a": null\n}');
         done();
       });
   });
@@ -436,8 +436,8 @@ describe('The convert Function', function() {
       Converter.convertV2({ type: 'file', data: examplesInSchemaSpec },
         { schemaFaker: true, parametersResolution: 'example' },
         (err, conversionResult) => {
-          let rootRequest = conversionResult.output[0].data.item[0].request,
-            exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
+          let rootRequest = conversionResult.output[0].data.item[0].item[0].request,
+            exampleRequest = conversionResult.output[0].data.item[0].item[0].response[0].originalRequest;
           // Request body
           expect(rootRequest.body.raw).to
             .equal('{\n  "a": "example-a",\n  "b": "example-b"\n}');
@@ -451,8 +451,8 @@ describe('The convert Function', function() {
       Converter.convertV2({ type: 'file', data: schemaWithoutExampleSpec },
         { schemaFaker: true, parametersResolution: 'example', exampleParametersResolution: 'example' },
         (err, conversionResult) => {
-          let rootRequestBody = JSON.parse(conversionResult.output[0].data.item[0].request.body.raw),
-            exampleRequestBody = JSON.parse(conversionResult.output[0].data.item[0]
+          let rootRequestBody = JSON.parse(conversionResult.output[0].data.item[0].item[0].request.body.raw),
+            exampleRequestBody = JSON.parse(conversionResult.output[0].data.item[0].item[0]
               .response[0].originalRequest.body.raw);
 
           expect(rootRequestBody).to.have.all.keys(['a', 'b']);
@@ -469,8 +469,8 @@ describe('The convert Function', function() {
       Converter.convertV2({ type: 'file', data: exampleOutsideSchema },
         { schemaFaker: true, parametersResolution: 'example', exampleParametersResolution: 'example' },
         (err, conversionResult) => {
-          let rootRequest = conversionResult.output[0].data.item[0].request,
-            exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
+          let rootRequest = conversionResult.output[0].data.item[0].item[0].request,
+            exampleRequest = conversionResult.output[0].data.item[0].item[0].response[0].originalRequest;
           expect(rootRequest.body.raw).to
             .equal('{\n  "a": "example-b",\n  "b": "example-c"\n}');
           expect(exampleRequest.body.raw).to
@@ -483,8 +483,8 @@ describe('The convert Function', function() {
       Converter.convertV2({ type: 'file', data: examplesOutsideSchema },
         { schemaFaker: true, parametersResolution: 'example', exampleParametersResolution: 'example' },
         (err, conversionResult) => {
-          let rootRequest = conversionResult.output[0].data.item[0].request,
-            exampleRequest = conversionResult.output[0].data.item[0].response[0].originalRequest;
+          let rootRequest = conversionResult.output[0].data.item[0].item[0].request,
+            exampleRequest = conversionResult.output[0].data.item[0].item[0].response[0].originalRequest;
           expect(rootRequest.body.raw).to
             .equal('{\n  "a": "example-b",\n  "b": "example-c"\n}');
           expect(exampleRequest.body.raw).to
@@ -498,8 +498,8 @@ describe('The convert Function', function() {
   descriptionInBodyParams, function(done) {
     var openapi = fs.readFileSync(descriptionInBodyParams, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
-      let descriptionOne = conversionResult.output[0].data.item[0].request.body.urlencoded[0].description,
-        descriptionTwo = conversionResult.output[0].data.item[0].request.body.urlencoded[1].description;
+      let descriptionOne = conversionResult.output[0].data.item[0].item[0].request.body.urlencoded[0].description,
+        descriptionTwo = conversionResult.output[0].data.item[0].item[0].request.body.urlencoded[1].description;
       expect(err).to.be.null;
       expect(descriptionOne.content).to.equal('Description of Pet ID');
       expect(descriptionTwo.content).to.equal('Description of Pet name');
@@ -733,7 +733,7 @@ describe('The convert Function', function() {
     'required field is set to true', function(done) {
     Converter.convertV2({ type: 'file', data: requiredInParams }, { schemaFaker: true }, (err, conversionResult) => {
       expect(err).to.be.null;
-      let requests = conversionResult.output[0].data.item,
+      let requests = conversionResult.output[0].data.item[0].item,
         request,
         response;
 
@@ -741,8 +741,8 @@ describe('The convert Function', function() {
       // query1 required, query2 optional
       // header1 required, header2 optional
       // response: header1 required, header2 optional
-      request = requests[0].request;
-      response = requests[0].response[0];
+      request = requests[1].request;
+      response = requests[1].response[0];
       expect(request.url.query[0].description.content).to.equal('(Required) Description of query1');
       expect(request.url.query[1].description.content).to.equal('Description of query2');
       expect(request.header[0].description.content).to.equal('(Required) Description of header1');
@@ -753,14 +753,14 @@ describe('The convert Function', function() {
       // PUT /pets
       // RequestBody: multipart/form-data
       // formParam1 required, formParam2 optional
-      request = requests[1].request;
+      request = requests[2].request;
       expect(request.body.formdata[0].description.content).to.equal('(Required) Description of formParam1');
       expect(request.body.formdata[1].description.content).to.equal('Description of formParam2');
 
       // POST /pets
       // RequestBody: application/x-www-form-urlencoded
       // urlencodedParam1 required, urlencodedParam2 optional
-      request = requests[2].request;
+      request = requests[3].request;
       expect(request.body.urlencoded[0].description.content).to.equal('(Required) Description of urlencodedParam1');
       expect(request.body.urlencoded[1].description.content).to.equal('Description of urlencodedParam2');
 
@@ -769,13 +769,13 @@ describe('The convert Function', function() {
   });
 
   // Confirm behaviour for `schema` resolution
-  it.skip('should convert to the expected schema with use of schemaFaker and schemaResolution caches', function(done) {
+  it('should convert to the expected schema with use of schemaFaker and schemaResolution caches', function(done) {
     Converter.convertV2({ type: 'file', data: multipleRefs }, {}, (err, conversionResult) => {
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
-      let items = conversionResult.output[0].data.item,
-        request = items[0].request,
-        response = items[0].response,
+      let item = conversionResult.output[0].data.item[0].item[0],
+        request = item.request,
+        response = item.response,
         requestBody = JSON.parse(request.body.raw),
         responseBody = JSON.parse(response[0].body);
       expect(requestBody).to.deep.equal({
@@ -790,12 +790,12 @@ describe('The convert Function', function() {
       });
       expect(responseBody).to.deep.equal({
         key1: {
-          responseId: 234,
-          responseName: '200 OK Response'
+          responseId: '<long>',
+          responseName: '<string>'
         },
         key2: {
-          responseId: 234,
-          responseName: '200 OK Response'
+          responseId: '<long>',
+          responseName: '<string>'
         }
       });
       done();
@@ -822,7 +822,7 @@ describe('The convert Function', function() {
       (err, conversionResult) => {
         let responseArray;
         expect(err).to.be.null;
-        responseArray = conversionResult.output[0].data.item[0].response;
+        responseArray = conversionResult.output[0].data.item[0].item[0].response;
         expect(responseArray).to.be.an('array');
         responseArray.forEach((response) => {
           let headerArray = response.originalRequest.header;
@@ -848,7 +848,7 @@ describe('The convert Function', function() {
       let responseBody;
 
       expect(err).to.be.null;
-      responseBody = JSON.parse(conversionResult.output[0].data.item[0].response[0].body);
+      responseBody = JSON.parse(conversionResult.output[0].data.item[0].item[0].response[0].body);
 
       expect(responseBody).to.be.an('object');
       expect(responseBody).to.have.keys(['min', 'max', 'minmax', 'nomin', 'nomax', 'nominmax']);
@@ -880,7 +880,7 @@ describe('The convert Function', function() {
 
     Converter.convertV2(input, {}, (err, result) => {
       expect(err).to.be.null;
-      let body = JSON.parse(result.output[0].data.item[0].response[0].body);
+      let body = JSON.parse(result.output[0].data.item[0].item[1].response[0].body);
       expect(result.result).to.be.true;
       expect(body)
         .to.be.an('array').with.length(2);
@@ -989,7 +989,7 @@ describe('The convert Function', function() {
     Converter.convertV2({ type: 'string', data: openapi }, { requestNameSource: 'URL' },
       (err, conversionResult) => {
         expect(err).to.be.null;
-        let request = conversionResult.output[0].data.item[0].request;
+        let request = conversionResult.output[0].data.item[0].item[0].request;
         expect(request.auth).to.be.eql({
           type: 'noauth'
         });
@@ -1004,9 +1004,9 @@ describe('The convert Function', function() {
       { schemaFaker: true, parametersResolution: 'Example' }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
-        expect(conversionResult.output[0].data.item[0].request.url.query[0].key)
+        expect(conversionResult.output[0].data.item[0].item[0].request.url.query[0].key)
           .to.equal('deepObjectLengthParameter[length]');
-        expect(conversionResult.output[0].data.item[0].request.url.query[0].value).to.equal('20');
+        expect(conversionResult.output[0].data.item[0].item[0].request.url.query[0].value).to.equal('20');
         done();
       });
   });
@@ -1018,9 +1018,9 @@ describe('The convert Function', function() {
       { schemaFaker: true, parametersResolution: 'Example' }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
-        expect(conversionResult.output[0].data.item[0].response[0]
+        expect(conversionResult.output[0].data.item[0].item[0].response[0]
           .body).to.include('"value": "QA"');
-        expect(conversionResult.output[0].data.item[1].response[0]
+        expect(conversionResult.output[0].data.item[1].item[0].response[0]
           .body).to.include('"value": "QA"');
         done();
       });
@@ -1047,7 +1047,7 @@ describe('The convert Function', function() {
       { schemaFaker: true, parametersResolution: 'Example' }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
-        expect(conversionResult.output[0].data.item[0].request.body.raw)
+        expect(conversionResult.output[0].data.item[0].item[0].request.body.raw)
           .to.equal(
             '<?xml version="1.0" encoding="UTF-8"?>\n' +
             '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope">' +
@@ -1070,7 +1070,7 @@ describe('The convert Function', function() {
       schemaFaker: true,
       parametersResolution: 'Example'
     }, (err, conversionResult) => {
-      let fakedParam = conversionResult.output[0].data.item[0].request.url.query[0].value;
+      let fakedParam = conversionResult.output[0].data.item[0].item[0].request.url.query[0].value;
       expect(err).to.be.null;
       expect(fakedParam).to.be.equal('120');
       done();
@@ -1084,10 +1084,10 @@ describe('The convert Function', function() {
       { }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
-        expect(conversionResult.output[0].data.item[0].request.body.formdata[0].description.content)
+        expect(conversionResult.output[0].data.item[0].item[0].request.body.formdata[0].description.content)
           .to.equal('Request param description');
-        expect(conversionResult.output[0].data.item[0].request.body.formdata[0].key).to.equal('requestParam');
-        expect(conversionResult.output[0].data.item[0].request.body.formdata[0].value).to.be.a('string');
+        expect(conversionResult.output[0].data.item[0].item[0].request.body.formdata[0].key).to.equal('requestParam');
+        expect(conversionResult.output[0].data.item[0].item[0].request.body.formdata[0].value).to.be.a('string');
         done();
       });
   });
@@ -1108,7 +1108,7 @@ describe('The convert Function', function() {
       });
   });
 
-  it('[GITHUB #597] - should convert file with all of merging properties', function() {
+  it('[GITHUB #597] - should convert file with all of merging properties', function(done) {
     const fileSource = path.join(__dirname, VALID_OPENAPI_PATH, 'all_of_properties.json'),
       fileData = fs.readFileSync(fileSource, 'utf8'),
       input = {
@@ -1128,6 +1128,8 @@ describe('The convert Function', function() {
           'parentTypeData',
           'specificTypeData'
         );
+
+      done();
     });
   });
 
@@ -1169,17 +1171,18 @@ describe('The convert Function', function() {
 
   // TODO: Handle deprecated property config option
   describe('Deprecated property', function () {
-    it('Should convert and exclude deprecated operations - has only one op and is deprecated', function () {
+    it('Should convert and exclude deprecated operations - has only one op and is deprecated', function (done) {
       const fileData = fs.readFileSync(onlyOneOperationDeprecated, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData }, { includeDeprecated: false },
         (err, result) => {
           expect(err).to.be.null;
           expect(result.result).to.be.true;
           expect(result.output[0].data.item).to.be.empty;
+          done();
         });
     });
 
-    it('Should convert and exclude deprecated operations - has some deprecated', function () {
+    it('Should convert and exclude deprecated operations - has some deprecated', function (done) {
       const fileData = fs.readFileSync(someOperationOneDeprecated, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData },
         { includeDeprecated: false },
@@ -1187,11 +1190,12 @@ describe('The convert Function', function() {
           expect(err).to.be.null;
           expect(result.result).to.be.true;
           expect(result.output[0].data.item.length).to.equal(1);
+          done();
         });
     });
 
     it('Should convert and exclude deprecated operations - has only one op and is deprecated' +
-      'using tags as folder strategy operation has not tag', function () {
+      'using tags as folder strategy operation has not tag', function (done) {
       const fileData = fs.readFileSync(onlyOneOperationDeprecated, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData },
         { includeDeprecated: false, folderStrategy: 'tags' },
@@ -1199,11 +1203,12 @@ describe('The convert Function', function() {
           expect(err).to.be.null;
           expect(result.result).to.be.true;
           expect(result.output[0].data.item).to.be.empty;
+          done();
         });
     });
 
     it('Should convert and exclude deprecated operations - has some deprecated' +
-      'using tags as folder strategy', function () {
+      'using tags as folder strategy', function (done) {
       const fileData = fs.readFileSync(someOperationDeprecatedUsingTags, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData },
         { includeDeprecated: false, folderStrategy: 'tags' },
@@ -1212,16 +1217,17 @@ describe('The convert Function', function() {
           expect(result.result).to.be.true;
           expect(result.output[0].data.item.length).to.equal(1);
           expect(result.output[0].data.item[0].name).to.equal('pets');
+          done();
         });
     });
 
-    it('Should convert and exclude deprecated params when option is set to false', function() {
+    it('Should convert and exclude deprecated params when option is set to false', function(done) {
       const fileData = fs.readFileSync(deprecatedParams, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData },
         { includeDeprecated: false },
         (err, result) => {
-          const req1 = result.output[0].data.item[0],
-            req2 = result.output[0].data.item[1];
+          const req1 = result.output[0].data.item[0].item[0],
+            req2 = result.output[0].data.item[0].item[1];
 
           expect(err).to.be.null;
           expect(req1.request.url.query.length).to.equal(1);
@@ -1229,15 +1235,17 @@ describe('The convert Function', function() {
           expect(req1.request.header[0].key).to.equal('limit');
           expect(req1.request.header[1].key).to.equal('limit_2');
           expect(req2.request.header[0].key).to.equal('limit_2');
+
+          done();
         });
     });
 
-    it('Should convert and include deprecated params when option is set to true', function() {
+    it('Should convert and include deprecated params when option is set to true', function(done) {
       const fileData = fs.readFileSync(deprecatedParams, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData },
         { includeDeprecated: true },
         (err, result) => {
-          const req = result.output[0].data.item[0];
+          const req = result.output[0].data.item[0].item[0];
 
           expect(err).to.be.null;
           expect(req.request.url.query.length).to.equal(2);
@@ -1246,14 +1254,16 @@ describe('The convert Function', function() {
           expect(req.request.header[0].key).to.equal('limit');
           expect(req.request.header[1].key).to.equal('limit_2');
           expect(req.request.header[2].key).to.equal('limit_Dep');
+
+          done();
         });
     });
 
-    it('Should convert and include deprecated params when option is not present', function() {
+    it('Should convert and include deprecated params when option is not present', function(done) {
       const fileData = fs.readFileSync(deprecatedParams, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData }, {},
         (err, result) => {
-          const req = result.output[0].data.item[0];
+          const req = result.output[0].data.item[0].item[0];
 
           expect(err).to.be.null;
           expect(req.request.url.query.length).to.equal(2);
@@ -1262,47 +1272,56 @@ describe('The convert Function', function() {
           expect(req.request.header[0].key).to.equal('limit');
           expect(req.request.header[1].key).to.equal('limit_2');
           expect(req.request.header[2].key).to.equal('limit_Dep');
+
+          done();
         });
     });
 
-    it('Should convert and exclude deprecated property when option is set to false', function() {
+    it('Should convert and exclude deprecated property when option is set to false', function(done) {
       const fileData = fs.readFileSync(deprecatedProperty, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData },
         { includeDeprecated: false },
         (err, result) => {
           expect(err).to.be.null;
-          expect(result.output[0].data.item[0].request.body.raw)
+          expect(result.output[0].data.item[0].item[0].request.body.raw)
             .to.equal('{\n  "b": "<string>"\n}');
-          expect(result.output[0].data.item[0].response[1].body.includes('errorCode')).to.be.false;
+          expect(result.output[0].data.item[0].item[0].response[1].body.includes('errorCode')).to.be.false;
+          expect(result.output[0].data.item[0].item[0].response[1].body.includes('ErrorData')).to.be.true;
+
+          done();
         });
     });
 
-    it('Should convert and include deprecated property when option is set to true', function() {
+    it('Should convert and include deprecated property when option is set to true', function(done) {
       const fileData = fs.readFileSync(deprecatedProperty, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData },
         { includeDeprecated: true },
         (err, result) => {
           expect(err).to.be.null;
-          expect(result.output[0].data.item[0].request.body.raw)
+          expect(result.output[0].data.item[0].item[0].request.body.raw)
             .to.equal('{\n  "a": "<string>",\n  "b": "<string>"\n}');
-          expect(result.output[0].data.item[0].response[1].body.includes('errorCode')).to.be.true;
+          expect(result.output[0].data.item[0].item[0].response[1].body.includes('errorCode')).to.be.true;
+
+          done();
         });
     });
 
-    it('Should convert and include deprecated property when option is set to true in query and path', function() {
+    it('Should convert and include deprecated property when option is set to true in query and path', function(done) {
       const fileData = fs.readFileSync(schemaParamDeprecated, 'utf8');
       Converter.convertV2({ type: 'string', data: fileData },
         { includeDeprecated: true },
         (err, result) => {
           expect(err).to.be.null;
-          expect(result.output[0].data.item[0].request.url.query[0].key)
+          expect(result.output[0].data.item[0].item[0].request.url.query[0].key)
             .to.equal('deprecated');
-          expect(result.output[0].data.item[0].request.url.query[1].key)
+          expect(result.output[0].data.item[0].item[0].request.url.query[1].key)
             .to.equal('b');
-          expect(result.output[0].data.item[0].request.url.variable[0].value)
+          expect(result.output[0].data.item[0].item[0].request.url.variable[0].value)
             .to.equal(';limitPath=deprecated,<boolean>,b,<string>');
-          expect(result.output[0].data.item[0].request.header[0].value)
+          expect(result.output[0].data.item[0].item[0].request.header[0].value)
             .to.equal('deprecated,<boolean>,b,<string>');
+
+          done();
         });
     });
 
@@ -1312,13 +1331,13 @@ describe('The convert Function', function() {
         { includeDeprecated: false },
         (err, result) => {
           expect(err).to.be.null;
-          expect(result.output[0].data.item[0].request.url.query[0].key)
+          expect(result.output[0].data.item[0].item[0].request.url.query[0].key)
             .to.equal('deprecated');
-          expect(result.output[0].data.item[0].request.url.query[1].key)
+          expect(result.output[0].data.item[0].item[0].request.url.query[1].key)
             .to.equal('b');
-          expect(result.output[0].data.item[0].request.url.variable[0].value)
+          expect(result.output[0].data.item[0].item[0].request.url.variable[0].value)
             .to.equal(';limitPath=b,<string>');
-          expect(result.output[0].data.item[0].request.header[0].value)
+          expect(result.output[0].data.item[0].item[0].request.header[0].value)
             .to.equal('b,<string>');
         });
     });
@@ -1334,8 +1353,10 @@ describe('The convert Function', function() {
       expect(conversionResult.output[0].type).to.equal('collection');
       expect(conversionResult.output[0].data).to.have.property('info');
       expect(conversionResult.output[0].data).to.have.property('item');
-      expect(conversionResult.output[0].data.item.length).to.equal(3);
-      expect(_.map(conversionResult.output[0].data.item, 'name')).to.include.members(['List all pets', 'pet']);
+      expect(conversionResult.output[0].data.item.length).to.equal(2);
+      expect(_.map(conversionResult.output[0].data.item[0].item, 'name')).to.include
+        .members(['List all pets', '/pets']);
+
       done();
     });
   });
@@ -1430,8 +1451,8 @@ describe('The convert Function', function() {
       { type: 'string', data: openapi },
       { schemaFaker: true },
       (err, conversionResult) => {
-        const resultantRequestBody = conversionResult.output[0].data.item[0].request.body.raw,
-          resultantResponseBody = conversionResult.output[0].data.item[0].response[0].body,
+        const resultantRequestBody = conversionResult.output[0].data.item[0].item[0].request.body.raw,
+          resultantResponseBody = conversionResult.output[0].data.item[0].item[0].response[0].body,
           expectedRequestBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
             '<ex:ExampleXMLRequest xmlns:ex=\"urn:ExampleXML\">\n' +
             '  <requestInteger>(integer)</requestInteger>\n' +
@@ -1462,8 +1483,8 @@ describe('The convert Function', function() {
       { type: 'string', data: openapi },
       { schemaFaker: true },
       (err, conversionResult) => {
-        const resultantRequestBody = conversionResult.output[0].data.item[0].request.body.raw,
-          resultantResponseBody = conversionResult.output[0].data.item[0].response[0].body,
+        const resultantRequestBody = conversionResult.output[0].data.item[0].item[0].request.body.raw,
+          resultantResponseBody = conversionResult.output[0].data.item[0].item[0].response[0].body,
           expectedRequestBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
             '<ExampleXMLRequest xmlns=\"urn:ExampleXML\">\n' +
             '  <requestInteger>(integer)</requestInteger>\n' +
@@ -1492,8 +1513,8 @@ describe('The convert Function', function() {
       { type: 'string', data: openapi },
       { schemaFaker: true },
       (err, conversionResult) => {
-        const resultantRequestBody = conversionResult.output[0].data.item[0].request.body.raw,
-          resultantResponseBody = conversionResult.output[0].data.item[0].response[0].body,
+        const resultantRequestBody = conversionResult.output[0].data.item[0].item[0].request.body.raw,
+          resultantResponseBody = conversionResult.output[0].data.item[0].item[0].response[0].body,
           expectedRequestBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
             '<ex:ExampleXMLRequest xmlns:ex=\"urn:ExampleXML\">\n' +
             '  <requestInteger>(integer)</requestInteger>\n' +
@@ -1532,8 +1553,8 @@ describe('The convert Function', function() {
       { type: 'string', data: openapi },
       { schemaFaker: true },
       (err, conversionResult) => {
-        const resultantRequestBody = conversionResult.output[0].data.item[0].request.body.raw,
-          resultantResponseBody = conversionResult.output[0].data.item[0].response[0].body,
+        const resultantRequestBody = conversionResult.output[0].data.item[0].item[0].request.body.raw,
+          resultantResponseBody = conversionResult.output[0].data.item[0].item[0].response[0].body,
           expectedRequestBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
             '<ExampleXMLRequest xmlns=\"urn:ExampleXML\">\n' +
             '  <requestInteger>(integer)</requestInteger>\n' +
@@ -1572,8 +1593,8 @@ describe('The convert Function', function() {
       { type: 'string', data: openapi },
       { schemaFaker: true },
       (err, conversionResult) => {
-        const resultantRequestBody = conversionResult.output[0].data.item[0].request.body.raw,
-          resultantResponseBody = conversionResult.output[0].data.item[0].response[0].body,
+        const resultantRequestBody = conversionResult.output[0].data.item[0].item[0].request.body.raw,
+          resultantResponseBody = conversionResult.output[0].data.item[0].item[0].response[0].body,
           expectedRequestBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
             '<ex:ExampleXMLRequest>\n' +
             '  <ex:ExampleXMLRequest xmlns:ex=\"urn:ExampleXML\">\n' +
@@ -1819,8 +1840,9 @@ describe('The convert Function', function() {
 
           expect(thisVar.value).to.equal('42');
           expect(thisVar.key).to.equal('ownerId');
+
+          done();
         });
-        done();
       });
     });
 
@@ -1853,7 +1875,7 @@ describe('The convert Function', function() {
         // Make sure that consumes and produces are processed
         convertResult.output.forEach(function(element) {
           expect(element.type).to.equal('collection');
-          expect(JSON.stringify(element.data.item[0].request.header[0])).to
+          expect(JSON.stringify(element.data.item[0].item[0].request.header[0])).to
             .equal('{"key":"Content-Type","value":"application/json"}');
         });
         done();
@@ -1888,7 +1910,7 @@ describe('The convert Function', function() {
         };
 
       Converter.convertV2(input, { requestNameSource: 'URL' }, (err, convertResult) => {
-        let request = convertResult.output[0].data.item[0].request;
+        let request = convertResult.output[0].data.item[0].item[0].request;
 
         expect(err).to.be.null;
         expect(request.name).to.equal('/');
@@ -1904,7 +1926,7 @@ describe('The convert Function', function() {
         };
 
       Converter.convertV2(input, { requestNameSource: 'Fallback' }, (err, convertResult) => {
-        let request = convertResult.output[0].data.item[0].request;
+        let request = convertResult.output[0].data.item[0].item[0].request;
 
         expect(err).to.be.null;
         expect(request.name).to.equal('List API versions');
@@ -1925,16 +1947,16 @@ describe('The convert Function', function() {
         optimizeConversion: false, stackLimit: 50
       }, (err, result) => {
         const expectedResponseBody1 = JSON.parse(
-            result.output[0].data.item[0].item[0].item[0].item[0]
+            result.output[0].data.item[0].item[0].item[0]
               .item[0].response[0].body
           ),
           expectedResponseBody2 = JSON.parse(
-            result.output[0].data.item[0].item[0].item[1].item[0].response[0].body
+            result.output[0].data.item[0].item[0].item[1].item[0].item[0].response[0].body
           );
         expect(err).to.be.null;
         expect(result.result).to.be.true;
-        expect(expectedResponseBody1.payload).to.be.eql('<boolean>');
-        expect(expectedResponseBody2.payload).to.be.an('object')
+        expect(expectedResponseBody2.payload).to.be.eql('<boolean>');
+        expect(expectedResponseBody1.payload).to.be.an('object')
           .and.to.have.all.keys('content', 'paging');
       });
     });

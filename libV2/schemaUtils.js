@@ -509,23 +509,25 @@ let QUERYPARAM = 'query',
     }
 
     if (schema.$ref) {
-      if (seenRef[schema.$ref]) {
+      const schemaRef = schema.$ref;
+
+      if (seenRef[schemaRef]) {
         return {
-          value: '<Circular reference to ' + schema.$ref + ' detected>'
+          value: '<Circular reference to ' + schemaRef + ' detected>'
         };
       }
 
-      seenRef[schema.$ref] = true;
+      seenRef[schemaRef] = true;
 
-      if (context.schemaCache[schema.$ref]) {
-        schema = context.schemaCache[schema.$ref];
+      if (context.schemaCache[schemaRef]) {
+        schema = context.schemaCache[schemaRef];
       }
       else {
-        schema = resolveRefFromSchema(context, schema.$ref, stack, _.cloneDeep(seenRef));
+        schema = resolveRefFromSchema(context, schemaRef, stack, _.cloneDeep(seenRef));
         schema = resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef));
 
         // Add the resolved schema to the global schema cache
-        context.schemaCache[schema.$ref] = schema;
+        context.schemaCache[schemaRef] = schema;
       }
       return schema;
     }
