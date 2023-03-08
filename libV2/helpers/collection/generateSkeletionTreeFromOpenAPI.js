@@ -41,6 +41,15 @@ let _ = require('lodash'),
     _.forEach(paths, function (completePath) {
       let pathSplit = completePath === '/' ? [completePath] : _.compact(completePath.split('/'));
 
+      /**
+       * /user
+       * /team
+       * /hi
+       * /bye
+       *
+       * In this scenario, always create a base folder for the path
+       * and then add and link the request inside the created folder.
+       */
       if (pathSplit.length === 1) {
         let methods = openapi.paths[completePath];
 
@@ -57,6 +66,20 @@ let _ = require('lodash'),
             return;
           }
 
+          if (!tree.hasNode(`path:folder:${pathSplit[0]}`)) {
+            tree.setNode(`path:folder:${pathSplit[0]}`, {
+              type: 'folder',
+              meta: {
+                name: pathSplit[0],
+                path: pathSplit[0],
+                pathIdentifier: pathSplit[0]
+              },
+              data: {}
+            });
+
+            tree.setEdge('root:collection', `path:folder:${pathSplit[0]}`);
+          }
+
           tree.setNode(`path:request:${pathSplit[0]}:${method}`, {
             type: 'request',
             data: {},
@@ -67,13 +90,7 @@ let _ = require('lodash'),
             }
           });
 
-          if (tree.hasNode(`path:folder:${pathSplit[0]}`)) {
-            tree.setEdge(`path:folder:${pathSplit[0]}`, `path:request:${pathSplit[0]}:${method}`);
-          }
-
-          else {
-            tree.setEdge('root:collection', `path:request:${pathSplit[0]}:${method}`);
-          }
+          tree.setEdge(`path:folder:${pathSplit[0]}`, `path:request:${pathSplit[0]}:${method}`);
         });
       }
 
@@ -98,6 +115,28 @@ let _ = require('lodash'),
                 return;
               }
 
+              /**
+               * If it is the last node,
+               * it might happen that this exists as a folder.
+               *
+               * If yes add a request inside that folder else
+               * add as a request on the previous path idendified which will be a folder.
+               */
+              if (!tree.hasNode(`path:folder:${pathIdentifier}`)) {
+                tree.setNode(`path:folder:${pathIdentifier}`, {
+                  type: 'folder',
+                  meta: {
+                    name: path,
+                    path: path,
+                    pathIdentifier: pathIdentifier
+                  },
+                  data: {}
+                });
+
+                tree.setEdge(index === 0 ? 'root:collection' : `path:folder:${previousPathIdentified}`,
+                  `path:folder:${pathIdentifier}`);
+              }
+
               tree.setNode(`path:request:${pathIdentifier}:${method}`, {
                 type: 'request',
                 data: {},
@@ -108,20 +147,7 @@ let _ = require('lodash'),
                 }
               });
 
-              /**
-               * If it is the last node,
-               * it might happen that this exists as a folder.
-               *
-               * If yes add a request inside that folder else
-               * add as a request on the previous path idendified which will be a folder.
-               */
-              if (tree.hasNode(`path:folder:${pathIdentifier}`)) {
-                tree.setEdge(`path:folder:${pathIdentifier}`, `path:request:${pathIdentifier}:${method}`);
-              }
-
-              else {
-                tree.setEdge(`path:folder:${previousPathIdentified}`, `path:request:${pathIdentifier}:${method}`);
-              }
+              tree.setEdge(`path:folder:${pathIdentifier}`, `path:request:${pathIdentifier}:${method}`);
             });
           }
 
