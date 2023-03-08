@@ -1,5 +1,10 @@
 # OpenAPI-Postman Changelog
 
+#### v4.10.0 (March 08, 2023)
+* Added support for convertV2() interface which has more stacklimit for schema resolution.
+* Added support for validateTransactionV2() interface uses same v2 interface for resolving schema.
+* Fixed multiple issues for urlencoded body with anyOf and oneOf schemas where valid data was reported as mismatches.
+
 #### v4.9.0 (February 06, 2023)
 * Fixed issue [#660](https://github.com/postmanlabs/openapi-to-postman/issues/660) where for certain XML request bodies, conversion was failing with TypeError.
 * Fixed issue where for some definitions having non-string URLs were failing conversion with TypeErrors.
