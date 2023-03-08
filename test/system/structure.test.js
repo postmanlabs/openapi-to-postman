@@ -27,7 +27,9 @@ const optionIds = [
     'includeWebhooks',
     'allowUrlPathVarMatching',
     'includeReferenceMap',
-    'includeDeprecated'
+    'includeDeprecated',
+    'parametersResolution',
+    'disabledParametersValidation'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -200,6 +202,26 @@ const optionIds = [
         ' in generated collection or not',
       external: true,
       usage: ['CONVERSION']
+    },
+    parametersResolution: {
+      name: 'Parameter generation',
+      type: 'enum',
+      default: 'Schema',
+      availableOptions: ['Example', 'Schema'],
+      description: 'Select whether to generate the request and response parameters based on the' +
+      ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the' +
+      ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
+      ' in the schema.',
+      external: true,
+      usage: ['CONVERSION']
+    },
+    disabledParametersValidation: {
+      name: 'Disabled Parameter validation',
+      type: 'boolean',
+      default: true,
+      description: 'Whether disabled parameters of collection should be validated',
+      external: false,
+      usage: ['VALIDATION']
     }
   };
 

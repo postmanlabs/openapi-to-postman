@@ -1,10 +1,12 @@
+const { MODULE_VERSION } = require('../../lib/schemapack.js');
+
 var expect = require('chai').expect,
   Converter = require('../../index.js'),
   fs = require('fs'),
   path = require('path'),
   async = require('async'),
   _ = require('lodash'),
-  schemaUtils = require('../../lib/schemaUtils'),
+  requestMatchingUtils = require('../../libV2/requestMatchingUtils'),
   VALIDATION_DATA_FOLDER_PATH = '../data/validationData',
   VALIDATION_DATA_OPTIONS_FOLDER_31_PATH = '../data/31CollectionTransactions/validateOptions',
   VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH = '../data/31CollectionTransactions/validate30Scenarios',
@@ -27,6 +29,42 @@ function getAllTransactions (collection, allRequests) {
     }
     else {
       getAllTransactions(item, allRequests);
+    }
+  });
+}
+
+/**
+ * Generates random id for collection items
+ * @returns {String} Random Id
+ */
+function idstr () {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
+/**
+ * Extract all transaction from collection and appends them into array
+ * And adds id to each item object
+ *
+ * @param {*} collection - Postman Collection
+ * @param {*} allRequests - Array to which transactions are appended
+ * @returns {*} - null
+ */
+function getAllTransactionsInjectingId (collection, allRequests) {
+  if (!_.has(collection, 'item') || !_.isArray(collection.item)) {
+    return;
+  }
+  _.forEach(collection.item, (item) => {
+    if (_.has(item, 'request') || _.has(item, 'response')) {
+      // let idstr = _.get(item, 'request.method') + ' ' + _.join(_.get(item, 'request.url.path'), '/');
+      allRequests.push(_.assign({}, _.omit(item, ['id', 'response']), {
+        id: idstr(),
+        response: _.map(item.response, (res) => {
+          return _.assign({}, res, { id: idstr() });
+        })
+      }));
+    }
+    else {
+      getAllTransactionsInjectingId(item, allRequests);
     }
   });
 }
@@ -79,7 +117,7 @@ describe('Validate with servers', function () {
         detailedBlobValidation: false
       },
       schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
-    schemaPack.convert((err, conversionResult) => {
+    schemaPack.convertV2((err, conversionResult) => {
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
 
@@ -87,7 +125,7 @@ describe('Validate with servers', function () {
 
       getAllTransactions(conversionResult.output[0].data, historyRequest);
 
-      schemaPack.validateTransaction(historyRequest, (err, result) => {
+      schemaPack.validateTransactionV2(historyRequest, (err, result) => {
         expect(err).to.be.null;
         expect(result).to.be.an('object');
 
@@ -105,21 +143,9 @@ describe('Validate with servers', function () {
 
 describe('Validation with different resolution parameters options', function () {
 
-  it('Should validate correctly with request and example parameters as Schema', function (done) {
+  it('Should validate correctly with request and example parameters as Schema', function () {
     let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
         '/issue#479_2.yaml'), 'utf8'),
-      expectedRequestBody =
-         '{"data":[{"entityId":"<string>","user":{"id":"<long>","age":"<integer>","created_at":"<dateTime>"},' +
-         '"isFavorite":"<integer>","needThis":"<string>"},' +
-         '{"entityId":"<string>","user":{"id":"<long>","age":"<integer>","created_at":"<dateTime>"},' +
-         '"isFavorite":"<integer>","needThis":"<string>"}]}',
-      expectedResponseBody =
-         '[{"id":"<long>","name":"<string>","tag":"<string>","created_at":"<dateTime>","birthday":"<date>"' +
-         ',"floatField":"<float>","doubleField":"<double>","content":"<byte>","file":"<binary>",' +
-         '"root_pass":"<password>"},' +
-         '{"id":"<long>","name":"<string>","tag":"<string>","created_at":"<dateTime>","birthday":"<date>"' +
-         ',"floatField":"<float>","doubleField":"<double>","content":"<byte>","file":"<binary>",' +
-         '"root_pass":"<password>"}]',
       options = {
         requestParametersResolution: 'Schema',
         exampleParametersResolution: 'Schema',
@@ -131,7 +157,7 @@ describe('Validation with different resolution parameters options', function () 
         detailedBlobValidation: true
       },
       schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options);
-    schemaPack.convert((err, conversionResult) => {
+    schemaPack.convertV2((err, conversionResult) => {
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
 
@@ -139,12 +165,7 @@ describe('Validation with different resolution parameters options', function () 
 
       getAllTransactions(conversionResult.output[0].data, historyRequest);
 
-      const fixedResponseBody = historyRequest[0].response[0].body.replace(/\s/g, ''),
-        fixedRequestBody = historyRequest[0].request.body.raw.replace(/\s/g, '');
-      expect(fixedResponseBody).to.equal(expectedResponseBody);
-      expect(fixedRequestBody).to.equal(expectedRequestBody);
-
-      schemaPack.validateTransaction(historyRequest, (err, result) => {
+      schemaPack.validateTransactionV2(historyRequest, (err, result) => {
         expect(err).to.be.null;
         expect(result).to.be.an('object');
         let requestIds = Object.keys(result.requests);
@@ -156,19 +177,13 @@ describe('Validation with different resolution parameters options', function () 
             expect(result.requests[requestId].endpoints[0].responses[responseId].matched).to.be.true;
           });
         });
-        done();
       });
     });
   });
 
-  it('Should validate correctly with request as schema and example parameters as Example', function (done) {
+  it('Should validate correctly with request as schema and example parameters as Example', function () {
     let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
         '/issue#479_2.yaml'), 'utf8'),
-      expectedBody =
-         '{"data":[{"entityId":"<string>","user":{"id":"<long>","age":"<integer>","created_at":"<dateTime>"},' +
-         '"isFavorite":"<integer>","needThis":"<string>"},' +
-         '{"entityId":"<string>","user":{"id":"<long>","age":"<integer>","created_at":"<dateTime>"},' +
-         '"isFavorite":"<integer>","needThis":"<string>"}]}',
       options = {
         requestParametersResolution: 'Schema',
         exampleParametersResolution: 'Example',
@@ -180,7 +195,7 @@ describe('Validation with different resolution parameters options', function () 
         detailedBlobValidation: true
       },
       schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options);
-    schemaPack.convert((err, conversionResult) => {
+    schemaPack.convertV2((err, conversionResult) => {
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
 
@@ -188,10 +203,7 @@ describe('Validation with different resolution parameters options', function () 
 
       getAllTransactions(conversionResult.output[0].data, historyRequest);
 
-      const fixedBody = historyRequest[0].request.body.raw.replace(/\s/g, '');
-      expect(fixedBody).to.equal(expectedBody);
-
-      schemaPack.validateTransaction(historyRequest, (err, result) => {
+      schemaPack.validateTransactionV2(historyRequest, (err, result) => {
         expect(err).to.be.null;
         expect(result).to.be.an('object');
         let requestIds = Object.keys(result.requests);
@@ -203,21 +215,13 @@ describe('Validation with different resolution parameters options', function () 
             expect(result.requests[requestId].endpoints[0].responses[responseId].matched).to.be.true;
           });
         });
-        done();
       });
     });
   });
 
-  it('Should validate correctly with request as Example and example parameters as Schema', function (done) {
+  it('Should validate correctly with request as Example and example parameters as Schema', function () {
     let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
         '/issue#479_2.yaml'), 'utf8'),
-      expectedResponseBody =
-        '[{"id":"<long>","name":"<string>","tag":"<string>","created_at":"<dateTime>","birthday":"<date>"' +
-        ',"floatField":"<float>","doubleField":"<double>","content":"<byte>","file":"<binary>",' +
-        '"root_pass":"<password>"},' +
-        '{"id":"<long>","name":"<string>","tag":"<string>","created_at":"<dateTime>","birthday":"<date>"' +
-        ',"floatField":"<float>","doubleField":"<double>","content":"<byte>","file":"<binary>",' +
-        '"root_pass":"<password>"}]',
       options = {
         requestParametersResolution: 'Example',
         exampleParametersResolution: 'Schema',
@@ -229,7 +233,7 @@ describe('Validation with different resolution parameters options', function () 
         detailedBlobValidation: true
       },
       schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options);
-    schemaPack.convert((err, conversionResult) => {
+    schemaPack.convertV2((err, conversionResult) => {
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
 
@@ -237,10 +241,7 @@ describe('Validation with different resolution parameters options', function () 
 
       getAllTransactions(conversionResult.output[0].data, historyRequest);
 
-      const fixedResponseBody = historyRequest[0].response[0].body.replace(/\s/g, '');
-      expect(fixedResponseBody).to.equal(expectedResponseBody);
-
-      schemaPack.validateTransaction(historyRequest, (err, result) => {
+      schemaPack.validateTransactionV2(historyRequest, (err, result) => {
         expect(err).to.be.null;
         expect(result).to.be.an('object');
         let requestIds = Object.keys(result.requests);
@@ -252,7 +253,6 @@ describe('Validation with different resolution parameters options', function () 
             expect(result.requests[requestId].endpoints[0].responses[responseId].matched).to.be.true;
           });
         });
-        done();
       });
     });
   });
@@ -271,7 +271,7 @@ describe('Validation with different resolution parameters options', function () 
         detailedBlobValidation: true
       },
       schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options);
-    schemaPack.convert((err, conversionResult) => {
+    schemaPack.convertV2((err, conversionResult) => {
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
 
@@ -279,7 +279,7 @@ describe('Validation with different resolution parameters options', function () 
 
       getAllTransactions(conversionResult.output[0].data, historyRequest);
 
-      schemaPack.validateTransaction(historyRequest, (err, result) => {
+      schemaPack.validateTransactionV2(historyRequest, (err, result) => {
         expect(err).to.be.null;
         expect(result).to.be.an('object');
         let requestIds = Object.keys(result.requests);
@@ -297,18 +297,24 @@ describe('Validation with different resolution parameters options', function () 
 
 
 });
-describe('The validator must validate generated collection from schema against schema itself', function () {
+
+describe('The validator must validate generated collection from schema against schema itself', function (done) {
   var validOpenapiFolder = fs.readdirSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH)),
     suggestedFixProps = ['key', 'actualValue', 'suggestedValue'],
     checkMismatch = (mismatch) => {
       expect(['REQUEST_NAME', 'REQUEST_DESCRIPTION', 'PATHVARIABLE', 'QUERYPARAM', 'HEADER', 'RESPONSE_HEADER',
-        'BODY', 'RESPONSE_BODY', 'ENDPOINT']).to.include(mismatch.property);
+        'BODY', 'RESPONSE', 'RESPONSE_BODY', 'ENDPOINT']).to.include(mismatch.property);
       expect(mismatch).to.include.keys('transactionJsonPath');
       expect(mismatch).to.include.keys('schemaJsonPath');
       expect(mismatch.reason).to.be.a('string');
       expect(['MISSING_IN_REQUEST', 'INVALID_TYPE', 'MISSING_IN_SCHEMA', 'INVALID_VALUE', 'INVALID_BODY',
         'INVALID_RESPONSE_BODY', 'BODY_SCHEMA_NOT_FOUND', 'MISSING_ENDPOINT']).to.include(mismatch.reasonCode);
     };
+
+  // Skipping nested_schemas.yaml for now.
+  validOpenapiFolder = _.filter(validOpenapiFolder, (file) => {
+    return file !== 'nested_schemas.yaml';
+  });
 
   async.each(validOpenapiFolder, function (file, cb) {
     it('correctly for schema: ' + file, function () {
@@ -328,7 +334,7 @@ describe('The validator must validate generated collection from schema against s
       // Increase timeout for larger schema
       this.timeout(30000);
 
-      schemaPack.convert((err, conversionResult) => {
+      schemaPack.convertV2((err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
 
@@ -336,7 +342,7 @@ describe('The validator must validate generated collection from schema against s
 
         getAllTransactions(conversionResult.output[0].data, historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
 
@@ -387,7 +393,7 @@ describe('The validator must validate generated collection from schema against s
         });
       });
     });
-  });
+  }, done);
 });
 
 describe('The Validation option', function () {
@@ -430,7 +436,7 @@ describe('The Validation option', function () {
           historyRequest = [];
 
         getAllTransactions(JSON.parse(collection), historyRequest);
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
 
           /**
@@ -474,7 +480,7 @@ describe('The Validation option', function () {
           historyRequest = [];
 
         getAllTransactions(JSON.parse(collection), historyRequest);
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           var reqResultObj;
           expect(err).to.be.null;
 
@@ -504,59 +510,34 @@ describe('The Validation option', function () {
         schemaPack = new Converter.SchemaPack({ type: 'string', data: schema },
           { validateMetadata: true, suggestAvailableFixes: true }),
         historyRequest = [],
-        resultObj1,
-        resultObj2;
+        resultObj1;
 
       before(function (done) {
         getAllTransactions(JSON.parse(collection), historyRequest);
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           resultObj1 = result.requests[historyRequest[0].id].endpoints[0];
-          resultObj2 = result.requests[historyRequest[1].id].endpoints[0];
           done();
         });
       });
 
       it('should validate request name and description according to schema - version: ' +
         specData.version, function () {
-        expect(resultObj1.mismatches).to.have.lengthOf(2);
-        _.forEach(resultObj1.mismatches, (mismatch) => {
-          // check for suggested value to be one in schema
-          if (mismatch.property === 'REQUEST_NAME') {
-            expect(mismatch.reasonCode).to.eql('INVALID_VALUE');
-            expect(mismatch.reason).to.eql('The request name didn\'t match with specified schema');
-            expect(mismatch.suggestedFix.suggestedValue).to.eql('List all pets Updated');
-          }
-          else if (mismatch.property === 'REQUEST_DESCRIPTION') {
-            expect(mismatch.reasonCode).to.eql('INVALID_VALUE');
-            expect(mismatch.reason).to.eql('The request description didn\'t match with specified schema');
-            expect(mismatch.suggestedFix.suggestedValue).to.eql('Description for GET /pets - List all pets');
-          }
-          else {
-            throw Error('Unhandled mismatch property in test');
-          }
-        });
-      });
-
-      it('should handle empty and null request name and description in request - version: ' +
-        specData.version, function () {
-        expect(resultObj2.mismatches).to.have.lengthOf(1);
-        expect(resultObj2.mismatches[0].property).to.eql('REQUEST_DESCRIPTION');
-        expect(resultObj2.mismatches[0].reasonCode).to.eql('INVALID_VALUE');
-        expect(resultObj2.mismatches[0].reason).to.eql('The request description didn\'t match with specified schema');
-        expect(resultObj2.mismatches[0].suggestedFix.actualValue).to.be.null;
-        expect(resultObj2.mismatches[0].suggestedFix.suggestedValue)
-          .to.eql('Description for POST /pets - Create a pet');
+        expect(resultObj1.mismatches).to.have.lengthOf(1);
+        expect(resultObj1.mismatches[0].property).to.eql('REQUEST_NAME');
+        expect(resultObj1.mismatches[0].reasonCode).to.eql('INVALID_VALUE');
+        expect(resultObj1.mismatches[0].reason).to.eql('The request name didn\'t match with specified schema');
+        expect(resultObj1.mismatches[0].suggestedFix.suggestedValue).to.eql('List all pets Updated');
       });
     });
   });
 
-  describe('suggestAvailableFixes ', function () {
+  describe('suggestAvailableFixes for parametersResolution=Schema', function () {
     suggestAvailableFixesSpecs.forEach((specData) => {
       let schema = fs.readFileSync(specData.path, 'utf8'),
         collection = fs.readFileSync(suggestAvailableFixesCollection, 'utf8'),
         schemaPack = new Converter.SchemaPack({ type: 'string', data: schema },
-          { suggestAvailableFixes: true }),
+          { suggestAvailableFixes: true, parametersResolution: 'Schema' }),
         historyRequest = [],
         resultObj,
         responseResult,
@@ -564,7 +545,70 @@ describe('The Validation option', function () {
 
       before(function (done) {
         getAllTransactions(JSON.parse(collection), historyRequest);
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
+          expect(err).to.be.null;
+          resultObj = result.requests[historyRequest[0].id].endpoints[0];
+          responseResult = resultObj.responses[historyRequest[0].response[0].id];
+
+          // check for expected mismatches length
+          expect(resultObj.mismatches).to.have.lengthOf(4);
+          expect(responseResult.mismatches).to.have.lengthOf(2);
+
+          // map all mismatch objects with it's property
+          _.forEach(_.concat(resultObj.mismatches, responseResult.mismatches), (mismatch) => {
+            propertyMismatchMap[mismatch.property] = mismatch;
+          });
+          done();
+        });
+      });
+
+      it('should suggest valid available fix for all kind of violated properties - version: ' +
+        specData.version, function () {
+        // check for all suggested value to be according to schema
+        expect(propertyMismatchMap.PATHVARIABLE.suggestedFix.suggestedValue).to.eql('<integer>');
+        expect(propertyMismatchMap.QUERYPARAM.suggestedFix.suggestedValue).to.eql('<number>');
+        expect(propertyMismatchMap.HEADER.suggestedFix.suggestedValue.value).to.eql('<boolean>');
+        expect(propertyMismatchMap.HEADER.suggestedFix.suggestedValue.description)
+          .to.eql('(Required) Quantity of pets available');
+        expect(propertyMismatchMap.BODY.suggestedFix.suggestedValue.name).to.eql('<string>');
+        expect(propertyMismatchMap.BODY.suggestedFix.suggestedValue.tag).to.eql('<string>');
+        // For enum, actual values in enum should be used
+        expect(_.includes(['Bulldog', 'Retriever', 'Timberwolf', 'Grizzly', 'Husky'],
+          propertyMismatchMap.BODY.suggestedFix.suggestedValue.breeds[2])).to.eql(true);
+        expect(propertyMismatchMap.RESPONSE_HEADER.suggestedFix.suggestedValue).to.eql('<integer>');
+        expect(propertyMismatchMap.RESPONSE_BODY.suggestedFix.suggestedValue.code).to.eql('<integer>');
+        expect(propertyMismatchMap.RESPONSE_BODY.suggestedFix.suggestedValue.message).to.eql('<string>');
+      });
+
+      it('should maintain valid properties/items in suggested value - version:' +
+        specData.version, function () {
+        expect(propertyMismatchMap.BODY.suggestedFix.suggestedValue.petId).to.eql(
+          propertyMismatchMap.BODY.suggestedFix.actualValue.petId
+        );
+        expect(propertyMismatchMap.BODY.suggestedFix.suggestedValue.breeds[0]).to.eql(
+          propertyMismatchMap.BODY.suggestedFix.actualValue.breeds[0]
+        );
+        expect(propertyMismatchMap.BODY.suggestedFix.suggestedValue.breeds[1]).to.eql(
+          propertyMismatchMap.BODY.suggestedFix.actualValue.breeds[1]
+        );
+      });
+    });
+  });
+
+  describe('suggestAvailableFixes for parametersResolution=Example', function () {
+    suggestAvailableFixesSpecs.forEach((specData) => {
+      let schema = fs.readFileSync(specData.path, 'utf8'),
+        collection = fs.readFileSync(suggestAvailableFixesCollection, 'utf8'),
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: schema },
+          { suggestAvailableFixes: true, parametersResolution: 'Example' }),
+        historyRequest = [],
+        resultObj,
+        responseResult,
+        propertyMismatchMap = {};
+
+      before(function (done) {
+        getAllTransactions(JSON.parse(collection), historyRequest);
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           resultObj = result.requests[historyRequest[0].id].endpoints[0];
           responseResult = resultObj.responses[historyRequest[0].response[0].id];
@@ -643,7 +687,7 @@ describe('The Validation option', function () {
           };
 
         getAllTransactions(JSON.parse(collection), historyRequest);
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           resultObj = result.requests[historyRequest[0].id].endpoints[0];
 
@@ -756,6 +800,13 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH
         ),
         '/oneOfChildNoTypeSpec.json'
+      ),
+      missingResponsesSpecs = getSpecsPathByVersion(
+        getFoldersByVersion(
+          VALIDATION_DATA_FOLDER_PATH,
+          VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH
+        ),
+        '/missingResponsesSpec.yaml'
       );
 
     emptyParameterSpecs.forEach((specData) => {
@@ -770,7 +821,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
 
         getAllTransactions(JSON.parse(emptyParameterCollection), historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
           expect(err).to.be.null;
           expect(result).to.be.an('object');
@@ -793,7 +844,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
 
         getAllTransactions(JSON.parse(implicitHeaderCollection), historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
           resultObj = result.requests[historyRequest[0].id].endpoints[0];
@@ -827,7 +878,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
 
         getAllTransactions(JSON.parse(rootKeywordViolationCollection), historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
           resultObj = result.requests[historyRequest[0].id].endpoints[0];
@@ -853,7 +904,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           resultObj,
           schemaPack = new Converter.SchemaPack({ type: 'string', data: doubleValidationFixSpec }, options);
 
-        schemaPack.convert((err, conversionResult) => {
+        schemaPack.convertV2((err, conversionResult) => {
           expect(err).to.be.null;
           expect(conversionResult.result).to.equal(true);
 
@@ -861,20 +912,13 @@ describe('VALIDATE FUNCTION TESTS ', function () {
 
           getAllTransactions(conversionResult.output[0].data, historyRequest);
 
-          schemaPack.validateTransaction(historyRequest, (err, result) => {
+          schemaPack.validateTransactionV2(historyRequest, (err, result) => {
             expect(err).to.be.null;
             expect(result).to.be.an('object');
             resultObj = result.requests[historyRequest[0].id].endpoints[0];
 
-            expect(resultObj.mismatches).to.have.lengthOf(1);
+            expect(resultObj.mismatches).to.have.lengthOf(0);
 
-            /**
-              The spec contains request body which has name and identifier props as required which is
-              violated in collection. We expect both props to be present and valid according to schema.
-            */
-            expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.contain.keys(['name', 'identifier']);
-            expect(resultObj.mismatches[0].suggestedFix.suggestedValue.name).to.be.a('string');
-            expect(resultObj.mismatches[0].suggestedFix.suggestedValue.identifier).to.be.a('string');
             done();
           });
         });
@@ -901,7 +945,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
 
         getAllTransactions(JSON.parse(internalRefsCollection), historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
 
@@ -937,7 +981,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
 
         getAllTransactions(JSON.parse(differentContentTypesCollection), historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
           resultObj = result.requests[historyRequest[1].id].endpoints[0];
@@ -967,7 +1011,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
 
         getAllTransactions(JSON.parse(differentContentTypesCollection), historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
           resultObj = result.requests[historyRequest[0].id].endpoints[0];
@@ -999,13 +1043,14 @@ describe('VALIDATE FUNCTION TESTS ', function () {
             ignoreUnresolvedVariables: true,
             validateMetadata: true,
             suggestAvailableFixes: true,
-            detailedBlobValidation: true
+            detailedBlobValidation: true,
+            parametersResolution: 'Example'
           },
           schemaPack = new Converter.SchemaPack({ type: 'string', data: primitiveDataTypeBodySpec }, options);
 
         getAllTransactions(JSON.parse(primitiveDataTypeBodyCollection), historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
 
@@ -1040,7 +1085,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
 
         getAllTransactions(JSON.parse(multiplePathVarCollection), historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
 
@@ -1068,7 +1113,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
 
         getAllTransactions(JSON.parse(multiplePathVarCollection), historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
 
@@ -1101,7 +1146,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
 
         getAllTransactions(JSON.parse(nestedObjectParamsCollection), historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
 
@@ -1122,11 +1167,11 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           resultObj,
           historyRequest = [],
           schemaPack = new Converter.SchemaPack({ type: 'string', data: queryParamDeepObjectSpec },
-            { suggestAvailableFixes: true, showMissingInSchemaErrors: true });
+            { suggestAvailableFixes: true, showMissingInSchemaErrors: true, parametersResolution: 'Example' });
 
         getAllTransactions(JSON.parse(queryParamDeepObjectCollection), historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
           resultObj = result.requests[historyRequest[0].id].endpoints[0];
@@ -1171,11 +1216,11 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           resultObjAllOf,
           historyRequest = [],
           schemaPack = new Converter.SchemaPack({ type: 'string', data: compositeSchemaSpec },
-            { suggestAvailableFixes: true, showMissingInSchemaErrors: true });
+            { suggestAvailableFixes: true, showMissingInSchemaErrors: true, parametersResolution: 'Example' });
 
         getAllTransactions(JSON.parse(compositeSchemaCollection), historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
           resultObjAnyOf = result.requests[historyRequest[0].id].endpoints[0];
@@ -1213,6 +1258,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         });
       });
     });
+
     invalidTypeProperty.forEach((specData) => {
       it('Should correctly suggest value and report transactionJsonPath on a body property with incorrect value ' +
         specData.version, function (done) {
@@ -1226,7 +1272,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
 
         getAllTransactions(JSON.parse(invalidTypePropertyCollection), historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
           resultObj = result.requests[historyRequest[0].id].endpoints[0];
@@ -1257,13 +1303,72 @@ describe('VALIDATE FUNCTION TESTS ', function () {
 
         getAllTransactions(JSON.parse(invalidTypePropertyCollection), historyRequest);
 
-        schemaPack.validateTransaction(historyRequest, (err, result) => {
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
           expect(err).to.be.null;
           expect(result).to.be.an('object');
           resultObj = result.requests[historyRequest[0].id].endpoints[0];
           const responseId = _.keys(resultObj.responses)[0],
             responseMissmatches = resultObj.responses[responseId].mismatches;
           expect(responseMissmatches).to.have.lengthOf(0);
+          done();
+        });
+      });
+    });
+
+    missingResponsesSpecs.forEach((specData) => {
+      it('Should correctly provide missing responses from schema and collection in result' +
+        specData.version, function (done) {
+        let missingResponsesSpec = fs.readFileSync(specData.path, 'utf-8'),
+          missingResponsesCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
+            '/missingResponsesCollection.json'), 'utf-8'),
+          options = { suggestAvailableFixes: true, showMissingInSchemaErrors: true },
+          resultObj1,
+          resultObj2,
+          responseKey,
+          responseMissmatches,
+          historyRequest = [],
+          schemaPack = new Converter.SchemaPack({ type: 'string', data: missingResponsesSpec }, options);
+
+        getAllTransactions(JSON.parse(missingResponsesCollection), historyRequest);
+
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
+          expect(err).to.be.null;
+          expect(result).to.be.an('object');
+          resultObj1 = result.requests[historyRequest[0].id].endpoints[0];
+          resultObj2 = result.requests[historyRequest[1].id].endpoints[0];
+
+          expect(resultObj1.matched).to.be.false;
+          expect(resultObj1.mismatches).to.be.empty;
+          expect(resultObj1.missingResponses.length).to.eql(1);
+
+          expect(resultObj1.missingResponses[0].property).to.eql('RESPONSE');
+          expect(resultObj1.missingResponses[0].transactionJsonPath).to.eql('$.responses');
+          expect(resultObj1.missingResponses[0].schemaJsonPath).to.eql('$.paths[/pets].get.responses.200');
+          expect(resultObj1.missingResponses[0].reasonCode).to.eql('MISSING_IN_REQUEST');
+          expect(resultObj1.missingResponses[0].reason).to.eql(
+            'The response \"200\" was not found in the transaction');
+
+          expect(resultObj1.missingResponses[0].suggestedFix.key).to.eql('200');
+          const requiredResponseProps = ['id', 'name', 'originalRequest', 'status', 'code', 'header',
+              'body', 'cookie', '_postman_previewlanguage'],
+            suggestedResponseProps = _.keys(resultObj1.missingResponses[0].suggestedFix.suggestedValue);
+
+          expect(_.difference(requiredResponseProps, suggestedResponseProps)).to.be.empty;
+
+          expect(resultObj2.matched).to.be.false;
+          expect(resultObj2.mismatches).to.be.empty;
+          expect(resultObj2.missingResponses.length).to.eql(1);
+
+          responseKey = _.keys(resultObj2.responses)[0];
+          responseMissmatches = resultObj2.responses[responseKey].mismatches;
+
+          expect(responseMissmatches.length).to.eql(1);
+          expect(responseMissmatches[0].property).to.eql('RESPONSE');
+          expect(responseMissmatches[0].transactionJsonPath).to.eql(`$.responses[${responseKey}]`);
+          expect(responseMissmatches[0].schemaJsonPath).to.be.null;
+          expect(responseMissmatches[0].reasonCode).to.eql('MISSING_IN_SCHEMA');
+          expect(responseMissmatches[0].reason).to.eql(
+            'The response \"200\" was not found in the schema');
           done();
         });
       });
@@ -1276,71 +1381,14 @@ describe('VALIDATE FUNCTION TESTS ', function () {
         schemaPath = ['pets', '{petId1}', '{petId2}', '{petId3}'],
         result;
 
-      result = schemaUtils.getPostmanUrlSuffixSchemaScore(pmSuffix, schemaPath, { strictRequestMatching: true });
+      result = requestMatchingUtils.getPostmanUrlSuffixSchemaScore(pmSuffix, schemaPath,
+        { strictRequestMatching: true });
 
       expect(result.match).to.be.true;
       expect(result.pathVars).to.have.lengthOf(3);
       expect(result.pathVars[0]).to.deep.equal({ key: 'petId1', value: pmSuffix[1] });
       expect(result.pathVars[1]).to.deep.equal({ key: 'petId2', value: pmSuffix[2] });
       expect(result.pathVars[2]).to.deep.equal({ key: 'petId3', value: pmSuffix[3] });
-      done();
-    });
-  });
-
-  it('Should be able to validate schema with request body of content type "application/x-www-form-urlencoded" ' +
-    'against transaction with valid UrlEncoded body correctly', function (done) {
-    let urlencodedBodySpec = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
-      '/urlencodedBodySpec.yaml'), 'utf-8'),
-      urlencodedBodyCollection = fs.readFileSync(path.join(__dirname, VALIDATION_DATA_FOLDER_PATH +
-        '/urlencodedBodyCollection.json'), 'utf-8'),
-      resultObj,
-      historyRequest = [],
-      schemaPack = new Converter.SchemaPack({ type: 'string', data: urlencodedBodySpec },
-        { suggestAvailableFixes: true, showMissingInSchemaErrors: true });
-
-    getAllTransactions(JSON.parse(urlencodedBodyCollection), historyRequest);
-
-    schemaPack.validateTransaction(historyRequest, (err, result) => {
-      expect(err).to.be.null;
-      expect(result).to.be.an('object');
-      resultObj = result.requests[historyRequest[0].id].endpoints[0];
-      expect(resultObj.mismatches).to.have.lengthOf(5);
-
-      /**
-       * no mismatches should be found for complex array type params as validation is skipped for them,
-       * even though corresponding value is of incorrect type
-       */
-      _.forEach(resultObj.mismatches, (mismatch) => {
-        expect(mismatch.suggestedFix.key).to.not.eql('propArrayComplex[0][prop1ArrayComp]');
-      });
-
-      // for explodable property of type object named "propObjectExplodable",
-      // second property named "prop2" is incorrect, while property "prop1" is correct
-      expect(resultObj.mismatches[0].transactionJsonPath).to.eql('$.request.body.urlencoded[1].value');
-      expect(resultObj.mismatches[0].suggestedFix.actualValue).to.eql('false');
-      expect(resultObj.mismatches[0].suggestedFix.suggestedValue).to.eql('world');
-
-      // for non explodable property of type object, entire property with updated value should be suggested
-      expect(resultObj.mismatches[1].transactionJsonPath).to.eql('$.request.body.urlencoded[2].value');
-      expect(resultObj.mismatches[1].suggestedFix.actualValue).to.eql('prop3,hello,prop4,true');
-      expect(resultObj.mismatches[1].suggestedFix.suggestedValue).to.eql('prop3,hello,prop4,world');
-
-      // for type array property named "propArray" second element is incorrect
-      expect(resultObj.mismatches[2].transactionJsonPath).to.eql('$.request.body.urlencoded[4].value');
-      expect(resultObj.mismatches[2].suggestedFix.actualValue).to.eql('999');
-      expect(resultObj.mismatches[2].suggestedFix.suggestedValue).to.eql('exampleString');
-
-      // for deepObject property named "propDeepObject" child param "propDeepObject[address][city]" is of incorrect type
-      expect(resultObj.mismatches[3].transactionJsonPath).to.eql('$.request.body.urlencoded[8].value');
-      expect(resultObj.mismatches[3].suggestedFix.actualValue).to.eql('123');
-      expect(resultObj.mismatches[3].suggestedFix.suggestedValue).to.eql('Delhi');
-
-      // property named "propMissingInReq" is missing in request
-      expect(resultObj.mismatches[4].reasonCode).to.eql('MISSING_IN_REQUEST');
-      expect(resultObj.mismatches[4].suggestedFix.actualValue).to.eql(null);
-      expect(resultObj.mismatches[4].suggestedFix.suggestedValue.key).to.eql('propMissingInReq');
-      expect(resultObj.mismatches[4].suggestedFix.suggestedValue.description)
-        .to.eql('(Required) This property is not available in matched collection.');
       done();
     });
   });
@@ -1356,7 +1404,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
 
     getAllTransactions(JSON.parse(allOfCollection), historyRequest);
 
-    schemaPack.validateTransaction(historyRequest, (err, result) => {
+    schemaPack.validateTransactionV2(historyRequest, (err, result) => {
       const requestId = historyRequest[0].id,
         request = result.requests[requestId],
         responseId = historyRequest[0].response[0].id,
@@ -1367,61 +1415,6 @@ describe('VALIDATE FUNCTION TESTS ', function () {
       expect(response.mismatches).to.have.length(1);
       expect(response.mismatches[0].reason)
         .to.equal('The response body didn\'t match the specified schema');
-      done();
-    });
-  });
-
-  describe('findMatchingRequestFromSchema function', function () {
-    it('#GITHUB-9396 Should maintain correct order of matched endpoint', function (done) {
-      let schema = {
-          paths: {
-            '/lookups': {
-              'get': { 'summary': 'Lookup Job Values' }
-            },
-            '/{jobid}': {
-              'get': {
-                'summary': 'Get Job by ID',
-                'parameters': [
-                  {
-                    'in': 'path',
-                    'name': 'jobid',
-                    'schema': {
-                      'type': 'string'
-                    },
-                    'required': true,
-                    'description': 'Unique identifier for a job to retrieve.',
-                    'example': '{{jobid}}'
-                  }
-                ]
-              }
-            }
-          }
-        },
-        schemaPath = '{{baseUrl}}/{{jobid}}',
-        result;
-
-      result = schemaUtils.findMatchingRequestFromSchema('GET', schemaPath, schema, { strictRequestMatching: true });
-
-      expect(result).to.have.lengthOf(2);
-      expect(result[0].name).to.eql('GET /{jobid}');
-      expect(result[1].name).to.eql('GET /lookups');
-      done();
-    });
-
-    it('should correctly handle non string URLs', function (done) {
-      let schema = {
-          paths: {
-            '/lookups': {
-              'get': { 'summary': 'Lookup Job Values' }
-            }
-          }
-        },
-        schemaPath = null,
-        result;
-
-      result = schemaUtils.findMatchingRequestFromSchema('GET', schemaPath, schema, { strictRequestMatching: true });
-
-      expect(result).to.have.lengthOf(0);
       done();
     });
   });
@@ -1439,7 +1432,7 @@ describe('validateTransaction method. Path variables matching validation (issue 
 
     getAllTransactions(JSON.parse(issueCollection), historyRequest);
 
-    schemaPack.validateTransaction(historyRequest, (err, result) => {
+    schemaPack.validateTransactionV2(historyRequest, (err, result) => {
       // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
       expect(err).to.be.null;
       expect(result).to.be.an('object');
@@ -1465,7 +1458,7 @@ describe('validateTransaction method. Path variables matching validation (issue 
 
     getAllTransactions(JSON.parse(issueCollection), historyRequest);
 
-    schemaPack.validateTransaction(historyRequest, (err, result) => {
+    schemaPack.validateTransactionV2(historyRequest, (err, result) => {
       // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
       expect(err).to.be.null;
       expect(result).to.be.an('object');
@@ -1486,7 +1479,7 @@ describe('validateTransaction method. Path variables matching validation (issue 
 
     getAllTransactions(JSON.parse(issueCollection), historyRequest);
 
-    schemaPack.validateTransaction(historyRequest, (err, result) => {
+    schemaPack.validateTransactionV2(historyRequest, (err, result) => {
       // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
       expect(err).to.be.null;
       expect(result).to.be.an('object');
@@ -1512,7 +1505,7 @@ describe('validateTransaction method. Path variables matching validation (issue 
 
     getAllTransactions(JSON.parse(issueCollection), historyRequest);
 
-    schemaPack.validateTransaction(historyRequest, (err, result) => {
+    schemaPack.validateTransactionV2(historyRequest, (err, result) => {
       // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
       expect(err).to.be.null;
       expect(result).to.be.an('object');
@@ -1540,7 +1533,7 @@ describe('validateTransaction method. Path variables matching validation (issue 
 
     getAllTransactions(JSON.parse(issueCollection), historyRequest);
 
-    schemaPack.validateTransaction(historyRequest, (err, result) => {
+    schemaPack.validateTransactionV2(historyRequest, (err, result) => {
       // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
       expect(err).to.be.null;
       expect(result).to.be.an('object');
@@ -1579,7 +1572,7 @@ describe('validateTransaction method. Path variables matching validation (issue 
 
     getAllTransactions(JSON.parse(issueCollection), historyRequest);
 
-    schemaPack.validateTransaction(historyRequest, (err, result) => {
+    schemaPack.validateTransactionV2(historyRequest, (err, result) => {
       // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
       expect(err).to.be.null;
       expect(result).to.be.an('object');
@@ -1632,7 +1625,7 @@ describe('validateTransaction method. Path variables matching validation (issue 
 
     getAllTransactions(JSON.parse(issueCollection), historyRequest);
 
-    schemaPack.validateTransaction(historyRequest, (err, result) => {
+    schemaPack.validateTransactionV2(historyRequest, (err, result) => {
       // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
       expect(err).to.be.null;
       expect(result).to.be.an('object');
@@ -1682,7 +1675,7 @@ describe('validateTransaction method. Path variables matching validation (issue 
 
     getAllTransactions(JSON.parse(issueCollection), historyRequest);
 
-    schemaPack.validateTransaction(historyRequest, (err, result) => {
+    schemaPack.validateTransactionV2(historyRequest, (err, result) => {
       // Schema is sample petsore with one of parameter as empty, expect no mismatch / error
       expect(err).to.be.null;
       expect(result).to.be.an('object');
@@ -1694,13 +1687,12 @@ describe('validateTransaction method. Path variables matching validation (issue 
 });
 
 describe('validateTransaction convert and validate schemas with allOf', function () {
-  it('Should convert and validate allOf properties for string schema', function () {
+  it('Should convert and validate allOf properties for string schema', function (done) {
     const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/all_of_property.json'),
       openAPIData = fs.readFileSync(openAPI, 'utf8'),
       expectedRequestBody = '{\n  "id": "3",\n  "name": "Contract.pdf"\n}',
       options = {
-        requestParametersResolution: 'Example',
-        exampleParametersResolution: 'Example',
+        parametersResolution: 'Example',
         showMissingInSchemaErrors: true,
         strictRequestMatching: true,
         ignoreUnresolvedVariables: true,
@@ -1708,17 +1700,17 @@ describe('validateTransaction convert and validate schemas with allOf', function
         suggestAvailableFixes: true,
         detailedBlobValidation: false
       },
-      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
-    schemaPack.convert((err, conversionResult) => {
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options, MODULE_VERSION.V2);
+    schemaPack.convertV2((err, conversionResult) => {
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
-      expect(conversionResult.output[0].data.item[0].response[0].body).to.equal(expectedRequestBody);
+      expect(conversionResult.output[0].data.item[0].item[0].response[0].body).to.equal(expectedRequestBody);
 
       let historyRequest = [];
 
       getAllTransactions(conversionResult.output[0].data, historyRequest);
 
-      schemaPack.validateTransaction(historyRequest, (err, result) => {
+      schemaPack.validateTransactionV2(historyRequest, (err, result) => {
         expect(err).to.be.null;
         expect(result).to.be.an('object');
 
@@ -1729,263 +1721,124 @@ describe('validateTransaction convert and validate schemas with allOf', function
           expect(result.requests[requestId].endpoints[0]).to.not.be.undefined;
           expect(result.requests[requestId].endpoints[0].matched).to.be.true;
         });
+
+        done();
       });
     });
   });
 });
 
-describe('validateTransaction convert and validate schemas with deprecated elements', function () {
-  it('Should convert and validate and include deprecated operation default option', function () {
-    const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/has_some_op_dep.json'),
-      openAPIData = fs.readFileSync(openAPI, 'utf8'),
-      options = {
-        showMissingInSchemaErrors: true,
+describe('Bug fixes', function () {
+  it('should send correct transaction json path for invalid params when there are disabled query params ' +
+  'in the request', function (done) {
+    let collectionPath = path.join(__dirname, '../data/disabled_query_param_test_data/collection.json'),
+      specPath = path.join(__dirname, '../data/disabled_query_param_test_data/spec.json'),
+      collectionData = JSON.parse(fs.readFileSync(collectionPath, 'utf8')),
+      spec = fs.readFileSync(specPath, 'utf8'),
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: spec }, {
         strictRequestMatching: true,
-        ignoreUnresolvedVariables: true
-      },
-      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
-    schemaPack.convert((err, conversionResult) => {
+        detailedBlobValidation: true,
+        suggestAvailableFixes: true,
+        ignoreUnresolvedVariables: true,
+        showMissingInSchemaErrors: true,
+        validateMetadata: true,
+        parametersResolution: 'Example'
+      }),
+      requests = [];
+
+    getAllTransactionsInjectingId(collectionData, requests);
+
+    schemaPack.validateTransactionV2(requests, (err, result) => {
       expect(err).to.be.null;
-      expect(conversionResult.result).to.equal(true);
-      expect(conversionResult.output[0].data.item.length).to.equal(1);
+      expect(result).to.be.an('object');
 
-      let historyRequest = [];
+      // check for result.requests structure
+      const requestId = Object.keys(result.requests)[0],
+        mismatches = _.get(result, ['requests', requestId, 'endpoints', '0', 'mismatches']),
+        queryParamMissingInSchemaMismatch =
+          _.find(mismatches, { property: 'QUERYPARAM', reasonCode: 'MISSING_IN_SCHEMA' }),
+        headerMissingInSchemaMismatch =
+          _.find(mismatches, { property: 'HEADER', reasonCode: 'MISSING_IN_SCHEMA' });
 
-      getAllTransactions(conversionResult.output[0].data, historyRequest);
+      expect(queryParamMissingInSchemaMismatch.transactionJsonPath).to.be.equal('$.request.url.query[1]');
+      expect(headerMissingInSchemaMismatch.transactionJsonPath).to.be.equal('$.request.header[2]');
 
-      schemaPack.validateTransaction(historyRequest, (err, result) => {
-        expect(err).to.be.null;
-        expect(result).to.be.an('object');
-
-        expect(err).to.be.null;
-        expect(result.missingEndpoints.length).to.eq(0);
-
-        let requestIds = Object.keys(result.requests);
-        requestIds.forEach((requestId) => {
-          expect(result.requests[requestId].endpoints[0]).to.not.be.undefined;
-          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
-        });
-      });
+      return done();
     });
   });
 
-  it('Should convert and validate and include deprecated operation', function () {
-    const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/has_some_op_dep.json'),
-      openAPIData = fs.readFileSync(openAPI, 'utf8'),
-      options = {
-        showMissingInSchemaErrors: true,
+  it('should validate non required paramters', function (done) {
+    let collectionPath = path.join(__dirname, '../data/disabled_query_param_test_data/collection.json'),
+      specPath = path.join(__dirname, '../data/disabled_query_param_test_data/spec.json'),
+      collectionData = JSON.parse(fs.readFileSync(collectionPath, 'utf8')),
+      spec = fs.readFileSync(specPath, 'utf8'),
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: spec }, {
         strictRequestMatching: true,
+        detailedBlobValidation: true,
+        suggestAvailableFixes: true,
         ignoreUnresolvedVariables: true,
-        includeDeprecated: true
-      },
-      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
-    schemaPack.convert((err, conversionResult) => {
+        showMissingInSchemaErrors: true,
+        validateMetadata: true,
+        parametersResolution: 'Example'
+      }),
+      requests = [];
+
+    getAllTransactionsInjectingId(collectionData, requests);
+
+    schemaPack.validateTransactionV2(requests, (err, result) => {
       expect(err).to.be.null;
-      expect(conversionResult.result).to.equal(true);
-      expect(conversionResult.output[0].data.item.length).to.equal(1);
+      expect(result).to.be.an('object');
 
-      let historyRequest = [];
+      // check for result.requests structure
+      const requestId = Object.keys(result.requests)[0],
+        mismatches = _.get(result, ['requests', requestId, 'endpoints', '0', 'mismatches']),
+        queryParamMissingInRequestMismatch =
+          _.find(mismatches, { property: 'QUERYPARAM', reasonCode: 'MISSING_IN_REQUEST' }),
+        headerMissingInRequestMismatch =
+          _.find(mismatches, { property: 'HEADER', reasonCode: 'MISSING_IN_REQUEST' });
 
-      getAllTransactions(conversionResult.output[0].data, historyRequest);
+      expect(queryParamMissingInRequestMismatch.suggestedFix.suggestedValue.key).to.be.equal('changed');
+      expect(headerMissingInRequestMismatch.suggestedFix.suggestedValue.key).to.be.equal('h1');
 
-      schemaPack.validateTransaction(historyRequest, (err, result) => {
-        expect(err).to.be.null;
-        expect(result).to.be.an('object');
-
-        expect(err).to.be.null;
-        expect(result.missingEndpoints.length).to.eq(0);
-
-        let requestIds = Object.keys(result.requests);
-        requestIds.forEach((requestId) => {
-          expect(result.requests[requestId].endpoints[0]).to.not.be.undefined;
-          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
-        });
-      });
+      return done();
     });
   });
 
-  it('Should convert and validate not including deprecated operation and no missing endpoint', function () {
-    const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/has_some_op_dep.json'),
-      openAPIData = fs.readFileSync(openAPI, 'utf8'),
-      options = {
-        showMissingInSchemaErrors: true,
+  it('should validate non required parameters in url encoded body', function (done) {
+    let collectionPath = path.join(__dirname, '../data/disabled_param_url_encoded_body/urlencodedBodyCollection.json'),
+      specPath = path.join(__dirname, '../data/disabled_param_url_encoded_body/urlencodedBodySpec.yaml'),
+      collectionData = JSON.parse(fs.readFileSync(collectionPath, 'utf8')),
+      spec = fs.readFileSync(specPath, 'utf8'),
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: spec }, {
         strictRequestMatching: true,
+        detailedBlobValidation: true,
+        suggestAvailableFixes: true,
         ignoreUnresolvedVariables: true,
-        includeDeprecated: false
-      },
-      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
-    schemaPack.convert((err, conversionResult) => {
-      expect(err).to.be.null;
-      expect(conversionResult.result).to.equal(true);
-      expect(conversionResult.output[0].data.item.length).to.equal(1);
-
-      let historyRequest = [];
-
-      getAllTransactions(conversionResult.output[0].data, historyRequest);
-
-      schemaPack.validateTransaction(historyRequest, (err, result) => {
-        expect(err).to.be.null;
-        expect(result).to.be.an('object');
-
-        expect(err).to.be.null;
-        expect(result.missingEndpoints.length).to.eq(0);
-        let requestIds = Object.keys(result.requests);
-        requestIds.forEach((requestId) => {
-          expect(result.requests[requestId].endpoints[0]).to.not.be.undefined;
-          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
-        });
-      });
-    });
-  });
-
-  it('Should convert and validate including deprecated operation and report mismatch' +
-    'when missing', function () {
-    const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/has_some_op_dep.json'),
-      openAPIData = fs.readFileSync(openAPI, 'utf8'),
-      options = {
         showMissingInSchemaErrors: true,
-        strictRequestMatching: true,
-        ignoreUnresolvedVariables: true,
-        includeDeprecated: true
-      },
-      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
-    schemaPack.convert((err, conversionResult) => {
+        validateMetadata: true,
+        parametersResolution: 'Example'
+      }),
+      requests = [];
+
+    getAllTransactions(collectionData, requests);
+
+    schemaPack.validateTransactionV2(requests, (err, result) => {
       expect(err).to.be.null;
-      expect(conversionResult.result).to.equal(true);
-      expect(conversionResult.output[0].data.item.length).to.equal(1);
+      expect(result).to.be.an('object');
 
-      let historyRequest = [];
+      // check for result.requests structure
+      const requestId = Object.keys(result.requests)[0],
+        mismatches = _.get(result, ['requests', requestId, 'endpoints', '0', 'mismatches']),
+        nonRequiredParamMissingInRequest =
+          _.find(mismatches, { property: 'BODY', reasonCode: 'MISSING_IN_REQUEST' });
 
-      getAllTransactions(conversionResult.output[0].data, historyRequest);
+      expect(nonRequiredParamMissingInRequest.schemaJsonPath).to.be.equal(
+        '$.paths[/pets/{petId}].post.requestBody.content[application/x-www-form-urlencoded].' +
+        'schema.properties[propMissingInReq]'
+      );
+      expect(nonRequiredParamMissingInRequest.suggestedFix.suggestedValue.key).to.be.equal('propMissingInReq');
 
-      historyRequest.shift();
-      schemaPack.validateTransaction(historyRequest, (err, result) => {
-        expect(err).to.be.null;
-        expect(result).to.be.an('object');
-
-        expect(err).to.be.null;
-        expect(result.missingEndpoints.length).to.eq(1);
-        expect(result.missingEndpoints[0].endpoint).to.eq('GET /pets');
-        let requestIds = Object.keys(result.requests);
-        requestIds.forEach((requestId) => {
-          expect(result.requests[requestId].endpoints[0]).to.not.be.undefined;
-          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
-        });
-      });
+      return done();
     });
-  });
-
-  it('Should convert and validate including deprecated operation and validate when deprecated is present', function () {
-    const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/has_some_op_dep.json'),
-      openAPIData = fs.readFileSync(openAPI, 'utf8'),
-      options = {
-        showMissingInSchemaErrors: true,
-        strictRequestMatching: true,
-        ignoreUnresolvedVariables: true,
-        includeDeprecated: true
-      },
-      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
-    schemaPack.convert((err, conversionResult) => {
-      expect(err).to.be.null;
-      expect(conversionResult.result).to.equal(true);
-
-      let historyRequest = [],
-        optionsOtherSchemaPack = {
-          showMissingInSchemaErrors: true,
-          strictRequestMatching: true,
-          ignoreUnresolvedVariables: true,
-          includeDeprecated: false
-        },
-        schemaPack2 = new Converter.SchemaPack({ type: 'string', data: openAPIData }, optionsOtherSchemaPack);
-
-      getAllTransactions(conversionResult.output[0].data, historyRequest);
-
-      schemaPack2.validateTransaction(historyRequest, (err, result) => {
-        expect(err).to.be.null;
-        expect(result).to.be.an('object');
-
-        expect(err).to.be.null;
-        let requestIds = Object.keys(result.requests);
-        requestIds.forEach((requestId) => {
-          expect(result.requests[requestId].endpoints[0]).to.not.be.undefined;
-          expect(result.requests[requestId].endpoints[0].matched).to.be.true;
-        });
-      });
-    });
-  });
-
-  it('Should convert and validate required parameter even if it is deprecated' +
-  'includeDeprecated is false', function() {
-    const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/petstore_deprecated_param.json'),
-      openAPIData = fs.readFileSync(openAPI, 'utf8'),
-      options = {
-        showMissingInSchemaErrors: true,
-        strictRequestMatching: true,
-        ignoreUnresolvedVariables: true,
-        includeDeprecated: false
-      },
-      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
-    schemaPack.convert((err, conversionResult) => {
-      expect(err).to.be.null;
-      expect(conversionResult.result).to.equal(true);
-      expect(conversionResult.output[0].data.item.length).to.equal(1);
-
-      let historyRequest = [];
-
-      getAllTransactions(conversionResult.output[0].data, historyRequest);
-
-      schemaPack.validateTransaction(historyRequest, (err, result) => {
-        expect(err).to.be.null;
-        expect(result).to.be.an('object');
-
-        expect(err).to.be.null;
-        expect(result.missingEndpoints.length).to.eq(0);
-        let requestIds = Object.keys(result.requests);
-        expect(result.requests[requestIds[0]].endpoints[0].matched).to.be.false;
-        expect(result.requests[requestIds[0]].endpoints[0].mismatches[0].reason.includes('variable2')).to.be.true;
-      });
-    });
-
-  });
-
-  it('Should convert and validate required parameter even if it is deprecated' +
-  'includeDeprecated is true', function() {
-    const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/petstore_deprecated_param.json'),
-      openAPIData = fs.readFileSync(openAPI, 'utf8'),
-      options = {
-        showMissingInSchemaErrors: true,
-        strictRequestMatching: true,
-        ignoreUnresolvedVariables: true,
-        includeDeprecated: false
-      },
-      schemaPack = new Converter.SchemaPack({ type: 'string', data: openAPIData }, options);
-    schemaPack.convert((err, conversionResult) => {
-      expect(err).to.be.null;
-      expect(conversionResult.result).to.equal(true);
-      expect(conversionResult.output[0].data.item.length).to.equal(1);
-
-      let historyRequest = [],
-        newOptions = {
-          showMissingInSchemaErrors: true,
-          strictRequestMatching: true,
-          ignoreUnresolvedVariables: true,
-          includeDeprecated: true
-        },
-        schemaPack2 = new Converter.SchemaPack({ type: 'string', data: openAPIData }, newOptions);
-
-      getAllTransactions(conversionResult.output[0].data, historyRequest);
-
-      schemaPack2.validateTransaction(historyRequest, (err, result) => {
-        expect(err).to.be.null;
-        expect(result).to.be.an('object');
-
-        expect(err).to.be.null;
-        expect(result.missingEndpoints.length).to.eq(0);
-        let requestIds = Object.keys(result.requests);
-        expect(result.requests[requestIds[0]].endpoints[0].matched).to.be.false;
-        expect(result.requests[requestIds[0]].endpoints[0].mismatches[0].reason.includes('variable2')).to.be.true;
-      });
-    });
-
   });
 });

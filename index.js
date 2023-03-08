@@ -1,5 +1,7 @@
 'use strict';
 
+const { MODULE_VERSION } = require('./lib/schemapack.js');
+
 const _ = require('lodash'),
   SchemaPack = require('./lib/schemapack.js').SchemaPack;
 
@@ -11,6 +13,16 @@ module.exports = {
     if (schema.validated) {
       return schema.convert(cb);
     }
+    return cb(null, schema.validationResult);
+  },
+
+  convertV2: function(input, options, cb) {
+    var schema = new SchemaPack(input, options, MODULE_VERSION.V2);
+
+    if (schema.validated) {
+      return schema.convertV2(cb);
+    }
+
     return cb(null, schema.validationResult);
   },
 

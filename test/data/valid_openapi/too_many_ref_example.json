@@ -1,0 +1,336 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "description": "Too Many Refs",
+    "version": "v1",
+    "title": "Too Many Refs",
+    "termsOfService": "http://www.example.com/termsOfService",
+    "contact": {
+      "name": "Sample",
+      "url": "http://sample.com/",
+      "email": "sample@sample.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "Folder tree"
+    }
+  ],
+  "paths": {
+    "/path": {
+      "get": {
+        "tags": [
+          "Some path"
+        ],
+        "summary": "Too many refs path",
+        "description": "Returns a list of folders in a nested, tree structure.",
+        "operationId": "listFolderTree",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/b"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/path2": {
+      "get": {
+        "tags": [
+          "Some path"
+        ],
+        "summary": "Too many refs path",
+        "description": "Returns a list of folders in a nested, tree structure.",
+        "operationId": "listFolderTree",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/k"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://{host}/sample/api",
+      "variables": {
+        "host": {
+          "default": "unknown"
+        }
+      }
+    }
+  ],
+  "components": {
+    "schemas": {
+      "b": {
+        "type": "object",
+        "properties": {
+          "c": {
+            "$ref": "#/components/schemas/c"
+          }
+        }
+      },
+      "c": {
+        "type": "object",
+        "properties": {
+          "d": {
+            "$ref": "#/components/schemas/d"
+          }
+        }
+      },
+
+      "d": {
+        "type": "object",
+        "properties": {
+          "e": {
+            "$ref": "#/components/schemas/e"
+          }
+        }
+      },
+      "e": {
+        "type": "object",
+        "properties": {
+          "f": {
+            "$ref": "#/components/schemas/f"
+          }
+        }
+      },
+      "f": {
+        "type": "object",
+        "properties": {
+          "g": {
+            "$ref": "#/components/schemas/g"
+          }
+        }
+      },
+      "g": {
+        "type": "object",
+        "properties": {
+          "h": {
+            "$ref": "#/components/schemas/h"
+          }
+        }
+      },
+      "h": {
+        "type": "object",
+        "properties": {
+          "i": {
+            "$ref": "#/components/schemas/i"
+          }
+        }
+      },
+      "i": {
+        "type": "object",
+        "properties": {
+          "j": {
+            "$ref": "#/components/schemas/j"
+          }
+        }
+      },
+      "j": {
+        "type": "object",
+        "properties": {
+          "k": {
+            "$ref": "#/components/schemas/k"
+          }
+        }
+      },
+      "k": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/l"
+          }
+        }
+      },
+      "l": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/m"
+          }
+        }
+      },
+      "m": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/n"
+          }
+        }
+      },
+      "n": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/o"
+          }
+        }
+      },
+      "o": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/p"
+          }
+        }
+      },
+      "p": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/q"
+          }
+        }
+      },
+      "q": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/r"
+          }
+        }
+      },
+      "r": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/s"
+          }
+        }
+      },
+      "s": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/t"
+          }
+        }
+      },
+      "t": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/u"
+          }
+        }
+      },
+      "u": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/v"
+          }
+        }
+      },
+      "v": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/x"
+          }
+        }
+      },
+      "x": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/y"
+          }
+        }
+      },
+      "y": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/z"
+          }
+        }
+      },
+      "z": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/aa"
+          }
+        }
+      },
+      "aa": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/ab"
+          }
+        }
+      },
+
+      "ab": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/ac"
+          }
+        }
+      },
+
+      "ac": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/ad"
+          }
+        }
+      },
+      "ad": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/ae"
+          }
+        }
+      },
+      "ae": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/a"
+          }
+        }
+      },
+
+
+      "a": {
+				"required": [
+					"id",
+					"name"
+				],
+				"properties": {
+					"id": {
+						"type": "integer",
+						"format": "int64"
+					},
+					"name": {
+						"type": "string"
+					},
+					"tag": {
+						"type": "string"
+					}
+				}
+			}
+    }
+  }
+}
