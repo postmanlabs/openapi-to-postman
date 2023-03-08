@@ -64,7 +64,6 @@ const _ = require('lodash'),
     'accept',
     'authorization'
   ],
-  DEFAULT_SCHEMA_UTILS = require('../lib/30XUtils/schemaUtils30X'),
 
   OAS_NOT_SUPPORTED = '<Error: Not supported in OAS>',
 
@@ -133,26 +132,30 @@ function shouldAddDeprecatedOperation (operation, options) {
  * removes things that might make schemaFaker crash
  * @param {Object} context - Required context from related SchemaPack function
  * @param {*} oldSchema the schema to fake
- * @param {string} resolveTo The desired JSON-generation mechanism (schema: prefer using the JSONschema to
  * generate a fake object, example: use specified examples as-is). Default: schema
  * @param {*} resolveFor - resolve refs for flow validation/conversion (value to be one of VALIDATION/CONVERSION)
  * @param {string} parameterSourceOption Specifies whether the schema being faked is from a request or response.
  * @param {*} components list of predefined components (with schemas)
  * @param {string} schemaFormat default or xml
  * @param {object} schemaCache - object storing schemaFaker and schemaResolution caches
- * @param {object} options - a standard list of options that's globally passed around. Check options.js for more.
  * @returns {object} fakedObject
  */
-function safeSchemaFaker (context, oldSchema, resolveTo, resolveFor, parameterSourceOption, components,
-  schemaFormat, schemaCache, options) {
-  var prop, key, resolvedSchema, fakedSchema,
-    schemaFakerCache = _.get(schemaCache, 'schemaFakerCache', {});
-  let concreteUtils = components && components.hasOwnProperty('concreteUtils') ?
-    components.concreteUtils :
-    DEFAULT_SCHEMA_UTILS;
-  const indentCharacter = options.indentCharacter;
+function safeSchemaFaker (context, oldSchema, resolveFor, parameterSourceOption, components,
+  schemaFormat, schemaCache) {
+  let prop, key, resolvedSchema, fakedSchema,
+    schemaFakerCache = _.get(schemaCache, 'schemaFakerCache', {}),
+    concreteUtils = context.concreteUtils;
 
-  resolvedSchema = resolveSchema(context, oldSchema, 0, PROCESSING_TYPE.VALIDATION);
+  const options = context.computedOptions,
+    resolveTo = _.get(options, 'parametersResolution', 'example'),
+    indentCharacter = options.indentCharacter;
+
+  /**
+   * Schema is cloned here as resolveSchema() when called for CONVERSION use cases, will mutate schema in certain way.
+   * i.e. For array it'll add maxItems = 2. This should be avoided as we'll again be needing non-mutated schema
+   * in further VALIDATION use cases as needed.
+   */
+  resolvedSchema = resolveSchema(context, _.cloneDeep(oldSchema), 0, _.toLower(PROCESSING_TYPE.CONVERSION));
 
   resolvedSchema = concreteUtils.fixExamplesByVersion(resolvedSchema);
   key = JSON.stringify(resolvedSchema);
@@ -173,7 +176,6 @@ function safeSchemaFaker (context, oldSchema, resolveTo, resolveFor, parameterSo
 
   if (resolveFor === PROCESSING_TYPE.VALIDATION) {
     schemaFaker.option({
-      useDefaultValue: false,
       avoidExampleItemsLength: false
     });
   }
@@ -1426,8 +1428,8 @@ function checkValueAgainstSchema (context, property, jsonPathPrefix, txnParamNam
           mismatchObj.suggestedFix = {
             key: txnParamName,
             actualValue: valueToUse,
-            suggestedValue: safeSchemaFaker(context, openApiSchemaObj || {}, 'example', PROCESSING_TYPE.VALIDATION,
-              parameterSourceOption, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options.includeDeprecated)
+            suggestedValue: safeSchemaFaker(context, schema || {}, PROCESSING_TYPE.VALIDATION,
+              parameterSourceOption, components, SCHEMA_FORMATS.DEFAULT, schemaCache)
           };
         }
 
@@ -1442,8 +1444,8 @@ function checkValueAgainstSchema (context, property, jsonPathPrefix, txnParamNam
         if (!_.isEmpty(filteredValidationError)) {
           let mismatchObj,
             suggestedValue,
-            fakedValue = safeSchemaFaker(context, openApiSchemaObj || {}, 'example', PROCESSING_TYPE.VALIDATION,
-              parameterSourceOption, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options);
+            fakedValue = safeSchemaFaker(context, schema || {}, PROCESSING_TYPE.VALIDATION,
+              parameterSourceOption, components, SCHEMA_FORMATS.DEFAULT, schemaCache);
 
           // Show detailed validation mismatches for only request/response body
           if (options.detailedBlobValidation && needJsonMatching) {
@@ -1698,13 +1700,15 @@ function checkPathVariables (context, matchedPathData, transactionPathPrefix, sc
         };
 
         if (options.suggestAvailableFixes) {
+          const resolvedSchema = resolveSchema(context, pathVar.schema, 0, PROCESSING_TYPE.VALIDATION);
+
           mismatchObj.suggestedFix = {
             key: pathVar.name,
             actualValue,
             suggestedValue: {
               key: pathVar.name,
-              value: safeSchemaFaker(context, pathVar.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
-                PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
+              value: safeSchemaFaker(context, resolvedSchema || {}, PROCESSING_TYPE.VALIDATION,
+                PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache),
               description: getParameterDescription(pathVar)
             }
           };
@@ -1836,13 +1840,15 @@ function checkQueryParams (context, queryParams, transactionPathPrefix, schemaPa
         };
 
         if (options.suggestAvailableFixes) {
+          const resolvedSchema = resolveSchema(context, qp.schema, 0, PROCESSING_TYPE.VALIDATION);
+
           mismatchObj.suggestedFix = {
             key: qp.name,
             actualValue: null,
             suggestedValue: {
               key: qp.name,
-              value: safeSchemaFaker(context, qp.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
-                PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
+              value: safeSchemaFaker(context, resolvedSchema || {}, PROCESSING_TYPE.VALIDATION,
+                PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache),
               description: getParameterDescription(qp)
             }
           };
@@ -1958,13 +1964,15 @@ function checkRequestHeaders (context, headers, transactionPathPrefix, schemaPat
         };
 
         if (options.suggestAvailableFixes) {
+          const resolvedSchema = resolveSchema(context, header.schema, 0, PROCESSING_TYPE.VALIDATION);
+
           mismatchObj.suggestedFix = {
             key: header.name,
             actualValue: null,
             suggestedValue: {
               key: header.name,
-              value: safeSchemaFaker(context, header.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
-                PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
+              value: safeSchemaFaker(context, resolvedSchema || {}, PROCESSING_TYPE.VALIDATION,
+                PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache),
               description: getParameterDescription(header)
             }
           };
@@ -2076,13 +2084,15 @@ function checkResponseHeaders (context, schemaResponse, headers, transactionPath
         };
 
         if (options.suggestAvailableFixes) {
+          const resolvedSchema = resolveSchema(context, header.schema, 0, PROCESSING_TYPE.VALIDATION);
+
           mismatchObj.suggestedFix = {
             key: header.name,
             actualValue: null,
             suggestedValue: {
               key: header.name,
-              value: safeSchemaFaker(context, header.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
-                PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
+              value: safeSchemaFaker(context, resolvedSchema || {}, PROCESSING_TYPE.VALIDATION,
+                PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache),
               description: getParameterDescription(header)
             }
           };
@@ -2246,13 +2256,15 @@ function checkRequestBody (context, requestBody, transactionPathPrefix, schemaPa
           };
 
           if (options.suggestAvailableFixes) {
+            const resolvedSchema = resolveSchema(context, uParam.schema, 0, PROCESSING_TYPE.VALIDATION);
+
             mismatchObj.suggestedFix = {
               key: uParam.name,
               actualValue: null,
               suggestedValue: {
                 key: uParam.name,
-                value: safeSchemaFaker(context, uParam.schema || {}, 'example', PROCESSING_TYPE.VALIDATION,
-                  PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache, options),
+                value: safeSchemaFaker(context, resolvedSchema || {}, PROCESSING_TYPE.VALIDATION,
+                  PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache),
                 description: getParameterDescription(uParam)
               }
             };
