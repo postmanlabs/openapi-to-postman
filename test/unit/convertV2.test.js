@@ -141,9 +141,9 @@ describe('The convert v2 Function', function() {
       expect(conversionResult.output[0].type).to.equal('collection');
       expect(conversionResult.output[0].data).to.have.property('info');
       expect(conversionResult.output[0].data).to.have.property('item');
-      // body = conversionResult.output[0].data.item[1].response[0].body;
+      let body = conversionResult.output[0].data.item[1].response[0].body;
 
-      // expect(body).to.contain('<Error: Too many levels of nesting to fake this schema>');
+      expect(body).to.contain('<Error: Too many levels of nesting to fake this schema>');
       done();
     });
   });
