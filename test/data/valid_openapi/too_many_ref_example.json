@@ -233,10 +233,86 @@
         "type": "object",
         "properties": {
           "l": {
+            "$ref": "#/components/schemas/v"
+          }
+        }
+      },
+      "v": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/x"
+          }
+        }
+      },
+      "x": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/y"
+          }
+        }
+      },
+      "y": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/z"
+          }
+        }
+      },
+      "z": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/aa"
+          }
+        }
+      },
+      "aa": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/ab"
+          }
+        }
+      },
+
+      "ab": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/ac"
+          }
+        }
+      },
+
+      "ac": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/ad"
+          }
+        }
+      },
+      "ad": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "$ref": "#/components/schemas/ae"
+          }
+        }
+      },
+      "ae": {
+        "type": "object",
+        "properties": {
+          "l": {
             "$ref": "#/components/schemas/a"
           }
         }
       },
+
+
       "a": {
 				"required": [
 					"id",

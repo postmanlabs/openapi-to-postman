@@ -132,8 +132,7 @@ describe('The convert v2 Function', function() {
 
   it('Should generate collection conforming to schema for and fail if not valid ' +
   tooManyRefs, function(done) {
-    var openapi = fs.readFileSync(tooManyRefs, 'utf8'),
-      body;
+    var openapi = fs.readFileSync(tooManyRefs, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
 
       expect(err).to.be.null;
@@ -142,7 +141,8 @@ describe('The convert v2 Function', function() {
       expect(conversionResult.output[0].type).to.equal('collection');
       expect(conversionResult.output[0].data).to.have.property('info');
       expect(conversionResult.output[0].data).to.have.property('item');
-      body = conversionResult.output[0].data.item[1].response[0].body;
+      let body = conversionResult.output[0].data.item[1].response[0].body;
+
       expect(body).to.contain('<Error: Too many levels of nesting to fake this schema>');
       done();
     });
@@ -1807,21 +1807,22 @@ describe('The convert v2 Function', function() {
         // Make sure that path params are updated and their respective default values
         convertResult.output.forEach(function(element) {
           expect(element.type).to.equal('collection');
-          expect(element.data.item[0].item[0].item[0]
+          expect(element.data.item[0].item[0]
             .item[0].item[0].request.url.path.indexOf(':ownerId') > -1)
             .to.equal(true);
-          expect(element.data.item[0].item[0].item[0]
+          expect(element.data.item[0].item[0]
             .item[0].item[0].request.url.path.indexOf(':petId') > -1)
             .to.equal(true);
 
-          let thisVar = element.data.item[0].item[0].item[0].item[0].item[0].request.url.variable[0];
+          let thisVar = element.data.item[0].item[0].item[0].item[0].request.url.variable[0];
 
           expect(thisVar.type).to.equal('any');
 
           expect(thisVar.value).to.equal('42');
           expect(thisVar.key).to.equal('ownerId');
+
+          done();
         });
-        done();
       });
     });
 
@@ -1926,7 +1927,7 @@ describe('The convert v2 Function', function() {
         optimizeConversion: false, stackLimit: 50
       }, (err, result) => {
         const expectedResponseBody1 = JSON.parse(
-            result.output[0].data.item[0].item[0].item[0].item[0]
+            result.output[0].data.item[0].item[0]
               .item[0].response[0].body
           ),
           expectedResponseBody2 = JSON.parse(
@@ -1934,8 +1935,8 @@ describe('The convert v2 Function', function() {
           );
         expect(err).to.be.null;
         expect(result.result).to.be.true;
-        expect(expectedResponseBody1.payload).to.be.eql('<boolean>');
-        expect(expectedResponseBody2.payload).to.be.an('object')
+        expect(expectedResponseBody2.payload).to.be.eql('<boolean>');
+        expect(expectedResponseBody1.payload).to.be.an('object')
           .and.to.have.all.keys('content', 'paging');
       });
     });
@@ -1948,7 +1949,7 @@ describe('The convert v2 Function', function() {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
 
-        const response = conversionResult.output[0].data.item[0].item[0].item[0].response[0];
+        const response = conversionResult.output[0].data.item[0].item[0].response[0];
         expect(response.body).to.equal('[\n\t{\n\t\t"id": "<long>",\n\t\t"name": "<string>",\n\t\t"tag": "<string>"' +
           '\n\t},\n\t{\n\t\t"id": "<long>",\n\t\t"name": "<string>",\n\t\t"tag": "<string>"' +
           '\n\t}\n]');
@@ -1963,7 +1964,7 @@ describe('The convert v2 Function', function() {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
 
-        const response = conversionResult.output[0].data.item[0].item[0].item[0].response[0];
+        const response = conversionResult.output[0].data.item[0].item[0].response[0];
         expect(response.body).to.equal('[\n  {\n    "id": "<long>",\n    "name": "<string>",\n    "tag": "<string>' +
           '"\n  },\n  {\n    "id": "<long>",\n    "name": "<string>",\n    "tag": "<string>"\n  }\n]');
         done();
@@ -1984,7 +1985,7 @@ describe('The convert v2 Function', function() {
         expect(conversionResult.output[0].data.auth.apikey[0].value).to.equal('{{apiKeyName}}');
         expect(conversionResult.output[0].data.auth.apikey[1].value).to.equal('{{apiKey}}');
 
-        const item = conversionResult.output[0].data.item[0].item[0].item[0];
+        const item = conversionResult.output[0].data.item[0].item[0];
         expect(item.request.header).to.not.be.ok;
         expect(item.response[0].originalRequest.header[0]).to.be.eql({
           description: {
@@ -2006,7 +2007,7 @@ describe('The convert v2 Function', function() {
           expect(err).to.be.null;
           expect(conversionResult.result).to.equal(true);
 
-          const item = conversionResult.output[0].data.item[0].item[0].item[0];
+          const item = conversionResult.output[0].data.item[0].item[0];
           expect(item.request.header).to.not.be.ok;
           expect(item.response[0].originalRequest.header).to.not.be.ok;
 
@@ -2028,7 +2029,7 @@ describe('The convert v2 Function', function() {
         expect(conversionResult.output[0].data.auth.oauth1[0].value).to.equal('{{consumerSecret}}');
         expect(conversionResult.output[0].data.auth.oauth1[1].value).to.equal('{{consumerKey}}');
 
-        const item = conversionResult.output[0].data.item[0].item[0].item[0];
+        const item = conversionResult.output[0].data.item[0].item[0];
 
         expect(item.request.header).to.not.be.ok;
         expect(item.response[0].originalRequest.header[0]).to.be.eql({
