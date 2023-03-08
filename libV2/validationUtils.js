@@ -1428,7 +1428,7 @@ function checkValueAgainstSchema (context, property, jsonPathPrefix, txnParamNam
           mismatchObj.suggestedFix = {
             key: txnParamName,
             actualValue: valueToUse,
-            suggestedValue: safeSchemaFaker(context, openApiSchemaObj || {}, PROCESSING_TYPE.VALIDATION,
+            suggestedValue: safeSchemaFaker(context, schema || {}, PROCESSING_TYPE.VALIDATION,
               parameterSourceOption, components, SCHEMA_FORMATS.DEFAULT, schemaCache)
           };
         }
@@ -1444,7 +1444,7 @@ function checkValueAgainstSchema (context, property, jsonPathPrefix, txnParamNam
         if (!_.isEmpty(filteredValidationError)) {
           let mismatchObj,
             suggestedValue,
-            fakedValue = safeSchemaFaker(context, openApiSchemaObj || {}, PROCESSING_TYPE.VALIDATION,
+            fakedValue = safeSchemaFaker(context, schema || {}, PROCESSING_TYPE.VALIDATION,
               parameterSourceOption, components, SCHEMA_FORMATS.DEFAULT, schemaCache);
 
           // Show detailed validation mismatches for only request/response body
@@ -1700,12 +1700,14 @@ function checkPathVariables (context, matchedPathData, transactionPathPrefix, sc
         };
 
         if (options.suggestAvailableFixes) {
+          const resolvedSchema = resolveSchema(context, pathVar.schema, 0, PROCESSING_TYPE.VALIDATION);
+
           mismatchObj.suggestedFix = {
             key: pathVar.name,
             actualValue,
             suggestedValue: {
               key: pathVar.name,
-              value: safeSchemaFaker(context, pathVar.schema || {}, PROCESSING_TYPE.VALIDATION,
+              value: safeSchemaFaker(context, resolvedSchema || {}, PROCESSING_TYPE.VALIDATION,
                 PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache),
               description: getParameterDescription(pathVar)
             }
@@ -1838,12 +1840,14 @@ function checkQueryParams (context, queryParams, transactionPathPrefix, schemaPa
         };
 
         if (options.suggestAvailableFixes) {
+          const resolvedSchema = resolveSchema(context, qp.schema, 0, PROCESSING_TYPE.VALIDATION);
+
           mismatchObj.suggestedFix = {
             key: qp.name,
             actualValue: null,
             suggestedValue: {
               key: qp.name,
-              value: safeSchemaFaker(context, qp.schema || {}, PROCESSING_TYPE.VALIDATION,
+              value: safeSchemaFaker(context, resolvedSchema || {}, PROCESSING_TYPE.VALIDATION,
                 PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache),
               description: getParameterDescription(qp)
             }
@@ -1960,12 +1964,14 @@ function checkRequestHeaders (context, headers, transactionPathPrefix, schemaPat
         };
 
         if (options.suggestAvailableFixes) {
+          const resolvedSchema = resolveSchema(context, header.schema, 0, PROCESSING_TYPE.VALIDATION);
+
           mismatchObj.suggestedFix = {
             key: header.name,
             actualValue: null,
             suggestedValue: {
               key: header.name,
-              value: safeSchemaFaker(context, header.schema || {}, PROCESSING_TYPE.VALIDATION,
+              value: safeSchemaFaker(context, resolvedSchema || {}, PROCESSING_TYPE.VALIDATION,
                 PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache),
               description: getParameterDescription(header)
             }
@@ -2078,12 +2084,14 @@ function checkResponseHeaders (context, schemaResponse, headers, transactionPath
         };
 
         if (options.suggestAvailableFixes) {
+          const resolvedSchema = resolveSchema(context, header.schema, 0, PROCESSING_TYPE.VALIDATION);
+
           mismatchObj.suggestedFix = {
             key: header.name,
             actualValue: null,
             suggestedValue: {
               key: header.name,
-              value: safeSchemaFaker(context, header.schema || {}, PROCESSING_TYPE.VALIDATION,
+              value: safeSchemaFaker(context, resolvedSchema || {}, PROCESSING_TYPE.VALIDATION,
                 PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache),
               description: getParameterDescription(header)
             }
@@ -2248,12 +2256,14 @@ function checkRequestBody (context, requestBody, transactionPathPrefix, schemaPa
           };
 
           if (options.suggestAvailableFixes) {
+            const resolvedSchema = resolveSchema(context, uParam.schema, 0, PROCESSING_TYPE.VALIDATION);
+
             mismatchObj.suggestedFix = {
               key: uParam.name,
               actualValue: null,
               suggestedValue: {
                 key: uParam.name,
-                value: safeSchemaFaker(context, uParam.schema || {}, PROCESSING_TYPE.VALIDATION,
+                value: safeSchemaFaker(context, resolvedSchema || {}, PROCESSING_TYPE.VALIDATION,
                   PARAMETER_SOURCE.REQUEST, components, SCHEMA_FORMATS.DEFAULT, schemaCache),
                 description: getParameterDescription(uParam)
               }
