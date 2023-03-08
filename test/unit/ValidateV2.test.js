@@ -1103,7 +1103,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           resultObj,
           historyRequest = [],
           schemaPack = new Converter.SchemaPack({ type: 'string', data: queryParamDeepObjectSpec },
-            { suggestAvailableFixes: true, showMissingInSchemaErrors: true });
+            { suggestAvailableFixes: true, showMissingInSchemaErrors: true, parametersResolution: 'Example' });
 
         getAllTransactions(JSON.parse(queryParamDeepObjectCollection), historyRequest);
 
@@ -1152,7 +1152,7 @@ describe('VALIDATE FUNCTION TESTS ', function () {
           resultObjAllOf,
           historyRequest = [],
           schemaPack = new Converter.SchemaPack({ type: 'string', data: compositeSchemaSpec },
-            { suggestAvailableFixes: true, showMissingInSchemaErrors: true });
+            { suggestAvailableFixes: true, showMissingInSchemaErrors: true, parametersResolution: 'Example' });
 
         getAllTransactions(JSON.parse(compositeSchemaCollection), historyRequest);
 
