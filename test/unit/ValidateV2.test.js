@@ -532,7 +532,70 @@ describe('The Validation option', function () {
     });
   });
 
-  describe('suggestAvailableFixes ', function () {
+  describe('suggestAvailableFixes for parametersResolution=Schema', function () {
+    suggestAvailableFixesSpecs.forEach((specData) => {
+      let schema = fs.readFileSync(specData.path, 'utf8'),
+        collection = fs.readFileSync(suggestAvailableFixesCollection, 'utf8'),
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: schema },
+          { suggestAvailableFixes: true, parametersResolution: 'Schema' }),
+        historyRequest = [],
+        resultObj,
+        responseResult,
+        propertyMismatchMap = {};
+
+      before(function (done) {
+        getAllTransactions(JSON.parse(collection), historyRequest);
+        schemaPack.validateTransactionV2(historyRequest, (err, result) => {
+          expect(err).to.be.null;
+          resultObj = result.requests[historyRequest[0].id].endpoints[0];
+          responseResult = resultObj.responses[historyRequest[0].response[0].id];
+
+          // check for expected mismatches length
+          expect(resultObj.mismatches).to.have.lengthOf(4);
+          expect(responseResult.mismatches).to.have.lengthOf(2);
+
+          // map all mismatch objects with it's property
+          _.forEach(_.concat(resultObj.mismatches, responseResult.mismatches), (mismatch) => {
+            propertyMismatchMap[mismatch.property] = mismatch;
+          });
+          done();
+        });
+      });
+
+      it('should suggest valid available fix for all kind of violated properties - version: ' +
+        specData.version, function () {
+        // check for all suggested value to be according to schema
+        expect(propertyMismatchMap.PATHVARIABLE.suggestedFix.suggestedValue).to.eql('<integer>');
+        expect(propertyMismatchMap.QUERYPARAM.suggestedFix.suggestedValue).to.eql('<number>');
+        expect(propertyMismatchMap.HEADER.suggestedFix.suggestedValue.value).to.eql('<boolean>');
+        expect(propertyMismatchMap.HEADER.suggestedFix.suggestedValue.description)
+          .to.eql('(Required) Quantity of pets available');
+        expect(propertyMismatchMap.BODY.suggestedFix.suggestedValue.name).to.eql('<string>');
+        expect(propertyMismatchMap.BODY.suggestedFix.suggestedValue.tag).to.eql('<string>');
+        // For enum, actual values in enum should be used
+        expect(_.includes(['Bulldog', 'Retriever', 'Timberwolf', 'Grizzly', 'Husky'],
+          propertyMismatchMap.BODY.suggestedFix.suggestedValue.breeds[2])).to.eql(true);
+        expect(propertyMismatchMap.RESPONSE_HEADER.suggestedFix.suggestedValue).to.eql('<integer>');
+        expect(propertyMismatchMap.RESPONSE_BODY.suggestedFix.suggestedValue.code).to.eql('<integer>');
+        expect(propertyMismatchMap.RESPONSE_BODY.suggestedFix.suggestedValue.message).to.eql('<string>');
+      });
+
+      it('should maintain valid properties/items in suggested value - version:' +
+        specData.version, function () {
+        expect(propertyMismatchMap.BODY.suggestedFix.suggestedValue.petId).to.eql(
+          propertyMismatchMap.BODY.suggestedFix.actualValue.petId
+        );
+        expect(propertyMismatchMap.BODY.suggestedFix.suggestedValue.breeds[0]).to.eql(
+          propertyMismatchMap.BODY.suggestedFix.actualValue.breeds[0]
+        );
+        expect(propertyMismatchMap.BODY.suggestedFix.suggestedValue.breeds[1]).to.eql(
+          propertyMismatchMap.BODY.suggestedFix.actualValue.breeds[1]
+        );
+      });
+    });
+  });
+
+  describe('suggestAvailableFixes for parametersResolution=Example', function () {
     suggestAvailableFixesSpecs.forEach((specData) => {
       let schema = fs.readFileSync(specData.path, 'utf8'),
         collection = fs.readFileSync(suggestAvailableFixesCollection, 'utf8'),
