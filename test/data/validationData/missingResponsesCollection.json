@@ -1,0 +1,129 @@
+{
+  "item": [
+    {
+      "id": "d51ae34c-a554-42ad-95d6-cec88a4db9f7",
+      "name": "List all pets",
+      "request": {
+        "name": "List all pets",
+        "description": {},
+        "url": {
+          "path": [
+            "pets"
+          ],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "query": [
+            {
+              "description": {
+                "content": "How many items to return at one time (max 100)",
+                "type": "text/plain"
+              },
+              "key": "limit",
+              "value": "-25670472"
+            }
+          ],
+          "variable": []
+        },
+        "method": "GET",
+        "body": {},
+        "auth": null
+      },
+      "response": [],
+      "event": [],
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      }
+    },
+    {
+      "name": "pets",
+      "item": [
+        {
+          "name": "{petId}",
+          "item": [
+            {
+              "id": "14772400-7dea-4f1e-ac49-70387a9d846b",
+              "name": "Info for a specific pet",
+              "request": {
+                "name": "Info for a specific pet",
+                "description": {},
+                "url": {
+                  "path": [
+                    "pets",
+                    ":petId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "type": "any",
+                      "value": "quis",
+                      "key": "petId"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "body": {},
+                "auth": null
+              },
+              "response": [
+                {
+                  "id": "d7f4c4ad-2e75-42a1-b456-4d561ad3f5bd",
+                  "name": "Expected response to a valid request",
+                  "originalRequest": {
+                    "url": {
+                      "path": [
+                        "pets",
+                        ":petId"
+                      ],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "method": "GET",
+                    "body": {}
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "[\n  {\n    \"id\": -94820178,\n    \"name\": \"Excepteur est cupidatat occaecat\",\n    \"tag\": \"Duis tempor velit\"\n  },\n  {\n    \"id\": 98403054,\n    \"name\": \"ad Ut sit mollit consectetur\",\n    \"tag\": \"nisi dolore adip\"\n  }\n]",
+                  "cookie": [],
+                  "_postman_previewlanguage": "json"
+                }
+              ],
+              "event": [],
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://petstore.swagger.io/v1"
+    }
+  ],
+  "info": {
+    "_postman_id": "57f84616-a4bc-4328-af19-b9ccbb71871c",
+    "name": "Swagger Petstore",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "",
+      "type": "text/plain"
+    }
+  }
+}

@@ -1825,7 +1825,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
   });
 
   describe('Converting swagger 2.0 files', function() {
-    it('should convert path paramters to postman-compatible paramters', function (done) {
+    it('should convert path parameters to postman-compatible parameters', function (done) {
       const fileData = path.join(__dirname, SWAGGER_20_FOLDER_JSON, 'swagger2-with-params.json'),
         input = {
           type: 'file',

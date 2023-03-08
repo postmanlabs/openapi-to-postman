@@ -313,44 +313,181 @@ describe('DEREF FUNCTION TESTS ', function() {
       expect(output.required).to.not.include('tag');
       done();
     });
-  });
 
-  describe('resolveAllOf Function', function () {
-    it('should resolve allOf schemas correctly', function (done) {
-      var allOfschema = [
-        {
-          'type': 'object',
-          'properties': {
-            'source': {
-              'type': 'string',
-              'format': 'uuid'
-            },
-            'actionId': { 'type': 'integer', 'minimum': 5 },
-            'result': { 'type': 'object' }
-          },
-          'required': ['source', 'actionId', 'result']
+    it('should handle schema with enum having no type defined for resolveTo set as schema', function(done) {
+      var schema = {
+          'enum': [
+            'capsule',
+            'probe',
+            'satellite',
+            'spaceplane',
+            'station'
+          ]
         },
-        {
-          'properties': {
-            'result': {
-              'type': 'object',
-              'properties': {
-                'err': { 'type': 'string' },
-                'data': { 'type': 'object' }
+        resolveFor = 'CONVERSION',
+        resolveTo = 'schema',
+        parameterSource = 'REQUEST',
+        output;
+
+      output = deref.resolveRefs(schema, parameterSource, { concreteUtils: schemaUtils30X }, {
+        resolveFor,
+        resolveTo
+      });
+      expect(output.type).to.equal('string');
+      expect(output.default).to.equal('<string>');
+      done();
+    });
+
+    it('should return schema with example parameter(if given) for $ref just like inline schema', function(done) {
+      var schema = {
+          $ref: '#/components/schemas/schema1',
+          example: 'asc'
+        },
+        componentsAndPaths = {
+          components: {
+            schemas: {
+              schema1: {
+                description: 'The unique identifier of a spacecraft',
+                enum: [
+                  'asc',
+                  'desc'
+                ],
+                type: 'string'
               }
             }
           }
-        }
-      ];
+        },
+        parameterSource = 'REQUEST',
+        // deref.resolveRefs modifies the input schema and components so cloning to keep tests independent of each other
+        output = deref.resolveRefs(schema, parameterSource, _.cloneDeep(componentsAndPaths), {});
+
+      expect(output.example).to.equal(schema.example);
+      done();
+    });
+  });
+
+  describe('resolveAllOf Function', function () {
+    it('should resolve schemas containing allOf keyword correctly', function (done) {
+      var schema = {
+        'allOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'source': {
+                'type': 'string',
+                'format': 'uuid'
+              },
+              'actionId': { 'type': 'integer', 'minimum': 5 },
+              'result': { 'type': 'object' }
+            },
+            'required': ['source', 'actionId', 'result']
+          },
+          {
+            'properties': {
+              'result': {
+                'type': 'object',
+                'properties': {
+                  'err': { 'type': 'string' },
+                  'data': { 'type': 'object' }
+                }
+              }
+            }
+          }
+        ]
+      };
 
       expect(deref.resolveAllOf(
-        allOfschema,
+        schema,
         'REQUEST',
         { concreteUtils: schemaUtils30X },
         { resolveTo: 'example' }
       )).to.deep.include({
         type: 'object',
         properties: {
+          source: {
+            type: 'string',
+            format: 'uuid'
+          },
+          actionId: { 'type': 'integer', 'minimum': 5 },
+          result: {
+            type: 'object',
+            properties: {
+              err: { 'type': 'string' },
+              data: { 'type': 'object' }
+            }
+          }
+        }
+      });
+      done();
+    });
+
+    it('should resolve schemas containing allOf keyword along with outer properties correctly', function (done) {
+      var schema = {
+        'properties': {
+          'id': {
+            'type': 'integer'
+          },
+          'name': {
+            'type': 'string'
+          },
+          'type': {
+            'type': 'string',
+            'enum': ['capsule', 'probe', 'satellite', 'spaceplane', 'station']
+          },
+          'registerdDate': {
+            'type': 'string',
+            'format': 'date-time'
+          }
+        },
+        'allOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'source': {
+                'type': 'string',
+                'format': 'uuid'
+              },
+              'actionId': { 'type': 'integer', 'minimum': 5 },
+              'result': { 'type': 'object' }
+            },
+            'required': ['source', 'actionId', 'result']
+          },
+          {
+            'properties': {
+              'result': {
+                'type': 'object',
+                'properties': {
+                  'err': { 'type': 'string' },
+                  'data': { 'type': 'object' }
+                }
+              }
+            }
+          }
+        ]
+      };
+
+      expect(deref.resolveAllOf(
+        schema,
+        'REQUEST',
+        { concreteUtils: schemaUtils30X },
+        { resolveTo: 'example' }
+      )).to.deep.include({
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer'
+          },
+          name: {
+            type: 'string'
+          },
+          type: {
+            type: 'string',
+            enum: ['capsule', 'probe', 'satellite', 'spaceplane', 'station']
+          },
+          registerdDate: {
+            type: 'string',
+            format: 'date-time'
+          },
           source: {
             type: 'string',
             format: 'uuid'
