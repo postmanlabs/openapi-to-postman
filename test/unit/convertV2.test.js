@@ -179,8 +179,7 @@ describe('The convert v2 Function', function() {
     });
   });
 
-  // @todo: check the order. Also add unique constraint while pushing in the collection variables
-  it.skip(' Fix for GITHUB#133: Should generate collection with proper Path and Collection variables', function(done) {
+  it(' Fix for GITHUB#133: Should generate collection with proper Path and Collection variables', function(done) {
     var openapi = fs.readFileSync(issue133, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi },
       { parametersResolution: 'Example', schemaFaker: true }, (err, conversionResult) => {
@@ -193,15 +192,15 @@ describe('The convert v2 Function', function() {
         expect(conversionResult.output[0].data).to.have.property('item');
         expect(conversionResult.output[0].data).to.have.property('variable');
         expect(conversionResult.output[0].data.variable).to.be.an('array');
-        expect(conversionResult.output[0].data.variable[1].key).to.equal('format');
-        expect(conversionResult.output[0].data.variable[1].value).to.equal('json');
-        expect(conversionResult.output[0].data.variable[2].key).to.equal('path');
-        expect(conversionResult.output[0].data.variable[2].value).to.equal('send-email');
-        expect(conversionResult.output[0].data.variable[3].key).to.equal('new-path-variable-1');
+        expect(conversionResult.output[0].data.variable[4].key).to.equal('format');
+        expect(conversionResult.output[0].data.variable[4].value).to.equal('json');
+        expect(conversionResult.output[0].data.variable[5].key).to.equal('path');
+        expect(conversionResult.output[0].data.variable[5].value).to.equal('send-email');
+        expect(conversionResult.output[0].data.variable[6].key).to.equal('new-path-variable-1');
         // serialised value for object { R: 100, G: 200, B: 150 }
-        expect(conversionResult.output[0].data.variable[3].value).to.equal('R,100,G,200,B,150');
-        expect(conversionResult.output[0].data.variable[4].key).to.equal('new-path-variable-2');
-        expect(conversionResult.output[0].data.variable[4].value).to.contain('exampleString');
+        expect(conversionResult.output[0].data.variable[6].value).to.equal('R,100,G,200,B,150');
+        expect(conversionResult.output[0].data.variable[7].key).to.equal('new-path-variable-2');
+        expect(conversionResult.output[0].data.variable[7].value).to.contain('exampleString');
         done();
       });
   });
@@ -334,13 +333,13 @@ describe('The convert v2 Function', function() {
   });
 
   // Need to handle xml body properly
-  it.skip('convertor should add custom header in the response' +
+  it('convertor should add custom header in the response' +
   customHeadersSpec, function(done) {
     var openapi = fs.readFileSync(customHeadersSpec, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
       expect(err).to.be.null;
-      expect(conversionResult.output[0].data.item[0].response[0].header[0].value)
-        .to.equal('application/vnd.retailer.v3+json');
+      expect(conversionResult.output[0].data.item[0].item[0].item[0].response[0].header[0].value)
+        .to.equal('application/vnd.retailer.v3+xml');
       done();
     });
   });
@@ -770,13 +769,13 @@ describe('The convert v2 Function', function() {
   });
 
   // Confirm behaviour for `schema` resolution
-  it.skip('should convert to the expected schema with use of schemaFaker and schemaResolution caches', function(done) {
+  it('should convert to the expected schema with use of schemaFaker and schemaResolution caches', function(done) {
     Converter.convertV2({ type: 'file', data: multipleRefs }, {}, (err, conversionResult) => {
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
-      let items = conversionResult.output[0].data.item,
-        request = items[0].request,
-        response = items[0].response,
+      let item = conversionResult.output[0].data.item[0].item[0],
+        request = item.request,
+        response = item.response,
         requestBody = JSON.parse(request.body.raw),
         responseBody = JSON.parse(response[0].body);
       expect(requestBody).to.deep.equal({
@@ -791,12 +790,12 @@ describe('The convert v2 Function', function() {
       });
       expect(responseBody).to.deep.equal({
         key1: {
-          responseId: 234,
-          responseName: '200 OK Response'
+          responseId: '<long>',
+          responseName: '<string>'
         },
         key2: {
-          responseId: 234,
-          responseName: '200 OK Response'
+          responseId: '<long>',
+          responseName: '<string>'
         }
       });
       done();
