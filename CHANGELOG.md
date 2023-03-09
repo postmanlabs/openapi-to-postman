@@ -1,5 +1,10 @@
 # OpenAPI-Postman Changelog
 
+#### v4.10.1 (March 09, 2023)
+* Fixed issue where request name generated were not validated correctly.
+* Fixed test where getOptions() was not using criteria correctly.
+* Fixed issue where deprecated params were reported missing even for includeDeprecated=false
+
 #### v4.10.0 (March 08, 2023)
 * Added support for convertV2() interface which has more stacklimit for schema resolution.
 * Added support for validateTransactionV2() interface uses same v2 interface for resolving schema.
