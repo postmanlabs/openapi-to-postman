@@ -1512,6 +1512,9 @@ let QUERYPARAM = 'query',
       }
     }
 
+    // Request name should be max 256 characters so trim if needed.
+    reqName = utils.trimRequestName(reqName);
+
     return reqName;
   },
 

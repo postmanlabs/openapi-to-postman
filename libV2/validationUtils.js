@@ -300,7 +300,8 @@ function checkMetadata (transaction, transactionPathPrefix, schemaPath, pathRout
   switch (options.requestNameSource) {
     case 'fallback' : {
       // operationId is usually camelcase or snake case
-      expectedReqName = schemaPath.summary || utils.insertSpacesInName(schemaPath.operationId) || reqUrl;
+      expectedReqName = schemaPath.summary || utils.insertSpacesInName(schemaPath.operationId) ||
+        operationItem.description || reqUrl;
       expectedReqName = utils.trimRequestName(expectedReqName);
       reqNameMismatch = (trimmedReqName !== expectedReqName);
       break;
@@ -309,6 +310,7 @@ function checkMetadata (transaction, transactionPathPrefix, schemaPath, pathRout
       // actual value may differ in conversion as it uses local/global servers info to generate it
       // for now suggest actual path as request name
       expectedReqName = reqUrl;
+      expectedReqName = utils.trimRequestName(expectedReqName);
       reqNameMismatch = !_.endsWith(actualReqName, reqUrl);
       break;
     }
