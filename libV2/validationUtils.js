@@ -1186,10 +1186,6 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
         resolvedProp.required = true;
       }
 
-      if (_.isUndefined(metaInfo.required) && _.includes(_.get(schema, 'required'), propName)) {
-        resolvedProp.required = true;
-      }
-
       pSerialisationInfo = getParamSerialisationInfo(resolvedProp, PARAMETER_SOURCE.REQUEST,
         components, options);
       isPropSeparable = _.includes(['form', 'deepObject'], pSerialisationInfo.style);
