@@ -300,7 +300,8 @@ function checkMetadata (transaction, transactionPathPrefix, schemaPath, pathRout
   switch (options.requestNameSource) {
     case 'fallback' : {
       // operationId is usually camelcase or snake case
-      expectedReqName = schemaPath.summary || utils.insertSpacesInName(schemaPath.operationId) || reqUrl;
+      expectedReqName = schemaPath.summary || utils.insertSpacesInName(schemaPath.operationId) ||
+        schemaPath.description || reqUrl;
       expectedReqName = utils.trimRequestName(expectedReqName);
       reqNameMismatch = (trimmedReqName !== expectedReqName);
       break;
@@ -309,6 +310,7 @@ function checkMetadata (transaction, transactionPathPrefix, schemaPath, pathRout
       // actual value may differ in conversion as it uses local/global servers info to generate it
       // for now suggest actual path as request name
       expectedReqName = reqUrl;
+      expectedReqName = utils.trimRequestName(expectedReqName);
       reqNameMismatch = !_.endsWith(actualReqName, reqUrl);
       break;
     }
@@ -1128,7 +1130,8 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
     in: 'query', // serialization follows same behaviour as query params
     description: _.get(schema, 'description', _.get(metaInfo, 'description', '')),
     pathPrefix: _.get(metaInfo, 'pathPrefix'),
-    isComposite: _.get(metaInfo, 'isComposite', false)
+    isComposite: _.get(metaInfo, 'isComposite', false),
+    deprecated: _.get(schema, 'deprecated', _.get(metaInfo, 'deprecated'))
   };
   encodingValue = _.get(encodingObj, schemaKey);
 
@@ -1165,7 +1168,8 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
           in: 'query', // serialization follows same behaviour as query params
           description: _.get(propSchema, 'description') || _.get(metaInfo, 'description') || '',
           required: _.get(metaInfo, 'required'),
-          isComposite: _.get(metaInfo, 'isComposite', false)
+          isComposite: _.get(metaInfo, 'isComposite', false),
+          deprecated: _.get(propSchema, 'deprecated') || _.get(metaInfo, 'deprecated')
         },
         parentPropName = resolvedPropName.indexOf('[') === -1 ? resolvedPropName :
           resolvedPropName.slice(0, resolvedPropName.indexOf('[')),
@@ -1215,7 +1219,8 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
       else if (isPropSeparable && propSchema.type === 'object' && pSerialisationInfo.explode) {
         let localMetaInfo = _.isEmpty(metaInfo) ? (metaInfo = {
             required: resolvedProp.required,
-            description: resolvedProp.description
+            description: resolvedProp.description,
+            deprecated: _.get(resolvedProp, 'deprecated')
           }) : metaInfo,
           nextSchemaKey = _.isEmpty(schemaKey) ? propName : `${schemaKey}[${propName}]`;
 
@@ -1233,7 +1238,8 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
               isResolvedParam: true,
               required: resolvedProp.required,
               description: resolvedProp.description,
-              isComposite: _.get(metaInfo, 'isComposite', false)
+              isComposite: _.get(metaInfo, 'isComposite', false),
+              deprecated: _.get(resolvedProp, 'deprecated') || _.get(metaInfo, 'deprecated')
             });
           });
         }
@@ -1286,7 +1292,8 @@ function resolveFormParamSchema (schema, schemaKey, encodingObj, requestParams, 
             description: _.get(additionalPropSchema, 'description') || _.get(metaInfo, 'description') || '',
             required: false,
             isResolvedParam: true,
-            isComposite: true
+            isComposite: true,
+            deprecated: _.get(additionalPropSchema, 'deprecated') || _.get(metaInfo, 'deprecated')
           });
         }
       });
@@ -1727,7 +1734,8 @@ function checkQueryParams (context, queryParams, transactionPathPrefix, schemaPa
   let schemaParams = _.filter(schemaPath.parameters, (param) => { return param.in === 'query'; }),
     requestQueryParams = [],
     resolvedSchemaParams = [],
-    mismatchProperty = 'QUERYPARAM';
+    mismatchProperty = 'QUERYPARAM',
+    { includeDeprecated } = context.computedOptions;
 
   if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
     return callback(null, []);
@@ -1753,6 +1761,7 @@ function checkQueryParams (context, queryParams, transactionPathPrefix, schemaPa
       metaInfo = {
         required: _.get(param, 'required') || false,
         description: _.get(param, 'description'),
+        deprecated: _.get(param, 'deprecated') || false,
         pathPrefix
       };
 
@@ -1824,6 +1833,10 @@ function checkQueryParams (context, queryParams, transactionPathPrefix, schemaPa
       });
 
     _.each(filteredSchemaParams, (qp) => {
+      if (qp.deprecated && !includeDeprecated) {
+        return;
+      }
+
       if (!_.find(requestQueryParams, (param) => {
         return param.key === qp.name;
       })) {
@@ -1874,7 +1887,8 @@ function checkRequestHeaders (context, headers, transactionPathPrefix, schemaPat
 
       return !_.includes(IMPLICIT_HEADERS, _.toLower(_.get(header, 'key')));
     }),
-    mismatchProperty = 'HEADER';
+    mismatchProperty = 'HEADER',
+    { includeDeprecated } = context.computedOptions;
 
   if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
     return callback(null, []);
@@ -1929,7 +1943,8 @@ function checkRequestHeaders (context, headers, transactionPathPrefix, schemaPat
     let mismatches = [],
       mismatchObj,
       reqBody = _.get(schemaPath, 'requestBody'),
-      contentHeaderMismatches = [];
+      contentHeaderMismatches = [],
+      filteredHeaders;
 
     // resolve $ref in request body if present
     if (reqBody) {
@@ -1941,7 +1956,8 @@ function checkRequestHeaders (context, headers, transactionPathPrefix, schemaPat
         schemaPathPrefix + '.requestBody.content', _.get(reqBody, 'content'),
         mismatchProperty, options);
     }
-    _.each(_.filter(schemaHeaders, (h) => {
+
+    filteredHeaders = _.filter(schemaHeaders, (h) => {
       // exclude non-required, non-composite and implicit header from further validation
       const isImplicitHeader = _.includes(IMPLICIT_HEADERS, _.toLower(h.name));
 
@@ -1949,8 +1965,14 @@ function checkRequestHeaders (context, headers, transactionPathPrefix, schemaPat
         return !h.isComposite && !isImplicitHeader;
       }
       return h.required && !h.isComposite && !isImplicitHeader;
-    }), (header) => {
+    });
+
+    _.each(filteredHeaders, (header) => {
       if (!_.find(reqHeaders, (param) => { return param.key === header.name; })) {
+
+        if (header.deprecated && !includeDeprecated) {
+          return;
+        }
 
         // assign parameter example(s) as schema examples;
         assignParameterExamples(header);
@@ -1996,7 +2018,8 @@ function checkResponseHeaders (context, schemaResponse, headers, transactionPath
 
       return !_.includes(IMPLICIT_HEADERS, _.toLower(_.get(header, 'key')));
     }),
-    mismatchProperty = 'RESPONSE_HEADER';
+    mismatchProperty = 'RESPONSE_HEADER',
+    { includeDeprecated } = context.computedOptions;
 
   if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
     return callback(null, []);
@@ -2053,23 +2076,28 @@ function checkResponseHeaders (context, schemaResponse, headers, transactionPath
     let mismatches = [],
       mismatchObj,
       contentHeaderMismatches = checkContentTypeHeader(headers, transactionPathPrefix,
-        schemaPathPrefix + '.content', _.get(schemaResponse, 'content'), mismatchProperty, options);
+        schemaPathPrefix + '.content', _.get(schemaResponse, 'content'), mismatchProperty, options),
+      filteredHeaders = _.filter(schemaHeaders, (h, hName) => {
+        // exclude empty headers from validation
+        if (_.isEmpty(h)) {
+          return false;
+        }
+        h.name = hName;
 
-    _.each(_.filter(schemaHeaders, (h, hName) => {
-      // exclude empty headers from validation
-      if (_.isEmpty(h)) {
-        return false;
+        // exclude non-required, non-composite and implicit header from further validation
+        const isImplicitHeader = _.includes(IMPLICIT_HEADERS, _.toLower(hName));
+
+        if (VALIDATE_OPTIONAL_PARAMS) {
+          return !h.isComposite && !isImplicitHeader;
+        }
+        return h.required && !h.isComposite && !isImplicitHeader;
+      });
+
+    _.each(filteredHeaders, (header) => {
+      if (header.deprecated && !includeDeprecated) {
+        return;
       }
-      h.name = hName;
 
-      // exclude non-required, non-composite and implicit header from further validation
-      const isImplicitHeader = _.includes(IMPLICIT_HEADERS, _.toLower(hName));
-
-      if (VALIDATE_OPTIONAL_PARAMS) {
-        return !h.isComposite && !isImplicitHeader;
-      }
-      return h.required && !h.isComposite && !isImplicitHeader;
-    }), (header) => {
       if (!_.find(resHeaders, (param) => { return param.key === header.name; })) {
 
         // assign parameter example(s) as schema examples;
@@ -2110,7 +2138,8 @@ function checkRequestBody (context, requestBody, transactionPathPrefix, schemaPa
   // check for body modes
   let jsonSchemaBody,
     jsonContentType,
-    mismatchProperty = 'BODY';
+    mismatchProperty = 'BODY',
+    { includeDeprecated } = context.computedOptions;
 
   if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
     return callback(null, []);
@@ -2245,6 +2274,10 @@ function checkRequestBody (context, requestBody, transactionPathPrefix, schemaPa
       });
 
       _.each(filteredSchemaParams, (uParam) => {
+        if (uParam.deprecated && !includeDeprecated) {
+          return;
+        }
+
         // report mismatches only for required properties
         if (!_.find(filteredUrlEncodedBody, (param) => { return param.key === uParam.name; })) {
           mismatchObj = {

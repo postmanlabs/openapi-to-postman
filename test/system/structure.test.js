@@ -232,7 +232,7 @@ const optionIds = [
  * @returns {String} - markdown table consisting documetation for options
  */
 function generateOptionsDoc (options) {
-  var doc = 'id|type|available options|default|description|usage\n|---|---|---|---|---|---|\n';
+  var doc = 'id|type|available options|default|description|usage|version\n|---|---|---|---|---|---|---|\n';
 
   _.forEach(options, (option) => {
     var convertArrayToDoc = (array) => {
@@ -246,7 +246,8 @@ function generateOptionsDoc (options) {
     (_.isEmpty(defaultOption)) && (defaultOption = JSON.stringify(defaultOption));
 
     doc += `${option.id}|${option.type}|${convertArrayToDoc(option.availableOptions, true)}|` +
-      `${defaultOption}|${option.description}|${convertArrayToDoc(option.usage)}\n`;
+      `${defaultOption}|${option.description}|${convertArrayToDoc(option.usage)}|` +
+      `${convertArrayToDoc(option.supportedModuleVersion)}\n`;
   });
   return doc;
 }
@@ -300,8 +301,11 @@ describe('getOptions', function() {
 
 describe('OPTIONS.md', function() {
   it('must contain all details of options', function () {
-    const optionsDoc = fs.readFileSync('OPTIONS.md', 'utf-8');
-    generateOptionsDoc(getOptions());
-    expect(optionsDoc).to.eql(generateOptionsDoc(getOptions()));
+    const optionsDoc = fs.readFileSync('OPTIONS.md', 'utf-8'),
+      v1Options = getOptions(undefined, { external: true, moduleVersion: 'v1' }),
+      v2Options = getOptions(undefined, { external: true, moduleVersion: 'v2' }),
+      allOptions = _.uniqBy(_.concat(v1Options, v2Options), 'id');
+
+    expect(optionsDoc).to.eql(generateOptionsDoc(allOptions));
   });
 });
