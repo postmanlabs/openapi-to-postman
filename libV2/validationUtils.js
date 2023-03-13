@@ -2461,10 +2461,11 @@ function checkResponses (context, transaction, transactionPathPrefix, schemaPath
         if (options.suggestAvailableFixes) {
           let generatedResponse,
             resolvedResponse,
-            originalRequest = _.omit(_.get(transaction, 'request', {}), 'response');
+            originalRequest = _.omit(_.get(transaction, 'request', {}), 'response'),
+            resolvedResponses = resolveResponseForPostmanRequest(context,
+              { responses: { [responseCode]: responseObj } }, originalRequest);
 
-          resolvedResponse = _.head(resolveResponseForPostmanRequest(context,
-            { responses: { [responseCode]: responseObj } }, originalRequest));
+          resolvedResponse = _.head(resolvedResponses.responses);
           generatedResponse = utils.generatePmResponseObject(resolvedResponse);
 
           if (_.isFunction(generatedResponse.toJSON)) {
