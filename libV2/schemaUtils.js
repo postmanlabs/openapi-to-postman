@@ -1555,7 +1555,7 @@ let QUERYPARAM = 'query',
   },
 
   resolveResponseBody = (context, responseBody = {}) => {
-    let responseContent, bodyType, bodyData, headerFamily;
+    let responseContent, bodyType, bodyData, headerFamily, acceptHeader;
 
     if (_.isEmpty(responseBody)) {
       return responseBody;
@@ -1583,8 +1583,15 @@ let QUERYPARAM = 'query',
     const { indentCharacter } = context.computedOptions,
       rawModeData = !_.isObject(bodyData) && _.isFunction(_.get(bodyData, 'toString')) ?
         bodyData.toString() :
-        JSON.stringify(bodyData, null, indentCharacter);
+        JSON.stringify(bodyData, null, indentCharacter),
+      responseMediaTypes = _.keys(responseContent);
 
+    if (responseMediaTypes.length > 0) {
+      acceptHeader = [{
+        key: 'Accept',
+        value: responseMediaTypes[0]
+      }];
+    }
 
     return {
       body: rawModeData,
@@ -1592,7 +1599,8 @@ let QUERYPARAM = 'query',
         key: 'Content-Type',
         value: bodyType
       }],
-      bodyType
+      bodyType,
+      acceptHeader
     };
   },
 
@@ -1709,14 +1717,15 @@ let QUERYPARAM = 'query',
   },
 
   resolveResponseForPostmanRequest = (context, operationItem, request) => {
-    let responses = [];
+    let responses = [],
+      requestAcceptHeader;
 
     _.forOwn(operationItem.responses, (responseSchema, code) => {
       let response,
         { includeAuthInfoInExample } = context.computedOptions,
         responseAuthHelper,
         auth = request.auth,
-        { body, contentHeader = [], bodyType } = resolveResponseBody(context, responseSchema) || {},
+        { body, contentHeader = [], bodyType, acceptHeader } = resolveResponseBody(context, responseSchema) || {},
         headers = resolveResponseHeaders(context, responseSchema.headers),
         originalRequest = request,
         reqHeaders = _.clone(request.headers) || [],
@@ -1738,6 +1747,11 @@ let QUERYPARAM = 'query',
         });
       }
 
+      // set accept header value as first found response content's media type
+      if (_.isEmpty(requestAcceptHeader)) {
+        requestAcceptHeader = acceptHeader;
+      }
+
       response = {
         name: _.get(responseSchema, 'description'),
         body,
@@ -1750,7 +1764,7 @@ let QUERYPARAM = 'query',
       responses.push(response);
     });
 
-    return responses;
+    return { responses, acceptHeader: requestAcceptHeader };
   };
 
 module.exports = {
@@ -1771,7 +1785,6 @@ module.exports = {
       { pathVariables, collectionVariables } = filterCollectionAndPathVariables(url, pathParams),
       requestBody = resolveRequestBodyForPostmanRequest(context, operationItem[method]),
       request,
-      responses,
       securitySchema = _.get(operationItem, [method, 'security']),
       authHelper = generateAuthForCollectionFromOpenAPI(context.openapi, securitySchema);
 
@@ -1795,7 +1808,12 @@ module.exports = {
       auth: authHelper
     };
 
-    responses = resolveResponseForPostmanRequest(context, operationItem[method], request);
+    const { responses, acceptHeader } = resolveResponseForPostmanRequest(context, operationItem[method], request);
+
+    // add accept header if found and not present already
+    if (!_.isEmpty(acceptHeader)) {
+      request.headers = _.concat(request.headers, acceptHeader);
+    }
 
     return {
       request: {
