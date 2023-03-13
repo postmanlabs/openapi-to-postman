@@ -380,7 +380,9 @@ describe('The convert v2 Function', function() {
       keepImplicitHeaders: false
     }, (err, conversionResult) => {
       expect(err).to.be.null;
-      expect(conversionResult.output[0].data.item[0].item[0].request.header).to.not.ok;
+      expect(conversionResult.output[0].data.item[0].item[0].request.header.length).to.eql(1);
+      expect(conversionResult.output[0].data.item[0].item[0].request.header[0].key).to.eql('Accept');
+      expect(conversionResult.output[0].data.item[0].item[0].request.header[0].value).to.eql('application/json');
       done();
     });
   });
@@ -2006,7 +2008,9 @@ describe('The convert v2 Function', function() {
         expect(conversionResult.output[0].data.auth.apikey[1].value).to.equal('{{apiKey}}');
 
         const item = conversionResult.output[0].data.item[0].item[0].item[0];
-        expect(item.request.header).to.not.be.ok;
+        expect(item.request.header.length).to.eql(1);
+        expect(item.request.header[0].key).to.eql('Accept');
+        expect(item.request.header[0].value).to.eql('application/json');
         expect(item.response[0].originalRequest.header[0]).to.be.eql({
           description: {
             content: 'Added as a part of security scheme: apikey',
@@ -2028,8 +2032,12 @@ describe('The convert v2 Function', function() {
           expect(conversionResult.result).to.equal(true);
 
           const item = conversionResult.output[0].data.item[0].item[0].item[0];
-          expect(item.request.header).to.not.be.ok;
-          expect(item.response[0].originalRequest.header).to.not.be.ok;
+          expect(item.request.header.length).to.eql(1);
+          expect(item.request.header[0].key).to.eql('Accept');
+          expect(item.request.header[0].value).to.eql('application/json');
+          expect(item.response[0].originalRequest.header.length).to.eql(1);
+          expect(item.response[0].originalRequest.header[0].key).to.eql('Accept');
+          expect(item.response[0].originalRequest.header[0].value).to.eql('application/json');
 
           done();
         });
@@ -2051,7 +2059,9 @@ describe('The convert v2 Function', function() {
 
         const item = conversionResult.output[0].data.item[0].item[0].item[0];
 
-        expect(item.request.header).to.not.be.ok;
+        expect(item.request.header.length).to.eql(1);
+        expect(item.request.header[0].key).to.eql('Accept');
+        expect(item.request.header[0].value).to.eql('application/json');
         expect(item.response[0].originalRequest.header[0]).to.be.eql({
           description: {
             content: 'Added as a part of security scheme: oauth1',
