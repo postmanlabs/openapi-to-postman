@@ -1,5 +1,8 @@
 # OpenAPI-Postman Changelog
 
+#### v4.10.2 (March 13, 2023)
+* Fixed issue where Accept header was generated correctly in convertV2() interface.
+
 #### v4.10.1 (March 09, 2023)
 * Fixed issue where request name generated were not validated correctly.
 * Fixed test where getOptions() was not using criteria correctly.
