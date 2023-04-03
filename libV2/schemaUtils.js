@@ -1211,6 +1211,7 @@ let QUERYPARAM = 'query',
   resolveFormDataRequestBodyForPostmanRequest = (context, requestBodyContent) => {
     let bodyData = '',
       formDataParams = [],
+      encoding = {},
       requestBodyData = {
         mode: 'formdata',
         formdata: formDataParams
@@ -1221,9 +1222,11 @@ let QUERYPARAM = 'query',
     }
 
     bodyData = resolveRequestBodyData(context, requestBodyContent.schema);
+    encoding = _.get(requestBodyContent, 'encoding', {});
 
     _.forOwn(bodyData, (value, key) => {
       let requestBodySchema,
+        contentType = null,
         paramSchema,
         description,
         param;
@@ -1239,6 +1242,10 @@ let QUERYPARAM = 'query',
         paramSchema.required :
         _.indexOf(requestBodySchema.required, key) !== -1;
       description = getParameterDescription(paramSchema);
+
+      if (encoding.hasOwnProperty(key) && encoding[key] && encoding[key].hasOwnProperty('contentType')) {
+        contentType = encoding[key].contentType;
+      }
 
       // TODO: Add handling for headers from encoding
 
@@ -1258,6 +1265,9 @@ let QUERYPARAM = 'query',
       }
 
       param.description = description;
+      if (contentType) {
+        param.contentType = contentType;
+      }
 
       formDataParams.push(param);
     });
