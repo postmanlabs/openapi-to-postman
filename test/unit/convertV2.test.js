@@ -81,7 +81,9 @@ const expect = require('chai').expect,
   xmlRequestAndResponseBodyArrayTypeWrapped =
     path.join(__dirname, VALID_OPENAPI_PATH, '/xmlRequestAndResponseBodyArrayTypeWrapped.json'),
   schemaWithAdditionalProperties =
-    path.join(__dirname, VALID_OPENAPI_PATH, '/schemaWithAdditionalProperties.yaml');
+    path.join(__dirname, VALID_OPENAPI_PATH, '/schemaWithAdditionalProperties.yaml'),
+  specWithResponseRef =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/specWithResponseRef.yaml');
 
 
 describe('The convert v2 Function', function() {
@@ -2070,6 +2072,35 @@ describe('The convert v2 Function', function() {
           key: 'Authorization',
           value: 'OAuth <credentials>'
         });
+        done();
+      });
+  });
+
+  it('Should convert a collection with response $ref correctly', function(done) {
+    var openapi = fs.readFileSync(specWithResponseRef, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, { parametersResolution: 'Example' },
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item.length).to.equal(1);
+
+        const item = conversionResult.output[0].data.item[0].item[0].item[0];
+
+        expect(item.response[1].name).to.eql('unexpected error');
+        expect(item.response[1].header.length).to.eql(2);
+        expect(item.response[1].header[0].key).to.eql('Content-Type');
+        expect(item.response[1].header[0].value).to.eql('application/json');
+        expect(item.response[1].header[1].key).to.eql('x-trace-id');
+        expect(item.response[1].header[1].value).to.eql('12345-6789');
+        expect(JSON.parse(item.response[1].body)).to.have.property('code');
+        expect(JSON.parse(item.response[1].body)).to.have.property('message');
+
+        // Incorrectly defined properties will be skipped
+        expect(JSON.parse(item.response[1].body)).to.not.have.property('nullProp');
         done();
       });
   });
