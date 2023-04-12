@@ -2371,7 +2371,7 @@ function checkResponses (context, transaction, transactionPathPrefix, schemaPath
   // for each response, find the appropriate response from schemaPath, and then validate response body and headers
   async.map(responses, (response, responseCallback) => {
     let thisResponseCode = _.toString(response.code),
-      thisSchemaResponse = _.get(schemaPath, ['responses', thisResponseCode]),
+      thisSchemaResponse = _.get(schemaPath, ['responses', thisResponseCode], _.get(schemaPath, 'responses.default')),
       responsePathPrefix = thisResponseCode;
 
     // X can be used as wild card character, so response code like 2XX in definition are valid
@@ -2449,6 +2449,8 @@ function checkResponses (context, transaction, transactionPathPrefix, schemaPath
       missingResponses = [];
 
     _.each(_.get(schemaPath, 'responses'), (responseObj, responseCode) => {
+      responseCode = responseCode === 'default' ? '500' : responseCode;
+
       if (!_.includes(matchedResponses, responseCode)) {
         let mismatchObj = {
           property: 'RESPONSE',
