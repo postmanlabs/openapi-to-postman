@@ -401,7 +401,7 @@ let QUERYPARAM = 'query',
     let example = {},
       exampleKey;
 
-    if (typeof exampleObj !== 'object') {
+    if (!exampleObj || typeof exampleObj !== 'object') {
       return '';
     }
 
@@ -545,6 +545,11 @@ let QUERYPARAM = 'query',
         { includeDeprecated } = context.computedOptions;
 
       _.forOwn(schema.properties, (property, propertyName) => {
+        // Skip property resolution if it's not schema object
+        if (!_.isObject(property)) {
+          return;
+        }
+
         if (
           property.format === 'decimal' ||
           property.format === 'byte' ||
@@ -875,7 +880,7 @@ let QUERYPARAM = 'query',
 
     Object.keys(deepObject).forEach((key) => {
       let value = deepObject[key];
-      if (typeof value === 'object') {
+      if (value && typeof value === 'object') {
         extractedParams = _.concat(extractedParams, extractDeepObjectParams(value, objectKey + '[' + key + ']'));
       }
       else {
@@ -1720,8 +1725,9 @@ let QUERYPARAM = 'query',
     let responses = [],
       requestAcceptHeader;
 
-    _.forOwn(operationItem.responses, (responseSchema, code) => {
+    _.forOwn(operationItem.responses, (responseObj, code) => {
       let response,
+        responseSchema = _.has(responseObj, '$ref') ? resolveSchema(context, responseObj) : responseObj,
         { includeAuthInfoInExample } = context.computedOptions,
         responseAuthHelper,
         auth = request.auth,

@@ -885,7 +885,7 @@ function extractDeepObjectParams (deepObject, objectKey) {
 
   Object.keys(deepObject).forEach((key) => {
     let value = deepObject[key];
-    if (typeof value === 'object') {
+    if (value && typeof value === 'object') {
       extractedParams = _.concat(extractedParams, extractDeepObjectParams(value, objectKey + '[' + key + ']'));
     }
     else {
