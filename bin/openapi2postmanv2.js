@@ -12,6 +12,7 @@ var _ = require('lodash'),
   definedOptions,
   testFlag,
   swaggerInput,
+  interfaceVersion,
   swaggerData;
 
 /**
@@ -41,6 +42,14 @@ function parseOptions (value) {
       console.warn('\x1b[33m%s\x1b[0m', 'Warning: Invalid option supplied ', option[0]);
     }
   });
+
+  /**
+   * As v2 interface uses parametersResolution instead of previous requestParametersResolution option,
+   * override value of parametersResolution if it's not defined and requestParametersResolution is defined
+   */
+  if (_.has(parsedOptions, 'requestParametersResolution') && !_.has(parsedOptions, 'parametersResolution')) {
+    parsedOptions.parametersResolution = parsedOptions.requestParametersResolution;
+  }
   return parsedOptions;
 }
 
@@ -50,6 +59,7 @@ program
   .option('-o, --output <output>', 'Write the collection to an output file')
   .option('-t, --test', 'Test the OPENAPI converter')
   .option('-p, --pretty', 'Pretty print the JSON file')
+  .option('-i, --interface-version <interfaceVersion>', 'Interface version of convert() to be used')
   .option('-c, --options-config <optionsConfig>', 'JSON file containing Converter options')
   .option('-O, --options <options>', 'comma separated list of options', parseOptions);
 
@@ -76,6 +86,7 @@ inputFile = program.spec;
 outputFile = program.output || false;
 testFlag = program.test || false;
 prettyPrintFlag = program.pretty || false;
+interfaceVersion = program.interfaceVersion || 'v2';
 configFile = program.optionsConfig || false;
 definedOptions = (!(program.options instanceof Array) ? program.options : {});
 swaggerInput;
@@ -112,7 +123,8 @@ function writetoFile(prettyPrintFlag, file, collection) {
  * @returns {void}
  */
 function convert(swaggerData) {
-  let options = {};
+  let options = {},
+    convertFn = interfaceVersion === 'v1' ? 'convert' : 'convertV2';
 
   // apply options from config file if present
   if (configFile) {
@@ -126,7 +138,7 @@ function convert(swaggerData) {
     options = definedOptions;
   }
 
-  Converter.convert({
+  Converter[convertFn]({
     type: 'string',
     data: swaggerData
   }, options, (err, status) => {

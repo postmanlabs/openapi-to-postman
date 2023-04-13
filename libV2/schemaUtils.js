@@ -237,6 +237,19 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * Provides ref stack limit for current instance
+   * @param {*} stackLimit - Defined stackLimit in options
+   *
+   * @returns {Number} Returns the stackLimit to be used
+   */
+  getRefStackLimit = (stackLimit) => {
+    if (typeof stackLimit === 'number' && stackLimit > REF_STACK_LIMIT) {
+      return stackLimit;
+    }
+    return REF_STACK_LIMIT;
+  },
+
+  /**
    * Resolve a given ref from the schema
    * @param {Object} context - Global context object
    * @param {Object} $ref - Ref that is to be resolved
@@ -246,9 +259,10 @@ let QUERYPARAM = 'query',
    * @returns {Object} Returns the object that staisfies the schema
    */
   resolveRefFromSchema = (context, $ref, stackDepth = 0, seenRef = {}) => {
-    const { specComponents } = context;
+    const { specComponents } = context,
+      { stackLimit } = context.computedOptions;
 
-    if (stackDepth >= REF_STACK_LIMIT) {
+    if (stackDepth >= getRefStackLimit(stackLimit)) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
 
@@ -315,9 +329,10 @@ let QUERYPARAM = 'query',
    * @returns {Object} Returns the object that staisfies the schema
    */
   resolveRefForExamples = (context, $ref, stackDepth = 0, seenRef = {}) => {
-    const { specComponents } = context;
+    const { specComponents } = context,
+      { stackLimit } = context.computedOptions;
 
-    if (stackDepth >= REF_STACK_LIMIT) {
+    if (stackDepth >= getRefStackLimit(stackLimit)) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
 
@@ -467,12 +482,15 @@ let QUERYPARAM = 'query',
       return new Error('Schema is empty');
     }
 
-    if (stack >= REF_STACK_LIMIT) {
+    const { stackLimit } = context.computedOptions;
+
+    if (stack >= getRefStackLimit(stackLimit)) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
 
     stack++;
 
+    // eslint-disable-next-line one-var
     const compositeKeyword = schema.anyOf ? 'anyOf' : 'oneOf',
       { concreteUtils } = context;
 
