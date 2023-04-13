@@ -56,28 +56,31 @@ The converter can be used as a CLI tool as well. The following [command line opt
 
 ### Options
 
-- `-s <source>`, `--spec <source>`  
+- `-s <source>`, `--spec <source>`
   Used to specify the OpenAPI specification (file path) which is to be converted
 
-- `-o <destination>`, `--output <destination>`  
+- `-o <destination>`, `--output <destination>`
   Used to specify the destination file in which the collection is to be written
 
-- `-p`, `--pretty`  
+- `-p`, `--pretty`
   Used to pretty print the collection object while writing to a file
 
-- `-O`, `--options`  
+- `-i`, `--interface-version`
+  Specifies the interface version of the converter to be used. Value can be 'v2' or 'v1'. Default is 'v2'.
+
+- `-O`, `--options`
   Used to supply options to the converter, for complete options details see [here](/OPTIONS.md)
 
-- `-c`, `--options-config`  
+- `-c`, `--options-config`
   Used to supply options to the converter through config file, for complete options details see [here](/OPTIONS.md)
 
-- `-t`, `--test`  
+- `-t`, `--test`
   Used to test the collection with an in-built sample specification
 
-- `-v`, `--version`  
+- `-v`, `--version`
   Specifies the version of the converter
 
-- `-h`, `--help`  
+- `-h`, `--help`
   Specifies all the options along with a few usage examples on the terminal
 
 
