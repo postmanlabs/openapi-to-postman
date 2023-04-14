@@ -1899,6 +1899,11 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
                     }
                   },
                   required: ['array']
+                },
+                encoding: {
+                  file: {
+                    contentType: 'application/binary'
+                  }
                 }
               }
             }
@@ -1909,6 +1914,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(resultBody[0].key).to.equal('array');
         expect(resultBody[1].key).to.equal('file');
         expect(resultBody[1].type).to.equal('file');
+        expect(resultBody[1].contentType).to.equal('application/binary');
         expect(result.contentHeader).to.deep.include(
           { key: 'Content-Type', value: 'multipart/form-data' });
         done();

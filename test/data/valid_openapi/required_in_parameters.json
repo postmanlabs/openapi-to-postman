@@ -98,6 +98,14 @@
                     "type": "string"
                   }
                 }
+              },
+              "encoding": {
+                "formParam1": {
+                  "contentType": "application/xml"
+                },
+                "formParam2": {
+                  "contentType": "application/js"
+                }
               }
             }
           }

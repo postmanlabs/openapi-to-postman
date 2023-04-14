@@ -1,4 +1,9 @@
-const { getParametersForPathItem, verifyDeprecatedProperties } = require('../../lib/schemaUtils'),
+const {
+    getParametersForPathItem,
+    verifyDeprecatedProperties,
+    getExampleData,
+    extractDeepObjectParams
+  } = require('../../lib/schemaUtils'),
   expect = require('chai').expect;
 
 
@@ -259,5 +264,24 @@ describe('verifyDeprecatedProperties function', function () {
     expect(schema.properties.b).to.not.be.undefined;
     expect(schema.properties.b.properties.c).to.be.undefined;
     expect(schema.properties.b.properties.d).to.not.be.undefined;
+  });
+});
+
+describe('getExampleData function', function () {
+  it('should correctly provide result with null example object', function () {
+    const result = getExampleData(null, {}, {});
+
+    expect(result).to.equal('');
+  });
+});
+
+describe('extractDeepObjectParams function', function () {
+  it('should correctly provide result with nested object containing null values', function () {
+    const result = extractDeepObjectParams({ id: null }, 'user');
+
+    expect(result).to.eql([{
+      key: 'user[id]',
+      value: null
+    }]);
   });
 });

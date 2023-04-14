@@ -237,6 +237,19 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * Provides ref stack limit for current instance
+   * @param {*} stackLimit - Defined stackLimit in options
+   *
+   * @returns {Number} Returns the stackLimit to be used
+   */
+  getRefStackLimit = (stackLimit) => {
+    if (typeof stackLimit === 'number' && stackLimit > REF_STACK_LIMIT) {
+      return stackLimit;
+    }
+    return REF_STACK_LIMIT;
+  },
+
+  /**
    * Resolve a given ref from the schema
    * @param {Object} context - Global context object
    * @param {Object} $ref - Ref that is to be resolved
@@ -246,9 +259,10 @@ let QUERYPARAM = 'query',
    * @returns {Object} Returns the object that staisfies the schema
    */
   resolveRefFromSchema = (context, $ref, stackDepth = 0, seenRef = {}) => {
-    const { specComponents } = context;
+    const { specComponents } = context,
+      { stackLimit } = context.computedOptions;
 
-    if (stackDepth >= REF_STACK_LIMIT) {
+    if (stackDepth >= getRefStackLimit(stackLimit)) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
 
@@ -315,9 +329,10 @@ let QUERYPARAM = 'query',
    * @returns {Object} Returns the object that staisfies the schema
    */
   resolveRefForExamples = (context, $ref, stackDepth = 0, seenRef = {}) => {
-    const { specComponents } = context;
+    const { specComponents } = context,
+      { stackLimit } = context.computedOptions;
 
-    if (stackDepth >= REF_STACK_LIMIT) {
+    if (stackDepth >= getRefStackLimit(stackLimit)) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
 
@@ -401,7 +416,7 @@ let QUERYPARAM = 'query',
     let example = {},
       exampleKey;
 
-    if (typeof exampleObj !== 'object') {
+    if (!exampleObj || typeof exampleObj !== 'object') {
       return '';
     }
 
@@ -467,12 +482,15 @@ let QUERYPARAM = 'query',
       return new Error('Schema is empty');
     }
 
-    if (stack >= REF_STACK_LIMIT) {
+    const { stackLimit } = context.computedOptions;
+
+    if (stack >= getRefStackLimit(stackLimit)) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
 
     stack++;
 
+    // eslint-disable-next-line one-var
     const compositeKeyword = schema.anyOf ? 'anyOf' : 'oneOf',
       { concreteUtils } = context;
 
@@ -545,6 +563,11 @@ let QUERYPARAM = 'query',
         { includeDeprecated } = context.computedOptions;
 
       _.forOwn(schema.properties, (property, propertyName) => {
+        // Skip property resolution if it's not schema object
+        if (!_.isObject(property)) {
+          return;
+        }
+
         if (
           property.format === 'decimal' ||
           property.format === 'byte' ||
@@ -875,7 +898,7 @@ let QUERYPARAM = 'query',
 
     Object.keys(deepObject).forEach((key) => {
       let value = deepObject[key];
-      if (typeof value === 'object') {
+      if (value && typeof value === 'object') {
         extractedParams = _.concat(extractedParams, extractDeepObjectParams(value, objectKey + '[' + key + ']'));
       }
       else {
@@ -1211,6 +1234,7 @@ let QUERYPARAM = 'query',
   resolveFormDataRequestBodyForPostmanRequest = (context, requestBodyContent) => {
     let bodyData = '',
       formDataParams = [],
+      encoding = {},
       requestBodyData = {
         mode: 'formdata',
         formdata: formDataParams
@@ -1221,9 +1245,11 @@ let QUERYPARAM = 'query',
     }
 
     bodyData = resolveRequestBodyData(context, requestBodyContent.schema);
+    encoding = _.get(requestBodyContent, 'encoding', {});
 
     _.forOwn(bodyData, (value, key) => {
       let requestBodySchema,
+        contentType = null,
         paramSchema,
         description,
         param;
@@ -1239,6 +1265,10 @@ let QUERYPARAM = 'query',
         paramSchema.required :
         _.indexOf(requestBodySchema.required, key) !== -1;
       description = getParameterDescription(paramSchema);
+
+      if (typeof _.get(encoding, `[${key}].contentType`) === 'string') {
+        contentType = encoding[key].contentType;
+      }
 
       // TODO: Add handling for headers from encoding
 
@@ -1258,6 +1288,9 @@ let QUERYPARAM = 'query',
       }
 
       param.description = description;
+      if (contentType) {
+        param.contentType = contentType;
+      }
 
       formDataParams.push(param);
     });
@@ -1720,8 +1753,9 @@ let QUERYPARAM = 'query',
     let responses = [],
       requestAcceptHeader;
 
-    _.forOwn(operationItem.responses, (responseSchema, code) => {
+    _.forOwn(operationItem.responses, (responseObj, code) => {
       let response,
+        responseSchema = _.has(responseObj, '$ref') ? resolveSchema(context, responseObj) : responseObj,
         { includeAuthInfoInExample } = context.computedOptions,
         responseAuthHelper,
         auth = request.auth,
