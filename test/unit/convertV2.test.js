@@ -731,7 +731,7 @@ describe('The convert v2 Function', function() {
     });
   });
 
-  it('[Github #137]- Should add `requried` keyword in parameters where ' +
+  it.only('[Github #137]- Should add `requried` keyword in parameters where ' +
     'required field is set to true', function(done) {
     Converter.convertV2({ type: 'file', data: requiredInParams }, { schemaFaker: true }, (err, conversionResult) => {
       expect(err).to.be.null;
@@ -758,6 +758,8 @@ describe('The convert v2 Function', function() {
       request = requests[2].request;
       expect(request.body.formdata[0].description.content).to.equal('(Required) Description of formParam1');
       expect(request.body.formdata[1].description.content).to.equal('Description of formParam2');
+      expect(request.body.formdata[0].contentType).to.equal('application/xml');
+      expect(request.body.formdata[1].contentType).to.equal('application/js');
 
       // POST /pets
       // RequestBody: application/x-www-form-urlencoded

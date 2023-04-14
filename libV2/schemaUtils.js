@@ -1243,7 +1243,7 @@ let QUERYPARAM = 'query',
         _.indexOf(requestBodySchema.required, key) !== -1;
       description = getParameterDescription(paramSchema);
 
-      if (encoding.hasOwnProperty(key) && encoding[key] && encoding[key].hasOwnProperty('contentType')) {
+      if (typeof _.get(encoding, `[${key}].contentType`) === 'string') {
         contentType = encoding[key].contentType;
       }
 
