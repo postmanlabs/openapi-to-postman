@@ -731,7 +731,7 @@ describe('The convert v2 Function', function() {
     });
   });
 
-  it.only('[Github #137]- Should add `requried` keyword in parameters where ' +
+  it('[Github #137]- Should add `requried` keyword in parameters where ' +
     'required field is set to true', function(done) {
     Converter.convertV2({ type: 'file', data: requiredInParams }, { schemaFaker: true }, (err, conversionResult) => {
       expect(err).to.be.null;
