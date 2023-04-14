@@ -1,5 +1,22 @@
 # OpenAPI-Postman Changelog
 
+## [Unreleased]
+
+## [v4.11.0] - 2021-04-14
+
+### Added
+
+- Fixed issue [#11680](https://github.com/postmanlabs/postman-app-support/issues/11680) Added support for contentType field for Formdata request bodies.
+- Fixed issue [#10928](https://github.com/postmanlabs/postman-app-support/issues/10928) Added support for usage of interface version in CLI conversions with v2 as default.
+
+### Fixed
+
+- Fixed various known type errors related issues that were causing conversion errors.
+- Fixed an issue where default response was not considered correctly while validating collection request response.
+
+## Previous Releases
+Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
+
 #### v4.10.2 (March 13, 2023)
 * Fixed issue where Accept header was generated correctly in convertV2() interface.
 
@@ -436,3 +453,7 @@
 
 #### v0.0.1 (October 23, 2018)
 * Base release
+
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.11.0...HEAD
+
+[v4.11.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.10.2...v4.11.0
