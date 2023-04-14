@@ -760,6 +760,8 @@ describe('The convert v2 Function', function() {
       request = requests[2].request;
       expect(request.body.formdata[0].description.content).to.equal('(Required) Description of formParam1');
       expect(request.body.formdata[1].description.content).to.equal('Description of formParam2');
+      expect(request.body.formdata[0].contentType).to.equal('application/xml');
+      expect(request.body.formdata[1].contentType).to.equal('application/js');
 
       // POST /pets
       // RequestBody: application/x-www-form-urlencoded
