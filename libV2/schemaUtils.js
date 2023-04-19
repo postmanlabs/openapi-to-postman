@@ -227,7 +227,7 @@ let QUERYPARAM = 'query',
     _.forOwn(serverObj.variables, (value, key) => {
       serverVariables.push({
         key,
-        value: value.default || ''
+        value: _.get(value, 'default') || ''
       });
     });
 
@@ -1150,6 +1150,10 @@ let QUERYPARAM = 'query',
         // TODO: This could have properties inside properties which needs to be handled
         // That's why for some properties we are not deleting the format
         _.forOwn(requestBodySchema.properties, (schema, prop) => {
+          if (!_.isObject(requestBodySchema.properties[prop])) {
+            return;
+          }
+
           if (
             requestBodySchema.properties[prop].format === 'binary' ||
             requestBodySchema.properties[prop].format === 'byte' ||
@@ -1466,6 +1470,10 @@ let QUERYPARAM = 'query',
       { includeDeprecated } = context.computedOptions;
 
     _.forEach(params, (param) => {
+      if (!_.isObject(param)) {
+        return;
+      }
+
       if (_.has(param, '$ref')) {
         param = resolveSchema(context, param);
       }
@@ -1497,6 +1505,10 @@ let QUERYPARAM = 'query',
       pmParams = [];
 
     _.forEach(params, (param) => {
+      if (!_.isObject(param)) {
+        return;
+      }
+
       if (_.has(param, '$ref')) {
         param = resolveSchema(context, param);
       }
@@ -1557,6 +1569,10 @@ let QUERYPARAM = 'query',
       { keepImplicitHeaders, includeDeprecated } = context.computedOptions;
 
     _.forEach(params, (param) => {
+      if (!_.isObject(param)) {
+        return;
+      }
+
       if (_.has(param, '$ref')) {
         param = resolveSchema(context, param);
       }
@@ -1646,6 +1662,10 @@ let QUERYPARAM = 'query',
     }
 
     _.forOwn(responseHeaders, (value, headerName) => {
+      if (!_.isObject(value)) {
+        return;
+      }
+
       if (!includeDeprecated && value.deprecated) {
         return;
       }
