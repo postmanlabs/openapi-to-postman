@@ -83,7 +83,9 @@ const expect = require('chai').expect,
   schemaWithAdditionalProperties =
     path.join(__dirname, VALID_OPENAPI_PATH, '/schemaWithAdditionalProperties.yaml'),
   specWithResponseRef =
-    path.join(__dirname, VALID_OPENAPI_PATH, '/specWithResponseRef.yaml');
+    path.join(__dirname, VALID_OPENAPI_PATH, '/specWithResponseRef.yaml'),
+  specWithNullParams =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/specWithNullParams.yaml');
 
 
 describe('The convert v2 Function', function() {
@@ -733,7 +735,7 @@ describe('The convert v2 Function', function() {
     });
   });
 
-  it('[Github #137]- Should add `requried` keyword in parameters where ' +
+  it('[Github #137]- Should add `required` keyword in parameters where ' +
     'required field is set to true', function(done) {
     Converter.convertV2({ type: 'file', data: requiredInParams }, { schemaFaker: true }, (err, conversionResult) => {
       expect(err).to.be.null;
@@ -2103,6 +2105,29 @@ describe('The convert v2 Function', function() {
 
         // Incorrectly defined properties will be skipped
         expect(JSON.parse(item.response[1].body)).to.not.have.property('nullProp');
+        done();
+      });
+  });
+
+  it('Should convert a collection with undefined/null params and response headers without error', function(done) {
+    var openapi = fs.readFileSync(specWithNullParams, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, {},
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item.length).to.equal(1);
+
+        const item = conversionResult.output[0].data.item[0].item[0].item[0];
+
+        expect(item.request.url.query.length).to.eql(1);
+        expect(item.request.url.variable.length).to.eql(1);
+        expect(item.request.header.length).to.eql(1);
+
+        expect(item.response[0].header.length).to.eql(1);
         done();
       });
   });
