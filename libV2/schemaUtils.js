@@ -896,7 +896,7 @@ let QUERYPARAM = 'query',
   extractDeepObjectParams = (deepObject, objectKey) => {
     let extractedParams = [];
 
-    Object.keys(deepObject).forEach((key) => {
+    _.keys(deepObject).forEach((key) => {
       let value = deepObject[key];
       if (value && typeof value === 'object') {
         extractedParams = _.concat(extractedParams, extractDeepObjectParams(value, objectKey + '[' + key + ']'));
