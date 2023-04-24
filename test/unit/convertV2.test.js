@@ -2020,6 +2020,10 @@ describe('The convert v2 Function', function() {
         expect(item.request.header[0].key).to.eql('Accept');
         expect(item.request.header[0].value).to.eql('application/json');
         expect(item.response[0].originalRequest.header[0]).to.be.eql({
+          key: 'Accept',
+          value: 'application/json'
+        });
+        expect(item.response[0].originalRequest.header[1]).to.be.eql({
           description: {
             content: 'Added as a part of security scheme: apikey',
             type: 'text/plain'
@@ -2071,6 +2075,10 @@ describe('The convert v2 Function', function() {
         expect(item.request.header[0].key).to.eql('Accept');
         expect(item.request.header[0].value).to.eql('application/json');
         expect(item.response[0].originalRequest.header[0]).to.be.eql({
+          key: 'Accept',
+          value: 'application/json'
+        });
+        expect(item.response[0].originalRequest.header[1]).to.be.eql({
           description: {
             content: 'Added as a part of security scheme: oauth1',
             type: 'text/plain'
