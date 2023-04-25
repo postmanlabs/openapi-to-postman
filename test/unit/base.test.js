@@ -90,7 +90,9 @@ describe('CONVERT FUNCTION TESTS ', function() {
       schemaWithAdditionalProperties =
         path.join(__dirname, VALID_OPENAPI_PATH, '/schemaWithAdditionalProperties.yaml'),
       specWithNullParams =
-        path.join(__dirname, VALID_OPENAPI_PATH, '/specWithNullParams.yaml');
+        path.join(__dirname, VALID_OPENAPI_PATH, '/specWithNullParams.yaml'),
+      acceptHeaderExample =
+        path.join(__dirname, VALID_OPENAPI_PATH, '/acceptHeaderExample.json');
 
 
     it('Should add collection level auth with type as `bearer`' +
@@ -1848,6 +1850,44 @@ describe('CONVERT FUNCTION TESTS ', function() {
             done();
           });
       });
+
+    it('Should add corresponding Accept header in collection example\'s request correctly', function(done) {
+      var openapi = fs.readFileSync(acceptHeaderExample, 'utf8');
+      Converter.convertV2({ type: 'string', data: openapi }, {},
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item.length).to.equal(1);
+
+          const item1 = conversionResult.output[0].data.item[0].item[0].item[0].item[0],
+            item2 = conversionResult.output[0].data.item[0].item[1].item[0],
+            acceptHeader = {
+              key: 'Accept',
+              value: 'application/json'
+            };
+
+          expect(item1.request.header.length).to.eql(1);
+          expect(item1.request.header[0]).to.eql(acceptHeader);
+          expect(item1.response[0].originalRequest.header.length).to.eql(1);
+          expect(item1.response[0].originalRequest.header[0]).to.eql(acceptHeader);
+          expect(item1.response[1].originalRequest.header).to.be.undefined;
+
+          expect(item2.request.header.length).to.eql(2);
+          expect(item2.request.header[0].key).to.eql('x-hello');
+          expect(item2.request.header[1]).to.eql(acceptHeader);
+          expect(item2.response[0].originalRequest.header.length).to.eql(2);
+          expect(item2.response[0].originalRequest.header[0].key).to.eql('x-hello');
+          expect(item2.response[0].originalRequest.header[1]).to.eql(acceptHeader);
+          expect(item2.response[1].originalRequest.header.length).to.eql(2);
+          expect(item2.response[1].originalRequest.header[0].key).to.eql('x-hello');
+          expect(item2.response[1].originalRequest.header[1]).to.eql(acceptHeader);
+          done();
+        });
+    });
   });
 
   describe('Converting swagger 2.0 files', function() {

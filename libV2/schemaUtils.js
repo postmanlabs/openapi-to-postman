@@ -1785,6 +1785,9 @@ let QUERYPARAM = 'query',
         reqHeaders = _.clone(request.headers) || [],
         reqQueryParams = _.clone(_.get(request, 'params.queryParams', []));
 
+      // add Accept header in example's original request headers
+      _.isArray(acceptHeader) && (reqHeaders.push(...acceptHeader));
+
       if (includeAuthInfoInExample) {
         if (!auth) {
           auth = generateAuthForCollectionFromOpenAPI(context.openapi, context.openapi.security);
@@ -1798,6 +1801,11 @@ let QUERYPARAM = 'query',
         originalRequest = _.assign({}, request, {
           headers: reqHeaders,
           params: _.assign({}, request.params, { queryParams: reqQueryParams })
+        });
+      }
+      else {
+        originalRequest = _.assign({}, request, {
+          headers: reqHeaders
         });
       }
 
