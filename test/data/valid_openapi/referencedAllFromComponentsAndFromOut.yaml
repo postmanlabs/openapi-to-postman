@@ -1,0 +1,172 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  license:
+    name: MIT
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /pets:
+    get:
+      summary: List all pets
+      operationId: listPets
+      tags:
+        - pets
+      links:
+        userRepositories:
+          $ref: '#/components/links/UserRepositories'
+      parameters:
+        - "$ref": "#/components/parameters/theParam"
+      responses:
+        "$ref": "#/components/responses"
+    post:
+      summary: Create a pet
+      operationId: createPets
+      tags:
+        - pets
+      responses:
+        '201':
+          description: Null response
+        default:
+          "$ref": "#/components/responses/default"
+    put:
+      summary: Create a pet put
+      operationId: createPets
+      tags:
+        - pets
+      requestBody:
+        $ref: '#/components/requestBodies/Pet'
+      responses:
+        '201':
+          description: Null response
+        default:
+          "$ref": "#/components/responses/default"
+  /pets/{petId}:
+    $ref: "#/x-operations/getAPet"
+components:
+  parameters:
+    theParam:
+      name: limit
+      in: query
+      description: How many items to return at one time (max 100)
+      required: false
+      schema:
+        type: integer
+        format: int32
+  requestBodies:
+    Pet:
+      content:
+        application/json:
+          schema:
+            allOf:
+              - description: My Pet
+                title: Pettie
+              - $ref: '#/components/schemas/Pet'
+        examples:
+          response:
+            "$ref": "#/components/examples/response"
+        application/xml:
+          schema:
+            type: 'object'
+            properties:
+              name:
+                type: string
+                description: hooray
+      description: Pet object that needs to be added to the store
+      required: true
+  responses:
+    '200':
+      description: A paged array of pets
+      headers:
+        "$ref": "#/components/headers/theHeader"
+      content:
+        application/json:    
+          schema:
+            $ref: "#/components/schemas/Pets"
+    default:
+      description: unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  headers:
+    theHeader:
+      description: the header
+      schema:
+        type: string
+  links:
+    UserRepositories:
+      operationId: getRepositoriesByOwner
+      parameters:
+        username: $response.body#/username
+  examples:
+    response:
+      value: {
+        description: My Pet,
+        title: Pettie,
+        id: 1,
+        name: bob
+      }
+  schemas:
+    Pet:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        tag:
+          type: string
+    Pets:
+      type: array
+      items:
+        $ref: "#/components/schemas/Pet"
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    other:
+      $ref: "#/placeOut/theSchema"
+x-operations:
+  getAPet:
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+placeOut:
+  theSchema:
+    type: string

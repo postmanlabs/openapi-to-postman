@@ -1,0 +1,208 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  license:
+    name: MIT
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  "$ref": "#/componentsFromOut/allPaths"
+componentsFromOut:
+  allPaths:
+    /pets:
+      get:
+        summary: List all pets
+        operationId: listPets
+        tags:
+          - pets
+        links:
+          userRepositories:
+            $ref: '#/componentsFromOut/links/UserRepositories'
+        parameters:
+          - "$ref": "#/componentsFromOut/parameters/theParam"
+        responses:
+          "200":
+            "$ref": "#/componentsFromOut/responses/200"
+          default:
+            "$ref": "#/componentsFromOut/responses/default"
+      post:
+        summary: Create a pet
+        operationId: createPets
+        tags:
+          - pets
+        responses:
+          '201':
+            description: Null response
+          default:
+            "$ref": "#/componentsFromOut/responses/default"
+        callbacks:
+          # the name `onData` is a convenience locator
+          onData:
+            # when data is sent, it will be sent to the `callbackUrl` provided
+            # when making the subscription PLUS the suffix `/data`
+            '{$request.query.callbackUrl}/data':
+              post:
+                requestBody:
+                  description: subscription payload
+                  content:
+                    application/json:
+                      schema:
+                        properties:
+                          timestamp:
+                            type: string
+                            format: date-time
+                          userData:
+                            type: string
+                responses:
+                  '202':
+                    description: |
+                      Your server implementation should return this HTTP status code
+                      if the data was received successfully
+                  '204':
+                    description: |
+                      Your server should return this HTTP status code if no longer interested
+                      in further updates
+      put:
+        summary: Create a pet put
+        operationId: createPets
+        tags:
+          - pets
+        requestBody:
+          $ref: '#/componentsFromOut/requestBodies/PetRequest'
+        responses:
+          '201':
+            description: Null response
+          default:
+            "$ref": "#/componentsFromOut/responses/default"
+    /pets/{petId}:
+      $ref: "#/x-operations/getAPet"
+  parameters:
+    theParam:
+      name: limit
+      in: query
+      description: How many items to return at one time (max 100)
+      required: false
+      schema:
+        type: integer
+        format: int32
+  requestBodies:
+    PetRequest:
+      content:
+        application/json:
+          schema:
+            "$ref": "#/componentsFromOut/schemas/Pet"
+          examples:
+            petExample:
+              "$ref": "#/componentsFromOut/examples/petExample"
+        application/xml:
+          schema:
+            type: 'object'
+            properties:
+              name:
+                type: string
+                description: hooray
+      description: Pet object that needs to be added to the store
+      required: true
+  responses:
+    '200':
+      description: A paged array of pets
+      headers:
+        theHeader:
+          "$ref": "#/componentsFromOut/headers/theHeader"
+      content:
+        application/json:    
+          schema:
+            $ref: "#/componentsFromOut/schemas/Pets"
+          examples:
+            petsExample:
+              "$ref": "#/componentsFromOut/examples/petsExample"
+    default:
+      description: unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: "#/componentsFromOut/schemas/Error"
+  headers:
+    theHeader:
+      description: the header
+      schema:
+        type: string
+  links:
+    UserRepositories:
+      operationId: getRepositoriesByOwner
+      parameters:
+        username: $response.body#/username
+  examples:
+    petExample:
+      value: {
+        id: 1,
+        name: bob
+      }
+    petsExample:
+      value: [{
+        id: 1,
+        name: bob
+      }]
+  schemas:
+    Pet:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        tag:
+          type: string
+    Pets:
+      type: array
+      items:
+        $ref: "#/componentsFromOut/schemas/Pet"
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    other:
+      $ref: "#/placeOut/theSchema"
+x-operations:
+  getAPet:
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/componentsFromOut/schemas/Pet"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/componentsFromOut/schemas/Error"
+
+placeOut:
+  theSchema:
+    type: string

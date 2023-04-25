@@ -1,0 +1,93 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  license:
+    name: MIT
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /pets:
+    get:
+      summary: List all pets
+      operationId: listPets
+      tags:
+        - pets
+      parameters:
+        - "$ref": "#/componentsFromOut/parameters/theParam"
+      responses:
+        "200":
+          "$ref": "#/componentsFromOut/responses/200"
+componentsFromOut:
+  parameters:
+    theParam:
+      name: limit
+      in: query
+      description: How many items to return at one time (max 100)
+      required: false
+      schema:
+        type: integer
+        format: int32
+  responses:
+    '200':
+      description: A paged array of pets
+      content:
+        application/json:    
+          schema:
+            $ref: "#/componentsFromOut/schemas/Pets"
+  schemas:
+    Dog:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        tag:
+          type: string
+        petData:
+          $ref: "#/componentsFromOut/schemas/other"
+    Cat:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        tag:
+          type: string
+        petData:
+          $ref: "#/componentsFromOut/schemas/other"
+    Pets:
+      type: object
+      properties:
+        dog:
+          $ref: "#/componentsFromOut/schemas/Dog"
+        cat:
+          $ref: "#/componentsFromOut/schemas/Cat"
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    other:
+      type: object
+      properties:
+        child:
+          $ref: "#/componentsFromOut/schemas/childOfOther"
+    childOfOther:
+      type: string
