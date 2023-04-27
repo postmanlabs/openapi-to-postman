@@ -1804,6 +1804,38 @@ describe('Bug fixes', function () {
     });
   });
 
+  it('should not validate non required paramters when option enableOptionalParameters=false', function (done) {
+    let collectionPath = path.join(__dirname, '../data/disabled_query_param_test_data/collection_disabled.json'),
+      specPath = path.join(__dirname, '../data/disabled_query_param_test_data/spec.json'),
+      collectionData = JSON.parse(fs.readFileSync(collectionPath, 'utf8')),
+      spec = fs.readFileSync(specPath, 'utf8'),
+      schemaPack = new Converter.SchemaPack({ type: 'string', data: spec }, {
+        strictRequestMatching: true,
+        detailedBlobValidation: true,
+        suggestAvailableFixes: true,
+        ignoreUnresolvedVariables: true,
+        showMissingInSchemaErrors: true,
+        validateMetadata: true,
+        parametersResolution: 'Example',
+        enableOptionalParameters: false
+      }),
+      requests = [];
+
+    getAllTransactionsInjectingId(collectionData, requests);
+
+    schemaPack.validateTransactionV2(requests, (err, result) => {
+      expect(err).to.be.null;
+      expect(result).to.be.an('object');
+
+      // check for result.requests structure
+      const requestId = Object.keys(result.requests)[0],
+        mismatches = _.get(result, ['requests', requestId, 'endpoints', '0', 'mismatches']);
+
+      expect(mismatches).to.have.lengthOf(0);
+      return done();
+    });
+  });
+
   it('should validate non required parameters in url encoded body', function (done) {
     let collectionPath = path.join(__dirname, '../data/disabled_param_url_encoded_body/urlencodedBodyCollection.json'),
       specPath = path.join(__dirname, '../data/disabled_param_url_encoded_body/urlencodedBodySpec.yaml'),
@@ -1841,4 +1873,38 @@ describe('Bug fixes', function () {
       return done();
     });
   });
+
+  it('should not validate non required parameters when option enableOptionalParameters=false in url encoded body',
+    function (done) {
+      let collectionPath = path.join(__dirname,
+          '../data/disabled_param_url_encoded_body/urlencodedBodyCollectionDisabled.json'),
+        specPath = path.join(__dirname, '../data/disabled_param_url_encoded_body/urlencodedBodySpec.yaml'),
+        collectionData = JSON.parse(fs.readFileSync(collectionPath, 'utf8')),
+        spec = fs.readFileSync(specPath, 'utf8'),
+        schemaPack = new Converter.SchemaPack({ type: 'string', data: spec }, {
+          strictRequestMatching: true,
+          detailedBlobValidation: true,
+          suggestAvailableFixes: true,
+          ignoreUnresolvedVariables: true,
+          showMissingInSchemaErrors: true,
+          validateMetadata: true,
+          parametersResolution: 'Example',
+          enableOptionalParameters: false
+        }),
+        requests = [];
+
+      getAllTransactions(collectionData, requests);
+
+      schemaPack.validateTransactionV2(requests, (err, result) => {
+        expect(err).to.be.null;
+        expect(result).to.be.an('object');
+
+        // check for result.requests structure
+        const requestId = Object.keys(result.requests)[0],
+          mismatches = _.get(result, ['requests', requestId, 'endpoints', '0', 'mismatches']);
+
+        expect(mismatches).to.have.lengthOf(0);
+        return done();
+      });
+    });
 });
