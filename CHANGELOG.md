@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+### Added
+
+- Fixed issue [#31](https://github.com/postmanlabs/openapi-to-postman/issues/31#issuecomment-1481258315) Added support for enableOptionalParameters option in v2 interface.
+
+### Fixed
+
+- Fixed issue [#11835](https://github.com/postmanlabs/postman-app-support/issues/11835) where Accept header was not present in Example request.
+- Fixed issue where conversion was failing with RangeError in case of non-schema circular refs.
+- Fixed issue where conversion was failing with TypeError by safer lodash functions usage.
+- Fixed issue where TypeErrors were happening for null/undefined params.
+
+## [v1.7.1] - 2023-03-29
+
+-   Minor fix - Add language labels for Rust and Kotlin
+
 ## [v4.11.0] - 2021-04-14
 
 ### Added
