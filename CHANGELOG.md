@@ -13,10 +13,6 @@
 - Fixed issue where conversion was failing with TypeError by safer lodash functions usage.
 - Fixed issue where TypeErrors were happening for null/undefined params.
 
-## [v1.7.1] - 2023-03-29
-
--   Minor fix - Add language labels for Rust and Kotlin
-
 ## [v4.11.0] - 2021-04-14
 
 ### Added
