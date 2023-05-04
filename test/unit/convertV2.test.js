@@ -843,6 +843,7 @@ describe('The convert v2 Function', function() {
             {
               key: 'access_token',
               value: 'X-access-token',
+              disabled: false,
               description: {
                 content: 'Access token',
                 type: 'text/plain'
@@ -949,18 +950,18 @@ describe('The convert v2 Function', function() {
   });
 
   // Handle optional parameters to be made disabled
-  it.skip('[Github #31] & [GitHub #337] - should set optional params as disabled', function(done) {
+  it('[Github #31] & [GitHub #337] - should set optional params as disabled', function(done) {
     let options = { schemaFaker: true, enableOptionalParameters: false };
     Converter.convertV2({ type: 'file', data: requiredInParams }, options, (err, conversionResult) => {
       expect(err).to.be.null;
-      let requests = conversionResult.output[0].data.item,
+      let requests = conversionResult.output[0].data.item[0].item,
         request,
         urlencodedBody;
 
       // GET /pets
       // query1 required, query2 optional
       // header1 required, header2 optional
-      request = requests[0].request;
+      request = requests[1].request;
       expect(request.url.query[0].disabled).to.be.false;
       expect(request.url.query[1].disabled).to.be.true;
       expect(request.header[0].disabled).to.be.false;
@@ -968,7 +969,7 @@ describe('The convert v2 Function', function() {
 
       // POST /pets
       // urlencoded body
-      urlencodedBody = requests[2].request.body.urlencoded;
+      urlencodedBody = requests[3].request.body.urlencoded;
       expect(urlencodedBody[0].key).to.eql('urlencodedParam1');
       expect(urlencodedBody[0].disabled).to.be.false;
       expect(urlencodedBody[1].key).to.eql('urlencodedParam2');

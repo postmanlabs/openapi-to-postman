@@ -1,0 +1,319 @@
+{
+  "item": [
+    {
+      "name": "pets",
+      "description": "",
+      "item": [
+        {
+          "name": "{petId}",
+          "description": "",
+          "item": [
+            {
+              "id": "a42ce42e-522b-4fc7-b1b9-adedb686ab5b",
+              "name": "Updates a pet in the store with form data",
+              "request": {
+                "name": "Updates a pet in the store with form data",
+                "description": {},
+                "url": {
+                  "path": [
+                    "pets",
+                    ":petId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "petId",
+                      "disabled": false
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "disabled": true,
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "key": "prop1dwawdawd",
+                      "value": "1234"
+                    },
+                    {
+                      "disabled": true,
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "key": "prop2",
+                      "value": "<string>"
+                    },
+                    {
+                      "disabled": true,
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "key": "propObjectNonExplodable",
+                      "value": "prop3,<string>,prop4,<string>"
+                    },
+                    {
+                      "disabled": true,
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "key": "propArray",
+                      "value": "<string>"
+                    },
+                    {
+                      "disabled": true,
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "key": "propArray",
+                      "value": "<string>"
+                    },
+                    {
+                      "disabled": true,
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "key": "propSimple",
+                      "value": "<integer>"
+                    },
+                    {
+                      "disabled": true,
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "key": "propDeepObject[id]",
+                      "value": "false"
+                    },
+                    {
+                      "disabled": true,
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "key": "propDeepObject[name]",
+                      "value": "<string>"
+                    },
+                    {
+                      "disabled": true,
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "key": "propDeepObject[address][city]",
+                      "value": "<string>"
+                    },
+                    {
+                      "disabled": true,
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "key": "propDeepObject[address][country]",
+                      "value": "<string>"
+                    },
+                    {
+                      "disabled": true,
+                      "key": "propArrayComplex",
+                      "value": "<Error: Not supported in OAS>"
+                    },
+                    {
+                      "disabled": true,
+                      "description": {
+                        "content": "This property is not available in matched collection.",
+                        "type": "text/plain"
+                      },
+                      "key": "propMissingInReq",
+                      "value": "<integer>"
+                    }
+                  ]
+                },
+                "auth": null
+              },
+              "response": [
+                {
+                  "id": "97737738-c691-4ad2-8a13-5e9ca6540a01",
+                  "name": "Pet updated.",
+                  "originalRequest": {
+                    "url": {
+                      "path": [
+                        "pets",
+                        ":petId"
+                      ],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/x-www-form-urlencoded"
+                      }
+                    ],
+                    "method": "POST",
+                    "body": {
+                      "mode": "urlencoded",
+                      "urlencoded": [
+                        {
+                          "disabled": true,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "prop1",
+                          "value": "<string>"
+                        },
+                        {
+                          "disabled": true,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "prop2",
+                          "value": "<string>"
+                        },
+                        {
+                          "disabled": true,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "propObjectNonExplodable",
+                          "value": "prop3,<string>,prop4,<string>"
+                        },
+                        {
+                          "disabled": true,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "propArray",
+                          "value": "<string>"
+                        },
+                        {
+                          "disabled": true,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "propArray",
+                          "value": "<string>"
+                        },
+                        {
+                          "disabled": true,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "propSimple",
+                          "value": "<integer>"
+                        },
+                        {
+                          "disabled": true,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "propDeepObject[id]",
+                          "value": "<integer>"
+                        },
+                        {
+                          "disabled": true,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "propDeepObject[name]",
+                          "value": "<string>"
+                        },
+                        {
+                          "disabled": true,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "propDeepObject[address][city]",
+                          "value": "<string>"
+                        },
+                        {
+                          "disabled": true,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "propDeepObject[address][country]",
+                          "value": "<string>"
+                        },
+                        {
+                          "disabled": true,
+                          "key": "propArrayComplex",
+                          "value": "<Error: Not supported in OAS>"
+                        },
+                        {
+                          "disabled": true,
+                          "description": {
+                            "content": "This property is not available in matched collection.",
+                            "type": "text/plain"
+                          },
+                          "key": "propMissingInReq",
+                          "value": "<integer>"
+                        }
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "header": [],
+                  "cookie": [],
+                  "_postman_previewlanguage": "text"
+                }
+              ],
+              "event": [],
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://petstore.swagger.io/v1"
+    }
+  ],
+  "info": {
+    "_postman_id": "82b88ce4-5b4c-43e8-8734-ef45b6e80957",
+    "name": "Swagger Petstore",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "",
+      "type": "text/plain"
+    }
+  }
+}

@@ -1735,7 +1735,7 @@ function checkQueryParams (context, queryParams, transactionPathPrefix, schemaPa
     requestQueryParams = [],
     resolvedSchemaParams = [],
     mismatchProperty = 'QUERYPARAM',
-    { includeDeprecated } = context.computedOptions;
+    { includeDeprecated, enableOptionalParameters } = context.computedOptions;
 
   if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
     return callback(null, []);
@@ -1837,6 +1837,11 @@ function checkQueryParams (context, queryParams, transactionPathPrefix, schemaPa
         return;
       }
 
+      // If optional parameters are disabled, do not report them as missing
+      if (!enableOptionalParameters && qp.required !== true) {
+        return;
+      }
+
       if (!_.find(requestQueryParams, (param) => {
         return param.key === qp.name;
       })) {
@@ -1888,7 +1893,7 @@ function checkRequestHeaders (context, headers, transactionPathPrefix, schemaPat
       return !_.includes(IMPLICIT_HEADERS, _.toLower(_.get(header, 'key')));
     }),
     mismatchProperty = 'HEADER',
-    { includeDeprecated } = context.computedOptions;
+    { includeDeprecated, enableOptionalParameters } = context.computedOptions;
 
   if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
     return callback(null, []);
@@ -1974,6 +1979,11 @@ function checkRequestHeaders (context, headers, transactionPathPrefix, schemaPat
           return;
         }
 
+        // If optional parameters are disabled, do not report them as missing
+        if (!enableOptionalParameters && header.required !== true) {
+          return;
+        }
+
         // assign parameter example(s) as schema examples;
         assignParameterExamples(header);
 
@@ -2019,7 +2029,7 @@ function checkResponseHeaders (context, schemaResponse, headers, transactionPath
       return !_.includes(IMPLICIT_HEADERS, _.toLower(_.get(header, 'key')));
     }),
     mismatchProperty = 'RESPONSE_HEADER',
-    { includeDeprecated } = context.computedOptions;
+    { includeDeprecated, enableOptionalParameters } = context.computedOptions;
 
   if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
     return callback(null, []);
@@ -2098,6 +2108,11 @@ function checkResponseHeaders (context, schemaResponse, headers, transactionPath
         return;
       }
 
+      // If optional parameters are disabled, do not report them as missing
+      if (!enableOptionalParameters && header.required !== true) {
+        return;
+      }
+
       if (!_.find(resHeaders, (param) => { return param.key === header.name; })) {
 
         // assign parameter example(s) as schema examples;
@@ -2139,7 +2154,7 @@ function checkRequestBody (context, requestBody, transactionPathPrefix, schemaPa
   let jsonSchemaBody,
     jsonContentType,
     mismatchProperty = 'BODY',
-    { includeDeprecated } = context.computedOptions;
+    { includeDeprecated, enableOptionalParameters } = context.computedOptions;
 
   if (options.validationPropertiesToIgnore.includes(mismatchProperty)) {
     return callback(null, []);
@@ -2275,6 +2290,11 @@ function checkRequestBody (context, requestBody, transactionPathPrefix, schemaPa
 
       _.each(filteredSchemaParams, (uParam) => {
         if (uParam.deprecated && !includeDeprecated) {
+          return;
+        }
+
+        // If optional parameters are disabled, do not report them as missing
+        if (!enableOptionalParameters && uParam.required !== true) {
           return;
         }
 

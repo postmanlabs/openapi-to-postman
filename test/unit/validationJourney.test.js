@@ -101,7 +101,8 @@ describe('validateTransactionV2() should be able to validate collections generat
           ignoreUnresolvedVariables: true,
           validateMetadata: true,
           suggestAvailableFixes: true,
-          detailedBlobValidation: false
+          detailedBlobValidation: false,
+          enableOptionalParameters: false
         },
         // Different schemaPack instances are used as conversion resolves schema differently then validation
         schemaPackConversion = new Converter.SchemaPack({ type: 'string', data: fileData }, options, MODULE_VERSION.V2),

@@ -926,11 +926,13 @@ let QUERYPARAM = 'query',
 
   serialiseParamsBasedOnStyle = (context, param, paramValue) => {
     const { style, explode, startValue, propSeparator, keyValueSeparator, isExplodable } =
-      getParamSerialisationInfo(context, param);
+      getParamSerialisationInfo(context, param),
+      { enableOptionalParameters } = context.computedOptions;
 
     let serialisedValue = '',
       description = getParameterDescription(param),
       paramName = _.get(param, 'name'),
+      disabled = !enableOptionalParameters && _.get(param, 'required') !== true,
       pmParams = [],
       isNotSerializable = false;
 
@@ -945,7 +947,8 @@ let QUERYPARAM = 'query',
             pmParams.push({
               key: isArrayValue ? paramName : key,
               value: (value === undefined ? '' : _.toString(value)),
-              description
+              description,
+              disabled
             });
           });
 
@@ -961,7 +964,8 @@ let QUERYPARAM = 'query',
             pmParams.push({
               key: extractedParam.key,
               value: _.toString(extractedParam.value) || '',
-              description
+              description,
+              disabled
             });
           });
 
@@ -971,7 +975,8 @@ let QUERYPARAM = 'query',
           isNotSerializable = true;
           pmParams.push({
             key: paramName,
-            value: '<Error: Not supported in OAS>'
+            value: '<Error: Not supported in OAS>',
+            disabled
           });
         }
 
@@ -1004,7 +1009,8 @@ let QUERYPARAM = 'query',
     pmParams.push({
       key: paramName,
       value: _.toString(serialisedValue),
-      description
+      description,
+      disabled
     });
 
     return pmParams;
