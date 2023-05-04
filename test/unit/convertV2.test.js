@@ -87,7 +87,9 @@ const expect = require('chai').expect,
   specWithNullParams =
     path.join(__dirname, VALID_OPENAPI_PATH, '/specWithNullParams.yaml'),
   acceptHeaderExample =
-    path.join(__dirname, VALID_OPENAPI_PATH, '/acceptHeaderExample.json');
+    path.join(__dirname, VALID_OPENAPI_PATH, '/acceptHeaderExample.json'),
+  recursiveRefComponents =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/recursiveRefComponents.yaml');
 
 
 describe('The convert v2 Function', function() {
@@ -2176,6 +2178,31 @@ describe('The convert v2 Function', function() {
         expect(item2.response[1].originalRequest.header.length).to.eql(2);
         expect(item2.response[1].originalRequest.header[0].key).to.eql('x-hello');
         expect(item2.response[1].originalRequest.header[1]).to.eql(acceptHeader);
+        done();
+      });
+  });
+
+  it('Should handle recursive references for non-schema $refs correctly', function(done) {
+    var openapi = fs.readFileSync(recursiveRefComponents, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, {},
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item.length).to.equal(1);
+
+        const item = conversionResult.output[0].data.item[0].item[0];
+
+        expect(item.request.header).to.be.undefined;
+        expect(item.request.url.query).to.be.empty;
+        expect(item.response.length).to.eql(2);
+        expect(item.response[0].header).to.be.empty;
+        expect(item.response[0].body).to.be.undefined;
+        expect(item.response[1].header).to.be.empty;
+        expect(item.response[1].body).to.be.undefined;
         done();
       });
   });
