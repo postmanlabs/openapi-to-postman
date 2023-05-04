@@ -83,7 +83,13 @@ const expect = require('chai').expect,
   schemaWithAdditionalProperties =
     path.join(__dirname, VALID_OPENAPI_PATH, '/schemaWithAdditionalProperties.yaml'),
   specWithResponseRef =
-    path.join(__dirname, VALID_OPENAPI_PATH, '/specWithResponseRef.yaml');
+    path.join(__dirname, VALID_OPENAPI_PATH, '/specWithResponseRef.yaml'),
+  specWithNullParams =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/specWithNullParams.yaml'),
+  acceptHeaderExample =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/acceptHeaderExample.json'),
+  recursiveRefComponents =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/recursiveRefComponents.yaml');
 
 
 describe('The convert v2 Function', function() {
@@ -733,7 +739,7 @@ describe('The convert v2 Function', function() {
     });
   });
 
-  it('[Github #137]- Should add `requried` keyword in parameters where ' +
+  it('[Github #137]- Should add `required` keyword in parameters where ' +
     'required field is set to true', function(done) {
     Converter.convertV2({ type: 'file', data: requiredInParams }, { schemaFaker: true }, (err, conversionResult) => {
       expect(err).to.be.null;
@@ -837,6 +843,7 @@ describe('The convert v2 Function', function() {
             {
               key: 'access_token',
               value: 'X-access-token',
+              disabled: false,
               description: {
                 content: 'Access token',
                 type: 'text/plain'
@@ -943,18 +950,18 @@ describe('The convert v2 Function', function() {
   });
 
   // Handle optional parameters to be made disabled
-  it.skip('[Github #31] & [GitHub #337] - should set optional params as disabled', function(done) {
+  it('[Github #31] & [GitHub #337] - should set optional params as disabled', function(done) {
     let options = { schemaFaker: true, enableOptionalParameters: false };
     Converter.convertV2({ type: 'file', data: requiredInParams }, options, (err, conversionResult) => {
       expect(err).to.be.null;
-      let requests = conversionResult.output[0].data.item,
+      let requests = conversionResult.output[0].data.item[0].item,
         request,
         urlencodedBody;
 
       // GET /pets
       // query1 required, query2 optional
       // header1 required, header2 optional
-      request = requests[0].request;
+      request = requests[1].request;
       expect(request.url.query[0].disabled).to.be.false;
       expect(request.url.query[1].disabled).to.be.true;
       expect(request.header[0].disabled).to.be.false;
@@ -962,7 +969,7 @@ describe('The convert v2 Function', function() {
 
       // POST /pets
       // urlencoded body
-      urlencodedBody = requests[2].request.body.urlencoded;
+      urlencodedBody = requests[3].request.body.urlencoded;
       expect(urlencodedBody[0].key).to.eql('urlencodedParam1');
       expect(urlencodedBody[0].disabled).to.be.false;
       expect(urlencodedBody[1].key).to.eql('urlencodedParam2');
@@ -2016,6 +2023,10 @@ describe('The convert v2 Function', function() {
         expect(item.request.header[0].key).to.eql('Accept');
         expect(item.request.header[0].value).to.eql('application/json');
         expect(item.response[0].originalRequest.header[0]).to.be.eql({
+          key: 'Accept',
+          value: 'application/json'
+        });
+        expect(item.response[0].originalRequest.header[1]).to.be.eql({
           description: {
             content: 'Added as a part of security scheme: apikey',
             type: 'text/plain'
@@ -2067,6 +2078,10 @@ describe('The convert v2 Function', function() {
         expect(item.request.header[0].key).to.eql('Accept');
         expect(item.request.header[0].value).to.eql('application/json');
         expect(item.response[0].originalRequest.header[0]).to.be.eql({
+          key: 'Accept',
+          value: 'application/json'
+        });
+        expect(item.response[0].originalRequest.header[1]).to.be.eql({
           description: {
             content: 'Added as a part of security scheme: oauth1',
             type: 'text/plain'
@@ -2103,6 +2118,92 @@ describe('The convert v2 Function', function() {
 
         // Incorrectly defined properties will be skipped
         expect(JSON.parse(item.response[1].body)).to.not.have.property('nullProp');
+        done();
+      });
+  });
+
+  it('Should convert a collection with undefined/null params and response headers without error', function(done) {
+    var openapi = fs.readFileSync(specWithNullParams, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, {},
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item.length).to.equal(1);
+
+        const item = conversionResult.output[0].data.item[0].item[0].item[0];
+
+        expect(item.request.url.query.length).to.eql(1);
+        expect(item.request.url.variable.length).to.eql(1);
+        expect(item.request.header.length).to.eql(1);
+
+        expect(item.response[0].header.length).to.eql(1);
+        done();
+      });
+  });
+
+  it('Should add corresponding Accept header in collection example\'s request correctly', function(done) {
+    var openapi = fs.readFileSync(acceptHeaderExample, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, {},
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item.length).to.equal(1);
+
+        const item1 = conversionResult.output[0].data.item[0].item[0].item[0].item[0],
+          item2 = conversionResult.output[0].data.item[0].item[1].item[0],
+          acceptHeader = {
+            key: 'Accept',
+            value: 'application/json'
+          };
+
+        expect(item1.request.header.length).to.eql(1);
+        expect(item1.request.header[0]).to.eql(acceptHeader);
+        expect(item1.response[0].originalRequest.header.length).to.eql(1);
+        expect(item1.response[0].originalRequest.header[0]).to.eql(acceptHeader);
+        expect(item1.response[1].originalRequest.header).to.be.undefined;
+
+        expect(item2.request.header.length).to.eql(2);
+        expect(item2.request.header[0].key).to.eql('x-hello');
+        expect(item2.request.header[1]).to.eql(acceptHeader);
+        expect(item2.response[0].originalRequest.header.length).to.eql(2);
+        expect(item2.response[0].originalRequest.header[0].key).to.eql('x-hello');
+        expect(item2.response[0].originalRequest.header[1]).to.eql(acceptHeader);
+        expect(item2.response[1].originalRequest.header.length).to.eql(2);
+        expect(item2.response[1].originalRequest.header[0].key).to.eql('x-hello');
+        expect(item2.response[1].originalRequest.header[1]).to.eql(acceptHeader);
+        done();
+      });
+  });
+
+  it('Should handle recursive references for non-schema $refs correctly', function(done) {
+    var openapi = fs.readFileSync(recursiveRefComponents, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, {},
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item.length).to.equal(1);
+
+        const item = conversionResult.output[0].data.item[0].item[0];
+
+        expect(item.request.header).to.be.undefined;
+        expect(item.request.url.query).to.be.empty;
+        expect(item.response.length).to.eql(2);
+        expect(item.response[0].header).to.be.empty;
+        expect(item.response[0].body).to.be.undefined;
+        expect(item.response[1].header).to.be.empty;
+        expect(item.response[1].body).to.be.undefined;
         done();
       });
   });

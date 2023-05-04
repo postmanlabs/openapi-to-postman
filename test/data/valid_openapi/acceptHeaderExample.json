@@ -1,0 +1,159 @@
+{
+    "openapi": "3.0.2",
+    "info": {
+        "title": "svc-activity",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http:\/\/localhost\/svc\/activity"
+        }
+    ],
+    "paths": {
+        "\/api\/log": {
+            "post": {
+                "summary": "Store",
+                "description": "Create new log item",
+                "parameters": [
+                  {
+                    "name": "x-hello",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    },
+                    "in": "header"
+                  }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "201 Created",
+                        "content": {
+                            "application\/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "422 Validation Errors",
+                        "content": {
+                            "application\/json": {
+                                "schema": {
+                                    "$ref": "#\/components\/schemas\/response-validation-errors"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "\/api\/logs\/{log}": {
+            "get": {
+                "summary": "Show",
+                "description": "Show one log by id",
+                "parameters": [
+                    {
+                        "name": "log",
+                        "in": "path",
+                        "description": "Log ID",
+                        "required": true,
+                        "schema": {
+                            "format": "int64",
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "example": 1
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "200 OK",
+                        "content": {
+                            "application\/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "id",
+                                        "metadata",
+                                        "timestamp",
+                                        "actor",
+                                        "action",
+                                        "namespace"
+                                    ],
+                                    "properties": {
+                                        "id": {
+                                            "description": "UUID of the object",
+                                            "format": "int64",
+                                            "type": "integer",
+                                            "example": 12
+                                        },
+                                        "namespace": {
+                                            "description": "Where this actions took, preferably service name. Must be exists before",
+                                            "type": "string",
+                                            "example": "some-project"
+                                        },
+                                        "action": {
+                                            "description": "What is the action",
+                                            "type": "string",
+                                            "example": "create_user"
+                                        },
+                                        "actor": {
+                                            "description": "Who took the action, Subject, string, can be id, email, username",
+                                            "type": "string",
+                                            "example": "email@email.com"
+                                        },
+                                        "timestamp": {
+                                            "format": "date-time",
+                                            "type": "string"
+                                        },
+                                        "metadata": {
+                                            "type": "object",
+                                            "nullable": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "404 Not Found"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "response-validation-errors": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "The given data was invalid."
+                    },
+                    "errors": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "example": {
+                            "field": [
+                                "Something is wrong with this field!"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

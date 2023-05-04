@@ -227,7 +227,7 @@ let QUERYPARAM = 'query',
     _.forOwn(serverObj.variables, (value, key) => {
       serverVariables.push({
         key,
-        value: value.default || ''
+        value: _.get(value, 'default') || ''
       });
     });
 
@@ -896,7 +896,7 @@ let QUERYPARAM = 'query',
   extractDeepObjectParams = (deepObject, objectKey) => {
     let extractedParams = [];
 
-    Object.keys(deepObject).forEach((key) => {
+    _.keys(deepObject).forEach((key) => {
       let value = deepObject[key];
       if (value && typeof value === 'object') {
         extractedParams = _.concat(extractedParams, extractDeepObjectParams(value, objectKey + '[' + key + ']'));
@@ -926,11 +926,13 @@ let QUERYPARAM = 'query',
 
   serialiseParamsBasedOnStyle = (context, param, paramValue) => {
     const { style, explode, startValue, propSeparator, keyValueSeparator, isExplodable } =
-      getParamSerialisationInfo(context, param);
+      getParamSerialisationInfo(context, param),
+      { enableOptionalParameters } = context.computedOptions;
 
     let serialisedValue = '',
       description = getParameterDescription(param),
       paramName = _.get(param, 'name'),
+      disabled = !enableOptionalParameters && _.get(param, 'required') !== true,
       pmParams = [],
       isNotSerializable = false;
 
@@ -945,7 +947,8 @@ let QUERYPARAM = 'query',
             pmParams.push({
               key: isArrayValue ? paramName : key,
               value: (value === undefined ? '' : _.toString(value)),
-              description
+              description,
+              disabled
             });
           });
 
@@ -961,7 +964,8 @@ let QUERYPARAM = 'query',
             pmParams.push({
               key: extractedParam.key,
               value: _.toString(extractedParam.value) || '',
-              description
+              description,
+              disabled
             });
           });
 
@@ -971,7 +975,8 @@ let QUERYPARAM = 'query',
           isNotSerializable = true;
           pmParams.push({
             key: paramName,
-            value: '<Error: Not supported in OAS>'
+            value: '<Error: Not supported in OAS>',
+            disabled
           });
         }
 
@@ -1004,7 +1009,8 @@ let QUERYPARAM = 'query',
     pmParams.push({
       key: paramName,
       value: _.toString(serialisedValue),
-      description
+      description,
+      disabled
     });
 
     return pmParams;
@@ -1150,6 +1156,10 @@ let QUERYPARAM = 'query',
         // TODO: This could have properties inside properties which needs to be handled
         // That's why for some properties we are not deleting the format
         _.forOwn(requestBodySchema.properties, (schema, prop) => {
+          if (!_.isObject(requestBodySchema.properties[prop])) {
+            return;
+          }
+
           if (
             requestBodySchema.properties[prop].format === 'binary' ||
             requestBodySchema.properties[prop].format === 'byte' ||
@@ -1466,6 +1476,10 @@ let QUERYPARAM = 'query',
       { includeDeprecated } = context.computedOptions;
 
     _.forEach(params, (param) => {
+      if (!_.isObject(param)) {
+        return;
+      }
+
       if (_.has(param, '$ref')) {
         param = resolveSchema(context, param);
       }
@@ -1497,6 +1511,10 @@ let QUERYPARAM = 'query',
       pmParams = [];
 
     _.forEach(params, (param) => {
+      if (!_.isObject(param)) {
+        return;
+      }
+
       if (_.has(param, '$ref')) {
         param = resolveSchema(context, param);
       }
@@ -1557,6 +1575,10 @@ let QUERYPARAM = 'query',
       { keepImplicitHeaders, includeDeprecated } = context.computedOptions;
 
     _.forEach(params, (param) => {
+      if (!_.isObject(param)) {
+        return;
+      }
+
       if (_.has(param, '$ref')) {
         param = resolveSchema(context, param);
       }
@@ -1646,6 +1668,10 @@ let QUERYPARAM = 'query',
     }
 
     _.forOwn(responseHeaders, (value, headerName) => {
+      if (!_.isObject(value)) {
+        return;
+      }
+
       if (!includeDeprecated && value.deprecated) {
         return;
       }
@@ -1765,6 +1791,9 @@ let QUERYPARAM = 'query',
         reqHeaders = _.clone(request.headers) || [],
         reqQueryParams = _.clone(_.get(request, 'params.queryParams', []));
 
+      // add Accept header in example's original request headers
+      _.isArray(acceptHeader) && (reqHeaders.push(...acceptHeader));
+
       if (includeAuthInfoInExample) {
         if (!auth) {
           auth = generateAuthForCollectionFromOpenAPI(context.openapi, context.openapi.security);
@@ -1778,6 +1807,11 @@ let QUERYPARAM = 'query',
         originalRequest = _.assign({}, request, {
           headers: reqHeaders,
           params: _.assign({}, request.params, { queryParams: reqQueryParams })
+        });
+      }
+      else {
+        originalRequest = _.assign({}, request, {
+          headers: reqHeaders
         });
       }
 
