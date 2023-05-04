@@ -1,17 +1,23 @@
 name: Test
 
 on:
-  [pull_request]
+  push:
+    branches: [develop, master]
+  pull_request:
 
 jobs:
   Unit-Tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x, 16.x, 18.x]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
         with:
-          node-version: '14.x'
-      - run: npm install
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci
       - run: npm run test-lint
       - run: npm run test-system
       - run: npm run test-unit
@@ -19,10 +25,14 @@ jobs:
   Regression:
     needs: Unit-Tests
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x, 16.x, 18.x]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
         with:
-          node-version: '14.x'
-      - run: npm install
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci
       - run: npm run test-regression
