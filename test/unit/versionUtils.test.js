@@ -485,23 +485,23 @@ describe('compareVersion method', function () {
 describe('getVersionRegexBySpecificationVersion method', function () {
   it('should return regex for 3.0', function () {
     const result = getVersionRegexBySpecificationVersion('3.0');
-    expect(result.toString()).to.equal('/openapi[\'|\"]?:\\s?[\\]?[\'|\"]?3.0/');
+    expect(result.toString()).to.equal('/openapi[\'|\"]?\\s*:\\s*[\\]?[\'|\"]?3.0/');
   });
   it('should return regex for 3.0.0', function () {
     const result = getVersionRegexBySpecificationVersion('3.0.0');
-    expect(result.toString()).to.equal('/openapi[\'|\"]?:\\s?[\\]?[\'|\"]?3.0/');
+    expect(result.toString()).to.equal('/openapi[\'|\"]?\\s*:\\s*[\\]?[\'|\"]?3.0/');
   });
   it('should return regex for 3.1', function () {
     const result = getVersionRegexBySpecificationVersion('3.1');
-    expect(result.toString()).to.equal('/openapi[\'|\"]?:\\s?[\\]?[\'|\"]?3.1/');
+    expect(result.toString()).to.equal('/openapi[\'|\"]?\\s*:\\s*[\\]?[\'|\"]?3.1/');
   });
   it('should return regex for 2.0', function () {
     const result = getVersionRegexBySpecificationVersion('2.0');
-    expect(result.toString()).to.equal('/swagger[\'|\"]?:\\s?[\\]?[\'|\"]?2.0/');
+    expect(result.toString()).to.equal('/swagger[\'|\"]?\\s*:\\s*[\\]?[\'|\"]?2.0/');
   });
   it('should return regex for 3.0 as default', function () {
     const result = getVersionRegexBySpecificationVersion('invalid');
-    expect(result.toString()).to.equal('/openapi[\'|\"]?:\\s?[\\]?[\'|\"]?3.0/');
+    expect(result.toString()).to.equal('/openapi[\'|\"]?\\s*:\\s*[\\]?[\'|\"]?3.0/');
   });
 });
 
