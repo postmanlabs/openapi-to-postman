@@ -23846,8 +23846,10 @@ function extend() {
                   /**
                    * CHANGE: This Makes sure that we're not adding extra spaces in generated value,
                    * As such behaviour generates invalid data when pattern is mentioned.
+                   *
+                   * To avoid infinite loop, make sure we keep adding spaces in cases where value is empty string
                    */
-                  value += (schema.pattern ? '' : ' ') + value;
+                  value += ((schema.pattern && value.length !== 0) ? '' : ' ') + value;
               }
               if (value.length > max) {
                   value = value.substr(0, max);
