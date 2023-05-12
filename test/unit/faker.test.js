@@ -121,4 +121,19 @@ describe('JSON SCHEMA FAKER TESTS', function () {
       expect(value.name).to.be.a('string');
     });
   });
+
+  it('Should successsfully generate data for certain patterns that can generate empty string', function () {
+    const schema = {
+      'maxLength': 63,
+      'minLength': 2,
+      'pattern': '^[A-Za-z !#$%&0-9,\'*+\\-.()/:;=@\\\\_\\[\\]`{}]*$',
+      'type': 'string',
+      'description': 'The exact name on the credit card.'
+    };
+
+    var fakedData = schemaFaker(schema);
+    expect(fakedData).to.be.an('string');
+    expect(fakedData.length >= 2).to.be.true;
+    expect(fakedData.length <= 63).to.be.true;
+  });
 });
