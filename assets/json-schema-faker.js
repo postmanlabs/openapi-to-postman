@@ -24352,10 +24352,6 @@ function extend() {
     const skipped = [];
     const missing = [];
 
-    if (typeof _props !== 'object') {
-      console.log('here');
-    }
-
     _props.forEach(key => {
       for (let i = 0; i < ignoreProperties.length; i += 1) {
         if ((ignoreProperties[i] instanceof RegExp && ignoreProperties[i].test(key))

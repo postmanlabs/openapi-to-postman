@@ -136,4 +136,22 @@ describe('JSON SCHEMA FAKER TESTS', function () {
     expect(fakedData.length >= 2).to.be.true;
     expect(fakedData.length <= 63).to.be.true;
   });
+
+  it('Should successsfully generate data iff required is defined as string', function () {
+    const schema = {
+      type: 'object',
+      required: 'timebase',
+      properties: {
+        timebase: { type: 'string' },
+        linkid: { type: 'string' },
+        chartRef: { type: 'string' }
+      }
+    };
+
+    var fakedData = schemaFaker(schema);
+    expect(fakedData).to.be.an('object');
+    expect(fakedData.timebase).to.be.a('string');
+    expect(fakedData.linkid).to.be.a('string');
+    expect(fakedData.chartRef).to.be.a('string');
+  });
 });
