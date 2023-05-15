@@ -24258,7 +24258,7 @@ function extend() {
 
     const properties = value.properties || {};
     const patternProperties = value.patternProperties || {};
-    const requiredProperties = typeof value.required === 'boolean' ? [] : (value.required || []).slice();
+    const requiredProperties = (!Array.isArray(value.required)) ? [] : (value.required || []).slice();
     const allowsAdditional = value.additionalProperties !== false;
 
     const propertyKeys = Object.keys(properties);
