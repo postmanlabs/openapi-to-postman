@@ -2332,6 +2332,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         }).responseBody;
         expect(pmResponseBody).to.equal(
           [
+            '<?xml version="1.0" encoding="UTF-8"?>',
             '<Person id="(integer)">',
             ' <sample:name xmlns:sample="http://example.com/schema/sample">(string)</sample:name>',
             ' <hobbies>',
@@ -2454,7 +2455,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
       pmResponse = SchemaUtils.convertToPmResponse(response, code, {}, {},
         { schemaFaker: true, indentCharacter: '  ' }).toJSON();
-      expect(pmResponse.body).to.equal('<element>\n  <id>(integer)</id>\n  <name>(string)</name>\n</element>');
+      expect(pmResponse.body).to.equal('<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<element>\n  <id>(integer)</id>\n  <name>(string)</name>\n</element>');
       expect(pmResponse.name).to.equal(response.description);
       expect(pmResponse.code).to.equal(200);
       expect(pmResponse._postman_previewlanguage).to.equal('xml');
