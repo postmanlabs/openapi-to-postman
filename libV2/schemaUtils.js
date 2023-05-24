@@ -5,6 +5,7 @@ const schemaFaker = require('../assets/json-schema-faker'),
   _ = require('lodash'),
   mergeAllOf = require('json-schema-merge-allof'),
   xmlFaker = require('./xmlSchemaFaker.js'),
+  js2xml = require('../lib/common/js2xml'),
   URLENCODED = 'application/x-www-form-urlencoded',
   APP_JSON = 'application/json',
   APP_JS = 'application/javascript',
@@ -1067,6 +1068,7 @@ let QUERYPARAM = 'query',
 
   resolveRequestBodyData = (context, requestBodySchema, bodyType) => {
     let { parametersResolution, indentCharacter } = context.computedOptions,
+      headerFamily = getHeaderFamily(bodyType),
       bodyData = '',
       shouldGenerateFromExample = parametersResolution === 'example',
       example,
@@ -1128,6 +1130,11 @@ let QUERYPARAM = 'query',
     requestBodySchema = requestBodySchema.schema || requestBodySchema;
     requestBodySchema = resolveSchema(context, requestBodySchema);
 
+    // If schema object has example defined, try to use that if no example is defiend at request body level
+    if (example === undefined && _.get(requestBodySchema, 'example') !== undefined) {
+      example = requestBodySchema.example;
+    }
+
     if (shouldGenerateFromExample && (example !== undefined || examples)) {
       /**
        * Here it could be example or examples (plural)
@@ -1135,7 +1142,12 @@ let QUERYPARAM = 'query',
        */
       const exampleData = example || getExampleData(context, examples);
 
-      bodyData = exampleData;
+      if (bodyType === APP_XML || bodyType === TEXT_XML || headerFamily === HEADER_TYPE.XML) {
+        bodyData = js2xml(exampleData, indentCharacter);
+      }
+      else {
+        bodyData = exampleData;
+      }
     }
     else if (requestBodySchema) {
       requestBodySchema = requestBodySchema.schema || requestBodySchema;
@@ -1144,7 +1156,7 @@ let QUERYPARAM = 'query',
         requestBodySchema = resolveSchema(context, requestBodySchema);
       }
 
-      if (bodyType === APP_XML || bodyType === TEXT_XML) {
+      if (bodyType === APP_XML || bodyType === TEXT_XML || headerFamily === HEADER_TYPE.XML) {
         return xmlFaker(null, requestBodySchema, indentCharacter);
       }
 
