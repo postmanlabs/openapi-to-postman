@@ -121,4 +121,37 @@ describe('JSON SCHEMA FAKER TESTS', function () {
       expect(value.name).to.be.a('string');
     });
   });
+
+  it('Should successsfully generate data for certain patterns that can generate empty string', function () {
+    const schema = {
+      'maxLength': 63,
+      'minLength': 2,
+      'pattern': '^[A-Za-z !#$%&0-9,\'*+\\-.()/:;=@\\\\_\\[\\]`{}]*$',
+      'type': 'string',
+      'description': 'The exact name on the credit card.'
+    };
+
+    var fakedData = schemaFaker(schema);
+    expect(fakedData).to.be.an('string');
+    expect(fakedData.length >= 2).to.be.true;
+    expect(fakedData.length <= 63).to.be.true;
+  });
+
+  it('Should successsfully generate data iff required is defined as string', function () {
+    const schema = {
+      type: 'object',
+      required: 'timebase',
+      properties: {
+        timebase: { type: 'string' },
+        linkid: { type: 'string' },
+        chartRef: { type: 'string' }
+      }
+    };
+
+    var fakedData = schemaFaker(schema);
+    expect(fakedData).to.be.an('object');
+    expect(fakedData.timebase).to.be.a('string');
+    expect(fakedData.linkid).to.be.a('string');
+    expect(fakedData.chartRef).to.be.a('string');
+  });
 });

@@ -1593,7 +1593,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
               '  <requestBoolean>(boolean)</requestBoolean>\n' +
               '  <requestNumber>(number)</requestNumber>\n' +
               '</ex:ExampleXMLRequest>',
-            expectedResponseBody = '<ex:ExampleXMLResponse xmlns:ex=\"urn:ExampleXML\">\n' +
+            expectedResponseBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
+              '<ex:ExampleXMLResponse xmlns:ex=\"urn:ExampleXML\">\n' +
               '  <responseInteger>(integer)</responseInteger>\n' +
               '  <responseString>(string)</responseString>\n' +
               '  <responseBoolean>(boolean)</responseBoolean>\n' +
@@ -1623,7 +1624,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
               '  <requestString>(string)</requestString>\n' +
               '  <requestBoolean>(boolean)</requestBoolean>\n' +
               '</ExampleXMLRequest>',
-            expectedResponseBody = '<ExampleXMLResponse xmlns=\"urn:ExampleXML\">\n' +
+            expectedResponseBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
+              '<ExampleXMLResponse xmlns=\"urn:ExampleXML\">\n' +
               '  <responseInteger>(integer)</responseInteger>\n' +
               '  <responseString>(string)</responseString>\n' +
               '  <responseBoolean>(boolean)</responseBoolean>\n' +
@@ -1657,7 +1659,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
               '  <requestString>(string)</requestString>\n' +
               '  <requestBoolean>(boolean)</requestBoolean>\n' +
               '</ex:ExampleXMLRequest>',
-            expectedResponseBody = '<ex:ExampleXMLResponse xmlns:ex=\"urn:ExampleXML\">\n' +
+            expectedResponseBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
+              '<ex:ExampleXMLResponse xmlns:ex=\"urn:ExampleXML\">\n' +
               '  <requestInteger>(integer)</requestInteger>\n' +
               '  <requestString>(string)</requestString>\n' +
               '  <requestBoolean>(boolean)</requestBoolean>\n' +
@@ -1696,7 +1699,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
               '  <requestString>(string)</requestString>\n' +
               '  <requestBoolean>(boolean)</requestBoolean>\n' +
               '</ExampleXMLRequest>',
-            expectedResponseBody = '<ExampleXMLResponse xmlns=\"urn:ExampleXML\">\n' +
+            expectedResponseBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
+              '<ExampleXMLResponse xmlns=\"urn:ExampleXML\">\n' +
               '  <requestInteger>(integer)</requestInteger>\n' +
               '  <requestString>(string)</requestString>\n' +
               '  <requestBoolean>(boolean)</requestBoolean>\n' +
@@ -1737,7 +1741,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
               '    <requestBoolean>(boolean)</requestBoolean>\n' +
               '  </ex:ExampleXMLRequest>\n' +
               '</ex:ExampleXMLRequest>',
-            expectedResponseBody = '<ex:ExampleXMLResponse>\n' +
+            expectedResponseBody = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
+            '<ex:ExampleXMLResponse>\n' +
             '  <ex:ExampleXMLResponse xmlns:ex=\"urn:ExampleXML\">\n' +
             '    <requestInteger>(integer)</requestInteger>\n' +
             '    <requestString>(string)</requestString>\n' +
@@ -1961,8 +1966,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(result.output[0].type).to.have.equal('collection');
         expect(result.output[0].data).to.have.property('info');
         expect(result.output[0].data).to.have.property('item');
+        done();
       });
-      done();
     });
 
     it('must read values consumes', function (done) {
@@ -2057,6 +2062,89 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(expectedResponseBody1.payload).to.be.a('boolean');
         expect(expectedResponseBody2.payload).to.be.an('object')
           .and.to.have.all.keys('content', 'paging');
+      });
+    });
+
+    it('Should convert a swagger document with XML example correctly', function(done) {
+      const fileData = fs.readFileSync(path.join(__dirname, SWAGGER_20_FOLDER_YAML, 'xml_example.yaml'), 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+      Converter.convert(input, { }, (error, result) => {
+        expect(error).to.be.null;
+        expect(result.result).to.equal(true);
+        expect(result.output.length).to.equal(1);
+        expect(result.output[0].type).to.have.equal('collection');
+        expect(result.output[0].data).to.have.property('info');
+        expect(result.output[0].data).to.have.property('item');
+        expect(result.output[0].data.item[0].item[0].response[0].body).to.eql(`<?xml version="1.0" encoding="UTF-8"?>
+<CstmrPmtStsRpt>
+  <GrpHdr>
+    <MsgId>20231213-PSR/1798570726</MsgId>
+    <InitgPty>
+      <Id>
+        <OrgId>
+          <BICOrBEI>US33</BICOrBEI>
+        </OrgId>
+      </Id>
+    </InitgPty>
+  </GrpHdr>
+  <OrgnlGrpInfAndSts>
+    <OrgnlMsgId>100060058</OrgnlMsgId>
+    <Orgn1MsgNmId>pain.001.02</Orgn1MsgNmId>
+    <OrgnlCreDtTm>2023-05-16T14:35:23-05:00</OrgnlCreDtTm>
+    <Orgn1NbOfTxs>1</Orgn1NbOfTxs>
+  </OrgnlGrpInfAndSts>
+  <OrgnlPmtInfAndSts>
+    <OrgnlPmtInfId>ASIA</OrgnlPmtInfId>
+    <TxInfAndSts>
+      <OrgnlEndToEndId>ASIADD</OrgnlEndToEndId>
+      <TxSts>ACTC</TxSts>
+    </TxInfAndSts>
+  </OrgnlPmtInfAndSts>
+  <OrgnlPmtInfAndSts>
+    <OrgnlPmtInfId>EU</OrgnlPmtInfId>
+    <TxInfAndSts>
+      <OrgnlEndToEndId>EUDD</OrgnlEndToEndId>
+      <TxSts>EUTC</TxSts>
+    </TxInfAndSts>
+  </OrgnlPmtInfAndSts>
+</CstmrPmtStsRpt>`);
+        expect(result.output[0].data.item[0].item[1].response[0].body).to.eql(`<?xml version="1.0" encoding="UTF-8"?>
+<CstmrPmtStsRpt>
+  <GrpHdr>
+    <MsgId>20201213-PSR/1798570726</MsgId>
+    <InitgPty>
+      <Id>
+        <OrgId>
+          <BICOrBEI>US33</BICOrBEI>
+        </OrgId>
+      </Id>
+    </InitgPty>
+  </GrpHdr>
+  <OrgnlGrpInfAndSts>
+    <OrgnlMsgId>100060058</OrgnlMsgId>
+    <Orgn1MsgNmId>pain.001.02</Orgn1MsgNmId>
+    <OrgnlCreDtTm>2023-05-16T14:35:23-05:00</OrgnlCreDtTm>
+    <Orgn1NbOfTxs>1</Orgn1NbOfTxs>
+  </OrgnlGrpInfAndSts>
+  <OrgnlPmtInfAndSts>
+    <OrgnlPmtInfId>ASIA</OrgnlPmtInfId>
+    <TxInfAndSts>
+      <OrgnlEndToEndId>ASIADD</OrgnlEndToEndId>
+      <TxSts>ACTC</TxSts>
+    </TxInfAndSts>
+  </OrgnlPmtInfAndSts>
+  <OrgnlPmtInfAndSts>
+    <OrgnlPmtInfId>EU</OrgnlPmtInfId>
+    <TxInfAndSts>
+      <OrgnlEndToEndId>EUDD</OrgnlEndToEndId>
+      <TxSts>EUTC</TxSts>
+    </TxInfAndSts>
+  </OrgnlPmtInfAndSts>
+</CstmrPmtStsRpt>`);
+        done();
       });
     });
   });

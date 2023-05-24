@@ -1,0 +1,233 @@
+swagger: '2.0'
+info:
+  title: YAML data
+  version: '1.0'
+schemes:
+  - https
+securityDefinitions:
+  Bearer:
+    description: Authorization 'Bearer' token
+    in: header
+    name: Authorization
+    type: apiKey
+tags:
+  - name: client
+    description: Client resources
+paths:
+  /client:
+    get:
+      deprecated: false
+      summary: Query Client
+      produces:
+        - application/xml
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Data'
+    post:
+      deprecated: false
+      summary: Query Client
+      produces:
+        - application/xml
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              CstmrPmtStsRpt:
+                type: object
+                properties:
+                  GrpHdr:
+                    type: object
+                    properties:
+                      MsgId:
+                        type: string
+                      CreDtTm:
+                        type: string
+                      InitgPty:
+                        type: object
+                        properties:
+                          Id:
+                            type: object
+                            properties:
+                              OrgId:
+                                type: object
+                                properties:
+                                  BICOrBEI:
+                                    type: string
+                                required:
+                                - BICOrBEI
+                            required:
+                            - OrgId
+                        required:
+                        - Id
+                    required:
+                    - MsgId
+                    - CreDtTm
+                    - InitgPty
+                  OrgnlGrpInfAndSts:
+                    type: object
+                    properties:
+                      OrgnlMsgId:
+                        type: string
+                      Orgn1MsgNmId:
+                        type: string
+                      OrgnlCreDtTm:
+                        type: string
+                      Orgn1NbOfTxs:
+                        type: string
+                    required:
+                    - OrgnlMsgId
+                    - Orgn1MsgNmId
+                    - OrgnlCreDtTm
+                    - Orgn1NbOfTxs
+                  OrgnlPmtInfAndSts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        OrgnlPmtInfId:
+                          type: string
+                        TxInfAndSts:
+                          type: object
+                          properties:
+                            OrgnlEndToEndId:
+                              type: string
+                            TxSts:
+                              type: string
+                          required:
+                          - OrgnlEndToEndId
+                          - TxSts
+                      required:
+                      - OrgnlPmtInfId
+                      - TxInfAndSts
+                required:
+                - GrpHdr
+                - OrgnlGrpInfAndSts
+                - OrgnlPmtInfAndSts
+            required:
+            - CstmrPmtStsRpt
+          examples:
+            application/xml:
+              CstmrPmtStsRpt:
+                GrpHdr:
+                  MsgId: 20201213-PSR/1798570726
+                  InitgPty:
+                    Id:
+                      OrgId:
+                        BICOrBEI: US33
+                OrgnlGrpInfAndSts:
+                  OrgnlMsgId: '100060058'
+                  Orgn1MsgNmId: pain.001.02
+                  OrgnlCreDtTm: '2023-05-16T14:35:23-05:00'
+                  Orgn1NbOfTxs: '1'
+                OrgnlPmtInfAndSts:
+                - OrgnlPmtInfId: ASIA
+                  TxInfAndSts:
+                    OrgnlEndToEndId: ASIADD
+                    TxSts: ACTC
+                - OrgnlPmtInfId: EU
+                  TxInfAndSts:
+                    OrgnlEndToEndId: EUDD
+                    TxSts: EUTC
+definitions:
+  Data:
+    type: object
+    properties:
+      CstmrPmtStsRpt:
+        type: object
+        properties:
+          GrpHdr:
+            type: object
+            properties:
+              MsgId:
+                type: string
+              CreDtTm:
+                type: string
+              InitgPty:
+                type: object
+                properties:
+                  Id:
+                    type: object
+                    properties:
+                      OrgId:
+                        type: object
+                        properties:
+                          BICOrBEI:
+                            type: string
+                        required:
+                        - BICOrBEI
+                    required:
+                    - OrgId
+                required:
+                - Id
+            required:
+            - MsgId
+            - CreDtTm
+            - InitgPty
+          OrgnlGrpInfAndSts:
+            type: object
+            properties:
+              OrgnlMsgId:
+                type: string
+              Orgn1MsgNmId:
+                type: string
+              OrgnlCreDtTm:
+                type: string
+              Orgn1NbOfTxs:
+                type: string
+            required:
+            - OrgnlMsgId
+            - Orgn1MsgNmId
+            - OrgnlCreDtTm
+            - Orgn1NbOfTxs
+          OrgnlPmtInfAndSts:
+            type: array
+            items:
+              type: object
+              properties:
+                OrgnlPmtInfId:
+                  type: string
+                TxInfAndSts:
+                  type: object
+                  properties:
+                    OrgnlEndToEndId:
+                      type: string
+                    TxSts:
+                      type: string
+                  required:
+                  - OrgnlEndToEndId
+                  - TxSts
+              required:
+              - OrgnlPmtInfId
+              - TxInfAndSts
+        required:
+        - GrpHdr
+        - OrgnlGrpInfAndSts
+        - OrgnlPmtInfAndSts
+    required:
+    - CstmrPmtStsRpt
+    example:
+      CstmrPmtStsRpt:
+        GrpHdr:
+          MsgId: 20231213-PSR/1798570726
+          InitgPty:
+            Id:
+              OrgId:
+                BICOrBEI: US33
+        OrgnlGrpInfAndSts:
+          OrgnlMsgId: '100060058'
+          Orgn1MsgNmId: pain.001.02
+          OrgnlCreDtTm: '2023-05-16T14:35:23-05:00'
+          Orgn1NbOfTxs: '1'
+        OrgnlPmtInfAndSts:
+        - OrgnlPmtInfId: ASIA
+          TxInfAndSts:
+            OrgnlEndToEndId: ASIADD
+            TxSts: ACTC
+        - OrgnlPmtInfId: EU
+          TxInfAndSts:
+            OrgnlEndToEndId: EUDD
+            TxSts: EUTC

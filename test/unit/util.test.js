@@ -686,6 +686,45 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
       done();
     });
+
+    it('should generate trie for definition with certain path segment same as JS object function names correctly',
+      function (done) {
+        var openapi = {
+            'openapi': '3.0.0',
+            'info': {
+              'version': '1.0.0',
+              'title': 'Swagger Petstore',
+              'license': {
+                'name': 'MIT'
+              }
+            },
+            'servers': [
+              {
+                'url': 'http://petstore.swagger.io/{v1}'
+              }
+            ],
+            'paths': {
+              '/constructor/v3/update-constructor': {
+                'get': {
+                  'summary': 'List all pets',
+                  'operationId': 'listPets',
+                  'responses': {
+                    '200': {
+                      'description': 'An paged array of pets'
+                    }
+                  }
+                }
+              }
+            }
+          },
+          output = SchemaUtils.generateTrieFromPaths(openapi),
+          root = output.tree.root;
+
+        expect(root.children).to.be.an('object').that.has.all.keys('constructor');
+        expect(root.children.constructor.requestCount).to.equal(1);
+
+        done();
+      });
   });
 
   describe('convertPathVariables', function() {
@@ -2293,6 +2332,7 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         }).responseBody;
         expect(pmResponseBody).to.equal(
           [
+            '<?xml version="1.0" encoding="UTF-8"?>',
             '<Person id="(integer)">',
             ' <sample:name xmlns:sample="http://example.com/schema/sample">(string)</sample:name>',
             ' <hobbies>',
@@ -2415,7 +2455,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
       pmResponse = SchemaUtils.convertToPmResponse(response, code, {}, {},
         { schemaFaker: true, indentCharacter: '  ' }).toJSON();
-      expect(pmResponse.body).to.equal('<element>\n  <id>(integer)</id>\n  <name>(string)</name>\n</element>');
+      expect(pmResponse.body).to.equal('<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<element>\n  <id>(integer)</id>\n  <name>(string)</name>\n</element>');
       expect(pmResponse.name).to.equal(response.description);
       expect(pmResponse.code).to.equal(200);
       expect(pmResponse._postman_previewlanguage).to.equal('xml');
