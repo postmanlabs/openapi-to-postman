@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added support for generating request and response bodies in correct XML format from mentioned examples.
+- Added support for validation of specifications in case of errors to report User input errors correctly.
+
+### Fixed
+
+- Fixed issue where conversion was stuck for certain schemas with pattern.
+- Fixed an issue where definition validation was not considering multiple white space characters.
+- Fixed issue [#708](https://github.com/postmanlabs/openapi-to-postman/issues/708) where if string is defined for required field, conversion was failing.
+- Fixed issue where for certain path segments, collection generation failed.
+- Fixed TypeError occurring while checking typeof bodyContent in getXmlVersionContent. 
+
 ## [v4.12.0] - 2023-05-04
 
 ### Added
