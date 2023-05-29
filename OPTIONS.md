@@ -21,3 +21,4 @@ allowUrlPathVarMatching|boolean|-|false|Whether to allow matching path variables
 enableOptionalParameters|boolean|-|true|Optional parameters aren't selected in the collection. Once enabled they will be selected in the collection and request as well.|CONVERSION|v2, v1
 keepImplicitHeaders|boolean|-|false|Whether to keep implicit headers from the OpenAPI specification, which are removed by default.|CONVERSION|v2, v1
 includeDeprecated|boolean|-|true|Select whether to include deprecated operations, parameters, and properties in generated collection or not|CONVERSION, VALIDATION|v2, v1
+alwaysInheritAuthentication|boolean|-|false|Whether authentication details should be included on every request, or always inherited from the collection.|CONVERSION|v2, v1

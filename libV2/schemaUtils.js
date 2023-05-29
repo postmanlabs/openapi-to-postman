@@ -1866,7 +1866,8 @@ module.exports = {
       requestBody = resolveRequestBodyForPostmanRequest(context, operationItem[method]),
       request,
       securitySchema = _.get(operationItem, [method, 'security']),
-      authHelper = generateAuthForCollectionFromOpenAPI(context.openapi, securitySchema);
+      authHelper = generateAuthForCollectionFromOpenAPI(context.openapi, securitySchema),
+      { alwaysInheritAuthentication } = context.computedOptions;
 
     headers.push(..._.get(requestBody, 'headers', []));
     pathVariables.push(...baseUrlData.pathVariables);
@@ -1885,7 +1886,7 @@ module.exports = {
       },
       headers,
       body: _.get(requestBody, 'body'),
-      auth: authHelper
+      auth: alwaysInheritAuthentication ? undefined : authHelper
     };
 
     const { responses, acceptHeader } = resolveResponseForPostmanRequest(context, operationItem[method], request);
