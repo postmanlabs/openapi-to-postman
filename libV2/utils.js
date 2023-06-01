@@ -52,7 +52,7 @@ const sdk = require('postman-collection'),
       pathParams = _.get(requestObject, 'request.params.pathParams', []),
       headers = _.get(requestObject, 'request.headers', []),
       responses = _.get(requestObject, 'request.responses', []),
-      auth = _.get(requestObject, 'request.auth', []);
+      auth = _.get(requestObject, 'request.auth', null);
 
     _.forEach(queryParams, (param) => {
       requestItem.request.url.addQueryParams(param);
