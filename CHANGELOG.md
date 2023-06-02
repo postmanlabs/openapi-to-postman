@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Fixed the default value of auth in the generated request when it is not resolved.
+
 ## [v4.13.0] - 2023-05-24
 
 ### Added
