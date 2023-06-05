@@ -1065,10 +1065,10 @@ describe('The convert v2 Function', function() {
         expect(conversionResult.output[0].data.item[0].item[0].request.body.raw)
           .to.equal(
             '<?xml version="1.0" encoding="UTF-8"?>\n' +
-            '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope">' +
-            ' <soap:Body> <NumberToWords ' +
-            'xmlns="http://www.dataaccess.com/webservicesserver"> ' +
-            '<ubiNum>500</ubiNum> </NumberToWords> </soap:Body> ' +
+            '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope">\n' +
+            '  <soap:Body>\n    <NumberToWords ' +
+            'xmlns="http://www.dataaccess.com/webservicesserver">\n' +
+            '      <ubiNum>500</ubiNum>\n    </NumberToWords>\n  </soap:Body>\n' +
             '</soap:Envelope>'
           );
         done();
@@ -1990,71 +1990,77 @@ describe('The convert v2 Function', function() {
         expect(result.output[0].data).to.have.property('info');
         expect(result.output[0].data).to.have.property('item');
         expect(result.output[0].data.item[0].item[0].response[0].body).to.eql(`<?xml version="1.0" encoding="UTF-8"?>
-<CstmrPmtStsRpt>
-  <GrpHdr>
-    <MsgId>20231213-PSR/1798570726</MsgId>
-    <InitgPty>
-      <Id>
-        <OrgId>
-          <BICOrBEI>US33</BICOrBEI>
-        </OrgId>
-      </Id>
-    </InitgPty>
-  </GrpHdr>
-  <OrgnlGrpInfAndSts>
-    <OrgnlMsgId>100060058</OrgnlMsgId>
-    <Orgn1MsgNmId>pain.001.02</Orgn1MsgNmId>
-    <OrgnlCreDtTm>2023-05-16T14:35:23-05:00</OrgnlCreDtTm>
-    <Orgn1NbOfTxs>1</Orgn1NbOfTxs>
-  </OrgnlGrpInfAndSts>
-  <OrgnlPmtInfAndSts>
-    <OrgnlPmtInfId>ASIA</OrgnlPmtInfId>
-    <TxInfAndSts>
-      <OrgnlEndToEndId>ASIADD</OrgnlEndToEndId>
-      <TxSts>ACTC</TxSts>
-    </TxInfAndSts>
-  </OrgnlPmtInfAndSts>
-  <OrgnlPmtInfAndSts>
-    <OrgnlPmtInfId>EU</OrgnlPmtInfId>
-    <TxInfAndSts>
-      <OrgnlEndToEndId>EUDD</OrgnlEndToEndId>
-      <TxSts>EUTC</TxSts>
-    </TxInfAndSts>
-  </OrgnlPmtInfAndSts>
-</CstmrPmtStsRpt>`);
+<element>
+  <CstmrPmtStsRpt>
+    <GrpHdr>
+      <MsgId>20231213-PSR/1798570726</MsgId>
+      <CreDtTm>(string)</CreDtTm>
+      <InitgPty>
+        <Id>
+          <OrgId>
+            <BICOrBEI>US33</BICOrBEI>
+          </OrgId>
+        </Id>
+      </InitgPty>
+    </GrpHdr>
+    <OrgnlGrpInfAndSts>
+      <OrgnlMsgId>100060058</OrgnlMsgId>
+      <Orgn1MsgNmId>pain.001.02</Orgn1MsgNmId>
+      <OrgnlCreDtTm>2023-05-16T14:35:23-05:00</OrgnlCreDtTm>
+      <Orgn1NbOfTxs>1</Orgn1NbOfTxs>
+    </OrgnlGrpInfAndSts>
+    <OrgnlPmtInfAndSts>
+      <OrgnlPmtInfId>ASIA</OrgnlPmtInfId>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>ASIADD</OrgnlEndToEndId>
+        <TxSts>ACTC</TxSts>
+      </TxInfAndSts>
+    </OrgnlPmtInfAndSts>
+    <OrgnlPmtInfAndSts>
+      <OrgnlPmtInfId>EU</OrgnlPmtInfId>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>EUDD</OrgnlEndToEndId>
+        <TxSts>EUTC</TxSts>
+      </TxInfAndSts>
+    </OrgnlPmtInfAndSts>
+  </CstmrPmtStsRpt>
+</element>`);
         expect(result.output[0].data.item[0].item[1].response[0].body).to.eql(`<?xml version="1.0" encoding="UTF-8"?>
-<CstmrPmtStsRpt>
-  <GrpHdr>
-    <MsgId>20201213-PSR/1798570726</MsgId>
-    <InitgPty>
-      <Id>
-        <OrgId>
-          <BICOrBEI>US33</BICOrBEI>
-        </OrgId>
-      </Id>
-    </InitgPty>
-  </GrpHdr>
-  <OrgnlGrpInfAndSts>
-    <OrgnlMsgId>100060058</OrgnlMsgId>
-    <Orgn1MsgNmId>pain.001.02</Orgn1MsgNmId>
-    <OrgnlCreDtTm>2023-05-16T14:35:23-05:00</OrgnlCreDtTm>
-    <Orgn1NbOfTxs>1</Orgn1NbOfTxs>
-  </OrgnlGrpInfAndSts>
-  <OrgnlPmtInfAndSts>
-    <OrgnlPmtInfId>ASIA</OrgnlPmtInfId>
-    <TxInfAndSts>
-      <OrgnlEndToEndId>ASIADD</OrgnlEndToEndId>
-      <TxSts>ACTC</TxSts>
-    </TxInfAndSts>
-  </OrgnlPmtInfAndSts>
-  <OrgnlPmtInfAndSts>
-    <OrgnlPmtInfId>EU</OrgnlPmtInfId>
-    <TxInfAndSts>
-      <OrgnlEndToEndId>EUDD</OrgnlEndToEndId>
-      <TxSts>EUTC</TxSts>
-    </TxInfAndSts>
-  </OrgnlPmtInfAndSts>
-</CstmrPmtStsRpt>`);
+<element>
+  <CstmrPmtStsRpt>
+    <GrpHdr>
+      <MsgId>20201213-PSR/1798570726</MsgId>
+      <CreDtTm>(string)</CreDtTm>
+      <InitgPty>
+        <Id>
+          <OrgId>
+            <BICOrBEI>US33</BICOrBEI>
+          </OrgId>
+        </Id>
+      </InitgPty>
+    </GrpHdr>
+    <OrgnlGrpInfAndSts>
+      <OrgnlMsgId>100060058</OrgnlMsgId>
+      <Orgn1MsgNmId>pain.001.02</Orgn1MsgNmId>
+      <OrgnlCreDtTm>2023-05-16T14:35:23-05:00</OrgnlCreDtTm>
+      <Orgn1NbOfTxs>1</Orgn1NbOfTxs>
+    </OrgnlGrpInfAndSts>
+    <OrgnlPmtInfAndSts>
+      <OrgnlPmtInfId>ASIA</OrgnlPmtInfId>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>ASIADD</OrgnlEndToEndId>
+        <TxSts>ACTC</TxSts>
+      </TxInfAndSts>
+    </OrgnlPmtInfAndSts>
+    <OrgnlPmtInfAndSts>
+      <OrgnlPmtInfId>EU</OrgnlPmtInfId>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>EUDD</OrgnlEndToEndId>
+        <TxSts>EUTC</TxSts>
+      </TxInfAndSts>
+    </OrgnlPmtInfAndSts>
+  </CstmrPmtStsRpt>
+</element>`);
         done();
       });
     });

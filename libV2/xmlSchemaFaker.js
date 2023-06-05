@@ -1,10 +1,12 @@
 /* eslint-disable */
 const _ = require('lodash');
 
-function convertSchemaToXML(name, schema, attribute, indentChar, indent) {
+function convertSchemaToXML(name, schema, attribute, indentChar, indent, resolveTo) {
   var tagPrefix = '',
     cIndent = _.times(indent, _.constant(indentChar)).join(''),
     retVal = '';
+
+  const schemaExample = typeof schema === 'object' && (schema.example);
 
   name = _.get(schema, 'xml.name', name || 'element');
   if (_.get(schema, 'xml.prefix')) {
@@ -23,6 +25,11 @@ function convertSchemaToXML(name, schema, attribute, indentChar, indent) {
     else if (schema.type === 'number') {
       actualValue = '(number)';
     }
+
+    if (resolveTo === 'example' && typeof schemaExample !== 'undefined') {
+      actualValue = schemaExample;
+    }
+
     if (attribute) {
       return actualValue;
     }
@@ -44,7 +51,14 @@ function convertSchemaToXML(name, schema, attribute, indentChar, indent) {
       retVal += ` xmlns${formattedTagPrefix}="${schema.xml.namespace}"`
     }
     _.forOwn(schema.properties, (value, key) => {
-      propVal = convertSchemaToXML(key, value, _.get(value, 'xml.attribute'), indentChar, indent + 1);
+      const currParentExample = _.get(schemaExample, key);
+
+      // override example value accoding to parent if exists
+      if (typeof currParentExample !== 'undefined' && typeof value === 'object') {
+        value.example = currParentExample;
+      }
+
+      propVal = convertSchemaToXML(key, value, _.get(value, 'xml.attribute'), indentChar, indent + 1, resolveTo);
       if (_.get(value, 'xml.attribute')) {
         attributes.push(`${key}="${propVal}"`);
       }
@@ -68,8 +82,25 @@ function convertSchemaToXML(name, schema, attribute, indentChar, indent) {
       contents;
 
     schemaItemsWithXmlProps.xml = schema.xml;
-    contents = convertSchemaToXML(arrayElemName, schemaItemsWithXmlProps, false, indentChar, indent + extraIndent) +
-      convertSchemaToXML(arrayElemName, schemaItemsWithXmlProps, false, indentChar, indent + extraIndent);
+
+    if (resolveTo === 'example' && Array.isArray(schemaExample)) {
+      let arrContent = _.map(schemaExample, (elementExample) => {
+        // assign current element as example to schema
+        typeof schemaItemsWithXmlProps === 'object' && (schemaItemsWithXmlProps.example = elementExample);
+        return convertSchemaToXML(arrayElemName, schemaItemsWithXmlProps, false, indentChar,
+          indent + extraIndent, resolveTo);
+      });
+
+      contents = _.join(arrContent, '');
+    }
+    else {
+      let singleElementContent = convertSchemaToXML(arrayElemName, schemaItemsWithXmlProps, false, indentChar,
+        indent + extraIndent, resolveTo);
+
+      // Atleast 2 items per array will be added asame as JSON schema faker
+      contents = singleElementContent + singleElementContent;
+    }
+
     if (isWrapped) {
       return `\n${cIndent}<${tagPrefix}${name}>${contents}\n${cIndent}</${tagPrefix}${name}>`;
     }
@@ -80,9 +111,9 @@ function convertSchemaToXML(name, schema, attribute, indentChar, indent) {
   return retVal;
 }
 
-module.exports = function(name, schema, indentCharacter) {
+module.exports = function(name, schema, indentCharacter, resolveTo) {
   // substring(1) to trim the leading newline
-  return convertSchemaToXML(name, schema, false, indentCharacter, 0).substring(1);
+  return convertSchemaToXML(name, schema, false, indentCharacter, 0, resolveTo).substring(1);
 };
 /*
 a = convertSchemaToXML('Person',{

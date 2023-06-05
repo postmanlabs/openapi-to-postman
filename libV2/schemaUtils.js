@@ -5,7 +5,6 @@ const schemaFaker = require('../assets/json-schema-faker'),
   _ = require('lodash'),
   mergeAllOf = require('json-schema-merge-allof'),
   xmlFaker = require('./xmlSchemaFaker.js'),
-  js2xml = require('../lib/common/js2xml'),
   URLENCODED = 'application/x-www-form-urlencoded',
   APP_JSON = 'application/json',
   APP_JS = 'application/javascript',
@@ -862,7 +861,7 @@ let QUERYPARAM = 'query',
 
     try {
       if (schemaFormat === SCHEMA_FORMATS.XML) {
-        return xmlFaker(null, resolvedSchema, indentCharacter);
+        return xmlFaker(null, resolvedSchema, indentCharacter, parametersResolution);
       }
 
       // for JSON, the indentCharacter will be applied in the JSON.stringify step later on
@@ -1143,7 +1142,14 @@ let QUERYPARAM = 'query',
       const exampleData = example || getExampleData(context, examples);
 
       if (bodyType === APP_XML || bodyType === TEXT_XML || headerFamily === HEADER_TYPE.XML) {
-        bodyData = js2xml(exampleData, indentCharacter);
+        let reqBodySchemaWithExample = requestBodySchema;
+
+        // Assign example at schema level to be faked by xmlSchemaFaker
+        if (typeof requestBodySchema === 'object') {
+          reqBodySchemaWithExample = Object.assign({}, requestBodySchema, { example: exampleData });
+        }
+
+        return xmlFaker(null, reqBodySchemaWithExample, indentCharacter, parametersResolution);
       }
       else {
         bodyData = exampleData;
@@ -1157,7 +1163,7 @@ let QUERYPARAM = 'query',
       }
 
       if (bodyType === APP_XML || bodyType === TEXT_XML || headerFamily === HEADER_TYPE.XML) {
-        return xmlFaker(null, requestBodySchema, indentCharacter);
+        return xmlFaker(null, requestBodySchema, indentCharacter, parametersResolution);
       }
 
 
