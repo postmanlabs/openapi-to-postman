@@ -758,6 +758,27 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
 
+    it('Should return validation result for an definition with empty title field', function(done) {
+      var invalidNoInfo = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-title.yaml'),
+        openapi = fs.readFileSync(invalidNoInfo, 'utf8');
+      Converter.getMetaData({ type: 'json', data: openapi }, (err, status) => {
+        if (err) {
+          expect.fail(null, null, err);
+        }
+        if (status.result) {
+          expect(status.result).to.be.eq(true);
+          expect(status.name).to.be.equal('Imported from OpenAPI');
+          expect(status.output[0].name).to.be.equal('Imported from OpenAPI');
+          expect(status.output[0].type).to.be.equal('collection');
+          done();
+        }
+        else {
+          expect.fail(null, null, status.reason);
+          done();
+        }
+      });
+    });
+
     it('Should return error for more than one root files', function(done) {
       let folderPath = path.join(__dirname, '../data/multiFile_with_two_root'),
         array = [
@@ -2144,6 +2165,25 @@ describe('CONVERT FUNCTION TESTS ', function() {
     </TxInfAndSts>
   </OrgnlPmtInfAndSts>
 </CstmrPmtStsRpt>`);
+        done();
+      });
+    });
+
+    it('Should convert definition with empty title field correctly with default name', function(done) {
+      const fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_PATH, 'empty-title.yaml'), 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+
+      Converter.convert(input, { }, (error, result) => {
+        expect(error).to.be.null;
+        expect(result.result).to.equal(true);
+        expect(result.output.length).to.equal(1);
+        expect(result.output[0].type).to.have.equal('collection');
+        expect(result.output[0].data).to.have.property('info');
+        expect(result.output[0].data.info.name).to.eql('Imported from OpenAPI');
+        expect(result.output[0].data).to.have.property('item');
         done();
       });
     });
