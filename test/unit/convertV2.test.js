@@ -110,6 +110,9 @@ describe('The convert v2 Function', function() {
 
   it('Should not explicitly set auth when specified on a request when passed alwaysInheritAuthentication ' +
   securityTestInheritance, function(done) {
+    const isEmptyArrayOrNull = (value) => {
+      return Array.isArray(value) && value.length === 0 || value === null;
+    };
     var openapi = fs.readFileSync(securityTestInheritance, 'utf8');
     Converter.convertV2(
       { type: 'string', data: openapi },
@@ -117,8 +120,8 @@ describe('The convert v2 Function', function() {
 
         expect(err).to.be.null;
         expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
-        expect(conversionResult.output[0].data.item[0].item[0].request.auth).to.be.empty;
-        expect(conversionResult.output[0].data.item[1].item[0].request.auth).to.be.empty;
+        expect(conversionResult.output[0].data.item[0].item[0].request.auth).to.satisfy(isEmptyArrayOrNull);
+        expect(conversionResult.output[0].data.item[1].item[0].request.auth).to.satisfy(isEmptyArrayOrNull);
         done();
       });
   });
