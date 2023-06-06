@@ -109,7 +109,7 @@ describe('The convert v2 Function', function() {
     });
   });
 
-  it('Should not explicitly set auth when specified on a request when passed alwaysInheritAuthentication ' +
+  it.only('Should not explicitly set auth when specified on a request when passed alwaysInheritAuthentication ' +
   securityTestInheritance, function(done) {
     var openapi = fs.readFileSync(securityTestInheritance, 'utf8');
     Converter.convertV2(
@@ -122,8 +122,8 @@ describe('The convert v2 Function', function() {
         console.log('==>>> T1PRO - : ', conversionResult.output[0].data.item[0].item[0].request.auth);
         console.log('==>>> T2PRO - : ', conversionResult.output[0].data.item[1].item[0].request.auth);
 
-        expect(conversionResult.output[0].data.item[0].item[0].request.auth).to.be.empty;
-        expect(conversionResult.output[0].data.item[1].item[0].request.auth).to.be.empty;
+        expect(conversionResult.output[0].data.item[0].item[0].request.auth).to.deep.equal([]);
+        expect(conversionResult.output[0].data.item[1].item[0].request.auth).to.deep.equal([]);
         done();
       });
   });
