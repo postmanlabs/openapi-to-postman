@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 const expect = require('chai').expect,
   Converter = require('../../index.js'),
   async = require('async'),
@@ -115,8 +116,12 @@ describe('The convert v2 Function', function() {
       { type: 'string', data: openapi },
       { alwaysInheritAuthentication: true }, (err, conversionResult) => {
 
+        console.log('==>>> Errur 118 :', err);
         expect(err).to.be.null;
         expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
+        console.log('==>>> T1PRO - : ', conversionResult.output[0].data.item[0].item[0].request.auth);
+        console.log('==>>> T2PRO - : ', conversionResult.output[0].data.item[1].item[0].request.auth);
+
         expect(conversionResult.output[0].data.item[0].item[0].request.auth).to.be.empty;
         expect(conversionResult.output[0].data.item[1].item[0].request.auth).to.be.empty;
         done();
