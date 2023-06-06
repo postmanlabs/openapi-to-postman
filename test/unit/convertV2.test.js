@@ -1994,7 +1994,6 @@ describe('The convert v2 Function', function() {
   <CstmrPmtStsRpt>
     <GrpHdr>
       <MsgId>20231213-PSR/1798570726</MsgId>
-      <CreDtTm>(string)</CreDtTm>
       <InitgPty>
         <Id>
           <OrgId>
@@ -2030,7 +2029,6 @@ describe('The convert v2 Function', function() {
   <CstmrPmtStsRpt>
     <GrpHdr>
       <MsgId>20201213-PSR/1798570726</MsgId>
-      <CreDtTm>(string)</CreDtTm>
       <InitgPty>
         <Id>
           <OrgId>

@@ -2083,7 +2083,6 @@ describe('CONVERT FUNCTION TESTS ', function() {
   <CstmrPmtStsRpt>
     <GrpHdr>
       <MsgId>20231213-PSR/1798570726</MsgId>
-      <CreDtTm>(string)</CreDtTm>
       <InitgPty>
         <Id>
           <OrgId>
@@ -2119,7 +2118,6 @@ describe('CONVERT FUNCTION TESTS ', function() {
   <CstmrPmtStsRpt>
     <GrpHdr>
       <MsgId>20201213-PSR/1798570726</MsgId>
-      <CreDtTm>(string)</CreDtTm>
       <InitgPty>
         <Id>
           <OrgId>
