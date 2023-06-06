@@ -109,7 +109,7 @@ describe('The convert v2 Function', function() {
     });
   });
 
-  it.only('Should not explicitly set auth when specified on a request when passed alwaysInheritAuthentication ' +
+  it('Should not explicitly set auth when specified on a request when passed alwaysInheritAuthentication ' +
   securityTestInheritance, function(done) {
     var openapi = fs.readFileSync(securityTestInheritance, 'utf8');
     Converter.convertV2(
