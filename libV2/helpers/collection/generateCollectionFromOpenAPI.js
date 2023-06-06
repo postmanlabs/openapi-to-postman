@@ -93,7 +93,7 @@ module.exports = function ({ openapi }) {
 
   const collectionVariables = resolveCollectionVariablesForBaseUrlFromServersObject(_.get(openapi, 'servers.0'));
 
-  let name = _.get(this.openapi, 'info.title');
+  let name = _.get(openapi, 'info.title');
 
   if (_.isEmpty(name) || !_.isString(name)) {
     name = COLLECTION_NAME;
