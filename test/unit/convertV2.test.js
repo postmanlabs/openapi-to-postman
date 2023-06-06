@@ -2310,4 +2310,23 @@ describe('The convert v2 Function', function() {
         done();
       });
   });
+
+  it('Should convert definition with empty title field correctly with default name', function(done) {
+    const fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_PATH, 'empty-title.yaml'), 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      };
+
+    Converter.convert(input, { }, (error, result) => {
+      expect(error).to.be.null;
+      expect(result.result).to.equal(true);
+      expect(result.output.length).to.equal(1);
+      expect(result.output[0].type).to.have.equal('collection');
+      expect(result.output[0].data).to.have.property('info');
+      expect(result.output[0].data.info.name).to.eql('Imported from OpenAPI');
+      expect(result.output[0].data).to.have.property('item');
+      done();
+    });
+  });
 });
