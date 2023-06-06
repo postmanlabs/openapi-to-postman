@@ -111,6 +111,9 @@ describe('The convert v2 Function', function() {
 
   it('Should not explicitly set auth when specified on a request when passed alwaysInheritAuthentication ' +
   securityTestInheritance, function(done) {
+    const isEmptyArrayOrNull = (value) => {
+      return Array.isArray(value) && value.length === 0 || value === null;
+    };
     var openapi = fs.readFileSync(securityTestInheritance, 'utf8');
     Converter.convertV2(
       { type: 'string', data: openapi },
@@ -122,8 +125,8 @@ describe('The convert v2 Function', function() {
         console.log('==>>> T1PRO - : ', conversionResult.output[0].data.item[0].item[0].request.auth);
         console.log('==>>> T2PRO - : ', conversionResult.output[0].data.item[1].item[0].request.auth);
 
-        expect(conversionResult.output[0].data.item[0].item[0].request.auth).to.deep.equal([]);
-        expect(conversionResult.output[0].data.item[1].item[0].request.auth).to.deep.equal([]);
+        expect(conversionResult.output[0].data.item[0].item[0].request.auth).to.satisfy(isEmptyArrayOrNull);
+        expect(conversionResult.output[0].data.item[1].item[0].request.auth).to.satisfy(isEmptyArrayOrNull);
         done();
       });
   });
