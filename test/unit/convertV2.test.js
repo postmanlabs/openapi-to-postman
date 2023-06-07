@@ -39,6 +39,7 @@ const expect = require('chai').expect,
   issue193 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#193.yml'),
   tooManyRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/too_many_ref_example.json'),
   securityTestCases = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-cases.yaml'),
+  securityTestInheritance = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-inheritance.yaml'),
   emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml'),
   rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json'),
   parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml'),
@@ -95,6 +96,37 @@ const expect = require('chai').expect,
 
 
 describe('The convert v2 Function', function() {
+
+  it('Should explicitly set auth when specified on a request ' +
+  securityTestInheritance, function(done) {
+    var openapi = fs.readFileSync(securityTestInheritance, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+
+      expect(err).to.be.null;
+      expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
+      expect(conversionResult.output[0].data.item[0].item[0].request.auth.type).to.equal('apikey');
+      expect(conversionResult.output[0].data.item[1].item[0].request.auth.type).to.equal('bearer');
+      done();
+    });
+  });
+
+  it('Should not explicitly set auth when specified on a request when passed alwaysInheritAuthentication ' +
+  securityTestInheritance, function(done) {
+    const isEmptyArrayOrNull = (value) => {
+      return Array.isArray(value) && value.length === 0 || value === null;
+    };
+    var openapi = fs.readFileSync(securityTestInheritance, 'utf8');
+    Converter.convertV2(
+      { type: 'string', data: openapi },
+      { alwaysInheritAuthentication: true }, (err, conversionResult) => {
+
+        expect(err).to.be.null;
+        expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
+        expect(conversionResult.output[0].data.item[0].item[0].request.auth).to.satisfy(isEmptyArrayOrNull);
+        expect(conversionResult.output[0].data.item[1].item[0].request.auth).to.satisfy(isEmptyArrayOrNull);
+        done();
+      });
+  });
 
   it('Should add collection level auth with type as `bearer`' +
   securityTestCases, function(done) {

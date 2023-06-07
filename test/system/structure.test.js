@@ -29,7 +29,8 @@ const optionIds = [
     'includeReferenceMap',
     'includeDeprecated',
     'parametersResolution',
-    'disabledParametersValidation'
+    'disabledParametersValidation',
+    'alwaysInheritAuthentication'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -222,6 +223,15 @@ const optionIds = [
       description: 'Whether disabled parameters of collection should be validated',
       external: false,
       usage: ['VALIDATION']
+    },
+    alwaysInheritAuthentication: {
+      name: 'Always inherit authentication',
+      type: 'boolean',
+      default: false,
+      description: 'Whether authentication details should be included on every request, or always inherited from ' +
+        'the collection.',
+      external: true,
+      usage: ['CONVERSION']
     }
   };
 
