@@ -1,5 +1,8 @@
 const sdk = require('postman-collection'),
   _ = require('lodash'),
+
+  // This is the default collection name if one can't be inferred from the OpenAPI spec
+  COLLECTION_NAME = 'Imported from OpenAPI',
   generatePmResponseObject = (response) => {
     const requestItem = generateRequestItemObject({ // eslint-disable-line no-use-before-define
         request: response.originalRequest
@@ -52,7 +55,7 @@ const sdk = require('postman-collection'),
       pathParams = _.get(requestObject, 'request.params.pathParams', []),
       headers = _.get(requestObject, 'request.headers', []),
       responses = _.get(requestObject, 'request.responses', []),
-      auth = _.get(requestObject, 'request.auth', []);
+      auth = _.get(requestObject, 'request.auth', null);
 
     _.forEach(queryParams, (param) => {
       requestItem.request.url.addQueryParams(param);
@@ -180,6 +183,20 @@ module.exports = {
       return '{' + p1 + '}';
     };
     return _.isString(url) ? url.replace(/(\{[^\/\{\}]+\})/g, replacer) : '';
+  },
+
+  /**
+   * Provides collection name to be used for generated collection
+   *
+   * @param {*} title - Definition title
+   * @returns {String} - Collection name
+   */
+  getCollectionName: function (title) {
+    if (_.isEmpty(title) || !_.isString(title)) {
+      return COLLECTION_NAME;
+    }
+
+    return title;
   },
 
   generatePmResponseObject,

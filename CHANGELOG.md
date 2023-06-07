@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [v4.14.0] - 2023-06-07
+
+### Added
+
+-   Added support for consumption of schema level examples while generating data from XML schemas.
+
+### Fixed
+
+-   Fixed the default value of auth in the generated request when it is not resolved.
+-   Fixed issue where collection name was empty in cases where definition title was defined as empty string.
+
 ## [v4.13.0] - 2023-05-24
 
 ### Added
@@ -562,7 +573,9 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.13.0...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.14.0...HEAD
+
+[v4.14.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.13.0...v4.14.0
 
 [v4.13.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.12.0...v4.13.0
 

@@ -46,6 +46,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       tooManyRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/too-many-refs.json'),
       tagsFolderSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/petstore-detailed.yaml'),
       securityTestCases = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-cases.yaml'),
+      securityTestInheritance = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-inheritance.yaml'),
       emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml'),
       rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json'),
       parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml'),
@@ -96,6 +97,34 @@ describe('CONVERT FUNCTION TESTS ', function() {
       recursiveRefComponents =
         path.join(__dirname, VALID_OPENAPI_PATH, '/recursiveRefComponents.yaml');
 
+
+    it('Should explicitly set auth when specified on a request ' +
+    securityTestInheritance, function(done) {
+      var openapi = fs.readFileSync(securityTestInheritance, 'utf8');
+      Converter.convert({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+
+        expect(err).to.be.null;
+        expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
+        expect(conversionResult.output[0].data.item[0].request.auth.type).to.equal('bearer');
+        expect(conversionResult.output[0].data.item[1].request.auth.type).to.equal('apikey');
+        done();
+      });
+    });
+
+    it('Should not explicitly set auth when specified on a request when passed alwaysInheritAuthentication ' +
+    securityTestInheritance, function(done) {
+      var openapi = fs.readFileSync(securityTestInheritance, 'utf8');
+      Converter.convert(
+        { type: 'string', data: openapi },
+        { alwaysInheritAuthentication: true }, (err, conversionResult) => {
+
+          expect(err).to.be.null;
+          expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
+          expect(conversionResult.output[0].data.item[0].request.auth).to.be.undefined;
+          expect(conversionResult.output[0].data.item[1].request.auth).to.be.undefined;
+          done();
+        });
+    });
 
     it('Should add collection level auth with type as `bearer`' +
     securityTestCases, function(done) {
@@ -758,6 +787,27 @@ describe('CONVERT FUNCTION TESTS ', function() {
       });
     });
 
+    it('Should return validation result for an definition with empty title field', function(done) {
+      var invalidNoInfo = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-title.yaml'),
+        openapi = fs.readFileSync(invalidNoInfo, 'utf8');
+      Converter.getMetaData({ type: 'json', data: openapi }, (err, status) => {
+        if (err) {
+          expect.fail(null, null, err);
+        }
+        if (status.result) {
+          expect(status.result).to.be.eq(true);
+          expect(status.name).to.be.equal('Imported from OpenAPI');
+          expect(status.output[0].name).to.be.equal('Imported from OpenAPI');
+          expect(status.output[0].type).to.be.equal('collection');
+          done();
+        }
+        else {
+          expect.fail(null, null, status.reason);
+          done();
+        }
+      });
+    });
+
     it('Should return error for more than one root files', function(done) {
       let folderPath = path.join(__dirname, '../data/multiFile_with_two_root'),
         array = [
@@ -1189,16 +1239,16 @@ describe('CONVERT FUNCTION TESTS ', function() {
     it('Should convert xml request body correctly', function(done) {
       const openapi = fs.readFileSync(xmlrequestBody, 'utf8');
       Converter.convert({ type: 'string', data: openapi },
-        { schemaFaker: true }, (err, conversionResult) => {
+        { schemaFaker: true, requestParametersResolution: 'Example' }, (err, conversionResult) => {
           expect(err).to.be.null;
           expect(conversionResult.result).to.equal(true);
           expect(conversionResult.output[0].data.item[0].request.body.raw)
             .to.equal(
               '<?xml version="1.0" encoding="UTF-8"?>\n' +
-              '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope">' +
-              ' <soap:Body> <NumberToWords ' +
-              'xmlns="http://www.dataaccess.com/webservicesserver"> ' +
-              '<ubiNum>500</ubiNum> </NumberToWords> </soap:Body> ' +
+              '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope">\n' +
+              '  <soap:Body>\n    <NumberToWords ' +
+              'xmlns="http://www.dataaccess.com/webservicesserver">\n' +
+              '      <ubiNum>500</ubiNum>\n    </NumberToWords>\n  </soap:Body>\n' +
               '</soap:Envelope>'
             );
           done();
@@ -2079,71 +2129,94 @@ describe('CONVERT FUNCTION TESTS ', function() {
         expect(result.output[0].data).to.have.property('info');
         expect(result.output[0].data).to.have.property('item');
         expect(result.output[0].data.item[0].item[0].response[0].body).to.eql(`<?xml version="1.0" encoding="UTF-8"?>
-<CstmrPmtStsRpt>
-  <GrpHdr>
-    <MsgId>20231213-PSR/1798570726</MsgId>
-    <InitgPty>
-      <Id>
-        <OrgId>
-          <BICOrBEI>US33</BICOrBEI>
-        </OrgId>
-      </Id>
-    </InitgPty>
-  </GrpHdr>
-  <OrgnlGrpInfAndSts>
-    <OrgnlMsgId>100060058</OrgnlMsgId>
-    <Orgn1MsgNmId>pain.001.02</Orgn1MsgNmId>
-    <OrgnlCreDtTm>2023-05-16T14:35:23-05:00</OrgnlCreDtTm>
-    <Orgn1NbOfTxs>1</Orgn1NbOfTxs>
-  </OrgnlGrpInfAndSts>
-  <OrgnlPmtInfAndSts>
-    <OrgnlPmtInfId>ASIA</OrgnlPmtInfId>
-    <TxInfAndSts>
-      <OrgnlEndToEndId>ASIADD</OrgnlEndToEndId>
-      <TxSts>ACTC</TxSts>
-    </TxInfAndSts>
-  </OrgnlPmtInfAndSts>
-  <OrgnlPmtInfAndSts>
-    <OrgnlPmtInfId>EU</OrgnlPmtInfId>
-    <TxInfAndSts>
-      <OrgnlEndToEndId>EUDD</OrgnlEndToEndId>
-      <TxSts>EUTC</TxSts>
-    </TxInfAndSts>
-  </OrgnlPmtInfAndSts>
-</CstmrPmtStsRpt>`);
+<element>
+  <CstmrPmtStsRpt>
+    <GrpHdr>
+      <MsgId>20231213-PSR/1798570726</MsgId>
+      <InitgPty>
+        <Id>
+          <OrgId>
+            <BICOrBEI>US33</BICOrBEI>
+          </OrgId>
+        </Id>
+      </InitgPty>
+    </GrpHdr>
+    <OrgnlGrpInfAndSts>
+      <OrgnlMsgId>100060058</OrgnlMsgId>
+      <Orgn1MsgNmId>pain.001.02</Orgn1MsgNmId>
+      <OrgnlCreDtTm>2023-05-16T14:35:23-05:00</OrgnlCreDtTm>
+      <Orgn1NbOfTxs>1</Orgn1NbOfTxs>
+    </OrgnlGrpInfAndSts>
+    <OrgnlPmtInfAndSts>
+      <OrgnlPmtInfId>ASIA</OrgnlPmtInfId>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>ASIADD</OrgnlEndToEndId>
+        <TxSts>ACTC</TxSts>
+      </TxInfAndSts>
+    </OrgnlPmtInfAndSts>
+    <OrgnlPmtInfAndSts>
+      <OrgnlPmtInfId>EU</OrgnlPmtInfId>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>EUDD</OrgnlEndToEndId>
+        <TxSts>EUTC</TxSts>
+      </TxInfAndSts>
+    </OrgnlPmtInfAndSts>
+  </CstmrPmtStsRpt>
+</element>`);
         expect(result.output[0].data.item[0].item[1].response[0].body).to.eql(`<?xml version="1.0" encoding="UTF-8"?>
-<CstmrPmtStsRpt>
-  <GrpHdr>
-    <MsgId>20201213-PSR/1798570726</MsgId>
-    <InitgPty>
-      <Id>
-        <OrgId>
-          <BICOrBEI>US33</BICOrBEI>
-        </OrgId>
-      </Id>
-    </InitgPty>
-  </GrpHdr>
-  <OrgnlGrpInfAndSts>
-    <OrgnlMsgId>100060058</OrgnlMsgId>
-    <Orgn1MsgNmId>pain.001.02</Orgn1MsgNmId>
-    <OrgnlCreDtTm>2023-05-16T14:35:23-05:00</OrgnlCreDtTm>
-    <Orgn1NbOfTxs>1</Orgn1NbOfTxs>
-  </OrgnlGrpInfAndSts>
-  <OrgnlPmtInfAndSts>
-    <OrgnlPmtInfId>ASIA</OrgnlPmtInfId>
-    <TxInfAndSts>
-      <OrgnlEndToEndId>ASIADD</OrgnlEndToEndId>
-      <TxSts>ACTC</TxSts>
-    </TxInfAndSts>
-  </OrgnlPmtInfAndSts>
-  <OrgnlPmtInfAndSts>
-    <OrgnlPmtInfId>EU</OrgnlPmtInfId>
-    <TxInfAndSts>
-      <OrgnlEndToEndId>EUDD</OrgnlEndToEndId>
-      <TxSts>EUTC</TxSts>
-    </TxInfAndSts>
-  </OrgnlPmtInfAndSts>
-</CstmrPmtStsRpt>`);
+<element>
+  <CstmrPmtStsRpt>
+    <GrpHdr>
+      <MsgId>20201213-PSR/1798570726</MsgId>
+      <InitgPty>
+        <Id>
+          <OrgId>
+            <BICOrBEI>US33</BICOrBEI>
+          </OrgId>
+        </Id>
+      </InitgPty>
+    </GrpHdr>
+    <OrgnlGrpInfAndSts>
+      <OrgnlMsgId>100060058</OrgnlMsgId>
+      <Orgn1MsgNmId>pain.001.02</Orgn1MsgNmId>
+      <OrgnlCreDtTm>2023-05-16T14:35:23-05:00</OrgnlCreDtTm>
+      <Orgn1NbOfTxs>1</Orgn1NbOfTxs>
+    </OrgnlGrpInfAndSts>
+    <OrgnlPmtInfAndSts>
+      <OrgnlPmtInfId>ASIA</OrgnlPmtInfId>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>ASIADD</OrgnlEndToEndId>
+        <TxSts>ACTC</TxSts>
+      </TxInfAndSts>
+    </OrgnlPmtInfAndSts>
+    <OrgnlPmtInfAndSts>
+      <OrgnlPmtInfId>EU</OrgnlPmtInfId>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>EUDD</OrgnlEndToEndId>
+        <TxSts>EUTC</TxSts>
+      </TxInfAndSts>
+    </OrgnlPmtInfAndSts>
+  </CstmrPmtStsRpt>
+</element>`);
+        done();
+      });
+    });
+
+    it('Should convert definition with empty title field correctly with default name', function(done) {
+      const fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_PATH, 'empty-title.yaml'), 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+
+      Converter.convert(input, { }, (error, result) => {
+        expect(error).to.be.null;
+        expect(result.result).to.equal(true);
+        expect(result.output.length).to.equal(1);
+        expect(result.output[0].type).to.have.equal('collection');
+        expect(result.output[0].data).to.have.property('info');
+        expect(result.output[0].data.info.name).to.eql('Imported from OpenAPI');
+        expect(result.output[0].data).to.have.property('item');
         done();
       });
     });

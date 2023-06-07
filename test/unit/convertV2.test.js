@@ -39,6 +39,7 @@ const expect = require('chai').expect,
   issue193 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#193.yml'),
   tooManyRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/too_many_ref_example.json'),
   securityTestCases = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-cases.yaml'),
+  securityTestInheritance = path.join(__dirname, VALID_OPENAPI_PATH + '/security-test-inheritance.yaml'),
   emptySecurityTestCase = path.join(__dirname, VALID_OPENAPI_PATH + '/empty-security-test-case.yaml'),
   rootUrlServerWithVariables = path.join(__dirname, VALID_OPENAPI_PATH + '/root_url_server_with_variables.json'),
   parameterExamples = path.join(__dirname, VALID_OPENAPI_PATH + '/parameteres_with_examples.yaml'),
@@ -89,10 +90,43 @@ const expect = require('chai').expect,
   acceptHeaderExample =
     path.join(__dirname, VALID_OPENAPI_PATH, '/acceptHeaderExample.json'),
   recursiveRefComponents =
-    path.join(__dirname, VALID_OPENAPI_PATH, '/recursiveRefComponents.yaml');
+    path.join(__dirname, VALID_OPENAPI_PATH, '/recursiveRefComponents.yaml'),
+  securityAuthUnresolvedInPathItem =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/securityAuthUnresolvedInPathItem.yaml');
 
 
 describe('The convert v2 Function', function() {
+
+  it('Should explicitly set auth when specified on a request ' +
+  securityTestInheritance, function(done) {
+    var openapi = fs.readFileSync(securityTestInheritance, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+
+      expect(err).to.be.null;
+      expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
+      expect(conversionResult.output[0].data.item[0].item[0].request.auth.type).to.equal('apikey');
+      expect(conversionResult.output[0].data.item[1].item[0].request.auth.type).to.equal('bearer');
+      done();
+    });
+  });
+
+  it('Should not explicitly set auth when specified on a request when passed alwaysInheritAuthentication ' +
+  securityTestInheritance, function(done) {
+    const isEmptyArrayOrNull = (value) => {
+      return Array.isArray(value) && value.length === 0 || value === null;
+    };
+    var openapi = fs.readFileSync(securityTestInheritance, 'utf8');
+    Converter.convertV2(
+      { type: 'string', data: openapi },
+      { alwaysInheritAuthentication: true }, (err, conversionResult) => {
+
+        expect(err).to.be.null;
+        expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
+        expect(conversionResult.output[0].data.item[0].item[0].request.auth).to.satisfy(isEmptyArrayOrNull);
+        expect(conversionResult.output[0].data.item[1].item[0].request.auth).to.satisfy(isEmptyArrayOrNull);
+        done();
+      });
+  });
 
   it('Should add collection level auth with type as `bearer`' +
   securityTestCases, function(done) {
@@ -1063,10 +1097,10 @@ describe('The convert v2 Function', function() {
         expect(conversionResult.output[0].data.item[0].item[0].request.body.raw)
           .to.equal(
             '<?xml version="1.0" encoding="UTF-8"?>\n' +
-            '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope">' +
-            ' <soap:Body> <NumberToWords ' +
-            'xmlns="http://www.dataaccess.com/webservicesserver"> ' +
-            '<ubiNum>500</ubiNum> </NumberToWords> </soap:Body> ' +
+            '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope">\n' +
+            '  <soap:Body>\n    <NumberToWords ' +
+            'xmlns="http://www.dataaccess.com/webservicesserver">\n' +
+            '      <ubiNum>500</ubiNum>\n    </NumberToWords>\n  </soap:Body>\n' +
             '</soap:Envelope>'
           );
         done();
@@ -1988,71 +2022,75 @@ describe('The convert v2 Function', function() {
         expect(result.output[0].data).to.have.property('info');
         expect(result.output[0].data).to.have.property('item');
         expect(result.output[0].data.item[0].item[0].response[0].body).to.eql(`<?xml version="1.0" encoding="UTF-8"?>
-<CstmrPmtStsRpt>
-  <GrpHdr>
-    <MsgId>20231213-PSR/1798570726</MsgId>
-    <InitgPty>
-      <Id>
-        <OrgId>
-          <BICOrBEI>US33</BICOrBEI>
-        </OrgId>
-      </Id>
-    </InitgPty>
-  </GrpHdr>
-  <OrgnlGrpInfAndSts>
-    <OrgnlMsgId>100060058</OrgnlMsgId>
-    <Orgn1MsgNmId>pain.001.02</Orgn1MsgNmId>
-    <OrgnlCreDtTm>2023-05-16T14:35:23-05:00</OrgnlCreDtTm>
-    <Orgn1NbOfTxs>1</Orgn1NbOfTxs>
-  </OrgnlGrpInfAndSts>
-  <OrgnlPmtInfAndSts>
-    <OrgnlPmtInfId>ASIA</OrgnlPmtInfId>
-    <TxInfAndSts>
-      <OrgnlEndToEndId>ASIADD</OrgnlEndToEndId>
-      <TxSts>ACTC</TxSts>
-    </TxInfAndSts>
-  </OrgnlPmtInfAndSts>
-  <OrgnlPmtInfAndSts>
-    <OrgnlPmtInfId>EU</OrgnlPmtInfId>
-    <TxInfAndSts>
-      <OrgnlEndToEndId>EUDD</OrgnlEndToEndId>
-      <TxSts>EUTC</TxSts>
-    </TxInfAndSts>
-  </OrgnlPmtInfAndSts>
-</CstmrPmtStsRpt>`);
+<element>
+  <CstmrPmtStsRpt>
+    <GrpHdr>
+      <MsgId>20231213-PSR/1798570726</MsgId>
+      <InitgPty>
+        <Id>
+          <OrgId>
+            <BICOrBEI>US33</BICOrBEI>
+          </OrgId>
+        </Id>
+      </InitgPty>
+    </GrpHdr>
+    <OrgnlGrpInfAndSts>
+      <OrgnlMsgId>100060058</OrgnlMsgId>
+      <Orgn1MsgNmId>pain.001.02</Orgn1MsgNmId>
+      <OrgnlCreDtTm>2023-05-16T14:35:23-05:00</OrgnlCreDtTm>
+      <Orgn1NbOfTxs>1</Orgn1NbOfTxs>
+    </OrgnlGrpInfAndSts>
+    <OrgnlPmtInfAndSts>
+      <OrgnlPmtInfId>ASIA</OrgnlPmtInfId>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>ASIADD</OrgnlEndToEndId>
+        <TxSts>ACTC</TxSts>
+      </TxInfAndSts>
+    </OrgnlPmtInfAndSts>
+    <OrgnlPmtInfAndSts>
+      <OrgnlPmtInfId>EU</OrgnlPmtInfId>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>EUDD</OrgnlEndToEndId>
+        <TxSts>EUTC</TxSts>
+      </TxInfAndSts>
+    </OrgnlPmtInfAndSts>
+  </CstmrPmtStsRpt>
+</element>`);
         expect(result.output[0].data.item[0].item[1].response[0].body).to.eql(`<?xml version="1.0" encoding="UTF-8"?>
-<CstmrPmtStsRpt>
-  <GrpHdr>
-    <MsgId>20201213-PSR/1798570726</MsgId>
-    <InitgPty>
-      <Id>
-        <OrgId>
-          <BICOrBEI>US33</BICOrBEI>
-        </OrgId>
-      </Id>
-    </InitgPty>
-  </GrpHdr>
-  <OrgnlGrpInfAndSts>
-    <OrgnlMsgId>100060058</OrgnlMsgId>
-    <Orgn1MsgNmId>pain.001.02</Orgn1MsgNmId>
-    <OrgnlCreDtTm>2023-05-16T14:35:23-05:00</OrgnlCreDtTm>
-    <Orgn1NbOfTxs>1</Orgn1NbOfTxs>
-  </OrgnlGrpInfAndSts>
-  <OrgnlPmtInfAndSts>
-    <OrgnlPmtInfId>ASIA</OrgnlPmtInfId>
-    <TxInfAndSts>
-      <OrgnlEndToEndId>ASIADD</OrgnlEndToEndId>
-      <TxSts>ACTC</TxSts>
-    </TxInfAndSts>
-  </OrgnlPmtInfAndSts>
-  <OrgnlPmtInfAndSts>
-    <OrgnlPmtInfId>EU</OrgnlPmtInfId>
-    <TxInfAndSts>
-      <OrgnlEndToEndId>EUDD</OrgnlEndToEndId>
-      <TxSts>EUTC</TxSts>
-    </TxInfAndSts>
-  </OrgnlPmtInfAndSts>
-</CstmrPmtStsRpt>`);
+<element>
+  <CstmrPmtStsRpt>
+    <GrpHdr>
+      <MsgId>20201213-PSR/1798570726</MsgId>
+      <InitgPty>
+        <Id>
+          <OrgId>
+            <BICOrBEI>US33</BICOrBEI>
+          </OrgId>
+        </Id>
+      </InitgPty>
+    </GrpHdr>
+    <OrgnlGrpInfAndSts>
+      <OrgnlMsgId>100060058</OrgnlMsgId>
+      <Orgn1MsgNmId>pain.001.02</Orgn1MsgNmId>
+      <OrgnlCreDtTm>2023-05-16T14:35:23-05:00</OrgnlCreDtTm>
+      <Orgn1NbOfTxs>1</Orgn1NbOfTxs>
+    </OrgnlGrpInfAndSts>
+    <OrgnlPmtInfAndSts>
+      <OrgnlPmtInfId>ASIA</OrgnlPmtInfId>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>ASIADD</OrgnlEndToEndId>
+        <TxSts>ACTC</TxSts>
+      </TxInfAndSts>
+    </OrgnlPmtInfAndSts>
+    <OrgnlPmtInfAndSts>
+      <OrgnlPmtInfId>EU</OrgnlPmtInfId>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>EUDD</OrgnlEndToEndId>
+        <TxSts>EUTC</TxSts>
+      </TxInfAndSts>
+    </OrgnlPmtInfAndSts>
+  </CstmrPmtStsRpt>
+</element>`);
         done();
       });
     });
@@ -2289,5 +2327,42 @@ describe('The convert v2 Function', function() {
         expect(item.response[1].body).to.be.undefined;
         done();
       });
+  });
+
+  it('Should generate auth as null when it cannot be resolved from provided security definitions', function(done) {
+    const openapi = fs.readFileSync(securityAuthUnresolvedInPathItem, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, {},
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data.item.length).to.equal(1);
+
+        const item = conversionResult.output[0].data.item[0].item[0];
+        expect(item.request.auth).to.be.null;
+        done();
+      });
+  });
+
+  it('Should convert definition with empty title field correctly with default name', function(done) {
+    const fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_PATH, 'empty-title.yaml'), 'utf8'),
+      input = {
+        type: 'string',
+        data: fileData
+      };
+
+    Converter.convert(input, { }, (error, result) => {
+      expect(error).to.be.null;
+      expect(result.result).to.equal(true);
+      expect(result.output.length).to.equal(1);
+      expect(result.output[0].type).to.have.equal('collection');
+      expect(result.output[0].data).to.have.property('info');
+      expect(result.output[0].data.info.name).to.eql('Imported from OpenAPI');
+      expect(result.output[0].data).to.have.property('item');
+      done();
+    });
   });
 });
