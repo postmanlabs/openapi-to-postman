@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Added support for consumption of schema level examples while generating data from XML schemas.
+
 ### Fixed
 
 -   Fixed the default value of auth in the generated request when it is not resolved.

@@ -1821,10 +1821,16 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
               description: 'body description',
               content: {
                 'text/xml': {
+                  schema: {
+                    type: 'string',
+                    xml: {
+                      name: 'AnXMLObject'
+                    }
+                  },
                   examples: {
                     xml: {
                       summary: 'A list containing two items',
-                      value: '<AnXMLObject>test</AnXMLObject>'
+                      value: 'test'
                     }
                   }
                 }
@@ -2012,10 +2018,16 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             description: 'body description',
             content: {
               'text/xml': {
+                schema: {
+                  type: 'string',
+                  xml: {
+                    name: 'AnXMLObject'
+                  }
+                },
                 examples: {
                   xml: {
                     summary: 'A list containing two items',
-                    value: '<AnXMLObject>test</AnXMLObject>'
+                    value: 'test'
                   }
                 }
               }
@@ -2023,7 +2035,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           },
           result, resultBody;
         result = SchemaUtils.convertToPmBody(requestBody, 'EXAMPLE', {}, {
-          requestParametersResolution: 'example'
+          requestParametersResolution: 'example',
+          exampleParametersResolution: 'example'
         });
         resultBody = (result.body.raw);
         expect(resultBody).to.equal(
@@ -2155,10 +2168,16 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
             description: 'body description',
             content: {
               'application/vnd.api+xml': {
+                schema: {
+                  type: 'string',
+                  xml: {
+                    name: 'AnXMLObject'
+                  }
+                },
                 examples: {
                   xml: {
                     summary: 'A list containing two items',
-                    value: '<AnXMLObject>test</AnXMLObject>'
+                    value: 'test'
                   }
                 }
               }
@@ -2166,7 +2185,8 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
           },
           result, resultBody;
         result = SchemaUtils.convertToPmBody(requestBody, 'EXAMPLE', {}, {
-          requestParametersResolution: 'example'
+          requestParametersResolution: 'example',
+          exampleParametersResolution: 'example'
         });
         resultBody = (result.body.raw);
         expect(resultBody).to.equal(

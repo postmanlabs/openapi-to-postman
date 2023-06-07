@@ -14,14 +14,32 @@ paths:
       requestBody:
         content:
           text/xml:
-            example: 
-              <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope">  
-                <soap:Body>
-                  <NumberToWords xmlns="http://www.dataaccess.com/webservicesserver">
-                    <ubiNum>500</ubiNum>
-                  </NumberToWords>
-                </soap:Body> 
-              </soap:Envelope>
+            schema:
+              type: object
+              properties:
+                'xmlns:soap':
+                  type: string
+                  xml:
+                    attribute: true
+                  example: http://schemas.xmlsoap.org/soap/envelope
+                body:
+                  type: object
+                  properties:
+                    NumberToWords:
+                      type: object
+                      properties:
+                        xmlns:
+                          type: string
+                          xml:
+                            attribute: true
+                          example: http://www.dataaccess.com/webservicesserver
+                        ubiNum:
+                          type: integer
+                          example: 500
+                  xml:
+                    name: soap:Body
+              xml:
+                name: soap:Envelope
       responses:
         "200":
           description: OK

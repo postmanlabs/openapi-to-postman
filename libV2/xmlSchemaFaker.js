@@ -1,10 +1,20 @@
 /* eslint-disable */
-const _ = require('lodash');
+const _ = require('lodash'),
+  js2xml = require('../lib/common/js2xml');
 
-function convertSchemaToXML(name, schema, attribute, indentChar, indent) {
+function indentContent (content, initialIndent) {
+  let contentArr = _.split(content, '\n'),
+    indentedContent = _.join(_.map(contentArr, (contentElement) => { return initialIndent + contentElement; }), '\n');
+
+  return indentedContent;
+}
+
+function convertSchemaToXML(name, schema, attribute, indentChar, indent, resolveTo) {
   var tagPrefix = '',
     cIndent = _.times(indent, _.constant(indentChar)).join(''),
     retVal = '';
+
+  const schemaExample = typeof schema === 'object' && (schema.example);
 
   name = _.get(schema, 'xml.name', name || 'element');
   if (_.get(schema, 'xml.prefix')) {
@@ -23,11 +33,16 @@ function convertSchemaToXML(name, schema, attribute, indentChar, indent) {
     else if (schema.type === 'number') {
       actualValue = '(number)';
     }
+
+    if (resolveTo === 'example' && typeof schemaExample !== 'undefined') {
+      actualValue = schemaExample;
+    }
+
     if (attribute) {
       return actualValue;
     }
     else {
-      var retVal = `\n${cIndent}<${tagPrefix+name}`;
+      retVal = `\n${cIndent}<${tagPrefix+name}`;
       if (_.get(schema, 'xml.namespace')) {
         retVal += ` xmlns:${tagPrefix.slice(0,-1)}="${schema.xml.namespace}"`
       }
@@ -35,41 +50,64 @@ function convertSchemaToXML(name, schema, attribute, indentChar, indent) {
     }
   }
   else if (schema.type === 'object') {
-    // go through all properties
-    var retVal = '\n' + cIndent + `<${tagPrefix}${name}`, propVal, attributes = [], childNodes = '';
-    if (_.get(schema, 'xml.namespace')) {
-      let formattedTagPrefix = tagPrefix ?
-        `:${tagPrefix.slice(0,-1)}` :
-        '';
-      retVal += ` xmlns${formattedTagPrefix}="${schema.xml.namespace}"`
+    if (resolveTo === 'example' && typeof schemaExample !== 'undefined') {
+      const elementName = _.get(schema, 'items.xml.name', name || 'element'),
+        fakedContent = js2xml({ [elementName]: schemaExample }, indentChar);
+
+      retVal = '\n' + indentContent(fakedContent, cIndent);
     }
-    _.forOwn(schema.properties, (value, key) => {
-      propVal = convertSchemaToXML(key, value, _.get(value, 'xml.attribute'), indentChar, indent + 1);
-      if (_.get(value, 'xml.attribute')) {
-        attributes.push(`${key}="${propVal}"`);
+    else {
+      // go through all properties
+      var propVal, attributes = [], childNodes = '';
+
+      retVal = '\n' + cIndent + `<${tagPrefix}${name}`;
+
+      if (_.get(schema, 'xml.namespace')) {
+        let formattedTagPrefix = tagPrefix ?
+          `:${tagPrefix.slice(0,-1)}` :
+          '';
+        retVal += ` xmlns${formattedTagPrefix}="${schema.xml.namespace}"`
       }
-      else {
-        childNodes += _.isString(propVal) ? propVal : '';
+      _.forOwn(schema.properties, (value, key) => {
+        propVal = convertSchemaToXML(key, value, _.get(value, 'xml.attribute'), indentChar, indent + 1, resolveTo);
+        if (_.get(value, 'xml.attribute')) {
+          attributes.push(`${key}="${propVal}"`);
+        }
+        else {
+          childNodes += _.isString(propVal) ? propVal : '';
+        }
+      });
+      if (attributes.length > 0) {
+        retVal += ' ' + attributes.join(' ');
       }
-    });
-    if (attributes.length > 0) {
-      retVal += ' ' + attributes.join(' ');
+      retVal += '>';
+      retVal += childNodes;
+      retVal += `\n${cIndent}</${tagPrefix}${name}>`;
     }
-    retVal += '>';
-    retVal += childNodes;
-    retVal += `\n${cIndent}</${tagPrefix}${name}>`;
   }
   else if (schema.type === 'array') {
     // schema.items must be an object
     var isWrapped = _.get(schema, 'xml.wrapped'),
       extraIndent = isWrapped ? 1 : 0,
-      arrayElemName = _.get(schema, 'items.xml.name', name, 'arrayItem'),
+      arrayElemName = _.get(schema, 'items.xml.name', name || 'element'),
       schemaItemsWithXmlProps = _.cloneDeep(schema.items),
       contents;
 
     schemaItemsWithXmlProps.xml = schema.xml;
-    contents = convertSchemaToXML(arrayElemName, schemaItemsWithXmlProps, false, indentChar, indent + extraIndent) +
-      convertSchemaToXML(arrayElemName, schemaItemsWithXmlProps, false, indentChar, indent + extraIndent);
+
+    if (resolveTo === 'example' && typeof schemaExample !== 'undefined') {
+      const fakedContent = js2xml({ [arrayElemName]: schemaExample }, indentChar);
+
+      contents = '\n' + indentContent(fakedContent, cIndent);
+    }
+    else {
+      let singleElementContent = convertSchemaToXML(arrayElemName, schemaItemsWithXmlProps, false, indentChar,
+        indent + extraIndent, resolveTo);
+
+      // Atleast 2 items per array will be added asame as JSON schema faker
+      contents = singleElementContent + singleElementContent;
+    }
+
     if (isWrapped) {
       return `\n${cIndent}<${tagPrefix}${name}>${contents}\n${cIndent}</${tagPrefix}${name}>`;
     }
@@ -80,9 +118,9 @@ function convertSchemaToXML(name, schema, attribute, indentChar, indent) {
   return retVal;
 }
 
-module.exports = function(name, schema, indentCharacter) {
+module.exports = function(name, schema, indentCharacter, resolveTo) {
   // substring(1) to trim the leading newline
-  return convertSchemaToXML(name, schema, false, indentCharacter, 0).substring(1);
+  return convertSchemaToXML(name, schema, false, indentCharacter, 0, resolveTo).substring(1);
 };
 /*
 a = convertSchemaToXML('Person',{
