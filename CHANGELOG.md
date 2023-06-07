@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v4.14.0] - 2023-06-07
+
 ### Added
 
 -   Added support for consumption of schema level examples while generating data from XML schemas.
@@ -571,7 +573,9 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.13.0...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.14.0...HEAD
+
+[v4.14.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.13.0...v4.14.0
 
 [v4.13.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.12.0...v4.13.0
 
