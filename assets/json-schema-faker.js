@@ -24188,7 +24188,14 @@ function extend() {
           var element = traverseCallback(value.items || sample, itemSubpath, resolve, null, seenSchemaCache);
           items.push(element);
       }
-      if (value.uniqueItems) {
+
+      /**
+       * Below condition puts more computation load to check unique data across multiple items by
+       * traversing through all data and making sure it's unique.
+       * As such only apply unique constraint when parameter resolution is set to "example".
+       * As in other case, i.e. "schema", generated value for will be same anyways.
+       */
+      if (value.uniqueItems && optionAPI('useExamplesValue')) {
           return unique(path.concat(['items']), items, value, sample, resolve, traverseCallback, seenSchemaCache);
       }
       return items;
