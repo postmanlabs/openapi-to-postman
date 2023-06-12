@@ -104,8 +104,8 @@ describe('The convert v2 Function', function() {
 
       expect(err).to.be.null;
       expect(conversionResult.output[0].data.auth.type).to.equal('apikey');
-      expect(conversionResult.output[0].data.item[0].item[0].request.auth.type).to.equal('apikey');
-      expect(conversionResult.output[0].data.item[1].item[0].request.auth.type).to.equal('bearer');
+      expect(conversionResult.output[0].data.item[0].item[0].request.auth.type).to.equal('bearer');
+      expect(conversionResult.output[0].data.item[1].item[0].request.auth.type).to.equal('apikey');
       done();
     });
   });
@@ -234,15 +234,15 @@ describe('The convert v2 Function', function() {
         expect(conversionResult.output[0].data).to.have.property('item');
         expect(conversionResult.output[0].data).to.have.property('variable');
         expect(conversionResult.output[0].data.variable).to.be.an('array');
-        expect(conversionResult.output[0].data.variable[4].key).to.equal('format');
-        expect(conversionResult.output[0].data.variable[4].value).to.equal('json');
-        expect(conversionResult.output[0].data.variable[5].key).to.equal('path');
-        expect(conversionResult.output[0].data.variable[5].value).to.equal('send-email');
-        expect(conversionResult.output[0].data.variable[6].key).to.equal('new-path-variable-1');
+        expect(conversionResult.output[0].data.variable[1].key).to.equal('format');
+        expect(conversionResult.output[0].data.variable[1].value).to.equal('json');
+        expect(conversionResult.output[0].data.variable[2].key).to.equal('path');
+        expect(conversionResult.output[0].data.variable[2].value).to.equal('send-email');
+        expect(conversionResult.output[0].data.variable[3].key).to.equal('new-path-variable-1');
         // serialised value for object { R: 100, G: 200, B: 150 }
-        expect(conversionResult.output[0].data.variable[6].value).to.equal('R,100,G,200,B,150');
-        expect(conversionResult.output[0].data.variable[7].key).to.equal('new-path-variable-2');
-        expect(conversionResult.output[0].data.variable[7].value).to.contain('exampleString');
+        expect(conversionResult.output[0].data.variable[3].value).to.equal('R,100,G,200,B,150');
+        expect(conversionResult.output[0].data.variable[4].key).to.equal('new-path-variable-2');
+        expect(conversionResult.output[0].data.variable[4].value).to.contain('exampleString');
         done();
       });
   });
@@ -359,14 +359,14 @@ describe('The convert v2 Function', function() {
       (err, conversionResult) => {
       // Combining protocol, host, path to create a request
       // Ex https:// + example.com + /example = https://example.com/example
-        let request = conversionResult.output[0].data.item[0].item[0].item[0].request,
+        let request = conversionResult.output[0].data.item[1].item[0].item[0].request,
           protocol = request.url.protocol,
           host = request.url.host.join('.'),
           port = request.url.port,
           path = request.url.path.join('/'),
           endPoint = protocol + '://' + host + ':' + port + '/' + path,
           host1 = conversionResult.output[0].data.variable[0].value,
-          path1 = conversionResult.output[0].data.item[1].item[0].item[0].request.url.path.join('/'),
+          path1 = conversionResult.output[0].data.item[0].item[0].item[0].request.url.path.join('/'),
           endPoint1 = host1 + '/' + path1;
         expect(endPoint).to.equal('http://petstore.swagger.io:{{port}}/:basePath/secondary-domain/fails');
         expect(endPoint1).to.equal('https://api.example.com/primary-domain/works');
@@ -785,8 +785,8 @@ describe('The convert v2 Function', function() {
       // query1 required, query2 optional
       // header1 required, header2 optional
       // response: header1 required, header2 optional
-      request = requests[1].request;
-      response = requests[1].response[0];
+      request = requests[0].request;
+      response = requests[0].response[0];
       expect(request.url.query[0].description.content).to.equal('(Required) Description of query1');
       expect(request.url.query[1].description.content).to.equal('Description of query2');
       expect(request.header[0].description.content).to.equal('(Required) Description of header1');
@@ -797,7 +797,7 @@ describe('The convert v2 Function', function() {
       // PUT /pets
       // RequestBody: multipart/form-data
       // formParam1 required, formParam2 optional
-      request = requests[2].request;
+      request = requests[1].request;
       expect(request.body.formdata[0].description.content).to.equal('(Required) Description of formParam1');
       expect(request.body.formdata[1].description.content).to.equal('Description of formParam2');
       expect(request.body.formdata[0].contentType).to.equal('application/xml');
@@ -806,7 +806,7 @@ describe('The convert v2 Function', function() {
       // POST /pets
       // RequestBody: application/x-www-form-urlencoded
       // urlencodedParam1 required, urlencodedParam2 optional
-      request = requests[3].request;
+      request = requests[2].request;
       expect(request.body.urlencoded[0].description.content).to.equal('(Required) Description of urlencodedParam1');
       expect(request.body.urlencoded[1].description.content).to.equal('Description of urlencodedParam2');
 
@@ -927,7 +927,7 @@ describe('The convert v2 Function', function() {
 
     Converter.convertV2(input, {}, (err, result) => {
       expect(err).to.be.null;
-      let body = JSON.parse(result.output[0].data.item[0].item[1].response[0].body);
+      let body = JSON.parse(result.output[0].data.item[0].item[0].response[0].body);
       expect(result.result).to.be.true;
       expect(body)
         .to.be.an('array').with.length(2);
@@ -995,7 +995,7 @@ describe('The convert v2 Function', function() {
       // GET /pets
       // query1 required, query2 optional
       // header1 required, header2 optional
-      request = requests[1].request;
+      request = requests[0].request;
       expect(request.url.query[0].disabled).to.be.false;
       expect(request.url.query[1].disabled).to.be.true;
       expect(request.header[0].disabled).to.be.false;
@@ -1003,7 +1003,7 @@ describe('The convert v2 Function', function() {
 
       // POST /pets
       // urlencoded body
-      urlencodedBody = requests[3].request.body.urlencoded;
+      urlencodedBody = requests[2].request.body.urlencoded;
       expect(urlencodedBody[0].key).to.eql('urlencodedParam1');
       expect(urlencodedBody[0].disabled).to.be.false;
       expect(urlencodedBody[1].key).to.eql('urlencodedParam2');
@@ -1994,11 +1994,11 @@ describe('The convert v2 Function', function() {
         optimizeConversion: false, stackLimit: 50
       }, (err, result) => {
         const expectedResponseBody1 = JSON.parse(
-            result.output[0].data.item[0].item[0].item[0]
+            result.output[0].data.item[0].item[0].item[1]
               .item[0].response[0].body
           ),
           expectedResponseBody2 = JSON.parse(
-            result.output[0].data.item[0].item[0].item[1].item[0].item[0].response[0].body
+            result.output[0].data.item[0].item[0].item[0].item[0].item[0].response[0].body
           );
         expect(err).to.be.null;
         expect(result.result).to.be.true;
@@ -2278,8 +2278,8 @@ describe('The convert v2 Function', function() {
         expect(conversionResult.output[0].data).to.have.property('item');
         expect(conversionResult.output[0].data.item.length).to.equal(1);
 
-        const item1 = conversionResult.output[0].data.item[0].item[0].item[0].item[0],
-          item2 = conversionResult.output[0].data.item[0].item[1].item[0],
+        const item1 = conversionResult.output[0].data.item[0].item[1].item[0].item[0],
+          item2 = conversionResult.output[0].data.item[0].item[0].item[0],
           acceptHeader = {
             key: 'Accept',
             value: 'application/json'

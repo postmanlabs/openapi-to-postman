@@ -1910,7 +1910,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
 
     it('Should add corresponding Accept header in collection example\'s request correctly', function(done) {
       var openapi = fs.readFileSync(acceptHeaderExample, 'utf8');
-      Converter.convertV2({ type: 'string', data: openapi }, {},
+      Converter.convert({ type: 'string', data: openapi }, {},
         (err, conversionResult) => {
           expect(err).to.be.null;
           expect(conversionResult.result).to.equal(true);
@@ -1920,8 +1920,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data).to.have.property('item');
           expect(conversionResult.output[0].data.item.length).to.equal(1);
 
-          const item1 = conversionResult.output[0].data.item[0].item[0].item[0].item[0],
-            item2 = conversionResult.output[0].data.item[0].item[1].item[0],
+          const item1 = conversionResult.output[0].data.item[0].item[1],
+            item2 = conversionResult.output[0].data.item[0].item[0],
             acceptHeader = {
               key: 'Accept',
               value: 'application/json'

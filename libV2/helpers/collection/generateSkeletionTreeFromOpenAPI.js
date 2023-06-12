@@ -30,9 +30,7 @@ let _ = require('lodash'),
     /**
      * Get all the paths sorted in desc order.
      */
-    const paths = Object.keys(openapi.paths).sort((a, b) => {
-      return (a > b ? -1 : 1);
-    });
+    const paths = Object.keys(openapi.paths);
 
     if (_.isEmpty(paths)) {
       return tree;
@@ -152,18 +150,24 @@ let _ = require('lodash'),
           }
 
           else {
-            tree.setNode(`path:folder:${pathIdentifier}`, {
-              type: 'folder',
-              meta: {
-                name: path,
-                path: path,
-                pathIdentifier: pathIdentifier
-              },
-              data: {}
-            });
+            let fromNode = index === 0 ? 'root:collection' : `path:folder:${previousPathIdentified}`,
+              toNode = `path:folder:${pathIdentifier}`;
 
-            tree.setEdge(index === 0 ? 'root:collection' : `path:folder:${previousPathIdentified}`,
-              `path:folder:${pathIdentifier}`);
+            if (!tree.hasNode(toNode)) {
+              tree.setNode(toNode, {
+                type: 'folder',
+                meta: {
+                  name: path,
+                  path: path,
+                  pathIdentifier: pathIdentifier
+                },
+                data: {}
+              });
+            }
+
+            if (!tree.hasEdge(fromNode, toNode)) {
+              tree.setEdge(fromNode, toNode);
+            }
           }
         });
       }
