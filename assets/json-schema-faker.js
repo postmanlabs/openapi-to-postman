@@ -24165,11 +24165,11 @@ function extend() {
       var maxItems = value.maxItems;
 
       /**
-       * Json schema faker fakes exactly maxItems # of elements in array
-       *  Hence keeping maxItems as minimum and valid as possible for schema faking (to lessen faked items)
-       *  We have enforced limit to maxItems as 20, set by Json schema faker option
+       * Json schema faker fakes exactly maxItems # of elements in array if present.
+       * Hence we're keeping maxItems as minimum and valid as possible for schema faking (to lessen faked items)
+       * Maximum allowed maxItems is set to 20, set by Json schema faker option.
        */
-      // Override minItems to default (2) if no minItems present
+      // Override minItems to defaultMinItems if no minItems present
       if (typeof minItems !== 'number' && maxItems && maxItems >= optionAPI('defaultMinItems')) {
         minItems = optionAPI('defaultMinItems');
       }
@@ -24179,7 +24179,7 @@ function extend() {
         maxItems = minItems;
       }
 
-      // If no maxItems is defined than override with default (2)
+      // If no maxItems is defined than override with defaultMaxItems
       typeof maxItems !== 'number' && (maxItems = optionAPI('defaultMaxItems'));
 
       if (optionAPI('minItems') && minItems === undefined) {
