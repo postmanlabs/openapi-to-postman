@@ -23585,6 +23585,8 @@ function extend() {
               data['requiredOnly'] = false;
               data['minItems'] = 0;
               data['maxItems'] = null;
+              data['defaultMinItems'] = 2;
+              data['defaultMaxItems'] = 2;
               data['maxLength'] = null;
               data['resolveJsonPath'] = false;
               data['reuseProperties'] = false;
@@ -24161,6 +24163,25 @@ function extend() {
       }
       var minItems = value.minItems;
       var maxItems = value.maxItems;
+
+      /**
+       * Json schema faker fakes exactly maxItems # of elements in array if present.
+       * Hence we're keeping maxItems as minimum and valid as possible for schema faking (to lessen faked items)
+       * Maximum allowed maxItems is set to 20, set by Json schema faker option.
+       */
+      // Override minItems to defaultMinItems if no minItems present
+      if (typeof minItems !== 'number' && maxItems && maxItems >= optionAPI('defaultMinItems')) {
+        minItems = optionAPI('defaultMinItems');
+      }
+
+      // Override maxItems to minItems if minItems is available
+      if (typeof minItems === 'number' && minItems > 0) {
+        maxItems = minItems;
+      }
+
+      // If no maxItems is defined than override with defaultMaxItems
+      typeof maxItems !== 'number' && (maxItems = optionAPI('defaultMaxItems'));
+
       if (optionAPI('minItems') && minItems === undefined) {
           // fix boundaries
           minItems = !maxItems

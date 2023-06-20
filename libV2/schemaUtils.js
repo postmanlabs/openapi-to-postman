@@ -72,6 +72,9 @@ const schemaFaker = require('../assets/json-schema-faker'),
     object: '<object>'
   },
 
+  // Maximum size of schema till whch we generate 2 elements per array (50 KB)
+  SCHEMA_SIZE_OPTIMIZATION_THRESHOLD = 50 * 1024,
+
   PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable', 'properties'],
   crypto = require('crypto'),
 
@@ -591,28 +594,6 @@ let QUERYPARAM = 'query',
     }
     // If schema is of type array
     else if (concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.array) && schema.items) {
-      /*
-        For VALIDATION - keep minItems and maxItems properties defined by user in schema as is
-        FOR CONVERSION -
-          Json schema faker fakes exactly maxItems # of elements in array
-          Hence keeping maxItems as minimum and valid as possible for schema faking (to lessen faked items)
-          We have enforced limit to maxItems as 100, set by Json schema faker option
-      */
-      if (resolveFor === CONVERSION) {
-        // Override minItems to default (2) if no minItems present
-        if (!_.has(schema, 'minItems') && _.has(schema, 'maxItems') && schema.maxItems >= 2) {
-          schema.minItems = 2;
-        }
-
-        // Override maxItems to minItems if minItems is available
-        if (_.has(schema, 'minItems') && schema.minItems > 0) {
-          schema.maxItems = schema.minItems;
-        }
-
-        // If no maxItems is defined than override with default (2)
-        !_.has(schema, 'maxItems') && (schema.maxItems = 2);
-      }
-
       schema.items = resolveSchema(context, schema.items, stack, resolveFor, _.cloneDeep(seenRef));
     }
     // Any properties to ignored should not be available in schema
@@ -771,15 +752,23 @@ let QUERYPARAM = 'query',
 
   fakeSchema = (context, schema, shouldGenerateFromExample = true) => {
     try {
-      let key = hash(JSON.stringify(schema)),
+      let stringifiedSchema = typeof schema === 'object' && (JSON.stringify(schema)),
+        key = hash(stringifiedSchema),
+        restrictArrayItems = typeof stringifiedSchema === 'string' &&
+          (stringifiedSchema.length > SCHEMA_SIZE_OPTIMIZATION_THRESHOLD),
         fakedSchema;
+
+      // unassign potentially larger string data after calculation as not required
+      stringifiedSchema = null;
 
       if (context.schemaFakerCache[key]) {
         return context.schemaFakerCache[key];
       }
 
       schemaFaker.option({
-        useExamplesValue: shouldGenerateFromExample
+        useExamplesValue: shouldGenerateFromExample,
+        defaultMinItems: restrictArrayItems ? 1 : 2,
+        defaultMaxItems: restrictArrayItems ? 1 : 2
       });
 
       fakedSchema = schemaFaker(schema, null, context.schemaValidationCache || {});
