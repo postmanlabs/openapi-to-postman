@@ -1110,11 +1110,11 @@ describe('The convert v2 Function', function() {
 
   it('Should convert xml request body with complete string example correctly', function(done) {
     const openapi = fs.readFileSync(xmlrequestExampleBody, 'utf8');
-    Converter.convert({ type: 'string', data: openapi },
-      { schemaFaker: true, requestParametersResolution: 'Example' }, (err, conversionResult) => {
+    Converter.convertV2({ type: 'string', data: openapi },
+      { schemaFaker: true, parametersResolution: 'Example' }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
-        expect(conversionResult.output[0].data.item[0].request.body.raw)
+        expect(conversionResult.output[0].data.item[0].item[0].request.body.raw)
           .to.equal(`<?xml version="1.0" encoding="UTF-8"?>
 <Errors>
   <error>
