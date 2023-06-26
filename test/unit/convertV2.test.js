@@ -48,6 +48,7 @@ const expect = require('chai').expect,
   valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml'),
   petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml'),
   xmlrequestBody = path.join(__dirname, VALID_OPENAPI_PATH, '/xmlExample.yaml'),
+  xmlrequestExampleBody = path.join(__dirname, VALID_OPENAPI_PATH, '/xmlExampleWithString.yaml'),
   queryParamWithEnumResolveAsExample =
     path.join(__dirname, VALID_OPENAPI_PATH, '/query_param_with_enum_resolve_as_example.json'),
   formDataParamDescription = path.join(__dirname, VALID_OPENAPI_PATH, '/form_data_param_description.yaml'),
@@ -1103,6 +1104,25 @@ describe('The convert v2 Function', function() {
             '      <ubiNum>500</ubiNum>\n    </NumberToWords>\n  </soap:Body>\n' +
             '</soap:Envelope>'
           );
+        done();
+      });
+  });
+
+  it('Should convert xml request body with complete string example correctly', function(done) {
+    const openapi = fs.readFileSync(xmlrequestExampleBody, 'utf8');
+    Converter.convert({ type: 'string', data: openapi },
+      { schemaFaker: true, requestParametersResolution: 'Example' }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output[0].data.item[0].request.body.raw)
+          .to.equal(`<?xml version="1.0" encoding="UTF-8"?>
+<Errors>
+  <error>
+    <issue>Mandatory field are missing.</issue>
+    <action>Resend request with valid values, any one of Hello or World.</action>
+  </error>
+</Errors>
+`);
         done();
       });
   });
