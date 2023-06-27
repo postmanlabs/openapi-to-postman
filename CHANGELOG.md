@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Added support for usage of XML examples of type string.
+
+### Fixed
+
+-   Fixed issue where generated collection contained request and folder in incorrect order for v2 interface.
+-   Fixed issue where collection generation took very large time.
+
+### Changed
+
+-   Reduced collection size by keeping maximum generated elements for array as 1 for definitions with larger schemas.
+
 ## [v4.14.0] - 2023-06-07
 
 ### Added
