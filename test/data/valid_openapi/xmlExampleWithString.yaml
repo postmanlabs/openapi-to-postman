@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: My API
+  version: 1.0.0
+  contact: {}
+servers:
+  - url: "https://api.server.test/v1"
+paths:
+  /test:
+    post:
+      summary: /test
+      description: /test
+      operationId: test
+      requestBody:
+        content:
+          text/xml:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  issue:
+                    type: string
+                    description: information about the issue
+                    maxLength: 150
+                  action:
+                    type: string
+                    description: what corrective action needs to be taken to resolve the issue.
+                    maxLength: 150
+              example: |
+                <Errors>
+                  <error>
+                    <issue>Mandatory field are missing.</issue>
+                    <action>Resend request with valid values, any one of Hello or World.</action>
+                  </error>
+                </Errors>
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              examples:
+                OK:
+                  value: 
+                    Data: Postman
+tags: []

@@ -55,6 +55,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       valuePropInExample = path.join(__dirname, VALID_OPENAPI_PATH, '/valuePropInExample.yaml'),
       petstoreParamExample = path.join(__dirname, VALID_OPENAPI_PATH, '/petstoreParamExample.yaml'),
       xmlrequestBody = path.join(__dirname, VALID_OPENAPI_PATH, '/xmlExample.yaml'),
+      xmlrequestExampleBody = path.join(__dirname, VALID_OPENAPI_PATH, '/xmlExampleWithString.yaml'),
       queryParamWithEnumResolveAsExample =
         path.join(__dirname, VALID_OPENAPI_PATH, '/query_param_with_enum_resolve_as_example.json'),
       formDataParamDescription = path.join(__dirname, VALID_OPENAPI_PATH, '/form_data_param_description.yaml'),
@@ -1255,6 +1256,25 @@ describe('CONVERT FUNCTION TESTS ', function() {
         });
     });
 
+    it('Should convert xml request body with complete string example correctly', function(done) {
+      const openapi = fs.readFileSync(xmlrequestExampleBody, 'utf8');
+      Converter.convert({ type: 'string', data: openapi },
+        { schemaFaker: true, requestParametersResolution: 'Example' }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output[0].data.item[0].request.body.raw)
+            .to.equal(`<?xml version="1.0" encoding="UTF-8"?>
+<Errors>
+  <error>
+    <issue>Mandatory field are missing.</issue>
+    <action>Resend request with valid values, any one of Hello or World.</action>
+  </error>
+</Errors>
+`);
+          done();
+        });
+    });
+
     it('[Github #518]- integer query params with enum values get default value of NaN' +
     descriptionInBodyParams, function(done) {
       var openapi = fs.readFileSync(queryParamWithEnumResolveAsExample, 'utf8');
@@ -1910,7 +1930,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
 
     it('Should add corresponding Accept header in collection example\'s request correctly', function(done) {
       var openapi = fs.readFileSync(acceptHeaderExample, 'utf8');
-      Converter.convertV2({ type: 'string', data: openapi }, {},
+      Converter.convert({ type: 'string', data: openapi }, {},
         (err, conversionResult) => {
           expect(err).to.be.null;
           expect(conversionResult.result).to.equal(true);
@@ -1920,8 +1940,8 @@ describe('CONVERT FUNCTION TESTS ', function() {
           expect(conversionResult.output[0].data).to.have.property('item');
           expect(conversionResult.output[0].data.item.length).to.equal(1);
 
-          const item1 = conversionResult.output[0].data.item[0].item[0].item[0].item[0],
-            item2 = conversionResult.output[0].data.item[0].item[1].item[0],
+          const item1 = conversionResult.output[0].data.item[0].item[1],
+            item2 = conversionResult.output[0].data.item[0].item[0],
             acceptHeader = {
               key: 'Accept',
               value: 'application/json'
