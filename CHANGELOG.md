@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [v4.15.0] - 2023-06-27
+
+### Added
+
+-   Added support for usage of XML examples of type string.
+
+### Fixed
+
+-   Fixed issue where generated collection contained request and folder in incorrect order for v2 interface.
+-   Fixed issue where collection generation took very large time.
+
+### Changed
+
+-   Reduced collection size by keeping maximum generated elements for array as 1 for definitions with larger schemas.
+
 ## [v4.14.0] - 2023-06-07
 
 ### Added
@@ -573,7 +588,9 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.14.0...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.15.0...HEAD
+
+[v4.15.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.14.0...v4.15.0
 
 [v4.14.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.13.0...v4.14.0
 
