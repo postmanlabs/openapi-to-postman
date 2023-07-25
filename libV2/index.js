@@ -309,13 +309,8 @@ module.exports = {
 
     // Pre-process array data into map to optimize search later
     const fileMap = new Map();
-
-    // start with root file
-    fileMap.set(rootFile.path, rootFile.content);
-
-    // add remaining files
     context.input.data.forEach((file) => {
-      fileMap.set(file.path, file.content);
+      fileMap.set(file.fileName, file.content);
     });
 
     const parser = new $RefParser();
