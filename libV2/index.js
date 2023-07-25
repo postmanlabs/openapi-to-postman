@@ -319,10 +319,13 @@ module.exports = {
         external: true,
         file: {
           canRead: (file) => {
-            return fileMap.has(file.url);
+            // TODO: tweak the condition further to identify Postman-only URLs here
+            const fileName = file.url.split('/').pop();
+            return fileMap.has(fileName);
           },
           read: async (file) => {
-            return fileMap.get(file.url);
+            const fileName = file.url.split('/').pop();
+            return fileMap.get(fileName);
           }
         }
       }
