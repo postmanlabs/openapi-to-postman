@@ -60,6 +60,11 @@ module.exports = {
     return schema.bundle();
   },
 
+  bundleV2: function(input) {
+    var schema = new SchemaPack(input, _.has(input, 'options') ? input.options : {});
+    return schema.bundleV2();
+  },
+
   // new API
   SchemaPack
 };

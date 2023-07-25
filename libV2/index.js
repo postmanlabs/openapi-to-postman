@@ -17,6 +17,7 @@ const _ = require('lodash'),
 
 const { resolvePostmanRequest } = require('./schemaUtils');
 const { generateRequestItemObject, fixPathVariablesInUrl } = require('./utils');
+const $RefParser = require('@apidevtools/json-schema-ref-parser');
 
 module.exports = {
   convertV2: function (context, cb) {
@@ -295,5 +296,49 @@ module.exports = {
 
       return callback(null, retVal);
     });
+  },
+
+  /**
+   * Bundle multi-file definitions into single schema Javascript object
+   *
+   * @param {object} context - Context
+   * @returns {Promise<object>} Returns bundled schema object
+   */
+  bundleV2: async function (context) {
+    const rootFile = context.input.rootFiles[0];
+
+    // Pre-process array data into map to optimize search later
+    const fileMap = new Map();
+
+    // start with root file
+    fileMap.set(rootFile.path, rootFile.content);
+
+    // add remaining files
+    context.input.data.forEach((file) => {
+      fileMap.set(file.path, file.content);
+    });
+
+    const parser = new $RefParser();
+    const bundledContent = await parser.dereference(rootFile.path, {
+      resolve: {
+        external: true,
+        file: {
+          canRead: (file) => {
+            return fileMap.has(file.url);
+          },
+          read: async (file) => {
+            return fileMap.get(file.url);
+          }
+        }
+      }
+    });
+
+    return {
+      result: true,
+      data: [{
+        bundledContent: JSON.stringify(bundledContent),
+        referenceMap: parser.$refs.values()
+      }]
+    };
   }
 };
