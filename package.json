@@ -132,7 +132,7 @@
     "swagger2openapi": "7.0.8",
     "traverse": "0.6.6",
     "yaml": "1.10.2",
-    "@apidevtools/json-schema-ref-parser": "^10.0.1"
+    "@apidevtools/json-schema-ref-parser": "10.0.1"
   },
   "author": "Postman Labs <help@getpostman.com>",
   "license": "Apache-2.0",
