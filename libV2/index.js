@@ -17,7 +17,6 @@ const _ = require('lodash'),
 
 const { resolvePostmanRequest } = require('./schemaUtils');
 const { generateRequestItemObject, fixPathVariablesInUrl } = require('./utils');
-const $RefParser = require('@apidevtools/json-schema-ref-parser');
 
 module.exports = {
   convertV2: function (context, cb) {
@@ -296,47 +295,5 @@ module.exports = {
 
       return callback(null, retVal);
     });
-  },
-
-  /**
-   * Bundle multi-file definitions into single schema Javascript object
-   *
-   * @param {object} context - Context
-   * @returns {Promise<object>} Returns bundled schema object
-   */
-  bundleV2: async function (context) {
-    const rootFile = context.input.rootFiles[0];
-
-    // Pre-process array data into map to optimize search later
-    const fileMap = new Map();
-    context.input.data.forEach((file) => {
-      fileMap.set(file.fileName, file.content);
-    });
-
-    const parser = new $RefParser();
-    const bundledContent = await parser.dereference(rootFile.path, {
-      resolve: {
-        external: true,
-        file: {
-          canRead: (file) => {
-            // TODO: tweak the condition further to identify Postman-only URLs here
-            const fileName = file.url.split('/').pop();
-            return fileMap.has(fileName);
-          },
-          read: async (file) => {
-            const fileName = file.url.split('/').pop();
-            return fileMap.get(fileName);
-          }
-        }
-      }
-    });
-
-    return {
-      result: true,
-      data: [{
-        bundledContent: JSON.stringify(bundledContent),
-        referenceMap: parser.$refs.values()
-      }]
-    };
   }
 };
