@@ -787,6 +787,21 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * Resolve a given ref from the schema
+   *
+   * @param {Object} context - Global context
+   * @param {Object} schema - Schema that is to be resolved
+   *
+   * @returns {Object} Faked data
+   */
+  resolveAndFakeSchema = (context, schema) => {
+    const resolvedSchema = resolveSchema(context, schema),
+      fakedValue = fakeSchema(context, resolvedSchema);
+
+    return fakedValue;
+  },
+
+  /**
    * Resolve value of a given parameter
    *
    * @param {Object} context - Required context from related SchemaPack function
@@ -1904,5 +1919,6 @@ module.exports = {
 
   resolveResponseForPostmanRequest,
   resolveRefFromSchema,
+  resolveAndFakeSchema,
   resolveSchema
 };
