@@ -11,6 +11,7 @@ let expect = require('chai').expect,
   nestedRefsFromRootComponents = path.join(__dirname, BUNDLES_FOLDER + '/nested_references_from_root_components'),
   localRefFolder = path.join(__dirname, BUNDLES_FOLDER + '/local_references'),
   schemaFromResponse = path.join(__dirname, BUNDLES_FOLDER + '/schema_from_response'),
+  remoteURLRefExamples = path.join(__dirname, BUNDLES_FOLDER + '/remote_url_refs'),
   petstoreFolder = path.join(__dirname, PETSTORE_FOLDER),
   withParamsFolder = path.join(__dirname, BUNDLES_FOLDER + '/with_parameters'),
   withRefInItems = path.join(__dirname, BUNDLES_FOLDER + '/with_ref_in_items'),
@@ -2712,10 +2713,94 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.specification.version).to.equal('3.0');
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
+
+  it('Should return bundled file as json - remote_url_refs', async function () {
+    let contentRootFile = fs.readFileSync(remoteURLRefExamples + '/root_2.json', 'utf8'),
+      spacecraftId = fs.readFileSync(remoteURLRefExamples + '/schemas/SpacecraftId.json', 'utf8'),
+
+      remoteRefResolver = async (refURL) => {
+        if (refURL.includes('SpacecraftId')) {
+          return JSON.parse(spacecraftId);
+        }
+      },
+      expected = fs.readFileSync(remoteURLRefExamples + '/expected_2.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: 'root.json'
+          }
+        ],
+        data: [
+          {
+            path: 'root.json',
+            content: contentRootFile
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON',
+        remoteRefResolver
+      };
+
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
+  it('Should return bundled file as json with deep url refs - remote_url_refs', async function () {
+    let contentRootFile = fs.readFileSync(remoteURLRefExamples + '/root.json', 'utf8'),
+      spacecraft = fs.readFileSync(remoteURLRefExamples + '/schemas/spacecraft.json', 'utf8'),
+      peakThrustSecond = fs.readFileSync(remoteURLRefExamples + '/schemas/peakThrustSecond.json', 'utf8'),
+      peakThrustSecondProperty =
+        fs.readFileSync(remoteURLRefExamples + '/schemas/peakThrustSecondProperty.json', 'utf8'),
+      remoteRefResolver = async (refURL) => {
+        if (refURL.includes('peakThrustSecondProperty')) {
+          return JSON.parse(peakThrustSecondProperty);
+        }
+
+        if (refURL.includes('peakThrustSecond')) {
+          return JSON.parse(peakThrustSecond);
+        }
+
+        if (refURL.includes('Spacecraft')) {
+          return JSON.parse(spacecraft);
+        }
+      },
+      expected = fs.readFileSync(remoteURLRefExamples + '/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: 'root.json'
+          }
+        ],
+        data: [
+          {
+            path: 'root.json',
+            content: contentRootFile
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON',
+        remoteRefResolver
+      };
+
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
 });
 
 describe('getReferences method when node does not have any reference', function() {
-  it('Should return reference data empty if there are not any reference', function() {
+  it('Should return reference data empty if there are not any reference', async function() {
     const userData = 'type: object\n' +
         'properties:\n' +
         '  id:\n' +
@@ -2724,7 +2809,7 @@ describe('getReferences method when node does not have any reference', function(
         '    type: string',
       userNode = parse.getOasObject(userData),
       nodeIsRoot = false,
-      result = getReferences(
+      result = await getReferences(
         userNode.oasObject,
         nodeIsRoot,
         removeLocalReferenceFromPath,
@@ -2738,7 +2823,7 @@ describe('getReferences method when node does not have any reference', function(
     expect(Object.keys(result.nodeReferenceDirectory).length).to.equal(0);
   });
 
-  it('Should return the reference data - schema_from_response', function() {
+  it('Should return the reference data - schema_from_response', async function() {
     const userData = 'User:\n' +
       '  $ref: \"./user.yaml\"\n' +
       '\n' +
@@ -2758,7 +2843,7 @@ describe('getReferences method when node does not have any reference', function(
       '      type: string',
       userNode = parse.getOasObject(userData),
       nodeIsRoot = false,
-      result = getReferences(
+      result = await getReferences(
         userNode.oasObject,
         nodeIsRoot,
         removeLocalReferenceFromPath,

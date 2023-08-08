@@ -1,0 +1,9 @@
+{
+    "components": {
+        "schemas": {
+            "peakThrustSecond": {
+                "$ref": "http://localhost:8080/peakThrustSecondProperty.json#components/schemas/peakThrustSecondProperty"
+            }
+        }
+    }
+}

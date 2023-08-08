@@ -1,0 +1,18 @@
+{
+  "components": {
+      "schemas": {
+          "peakThrustSecondProperty": {
+              "type": "object",
+              "required": [
+                  "message"
+              ],
+              "properties": {
+                  "message": {
+                      "description": "A human readable error message from nested deep ref",
+                      "type": "string"
+                  }
+              }
+          }
+      }
+  }
+}
