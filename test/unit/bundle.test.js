@@ -2753,7 +2753,7 @@ describe('bundle files method - 3.0', function () {
 
   it('Should return bundled file as json with deep url refs - remote_url_refs', async function () {
     let contentRootFile = fs.readFileSync(remoteURLRefExamples + '/root.json', 'utf8'),
-      spacecraft = fs.readFileSync(remoteURLRefExamples + '/schemas/spacecraft.json', 'utf8'),
+      spacecraft = fs.readFileSync(remoteURLRefExamples + '/schemas/Spacecraft.json', 'utf8'),
       peakThrustSecond = fs.readFileSync(remoteURLRefExamples + '/schemas/peakThrustSecond.json', 'utf8'),
       peakThrustSecondProperty =
         fs.readFileSync(remoteURLRefExamples + '/schemas/peakThrustSecondProperty.json', 'utf8'),
