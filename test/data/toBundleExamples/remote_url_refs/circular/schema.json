@@ -24,7 +24,7 @@
             "readOnly": true,
             "type": "array",
             "items": {
-              "$ref": "https://localhost:8080/schema.json#/components/schemas/ErrorDetail"
+              "$ref": "https://localhost:8080/root.json#/components/schemas/details"
             },
             "description": "The error details."
           }

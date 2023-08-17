@@ -37,5 +37,20 @@
         }
       }
     }
+  },
+  "components": {
+    "schemas": {
+      "details": {
+        "description": "The detailed identifier of a spacecraft",
+        "type": "string"
+      }
+    },
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key"
+      }
+    }
   }
 }

@@ -1,32 +1,35 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.0.2",
   "info": {
     "version": "1.0.0",
-    "title": "Sample API",
-    "description": "Buy or rent spacecrafts"
+    "title": "Swagger Petstore",
+    "description": "A sample API that uses a petstore as an example to demonstrate features in the swagger-2.0 specification",
+    "termsOfService": "http://swagger.io/terms/",
+    "contact": {
+      "name": "Swagger API Team",
+      "email": "apiteam@swagger.io",
+      "url": "http://swagger.io"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+    }
   },
   "paths": {
-    "/spacecrafts/{spacecraftId}": {
-      "parameters": [
-        {
-          "name": "spacecraftId",
-          "description": "The unique identifier of the spacecraft",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/SpacecraftId"
-          }
-        }
-      ],
+    "/pets": {
       "get": {
-        "summary": "Read a spacecraft",
+        "description": "Returns all pets alesuada ac...",
+        "operationId": "findPets",
         "responses": {
           "200": {
-            "description": "The spacecraft corresponding to the provided `spacecraftId`",
+            "description": "An paged array of pets",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/https_localhost8080_Spacecraft.json-components_schemas_Spacecraft"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/https_localhost8080_schema.json-_components_schemas_ErrorDetail"
+                  }
                 }
               }
             }
@@ -37,71 +40,36 @@
   },
   "components": {
     "schemas": {
-      "SpacecraftId": {
-        "description": "The unique identifier of a spacecraft",
+      "details": {
+        "description": "The detailed identifier of a spacecraft",
         "type": "string"
       },
-      "Error": {
+      "https_localhost8080_schema.json-_components_schemas_ErrorDetail": {
         "type": "object",
-        "required": [
-          "message"
-        ],
+        "description": "The error detail.",
         "properties": {
+          "code": {
+            "readOnly": true,
+            "type": "string",
+            "description": "The error code."
+          },
           "message": {
-            "description": "A human readable error message",
-            "type": "string"
-          }
-        }
-      },
-      "https_localhost8080_Spacecraft.json-components_schemas_Spacecraft": {
-        "type": "object",
-        "required": [
-          "variant",
-          "fuelFlowRate",
-          "type"
-        ],
-        "properties": {
-          "id": {
-            "description": "THE ID",
-            "type": "string"
-          },
-          "variant": {
-            "description": "The identifier of a spacecraft",
-            "type": "string"
-          },
-          "peakThrust": {
+            "readOnly": true,
             "type": "string",
-            "description": "PEAKTHRUST"
+            "description": "The error message."
           },
-          "fuelFlowRate": {
+          "target": {
+            "readOnly": true,
             "type": "string",
-            "description": "Fuel injection capacity rate"
+            "description": "The error target."
           },
-          "maxImpulse": {
-            "description": "maxImpulse maxImpulse",
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "capsule",
-              "probe",
-              "satellite",
-              "spaceplane",
-              "station"
-            ]
-          },
-          "peakThrustSecond": {
-            "type": "object",
-            "required": [
-              "message"
-            ],
-            "properties": {
-              "message": {
-                "description": "A human readable error message from nested deep ref",
-                "type": "string"
-              }
-            }
+          "details": {
+            "readOnly": true,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/details"
+            },
+            "description": "The error details."
           }
         }
       }
@@ -113,10 +81,5 @@
         "name": "X-Api-Key"
       }
     }
-  },
-  "security": [
-    {
-      "ApiKey": []
-    }
-  ]
+  }
 }
