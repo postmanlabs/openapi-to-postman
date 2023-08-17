@@ -2835,6 +2835,80 @@ describe('bundle files method - 3.0', function () {
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 
+  it('Should return bundled file as yaml with yaml content remote refs - remote_url_refs', async function () {
+    let contentRootFile = fs.readFileSync(remoteURLRefExamples + '/yaml/root.yaml', 'utf8'),
+      spacecraftId = fs.readFileSync(remoteURLRefExamples + '/yaml/SpacecraftId.yaml', 'utf8'),
+
+      remoteRefResolver = async (refURL) => {
+        if (refURL.includes('SpacecraftId')) {
+          return spacecraftId;
+        }
+      },
+      expected = fs.readFileSync(remoteURLRefExamples + '/yaml/expected.yaml', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: 'root.json'
+          }
+        ],
+        data: [
+          {
+            path: 'root.json',
+            content: contentRootFile
+          }
+        ],
+        options: {},
+        bundleFormat: 'YAML',
+        remoteRefResolver
+      };
+
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(res.output.data[0].bundledContent).to.be.equal(expected);
+  });
+
+  it('Should return bundled file as json with yaml content refs and root file - remote_url_refs', async function () {
+    let contentRootFile = fs.readFileSync(remoteURLRefExamples + '/yaml/root.yaml', 'utf8'),
+      spacecraftId = fs.readFileSync(remoteURLRefExamples + '/yaml/SpacecraftId.yaml', 'utf8'),
+
+      remoteRefResolver = async (refURL) => {
+        if (refURL.includes('SpacecraftId')) {
+          return spacecraftId;
+        }
+      },
+      expected = fs.readFileSync(remoteURLRefExamples + '/yaml/expected.json', 'utf8'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '3.0',
+        rootFiles: [
+          {
+            path: 'root.json'
+          }
+        ],
+        data: [
+          {
+            path: 'root.json',
+            content: contentRootFile
+          }
+        ],
+        options: {},
+        bundleFormat: 'JSON',
+        remoteRefResolver
+      };
+
+    const res = await Converter.bundle(input);
+
+    expect(res).to.not.be.empty;
+    expect(res.result).to.be.true;
+    expect(res.output.specification.version).to.equal('3.0');
+    expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+  });
+
   it('Should return bundled file as json without resolving the reference if resolver threw err - remote_url_refs',
     async function () {
       let contentRootFile = fs.readFileSync(remoteURLRefExamples + '/root_3.json', 'utf8'),
