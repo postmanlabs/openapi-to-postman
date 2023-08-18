@@ -1,0 +1,3 @@
+SpacecraftId:
+  description: The unique identifier of a spacecraft
+  type: string
