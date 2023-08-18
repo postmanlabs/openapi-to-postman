@@ -4,7 +4,7 @@
 
 ### Added
 
--   Added support for resolving of remote URL refs in bundle method
+-   Added support for remote $ref resolution in bundle() API.
 
 ## [v4.15.0] - 2023-06-27
 
