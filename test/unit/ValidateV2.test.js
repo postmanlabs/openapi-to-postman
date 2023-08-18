@@ -10,7 +10,9 @@ var expect = require('chai').expect,
   VALIDATION_DATA_FOLDER_PATH = '../data/validationData',
   VALIDATION_DATA_OPTIONS_FOLDER_31_PATH = '../data/31CollectionTransactions/validateOptions',
   VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH = '../data/31CollectionTransactions/validate30Scenarios',
-  VALID_OPENAPI_FOLDER_PATH = '../data/valid_openapi';
+  VALID_OPENAPI_FOLDER_PATH = '../data/valid_openapi',
+  VALID_OPENAPI_FOLDER_PATH_SWAGGER = '../data/valid_swagger',
+  Resolver = require('@stoplight/json-ref-resolver').Resolver;
 
 /**
  * Extract all transaction from collection and appends them into array
@@ -255,6 +257,51 @@ describe('Validation with different resolution parameters options', function () 
         });
       });
     });
+  });
+
+  it('Should resolve and fake a schema provided from an openapi', function () {
+    let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH,
+        '/petstore.json'), 'utf8'),
+      options = {
+        parametersResolution: 'example'
+      };
+
+    const schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options, 'v2'),
+      schemaToFake = {
+        'type': 'array',
+        'items': {
+          '$ref': '#/components/schemas/Pet'
+        }
+      },
+      resolvedSchema = schemaPack.resolveSchema(schemaToFake),
+      result = schemaPack.fakeSchema(resolvedSchema.value);
+
+    expect(result).to.not.be.null;
+    expect(result.value).to.not.be.empty;
+    expect(typeof result.value[0].id).to.eq('number');
+    expect(typeof result.value[0].name).to.eq('string');
+    expect(typeof result.value[0].tag).to.eq('string');
+  });
+
+  it('Should fake a schema provided from another schema resolver', async function () {
+    let fileData = fs.readFileSync(path.join(__dirname, VALID_OPENAPI_FOLDER_PATH_SWAGGER,
+        '/json/swagger_aws_2.json'), 'utf8'),
+      options = {
+        parametersResolution: 'example'
+      };
+
+    const schemaPack = new Converter.SchemaPack({ type: 'string', data: fileData }, options, 'v2'),
+      resolver = new Resolver(),
+      resolved = await resolver.resolve(JSON.parse(fileData), {
+        jsonPointer: '#/paths/~1users/post/responses/200/schema'
+      }),
+      result = schemaPack.fakeSchema(resolved.result);
+
+    expect(result).to.not.be.null;
+    expect(result.value).to.not.be.undefined;
+    expect(typeof result.value.username).to.eq('string');
+    expect(typeof result.value.identityId).to.eq('string');
+    expect(typeof result.value.credentials.expiration).to.eq('number');
   });
 
   it('Should validate correctly with request and example parameters as Example', function () {

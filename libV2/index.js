@@ -15,7 +15,7 @@ const _ = require('lodash'),
   OpenApiErr = require('../lib/error'),
   { validateTransaction, getMissingSchemaEndpoints } = require('./validationUtils');
 
-const { resolvePostmanRequest, resolveAndFakeSchema } = require('./schemaUtils');
+const { resolvePostmanRequest, resolveSchema, fakeSchema } = require('./schemaUtils');
 const { generateRequestItemObject, fixPathVariablesInUrl } = require('./utils');
 
 module.exports = {
@@ -297,9 +297,15 @@ module.exports = {
     });
   },
 
-  resolveAndFakeSchema(context, schema) {
+  resolveSchema(context, schema) {
     context.schemaCache = context.schemaCache || {};
 
-    return resolveAndFakeSchema(context, schema);
+    return resolveSchema(context, schema);
+  },
+
+  fakeSchema(context, resolvedSchema) {
+    context.schemaCache = context.schemaCache || {};
+
+    return fakeSchema(context, resolvedSchema);
   }
 };
