@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v4.16.0] - 2023-08-18
+
 ### Added
 
 -   Added support for remote $ref resolution in bundle() API.
@@ -592,7 +594,9 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.15.0...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.16.0...HEAD
+
+[v4.16.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.15.0...v4.16.0
 
 [v4.15.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.14.0...v4.15.0
 
