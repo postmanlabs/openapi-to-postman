@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [v4.16.0] - 2023-08-18
+
+### Added
+
+-   Added support for remote $ref resolution in bundle() API.
+
 ## [v4.15.0] - 2023-06-27
 
 ### Added
@@ -41,7 +47,7 @@
 -   Fixed an issue where definition validation was not considering multiple white space characters.
 -   Fixed issue [#708](https://github.com/postmanlabs/openapi-to-postman/issues/708) where if string is defined for required field, conversion was failing.
 -   Fixed issue where for certain path segments, collection generation failed.
--   Fixed TypeError occurring while checking typeof bodyContent in getXmlVersionContent. 
+-   Fixed TypeError occurring while checking typeof bodyContent in getXmlVersionContent.
 
 ## [v4.12.0] - 2023-05-04
 
@@ -295,7 +301,7 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 -   Added support for internal $ref resolution in validation flows.
 -   Fixed issue where parameter resolution was "schema" when "example" was specified.
 -   Add supported formats for schema resolution (deref).
--   Fix for [#7643](https://github.com/postmanlabs/postman-app-support/issues/7643), [#7914](https://github.com/postmanlabs/postman-app-support/issues/7914), [#9004](https://github.com/postmanlabs/postman-app-support/issues/9004) - Added support for Auth params in response/example. 
+-   Fix for [#7643](https://github.com/postmanlabs/postman-app-support/issues/7643), [#7914](https://github.com/postmanlabs/postman-app-support/issues/7914), [#9004](https://github.com/postmanlabs/postman-app-support/issues/9004) - Added support for Auth params in response/example.
 -   Bumped up multiple dependecies and dev-dependencies versions to keep them up-to-date.
 -   Updated code coverage tool from deprecated istanbul to nyc.
 
@@ -382,7 +388,7 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 #### v1.1.13 (April 21, 2020)
 
 -   Added support for detailed validation body mismatches with option detailedBlobValidation.
--   Fix for [#8098](https://github.com/postmanlabs/postman-app-support/issues/8098) - Unable to validate schema with type array. 
+-   Fix for [#8098](https://github.com/postmanlabs/postman-app-support/issues/8098) - Unable to validate schema with type array.
 -   Fixed URIError for invalid URI in transaction.
 -   Fix for [#152](https://github.com/postmanlabs/openapi-to-postman/issues/152) - Path references not resolved due to improver handling of special characters.
 -   Fix for [#160](https://github.com/postmanlabs/openapi-to-postman/issues/160) - Added handling for variables in local servers not a part of a URL segment. All path servers to be added as collection variables.
@@ -588,7 +594,9 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.15.0...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.16.0...HEAD
+
+[v4.16.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.15.0...v4.16.0
 
 [v4.15.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.14.0...v4.15.0
 

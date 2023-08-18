@@ -1,0 +1,122 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Sample API",
+    "description": "Buy or rent spacecrafts"
+  },
+  "paths": {
+    "/spacecrafts/{spacecraftId}": {
+      "parameters": [
+        {
+          "name": "spacecraftId",
+          "description": "The unique identifier of the spacecraft",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/SpacecraftId"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Read a spacecraft",
+        "responses": {
+          "200": {
+            "description": "The spacecraft corresponding to the provided `spacecraftId`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/https_localhost8080_Spacecraft.json-components_schemas_Spacecraft"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SpacecraftId": {
+        "description": "The unique identifier of a spacecraft",
+        "type": "string"
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "description": "A human readable error message",
+            "type": "string"
+          }
+        }
+      },
+      "https_localhost8080_Spacecraft.json-components_schemas_Spacecraft": {
+        "type": "object",
+        "required": [
+          "variant",
+          "fuelFlowRate",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "description": "THE ID",
+            "type": "string"
+          },
+          "variant": {
+            "description": "The identifier of a spacecraft",
+            "type": "string"
+          },
+          "peakThrust": {
+            "type": "string",
+            "description": "PEAKTHRUST"
+          },
+          "fuelFlowRate": {
+            "type": "string",
+            "description": "Fuel injection capacity rate"
+          },
+          "maxImpulse": {
+            "description": "maxImpulse maxImpulse",
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "capsule",
+              "probe",
+              "satellite",
+              "spaceplane",
+              "station"
+            ]
+          },
+          "peakThrustSecond": {
+            "type": "object",
+            "required": [
+              "message"
+            ],
+            "properties": {
+              "message": {
+                "description": "A human readable error message from nested deep ref",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key"
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKey": []
+    }
+  ]
+}
