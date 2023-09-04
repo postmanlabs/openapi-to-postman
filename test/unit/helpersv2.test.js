@@ -71,4 +71,4 @@ describe('Helper function tests', function () {
 
     });
   });
-})
+});
