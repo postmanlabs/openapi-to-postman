@@ -23,7 +23,7 @@ module.exports = function (openapi, securitySet, shouldCheckForMultipleKeys) {
   _.forEach(securitySet, (security) => {
     let helper;
     if (_.isObject(security) && _.isEmpty(security)) {
-      helper = {
+      authHelper = {
         type: 'noauth'
       };
       return false;

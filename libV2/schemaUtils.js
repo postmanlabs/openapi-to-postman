@@ -1932,8 +1932,10 @@ module.exports = {
       extraAPIKeys = getExtraAPIKeyParams(authHelper);
     }
 
-    headers.push(...extraAPIKeys.headers);
-    queryParams.push(...extraAPIKeys.queryParams);
+    if (!_.isEmpty) {
+      headers.push(...extraAPIKeys.headers);
+      queryParams.push(...extraAPIKeys.queryParams);
+    }
 
 
     url = _.get(baseUrlData, 'baseUrl', '') + url;
