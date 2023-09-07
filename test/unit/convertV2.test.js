@@ -30,6 +30,7 @@ const expect = require('chai').expect,
   examplesOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/examples_outside_schema.json'),
   exampleOutsideSchema = path.join(__dirname, VALID_OPENAPI_PATH + '/example_outside_schema.json'),
   descriptionInBodyParams = path.join(__dirname, VALID_OPENAPI_PATH + '/description_in_body_params.json'),
+  descriptionInPathParams = path.join(__dirname, VALID_OPENAPI_PATH + '/path_params_with_description.json'),
   zeroDefaultValueSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/zero_in_default_value.json'),
   requiredInParams = path.join(__dirname, VALID_OPENAPI_PATH, '/required_in_parameters.json'),
   multipleRefs = path.join(__dirname, VALID_OPENAPI_PATH, '/multiple_refs.json'),
@@ -548,6 +549,16 @@ describe('The convert v2 Function', function() {
       expect(err).to.be.null;
       expect(descriptionOne.content).to.equal('Description of Pet ID');
       expect(descriptionTwo.content).to.equal('Description of Pet name');
+      done();
+    });
+  });
+
+  it('should add description in path params', function (done) {
+    var openapi = fs.readFileSync(descriptionInPathParams, 'utf-8');
+    Converter.convertV2({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
+      let description = conversionResult.output[0].data.item[0].item[0].item[0].request.url.variable[0].description;
+      expect(err).to.be.null;
+      expect(description).to.equal('(Required) Id of pet');
       done();
     });
   });
