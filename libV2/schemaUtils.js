@@ -598,11 +598,11 @@ let QUERYPARAM = 'query',
     }
     // Any properties to ignored should not be available in schema
     else if (_.every(SCHEMA_PROPERTIES_TO_EXCLUDE, (schemaKey) => { return !schema.hasOwnProperty(schemaKey); })) {
+      let { parametersResolution } = context.computedOptions;
       if (schema.hasOwnProperty('type')) {
-        let { parametersResolution } = context.computedOptions;
 
         // Override default value to schema for CONVERSION only for parmeter resolution set to schema
-        if (resolveFor === CONVERSION && parametersResolution === 'schema') {
+        if (resolveFor === CONVERSION && parametersResolution === 'schema' || parametersResolution === 'hybrid') {
           if (!schema.hasOwnProperty('format')) {
             schema.default = '<' + schema.type + '>';
           }
@@ -621,6 +621,9 @@ let QUERYPARAM = 'query',
             schema.default = '<' + schema.type + (schema.format ? ('-' + schema.format) : '') + '>';
           }
         }
+      }
+      if (resolveFor === CONVERSION && parametersResolution === 'hybrid' && schema.example) {
+        schema.default = schema.example;
       }
     }
 
@@ -802,7 +805,7 @@ let QUERYPARAM = 'query',
     const { indentCharacter } = context.computedOptions,
       resolvedSchema = resolveSchema(context, param.schema),
       { parametersResolution } = context.computedOptions,
-      shouldGenerateFromExample = parametersResolution === 'example',
+      shouldGenerateFromExample = parametersResolution === 'example' || parametersResolution === 'hybrid',
       hasExample = param.example !== undefined ||
         param.schema.example !== undefined ||
         param.examples !== undefined ||
@@ -1058,7 +1061,7 @@ let QUERYPARAM = 'query',
     let { parametersResolution, indentCharacter } = context.computedOptions,
       headerFamily = getHeaderFamily(bodyType),
       bodyData = '',
-      shouldGenerateFromExample = parametersResolution === 'example',
+      shouldGenerateFromExample = parametersResolution === 'example' || parametersResolution === 'hybrid',
       example,
       examples;
 
