@@ -1176,12 +1176,12 @@ describe('The convert v2 Function', function() {
 
     Converter.convertV2({ type: 'string', data: openapi },
       {}, (err, conversionResult) => {
-        expect(conversionResult.output[0].data.item[0].item[0].item[0].request.url.query[0].description.content).to.equal(
-          '(Required) QUERY PARAM DESCRIPTION'
-        );
-        expect(conversionResult.output[0].data.item[0].item[0].item[0].request.url.query[1].description.content).to.equal(
-          'QUERY PARAM Optional'
-        );
+        expect(
+          conversionResult.output[0].data.item[0].item[0].item[0].request.url.query[0].description.content)
+          .to.equal('(Required) QUERY PARAM DESCRIPTION');
+        expect(
+          conversionResult.output[0].data.item[0].item[0].item[0].request.url.query[1].description.content)
+          .to.equal('QUERY PARAM Optional');
         expect(conversionResult.output[0].data.item[0].item[0].item[0].request.url.variable[0].description).to.equal(
           '(Required) Required spacecraftId path param'
         );
