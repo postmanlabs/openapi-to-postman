@@ -9,24 +9,44 @@ paths:
     get:
       parameters:
         - name: spacecraftId
-          description: PATH_PARAM_DESCRIPTION
+          description: "Required spacecraftId path param"
           in: path
           required: true
           schema:
             type: string
+        - name: pathParamOptional
+          description: "Path param optional description"
+          in: path
+          required: false
+          schema:
+            type: string
         - name: limit
           in: query
-          description: QUERY_PARAM_DESCRIPTION
+          description: "QUERY PARAM DESCRIPTION"
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: optionalQueryParam
+          in: query
+          description: "QUERY PARAM Optional"
           required: false
           schema:
             type: integer
             format: int32
         - name: page
           in: header
-          description: "HEADER_DESCRIPTION_NOT_PRESENT"
+          description: "HEADER PARAM DESCRIPTION"
+          required: true
+          schema:
+            type: string
+        - name: offset
+          in: header
+          description: "HEADER PARAM Optional"
           required: false
           schema:
             type: string
+
       summary: Read a spacecraft
       responses:
         "201":

@@ -1177,13 +1177,22 @@ describe('The convert v2 Function', function() {
     Converter.convertV2({ type: 'string', data: openapi },
       {}, (err, conversionResult) => {
         expect(conversionResult.output[0].data.item[0].item[0].item[0].request.url.query[0].description.content).to.equal(
-          'QUERY PARAM DESCRIPTION'
+          '(Required) QUERY PARAM DESCRIPTION'
+        );
+        expect(conversionResult.output[0].data.item[0].item[0].item[0].request.url.query[1].description.content).to.equal(
+          'QUERY PARAM Optional'
         );
         expect(conversionResult.output[0].data.item[0].item[0].item[0].request.url.variable[0].description).to.equal(
-          'PATH PARAM DESCRIPTION'
+          '(Required) Required spacecraftId path param'
         );
-        expect(conversionResult.output[0].data.item[0].item[0].item[0].request.url.header[0].description).to.equal(
-          'HEADER PARAM DESCRIPTION'
+        expect(conversionResult.output[0].data.item[0].item[0].item[0].request.url.variable[1].description).to.equal(
+          'Path param optional description'
+        );
+        expect(conversionResult.output[0].data.item[0].item[0].item[0].request.header[0].description.content).to.equal(
+          '(Required) HEADER PARAM DESCRIPTION'
+        );
+        expect(conversionResult.output[0].data.item[0].item[0].item[0].request.header[1].description.content).to.equal(
+          'HEADER PARAM Optional'
         );
         done();
       });
