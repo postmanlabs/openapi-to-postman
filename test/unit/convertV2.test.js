@@ -1171,7 +1171,7 @@ describe('The convert v2 Function', function() {
       });
   });
 
-  it('description test', function(done) {
+  it('should generate a collection with description for Query Params, Path variables and Headers', function(done) {
     var openapi = fs.readFileSync(descriptionTestSpec, 'utf8');
 
     Converter.convertV2({ type: 'string', data: openapi },
