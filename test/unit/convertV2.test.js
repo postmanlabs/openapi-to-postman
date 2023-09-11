@@ -54,6 +54,7 @@ const expect = require('chai').expect,
     path.join(__dirname, VALID_OPENAPI_PATH, '/query_param_with_enum_resolve_as_example.json'),
   formDataParamDescription = path.join(__dirname, VALID_OPENAPI_PATH, '/form_data_param_description.yaml'),
   allHTTPMethodsSpec = path.join(__dirname, VALID_OPENAPI_PATH, '/all-http-methods.yaml'),
+  descriptionTestSpec = path.join(__dirname, VALID_OPENAPI_PATH, '/description-test.yaml'),
   invalidNullInfo = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-null-info.json'),
   invalidNullInfoTitle = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-title.json'),
   invalidNullInfoVersion = path.join(__dirname, INVALID_OPENAPI_PATH, '/invalid-info-null-version.json'),
@@ -1166,6 +1167,24 @@ describe('The convert v2 Function', function() {
           .to.equal('Request param description');
         expect(conversionResult.output[0].data.item[0].item[0].request.body.formdata[0].key).to.equal('requestParam');
         expect(conversionResult.output[0].data.item[0].item[0].request.body.formdata[0].value).to.be.a('string');
+        done();
+      });
+  });
+
+  it('description test', function(done) {
+    var openapi = fs.readFileSync(descriptionTestSpec, 'utf8');
+
+    Converter.convertV2({ type: 'string', data: openapi },
+      {}, (err, conversionResult) => {
+        expect(conversionResult.output[0].data.item[0].item[0].item[0].request.url.query[0].description.content).to.equal(
+          'QUERY PARAM DESCRIPTION'
+        );
+        expect(conversionResult.output[0].data.item[0].item[0].item[0].request.url.variable[0].description).to.equal(
+          'PATH PARAM DESCRIPTION'
+        );
+        expect(conversionResult.output[0].data.item[0].item[0].item[0].request.url.header[0].description).to.equal(
+          'HEADER PARAM DESCRIPTION'
+        );
         done();
       });
   });
