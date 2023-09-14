@@ -1,0 +1,57 @@
+openapi: "3.0.0"
+info:
+  version: "1.0.0"
+  title: "Sample API"
+  description: Buy or rent spacecrafts
+
+paths:
+  /space/{spacecraftId}:
+    get:
+      parameters:
+        - name: spacecraftId
+          description: "Required spacecraftId path param"
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pathParamOptional
+          description: "Path param optional description"
+          in: path
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: "QUERY PARAM DESCRIPTION"
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: optionalQueryParam
+          in: query
+          description: "QUERY PARAM Optional"
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: page
+          in: header
+          description: "HEADER PARAM DESCRIPTION"
+          required: true
+          schema:
+            type: string
+        - name: offset
+          in: header
+          description: "HEADER PARAM Optional"
+          required: false
+          schema:
+            type: string
+
+      summary: Read a spacecraft
+      responses:
+        "201":
+          description: The spacecraft corresponding to the provided `spacecraftId`
+          content:
+            application/json:
+              schema:
+                type: string

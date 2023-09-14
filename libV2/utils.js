@@ -66,15 +66,6 @@ const sdk = require('postman-collection'),
     });
 
     requestItem.request.url.variables.assimilate(pathParams);
-    _.forEach(pathParams, (param) => {
-      if (param.description) {
-        const item = requestItem.request.url.variables.one(param.key);
-        if (!_.isEmpty(item)) {
-          item.description = param.description;
-        }
-      }
-    });
-
     requestItem.request.auth = auth;
 
     _.forEach(responses, (response) => {
