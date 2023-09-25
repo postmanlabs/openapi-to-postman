@@ -2038,23 +2038,30 @@ let QUERYPARAM = 'query',
     }
 
     _.forOwn(operationItem.responses, (responseObj, code) => {
-      let response,
-        responseSchema = _.has(responseObj, '$ref') ? resolveSchema(context, responseObj) : responseObj,
+      let responseSchema = _.has(responseObj, '$ref') ? resolveSchema(context, responseObj) : responseObj,
         { includeAuthInfoInExample } = context.computedOptions,
-        responseAuthHelper,
         auth = request.auth,
         resolvedExamples = resolveResponseBody(context, responseSchema, requestBodyExamples) || {},
         headers = resolveResponseHeaders(context, responseSchema.headers);
 
       _.forOwn(resolvedExamples, (resolvedExample = {}) => {
         let { body, contentHeader = [], bodyType, acceptHeader, name } = resolvedExample,
-          resolvedRequestBody = _.get(resolvedExample, 'request.body', ''),
+          resolvedRequestBody = _.get(resolvedExample, 'request.body'),
           originalRequest,
+          response,
+          responseAuthHelper,
+          requestBodyObj = {},
           reqHeaders = _.clone(request.headers) || [],
           reqQueryParams = _.clone(_.get(request, 'params.queryParams', []));
 
         // add Accept header in example's original request headers
         _.isArray(acceptHeader) && (reqHeaders.push(...acceptHeader));
+
+        if (_.get(request, 'body.mode') === 'raw' && !_.isNil(resolvedRequestBody)) {
+          requestBodyObj = {
+            body: Object.assign({}, request.body, { raw: resolvedRequestBody })
+          };
+        }
 
         if (includeAuthInfoInExample) {
           if (!auth) {
@@ -2069,16 +2076,15 @@ let QUERYPARAM = 'query',
           originalRequest = _.assign({}, request, {
             headers: reqHeaders,
             params: _.assign({}, request.params, { queryParams: reqQueryParams })
-          });
+          }, requestBodyObj);
         }
         else {
-          originalRequest = _.assign({}, request, {
-            headers: reqHeaders
-          });
+          originalRequest = _.assign({}, request, { headers: reqHeaders }, requestBodyObj);
         }
 
-        if (_.get(originalRequest, 'body.mode') === 'raw' && resolvedRequestBody) {
-          originalRequest.body.raw = resolvedRequestBody;
+        // When example key is not available, key name will be `_default` naming should be done based on description
+        if (_.get(resolvedExample, 'name') === '_default' || !(typeof name === 'string' && name.length)) {
+          name = _.get(responseSchema, 'description', `${code} response`);
         }
 
         // set accept header value as first found response content's media type
@@ -2087,7 +2093,7 @@ let QUERYPARAM = 'query',
         }
 
         response = {
-          name: (typeof name === 'string' && name.length) ? name : _.get(responseSchema, 'description'),
+          name,
           body,
           headers: _.concat(contentHeader, headers),
           code,
