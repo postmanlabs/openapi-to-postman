@@ -16,12 +16,6 @@
 									"type": "integer",
 									"format": "int32"
 								}
-							},
-							"application/vnd.retailer.v3+json": {
-								"schema": {
-									"type": "integer",
-									"format": "int32"
-								}
 							}
 						}
 					}

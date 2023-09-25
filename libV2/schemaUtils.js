@@ -1054,16 +1054,149 @@ let QUERYPARAM = 'query',
     return HEADER_TYPE.INVALID;
   },
 
-  resolveRequestBodyData = (context, requestBodySchema, bodyType) => {
+  /**
+   * Gets XML Example data in correct format based on schema
+   *
+   * @param {Object} context - Global context object
+   * @param {Object} exampleData - Example data to be used
+   * @param {Object} requestBodySchema - Schema of the request body
+   * @returns {String} XML Example data
+   */
+  getXMLExampleData = (context, exampleData, requestBodySchema) => {
+    const { parametersResolution, indentCharacter } = context.computedOptions;
+
+    let reqBodySchemaWithExample = requestBodySchema;
+
+    // Assign example at schema level to be faked by xmlSchemaFaker
+    if (typeof requestBodySchema === 'object') {
+      reqBodySchemaWithExample = Object.assign({}, requestBodySchema, { example: exampleData });
+    }
+
+    return xmlFaker(null, reqBodySchemaWithExample, indentCharacter, parametersResolution);
+  },
+
+  /**
+   * Generates postman equivalent examples which contains request and response mappings of
+   * each example based on examples mentioned ind definition
+   *
+   * @param {Object} context - Global context object
+   * @param {Object} responseExamples - Examples defined in the response
+   * @param {Object} requestBodyExamples - Examples defined in the request body
+   * @param {Object} responseBodySchema - Schema of the response body
+   * @param {Boolean} isXMLExample - Whether the example is XML example
+   * @returns {Array} Examples for corresponding operation
+   */
+  generateExamples = (context, responseExamples, requestBodyExamples, responseBodySchema, isXMLExample) => {
+    const pmExamples = [];
+
+    _.forEach(responseExamples, (responseExample, index) => {
+
+      if (!_.isObject(responseExample)) {
+        return;
+      }
+
+      let responseExampleData = getExampleData(context, { [responseExample.key]: responseExample.value }),
+        requestExample;
+
+      if (isXMLExample) {
+        responseExampleData = getXMLExampleData(context, responseExampleData, responseBodySchema);
+      }
+
+      if (_.isEmpty(requestBodyExamples)) {
+        pmExamples.push({
+          response: responseExampleData,
+          name: _.get(responseExample, 'summary') || responseExample.key
+        });
+        return;
+      }
+
+      requestExample = _.find(requestBodyExamples, (example, index) => {
+        if (example.key === responseExample.key) {
+          requestBodyExamples[index].isUsed = true;
+          return true;
+        }
+        return false;
+      });
+
+      if (!requestExample) {
+        if (!requestBodyExamples[index].isUsed) {
+          requestExample = requestBodyExamples[index];
+          requestBodyExamples[index].isUsed = true;
+        }
+        else {
+          for (let i = 0; i < requestBodyExamples.length; i++) {
+            if (!requestBodyExamples[i].isUsed) {
+              requestExample = requestBodyExamples[i];
+              requestBodyExamples[i].isUsed = true;
+              break;
+            }
+          }
+
+          if (!requestExample) {
+            requestExample = requestBodyExamples[0];
+          }
+        }
+      }
+
+      pmExamples.push({
+        request: getExampleData(context, { [requestExample.key]: requestExample.value }),
+        response: responseExampleData,
+        name: _.get(responseExample, 'summary') || _.get(requestExample, 'summary') || responseExample.key
+      });
+    });
+
+    let responseExample,
+      responseExampleData;
+
+    for (let i = 0; i < requestBodyExamples.length; i++) {
+
+      if (!requestBodyExamples[i].isUsed || pmExamples.length === 0) {
+        if (!responseExample) {
+          responseExample = _.head(responseExamples);
+
+          if (responseExample) {
+            responseExampleData = getExampleData(context, { [responseExample.key]: responseExample.value });
+          }
+
+          if (isXMLExample) {
+            responseExampleData = getXMLExampleData(context, responseExampleData, responseBodySchema);
+          }
+        }
+        pmExamples.push({
+          request: getExampleData(context, { [requestBodyExamples[i].key]: requestBodyExamples[i].value }),
+          response: responseExampleData,
+          name: _.get(requestBodyExamples[i], 'summary') || _.get(responseExample, 'summary') ||
+            requestBodyExamples[i].key
+        });
+      }
+    }
+
+    return pmExamples;
+  },
+
+  /**
+   * Resolves the request/response body data
+   *
+   * @param {Object} context - Global context object
+   * @param {Object} requestBodySchema - Schema of the request / response body
+   * @param {String} bodyType - Content type of the body
+   * @param {Boolean} isExampleBody - Whether the body is example body
+   * @param {Object} requestBodyExamples - Examples defined in the request body
+   * @returns {Array} Request / Response body data
+   */
+  resolveBodyData = (context, requestBodySchema, bodyType, isExampleBody = false, requestBodyExamples) => {
     let { parametersResolution, indentCharacter } = context.computedOptions,
       headerFamily = getHeaderFamily(bodyType),
       bodyData = '',
       shouldGenerateFromExample = parametersResolution === 'example',
+      isBodyTypeXML = bodyType === APP_XML || bodyType === TEXT_XML || headerFamily === HEADER_TYPE.XML,
+      bodyKey = isExampleBody ? 'response' : 'request',
+      responseExamples,
       example,
       examples;
 
     if (_.isEmpty(requestBodySchema)) {
-      return bodyData;
+      return [{ [bodyKey]: bodyData }];
     }
 
     if (requestBodySchema.$ref) {
@@ -1123,22 +1256,22 @@ let QUERYPARAM = 'query',
       example = requestBodySchema.example;
     }
 
-    if (shouldGenerateFromExample && (example !== undefined || examples)) {
+    if (
+      isExampleBody &&
+      shouldGenerateFromExample &&
+      (!_.isEmpty(examples))
+    ) {
+      responseExamples = examples;
+    }
+    else if (shouldGenerateFromExample && (example !== undefined || examples)) {
       /**
        * Here it could be example or examples (plural)
        * For examples, we'll pick the first example
        */
       const exampleData = example || getExampleData(context, examples);
 
-      if (bodyType === APP_XML || bodyType === TEXT_XML || headerFamily === HEADER_TYPE.XML) {
-        let reqBodySchemaWithExample = requestBodySchema;
-
-        // Assign example at schema level to be faked by xmlSchemaFaker
-        if (typeof requestBodySchema === 'object') {
-          reqBodySchemaWithExample = Object.assign({}, requestBodySchema, { example: exampleData });
-        }
-
-        return xmlFaker(null, reqBodySchemaWithExample, indentCharacter, parametersResolution);
+      if (isBodyTypeXML) {
+        bodyData = getXMLExampleData(context, exampleData, requestBodySchema);
       }
       else {
         bodyData = exampleData;
@@ -1151,47 +1284,63 @@ let QUERYPARAM = 'query',
         requestBodySchema = resolveSchema(context, requestBodySchema);
       }
 
-      if (bodyType === APP_XML || bodyType === TEXT_XML || headerFamily === HEADER_TYPE.XML) {
-        return xmlFaker(null, requestBodySchema, indentCharacter, parametersResolution);
+      if (isBodyTypeXML) {
+        bodyData = xmlFaker(null, requestBodySchema, indentCharacter, parametersResolution);
       }
+      else {
+        if (requestBodySchema.properties) {
+          // If any property exists with format:binary or byte schemaFaker crashes
+          // we just delete based on that format
 
+          // TODO: This could have properties inside properties which needs to be handled
+          // That's why for some properties we are not deleting the format
+          _.forOwn(requestBodySchema.properties, (schema, prop) => {
+            if (!_.isObject(requestBodySchema.properties[prop])) {
+              return;
+            }
 
-      if (requestBodySchema.properties) {
-        // If any property exists with format:binary or byte schemaFaker crashes
-        // we just delete based on that format
+            if (
+              requestBodySchema.properties[prop].format === 'binary' ||
+              requestBodySchema.properties[prop].format === 'byte' ||
+              requestBodySchema.properties[prop].format === 'decimal'
+            ) {
+              delete requestBodySchema.properties[prop].format;
+            }
+          });
+        }
 
-        // TODO: This could have properties inside properties which needs to be handled
-        // That's why for some properties we are not deleting the format
-        _.forOwn(requestBodySchema.properties, (schema, prop) => {
-          if (!_.isObject(requestBodySchema.properties[prop])) {
-            return;
-          }
+        // This is to handle cases when the jsf throws errors on finding unsupported types/formats
+        try {
+          bodyData = fakeSchema(context, requestBodySchema, shouldGenerateFromExample);
+        }
+        catch (e) {
+          console.warn(
+            'Error faking a schema. Not faking this schema. Schema:', requestBodySchema,
+            'Error', e.message
+          );
 
-          if (
-            requestBodySchema.properties[prop].format === 'binary' ||
-            requestBodySchema.properties[prop].format === 'byte' ||
-            requestBodySchema.properties[prop].format === 'decimal'
-          ) {
-            delete requestBodySchema.properties[prop].format;
-          }
-        });
-      }
-
-      // This is to handle cases when the jsf throws errors on finding unsupported types/formats
-      try {
-        bodyData = fakeSchema(context, requestBodySchema, shouldGenerateFromExample);
-      }
-      catch (e) {
-        console.warn(
-          'Error faking a schema. Not faking this schema. Schema:', requestBodySchema,
-          'Error', e.message
-        );
-
-        return '';
+          bodyData = '';
+        }
       }
     }
 
-    return bodyData;
+    if (
+      isExampleBody &&
+      shouldGenerateFromExample &&
+      (!_.isEmpty(examples) || !_.isEmpty(requestBodyExamples))
+    ) {
+      responseExamples = [{
+        key: '_default',
+        value: bodyData
+      }];
+
+      if (!_.isEmpty(examples)) {
+        responseExamples = _.map(examples, (example, key) => { return { key, value: example }; });
+      }
+      return generateExamples(context, responseExamples, requestBodyExamples, requestBodySchema, isBodyTypeXML);
+    }
+
+    return [{ [bodyKey]: bodyData }];
   },
 
   resolveUrlEncodedRequestBodyForPostmanRequest = (context, requestBodyContent) => {
@@ -1200,7 +1349,8 @@ let QUERYPARAM = 'query',
       requestBodyData = {
         mode: 'urlencoded',
         urlencoded: urlEncodedParams
-      };
+      },
+      resolvedBody;
 
     if (_.isEmpty(requestBodyContent)) {
       return requestBodyData;
@@ -1210,7 +1360,8 @@ let QUERYPARAM = 'query',
       requestBodyContent.schema = resolveSchema(context, requestBodyContent.schema);
     }
 
-    bodyData = resolveRequestBodyData(context, requestBodyContent.schema);
+    resolvedBody = resolveBodyData(context, requestBodyContent.schema)[0];
+    resolvedBody && (bodyData = resolvedBody.request);
 
     const encoding = requestBodyContent.encoding || {};
 
@@ -1255,13 +1406,16 @@ let QUERYPARAM = 'query',
       requestBodyData = {
         mode: 'formdata',
         formdata: formDataParams
-      };
+      },
+      resolvedBody;
 
     if (_.isEmpty(requestBodyContent)) {
       return requestBodyData;
     }
 
-    bodyData = resolveRequestBodyData(context, requestBodyContent.schema);
+    resolvedBody = resolveBodyData(context, requestBodyContent.schema)[0];
+    resolvedBody && (bodyData = resolvedBody.request);
+
     encoding = _.get(requestBodyContent, 'encoding', {});
 
     _.forOwn(bodyData, (value, key) => {
@@ -1332,12 +1486,33 @@ let QUERYPARAM = 'query',
     else if (content.hasOwnProperty(APP_XML)) { bodyType = APP_XML; }
     else if (content.hasOwnProperty(TEXT_XML)) { bodyType = TEXT_XML; }
     else {
-      // take the first property it has
-      // types like image/png etc
-      for (const cType in content) {
-        if (content.hasOwnProperty(cType)) {
-          bodyType = cType;
-          break;
+      // prefer JSON type of body if available
+      _.forOwn(content, (value, key) => {
+        if (content.hasOwnProperty(key) && getHeaderFamily(key) === HEADER_TYPE.JSON) {
+          bodyType = key;
+          return false;
+        }
+      });
+
+      // prefer XML type of body if no JSON body is available
+      if (!bodyType) {
+        _.forOwn(content, (value, key) => {
+          if (content.hasOwnProperty(key) && getHeaderFamily(key) === HEADER_TYPE.XML) {
+            bodyType = key;
+            return false;
+          }
+        });
+      }
+
+      // use first available type of body if no JSON or XML body is available
+      if (!bodyType) {
+        // take the first property it has
+        // types like image/png etc
+        for (const cType in content) {
+          if (content.hasOwnProperty(cType)) {
+            bodyType = cType;
+            break;
+          }
         }
       }
     }
@@ -1350,7 +1525,8 @@ let QUERYPARAM = 'query',
       bodyData,
       headerFamily,
       dataToBeReturned = {},
-      { concreteUtils } = context;
+      { concreteUtils } = context,
+      resolvedBody;
 
     headerFamily = getHeaderFamily(bodyType);
 
@@ -1361,7 +1537,8 @@ let QUERYPARAM = 'query',
     }
     // Handling for Raw mode data
     else {
-      bodyData = resolveRequestBodyData(context, requestContent[bodyType], bodyType);
+      resolvedBody = resolveBodyData(context, requestContent[bodyType], bodyType)[0];
+      resolvedBody && (bodyData = resolvedBody.request);
 
       if ((bodyType === TEXT_XML || bodyType === APP_XML || headerFamily === HEADER_TYPE.XML)) {
         bodyData = getXmlVersionContent(bodyData);
@@ -1616,11 +1793,27 @@ let QUERYPARAM = 'query',
     return pmParams;
   },
 
-  resolveResponseBody = (context, responseBody = {}) => {
-    let responseContent, bodyType, bodyData, headerFamily, acceptHeader;
+  /**
+   * Resolve the responses from definition which will be converted to request examples.
+   * This includes both request and response body of corresponding example.
+   *
+   * @param {Object} context - Global context object
+   * @param {Object} responseBody - Response body schema
+   * @param {Object} requestBodyExamples - Examples defined in the request body of corresponding operation
+   * @returns {Array} - Postman examples
+   */
+  resolveResponseBody = (context, responseBody = {}, requestBodyExamples) => {
+    let responseContent,
+      bodyType,
+      allBodyData,
+      headerFamily,
+      acceptHeader,
+      emptyResponse = [{
+        body: undefined
+      }];
 
     if (_.isEmpty(responseBody)) {
-      return responseBody;
+      return emptyResponse;
     }
 
     if (responseBody.$ref) {
@@ -1630,40 +1823,55 @@ let QUERYPARAM = 'query',
     responseContent = responseBody.content;
 
     if (_.isEmpty(responseContent)) {
-      return responseContent;
+      return emptyResponse;
     }
 
     bodyType = getRawBodyType(responseContent);
     headerFamily = getHeaderFamily(bodyType);
 
-    bodyData = resolveRequestBodyData(context, responseContent[bodyType], bodyType);
+    allBodyData = resolveBodyData(context, responseContent[bodyType], bodyType, true, requestBodyExamples);
 
-    if ((bodyType === TEXT_XML || bodyType === APP_XML || headerFamily === HEADER_TYPE.XML)) {
-      bodyData = getXmlVersionContent(bodyData);
-    }
+    return _.map(allBodyData, (bodyData) => {
+      let requestBodyData = bodyData.request,
+        responseBodyData = bodyData.response,
+        exampleName = bodyData.name;
 
-    const { indentCharacter } = context.computedOptions,
-      rawModeData = !_.isObject(bodyData) && _.isFunction(_.get(bodyData, 'toString')) ?
-        bodyData.toString() :
-        JSON.stringify(bodyData, null, indentCharacter),
-      responseMediaTypes = _.keys(responseContent);
+      if ((bodyType === TEXT_XML || bodyType === APP_XML || headerFamily === HEADER_TYPE.XML)) {
+        requestBodyData && (requestBodyData = getXmlVersionContent(requestBodyData));
+        responseBodyData && (responseBodyData = getXmlVersionContent(responseBodyData));
+      }
 
-    if (responseMediaTypes.length > 0) {
-      acceptHeader = [{
-        key: 'Accept',
-        value: responseMediaTypes[0]
-      }];
-    }
+      const { indentCharacter } = context.computedOptions,
+        getRawModeData = (bodyData) => {
+          return !_.isObject(bodyData) && _.isFunction(_.get(bodyData, 'toString')) ?
+            bodyData.toString() :
+            JSON.stringify(bodyData, null, indentCharacter);
+        },
+        requestRawModeData = getRawModeData(requestBodyData),
+        responseRawModeData = getRawModeData(responseBodyData),
+        responseMediaTypes = _.keys(responseContent);
 
-    return {
-      body: rawModeData,
-      contentHeader: [{
-        key: 'Content-Type',
-        value: bodyType
-      }],
-      bodyType,
-      acceptHeader
-    };
+      if (responseMediaTypes.length > 0) {
+        acceptHeader = [{
+          key: 'Accept',
+          value: responseMediaTypes[0]
+        }];
+      }
+
+      return {
+        request: {
+          body: requestRawModeData
+        },
+        body: responseRawModeData,
+        contentHeader: [{
+          key: 'Content-Type',
+          value: bodyType
+        }],
+        name: exampleName,
+        bodyType,
+        acceptHeader
+      };
+    });
   },
 
   resolveResponseHeaders = (context, responseHeaders) => {
@@ -1784,7 +1992,50 @@ let QUERYPARAM = 'query',
 
   resolveResponseForPostmanRequest = (context, operationItem, request) => {
     let responses = [],
-      requestAcceptHeader;
+      requestBodyExamples = [],
+      requestAcceptHeader,
+      requestBody = operationItem.requestBody,
+      requestContent,
+      rawBodyType,
+      headerFamily,
+      isBodyTypeXML;
+
+    // store all request examples which will be used for creation of examples with correct request and response matching
+    if (typeof requestBody === 'object') {
+      if (requestBody.$ref) {
+        requestBody = resolveSchema(context, requestBody);
+      }
+
+      requestContent = requestBody.content;
+
+      if (typeof requestContent === 'object') {
+        rawBodyType = getRawBodyType(requestContent);
+        headerFamily = getHeaderFamily(rawBodyType);
+        isBodyTypeXML = rawBodyType === APP_XML || rawBodyType === TEXT_XML || headerFamily === HEADER_TYPE.XML;
+
+        _.forEach(requestContent, (content, contentType) => {
+          if (_.has(content, 'examples')) {
+            _.forEach(content.examples, (example, name) => {
+              const exampleObj = example;
+
+              if (isBodyTypeXML && exampleObj.value) {
+                const exampleData = getExampleData(context, { [name]: exampleObj });
+
+                if (isBodyTypeXML) {
+                  exampleObj.value = getXMLExampleData(context, exampleData, resolveSchema(context, content.schema));
+                }
+              }
+
+              requestBodyExamples.push({
+                contentType,
+                key: name,
+                value: example
+              });
+            });
+          }
+        });
+      }
+    }
 
     _.forOwn(operationItem.responses, (responseObj, code) => {
       let response,
@@ -1792,51 +2043,60 @@ let QUERYPARAM = 'query',
         { includeAuthInfoInExample } = context.computedOptions,
         responseAuthHelper,
         auth = request.auth,
-        { body, contentHeader = [], bodyType, acceptHeader } = resolveResponseBody(context, responseSchema) || {},
-        headers = resolveResponseHeaders(context, responseSchema.headers),
-        originalRequest = request,
-        reqHeaders = _.clone(request.headers) || [],
-        reqQueryParams = _.clone(_.get(request, 'params.queryParams', []));
+        resolvedExamples = resolveResponseBody(context, responseSchema, requestBodyExamples) || {},
+        headers = resolveResponseHeaders(context, responseSchema.headers);
 
-      // add Accept header in example's original request headers
-      _.isArray(acceptHeader) && (reqHeaders.push(...acceptHeader));
+      _.forOwn(resolvedExamples, (resolvedExample = {}) => {
+        let { body, contentHeader = [], bodyType, acceptHeader, name } = resolvedExample,
+          resolvedRequestBody = _.get(resolvedExample, 'request.body', ''),
+          originalRequest,
+          reqHeaders = _.clone(request.headers) || [],
+          reqQueryParams = _.clone(_.get(request, 'params.queryParams', []));
 
-      if (includeAuthInfoInExample) {
-        if (!auth) {
-          auth = generateAuthForCollectionFromOpenAPI(context.openapi, context.openapi.security);
+        // add Accept header in example's original request headers
+        _.isArray(acceptHeader) && (reqHeaders.push(...acceptHeader));
+
+        if (includeAuthInfoInExample) {
+          if (!auth) {
+            auth = generateAuthForCollectionFromOpenAPI(context.openapi, context.openapi.security);
+          }
+
+          responseAuthHelper = getResponseAuthHelper(auth);
+
+          reqHeaders.push(...responseAuthHelper.header);
+          reqQueryParams.push(...responseAuthHelper.query);
+
+          originalRequest = _.assign({}, request, {
+            headers: reqHeaders,
+            params: _.assign({}, request.params, { queryParams: reqQueryParams })
+          });
+        }
+        else {
+          originalRequest = _.assign({}, request, {
+            headers: reqHeaders
+          });
         }
 
-        responseAuthHelper = getResponseAuthHelper(auth);
+        if (_.get(originalRequest, 'body.mode') === 'raw' && resolvedRequestBody) {
+          originalRequest.body.raw = resolvedRequestBody;
+        }
 
-        reqHeaders.push(...responseAuthHelper.header);
-        reqQueryParams.push(...responseAuthHelper.query);
+        // set accept header value as first found response content's media type
+        if (_.isEmpty(requestAcceptHeader)) {
+          requestAcceptHeader = acceptHeader;
+        }
 
-        originalRequest = _.assign({}, request, {
-          headers: reqHeaders,
-          params: _.assign({}, request.params, { queryParams: reqQueryParams })
-        });
-      }
-      else {
-        originalRequest = _.assign({}, request, {
-          headers: reqHeaders
-        });
-      }
+        response = {
+          name: (typeof name === 'string' && name.length) ? name : _.get(responseSchema, 'description'),
+          body,
+          headers: _.concat(contentHeader, headers),
+          code,
+          originalRequest,
+          _postman_previewlanguage: getPreviewLangugaForResponseBody(bodyType)
+        };
 
-      // set accept header value as first found response content's media type
-      if (_.isEmpty(requestAcceptHeader)) {
-        requestAcceptHeader = acceptHeader;
-      }
-
-      response = {
-        name: _.get(responseSchema, 'description'),
-        body,
-        headers: _.concat(contentHeader, headers),
-        code,
-        originalRequest,
-        _postman_previewlanguage: getPreviewLangugaForResponseBody(bodyType)
-      };
-
-      responses.push(response);
+        responses.push(response);
+      });
     });
 
     return { responses, acceptHeader: requestAcceptHeader };
