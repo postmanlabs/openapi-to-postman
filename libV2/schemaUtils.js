@@ -1105,7 +1105,7 @@ let QUERYPARAM = 'query',
       if (_.isEmpty(requestBodyExamples)) {
         pmExamples.push({
           response: responseExampleData,
-          name: _.get(responseExample, 'summary') || responseExample.key
+          name: _.get(responseExample, 'value.summary') || responseExample.key
         });
         return;
       }
@@ -1119,7 +1119,7 @@ let QUERYPARAM = 'query',
       });
 
       if (!requestExample) {
-        if (!requestBodyExamples[index].isUsed) {
+        if (requestBodyExamples[index] && !requestBodyExamples[index].isUsed) {
           requestExample = requestBodyExamples[index];
           requestBodyExamples[index].isUsed = true;
         }
@@ -1141,7 +1141,8 @@ let QUERYPARAM = 'query',
       pmExamples.push({
         request: getExampleData(context, { [requestExample.key]: requestExample.value }),
         response: responseExampleData,
-        name: _.get(responseExample, 'summary') || _.get(requestExample, 'summary') || responseExample.key
+        name: _.get(responseExample, 'value.summary') || _.get(requestExample, 'value.summary') ||
+          (responseExample.key === '_default' ? requestExample.key : responseExample.key)
       });
     });
 
@@ -1165,7 +1166,7 @@ let QUERYPARAM = 'query',
         pmExamples.push({
           request: getExampleData(context, { [requestBodyExamples[i].key]: requestBodyExamples[i].value }),
           response: responseExampleData,
-          name: _.get(requestBodyExamples[i], 'summary') || _.get(responseExample, 'summary') ||
+          name: _.get(requestBodyExamples[i], 'value.summary') || _.get(responseExample, 'value.summary') ||
             requestBodyExamples[i].key
         });
       }
