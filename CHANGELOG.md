@@ -4,6 +4,8 @@
 
 ## [v4.18.0] - 2023-09-28
 
+-   [#425](https://github.com/postmanlabs/openapi-to-postman/issues/425) [8413](https://github.com/postmanlabs/postman-app-support/issues/8413) Added support for multiple request and response examples.
+
 ## [v4.17.0] - 2023-09-12
 
 ## [v4.16.0] - 2023-08-18
