@@ -1111,12 +1111,26 @@ let QUERYPARAM = 'query',
       }
 
       requestExample = _.find(requestBodyExamples, (example, index) => {
-        if (example.key === responseExample.key) {
+        if (
+          example.contentType === responseExample.contentType &&
+          _.toLower(example.key) === _.toLower(responseExample.key)
+        ) {
           requestBodyExamples[index].isUsed = true;
           return true;
         }
         return false;
       });
+
+      // If exact content type is not matching, pick first content type with same example key
+      if (!requestExample) {
+        requestExample = _.find(requestBodyExamples, (example, index) => {
+          if (_.toLower(example.key) === _.toLower(responseExample.key)) {
+            requestBodyExamples[index].isUsed = true;
+            return true;
+          }
+          return false;
+        });
+      }
 
       if (!requestExample) {
         if (requestBodyExamples[index] && !requestBodyExamples[index].isUsed) {
@@ -1141,8 +1155,8 @@ let QUERYPARAM = 'query',
       pmExamples.push({
         request: getExampleData(context, { [requestExample.key]: requestExample.value }),
         response: responseExampleData,
-        name: _.get(responseExample, 'value.summary') || _.get(requestExample, 'value.summary') ||
-          (responseExample.key === '_default' ? requestExample.key : responseExample.key)
+        name: _.get(responseExample, 'value.summary') || (responseExample.key !== '_default' && responseExample.key) ||
+          _.get(requestExample, 'value.summary') || requestExample.key || 'Example'
       });
     });
 
@@ -1166,8 +1180,9 @@ let QUERYPARAM = 'query',
         pmExamples.push({
           request: getExampleData(context, { [requestBodyExamples[i].key]: requestBodyExamples[i].value }),
           response: responseExampleData,
-          name: _.get(requestBodyExamples[i], 'value.summary') || _.get(responseExample, 'value.summary') ||
-            requestBodyExamples[i].key
+          name: _.get(requestBodyExamples[i], 'value.summary') ||
+            (requestBodyExamples[i].key !== '_default' && requestBodyExamples[i].key) ||
+            _.get(responseExample, 'value.summary') || 'Example'
         });
       }
     }
@@ -1257,14 +1272,7 @@ let QUERYPARAM = 'query',
       example = requestBodySchema.example;
     }
 
-    if (
-      isExampleBody &&
-      shouldGenerateFromExample &&
-      (!_.isEmpty(examples))
-    ) {
-      responseExamples = examples;
-    }
-    else if (shouldGenerateFromExample && (example !== undefined || examples)) {
+    if (shouldGenerateFromExample && (example !== undefined || examples)) {
       /**
        * Here it could be example or examples (plural)
        * For examples, we'll pick the first example
@@ -1325,18 +1333,26 @@ let QUERYPARAM = 'query',
       }
     }
 
+    // Generate multiple examples when either request or response contains more than one example
     if (
       isExampleBody &&
       shouldGenerateFromExample &&
-      (!_.isEmpty(examples) || !_.isEmpty(requestBodyExamples))
+      (_.size(examples) > 1 || _.size(requestBodyExamples) > 1)
     ) {
       responseExamples = [{
         key: '_default',
-        value: bodyData
+        value: bodyData,
+        contentType: bodyType
       }];
 
       if (!_.isEmpty(examples)) {
-        responseExamples = _.map(examples, (example, key) => { return { key, value: example }; });
+        responseExamples = _.map(examples, (example, key) => {
+          return {
+            key,
+            value: example,
+            contentType: bodyType
+          };
+        });
       }
       return generateExamples(context, responseExamples, requestBodyExamples, requestBodySchema, isBodyTypeXML);
     }
@@ -1494,16 +1510,6 @@ let QUERYPARAM = 'query',
           return false;
         }
       });
-
-      // prefer XML type of body if no JSON body is available
-      if (!bodyType) {
-        _.forOwn(content, (value, key) => {
-          if (content.hasOwnProperty(key) && getHeaderFamily(key) === HEADER_TYPE.XML) {
-            bodyType = key;
-            return false;
-          }
-        });
-      }
 
       // use first available type of body if no JSON or XML body is available
       if (!bodyType) {
@@ -1838,7 +1844,6 @@ let QUERYPARAM = 'query',
         exampleName = bodyData.name;
 
       if ((bodyType === TEXT_XML || bodyType === APP_XML || headerFamily === HEADER_TYPE.XML)) {
-        requestBodyData && (requestBodyData = getXmlVersionContent(requestBodyData));
         responseBodyData && (responseBodyData = getXmlVersionContent(responseBodyData));
       }
 
@@ -2023,7 +2028,9 @@ let QUERYPARAM = 'query',
                 const exampleData = getExampleData(context, { [name]: exampleObj });
 
                 if (isBodyTypeXML) {
-                  exampleObj.value = getXMLExampleData(context, exampleData, resolveSchema(context, content.schema));
+                  let bodyData = getXMLExampleData(context, exampleData, resolveSchema(context, content.schema));
+
+                  exampleObj.value = getXmlVersionContent(bodyData);
                 }
               }
 
