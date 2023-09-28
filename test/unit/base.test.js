@@ -371,7 +371,7 @@ describe('CONVERT FUNCTION TESTS ', function() {
       Converter.convert({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.output[0].data.item[0].response[0].header[0].value)
-          .to.equal('application/vnd.retailer.v3+json');
+          .to.equal('application/vnd.retailer.v3+xml');
         done();
       });
     });

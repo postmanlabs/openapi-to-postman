@@ -1,0 +1,50 @@
+openapi: 3.0.0
+info:
+  title: None
+  version: 1.0.0
+  description: None
+paths:
+  /v1/:
+    post:
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: "#/components/schemas/Request"
+            examples:
+              valid-request:
+                value:
+                  {
+                    "user": 1,
+                    "height": 168,
+                    "weight": 44
+                  }
+              missing-required-parameter:
+                value:
+                  {
+                    "user": 1
+                  }
+      responses:
+        200:
+          description: None
+          content:
+            'application/json':
+              example: { hello: 'world' }
+components:
+  schemas:
+    Request:
+      type: object
+      required:
+        - user
+        - height
+        - weight
+      properties:
+        user:
+          type: integer
+          description: None
+        height:
+          type: integer
+          description: None
+        weight:
+          type: integer
+          description: None
