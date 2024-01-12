@@ -2069,6 +2069,28 @@ describe('The convert v2 Function', function() {
       });
     });
 
+    it('[GITHUB #417] - should convert file with enum as conflicts while merging allOf keyword', function() {
+      const fileSource = path.join(__dirname, VALID_OPENAPI_PATH, 'enumAllOfConflicts.yaml'),
+        fileData = fs.readFileSync(fileSource, 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+
+      Converter.convertV2(input, {
+        optimizeConversion: false
+      }, (err, result) => {
+        const expectedResponseBody = JSON.parse(result.output[0].data.item[0].item[0].response[0].body);
+        expect(err).to.be.null;
+        expect(result.result).to.be.true;
+        expect(expectedResponseBody).to.be.an('object');
+        expect(expectedResponseBody).to.have.property('status');
+        expect(expectedResponseBody.status).to.be.a('string');
+        expect(expectedResponseBody.status).to.be.oneOf(['no_market', 'too_small', 'too_large',
+          'incomplete', 'completed', 'refunded']);
+      });
+    });
+
     it('Should convert a swagger document with XML example correctly', function(done) {
       const fileData = fs.readFileSync(path.join(__dirname, SWAGGER_20_FOLDER_YAML, 'xml_example.yaml'), 'utf8'),
         input = {
