@@ -377,6 +377,10 @@ describe('DEREF FUNCTION TESTS ', function() {
                 'type': 'string',
                 'format': 'uuid'
               },
+              'status': {
+                'type': 'string',
+                'enum': ['incomplete', 'completed', 'refunded']
+              },
               'actionId': { 'type': 'integer', 'minimum': 5 },
               'result': { 'type': 'object' }
             },
@@ -390,6 +394,10 @@ describe('DEREF FUNCTION TESTS ', function() {
                   'err': { 'type': 'string' },
                   'data': { 'type': 'object' }
                 }
+              },
+              'status': {
+                'type': 'string',
+                'enum': ['no_market', 'too_small', 'too_large']
               }
             }
           }
@@ -407,6 +415,10 @@ describe('DEREF FUNCTION TESTS ', function() {
           source: {
             type: 'string',
             format: 'uuid'
+          },
+          status: {
+            type: 'string',
+            enum: ['incomplete', 'completed', 'refunded', 'no_market', 'too_small', 'too_large']
           },
           actionId: { 'type': 'integer', 'minimum': 5 },
           result: {
