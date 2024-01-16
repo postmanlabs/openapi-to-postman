@@ -121,7 +121,7 @@
     "ajv-formats": "2.1.1",
     "async": "3.2.4",
     "commander": "2.20.3",
-    "js-yaml": "4.0.0",
+    "js-yaml": "4.1.0",
     "json-schema-merge-allof": "0.8.1",
     "lodash": "4.17.21",
     "oas-resolver-browser": "2.5.6",
