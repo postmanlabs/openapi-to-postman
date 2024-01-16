@@ -13,20 +13,20 @@ info:
     email: apiteam@wordnik.com
   license:
     name: Apache 2.0
-    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
 tags:
   - name: pet
     description: Everything about your Pets
     externalDocs:
       description: Find out more
-      url: 'http://swagger.io'
+      url: http://swagger.io
   - name: store
     description: Operations about user
   - name: user
     description: Access to Petstore orders
     externalDocs:
       description: Find out more about our store
-      url: 'http://swagger.io'
+      url: http://swagger.io
 paths:
   '/pet/{petId}':
     get:
@@ -123,7 +123,7 @@ paths:
             - 'read:pets'
 externalDocs:
   description: Find out more about Swagger
-  url: 'http://swagger.io'
+  url: http://swagger.io
 components:
   securitySchemes:
     petstore_auth:

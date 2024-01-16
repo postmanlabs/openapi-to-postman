@@ -5,14 +5,14 @@ info:
   description: >-
     A sample API that uses a petstore as an example to demonstrate features in
     the swagger-2.0 specification
-  termsOfService: 'http://swagger.io/terms/'
+  termsOfService: http://swagger.io/terms/
   contact:
     name: Swagger API Team
     email: apiteam@swagger.io
-    url: 'http://swagger.io'
+    url: http://swagger.io
   license:
     name: Apache 2.0
-    url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
 host: petstore.swagger.io
 basePath: /api
 schemes:
@@ -85,7 +85,7 @@ paths:
           description: unexpected error
           schema:
             $ref: '#/components/schemas/_common_Error.yaml'
-  '/pets/{id}':
+  /pets/{id}:
     get:
       description: >-
         Returns a user based on a single ID, if the user does not have access to

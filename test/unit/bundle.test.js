@@ -472,7 +472,8 @@ describe('bundle files method - 3.0', function () {
     catch (error) {
       expect(error.message).to.equal('Invalid format. Input must be in YAML or JSON ' +
         'format. Specification is not a valid YAML. YAMLException: duplicated mapping' +
-        ' key at line 30, column -54:\n    components:\n    ^');
+        ' key (30:1)\n\n 27 |     Test:\n 28 |       type: string\n 29 | \n 30 | components:' +
+        '\n------^\n 31 |   schemas:\n 32 |     Test2: ');
     }
   });
 
