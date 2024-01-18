@@ -4,7 +4,7 @@ info:
   title: Sample API
   description: Buy or rent spacecrafts
 paths:
-  '/spacecrafts/{spacecraftId}':
+  /spacecrafts/{spacecraftId}:
     parameters:
       - name: spacecraftId
         description: The unique identifier of the spacecraft
