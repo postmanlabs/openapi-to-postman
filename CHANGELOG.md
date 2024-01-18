@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v4.19.0] - 2024-01-18
+
 ## [v4.18.0] - 2023-09-28
 
 -   [#425](https://github.com/postmanlabs/openapi-to-postman/issues/425) [8413](https://github.com/postmanlabs/postman-app-support/issues/8413) Added support for multiple request and response examples.
@@ -600,7 +602,9 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.18.0...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.19.0...HEAD
+
+[v4.19.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.18.0...v4.19.0
 
 [v4.18.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.17.0...v4.18.0
 
