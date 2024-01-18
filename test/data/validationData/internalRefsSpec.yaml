@@ -10,7 +10,7 @@ info:
     email: you@your-company.com
   license:
     name: Apache 2.0
-    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
 paths:
   /inventory/{searchString}:
     parameters:

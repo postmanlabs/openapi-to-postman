@@ -458,7 +458,10 @@ let QUERYPARAM = 'query',
       }), {
         resolvers: {
           // for keywords in OpenAPI schema that are not standard defined JSON schema keywords, use default resolver
-          defaultResolver: (compacted) => { return compacted[0]; }
+          defaultResolver: (compacted) => { return compacted[0]; },
+          enum: (values) => {
+            return _.uniq(_.concat(...values));
+          }
         }
       });
     }

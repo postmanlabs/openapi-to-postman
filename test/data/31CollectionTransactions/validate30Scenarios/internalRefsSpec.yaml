@@ -10,7 +10,7 @@ info:
     email: you@your-company.com
   license:
     name: Apache 2.0
-    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
 paths:
   /inventory/{searchString}:
     parameters:
@@ -47,14 +47,14 @@ paths:
           content:
             application/json:
               schema:
-                type: 
+                type:
                   - string
 components:
   headers:
     x-date:
       description: The date.
       schema:
-        type: 
+        type:
           - string
         format: date
   parameters:
@@ -63,7 +63,7 @@ components:
       name: limit
       description: maximum number of records to return
       schema:
-        type: 
+        type:
           - integer
         format: int32
         minimum: 0
@@ -80,7 +80,7 @@ components:
       name: skip
       description: number of records to skip for pagination
       schema:
-        type: 
+        type:
           - integer
         format: int32
         minimum: 0
@@ -135,10 +135,10 @@ components:
             message: 'resource was not found'
   schemas:
     SearchString:
-      type: 
+      type:
         - string
     InventoryItem:
-      type: 
+      type:
         - object
       required:
         - id
@@ -147,21 +147,21 @@ components:
         - releaseDate
       properties:
         id:
-          type: 
+          type:
             - string
           format: uuid
-          examples: 
+          examples:
             - d290f1ee-6c54-4b01-90e6-d701748f0851
         name:
-          type: 
+          type:
             - string
-          examples: 
+          examples:
             - Widget Adapter
         releaseDate:
-          type: 
+          type:
             - string
           format: date-time
-          examples: 
+          examples:
             - '2016-08-29T09:12:33.001Z'
         manufacturer:
           $ref: '#/components/schemas/Manufacturer'
@@ -170,25 +170,25 @@ components:
         - name
       properties:
         name:
-          type: 
+          type:
             - string
-          examples: 
+          examples:
             - ACME Corporation
         homePage:
-          type: 
+          type:
             - string
           format: url
-          examples: 
+          examples:
             - 'https://www.acme-corp.com'
         phone:
-          type: 
+          type:
             - string
-          examples: 
+          examples:
             - 408-867-5309
-      type: 
+      type:
         - object
     Profile:
-      type: 
+      type:
         - object
       required:
         - id
@@ -197,52 +197,52 @@ components:
         - family_name
       properties:
         id:
-          type: 
+          type:
             - string
           format: uuid
         name:
-          type: 
+          type:
             - string
-          examples: 
+          examples:
             - "ioneyed"
         given_name:
-          type: 
+          type:
             - string
-          examples: 
+          examples:
             - "Robert"
         family_name:
-          type: 
+          type:
             - string
-          examples: 
+          examples:
             - "Buchanan"
     Error:
-      type: 
+      type:
         - object
       required:
         - code
         - message
       properties:
         code:
-          type: 
+          type:
             - string
           pattern: 'PROFILE-\d{3}-\d{3}'
-          examples: 
+          examples:
             - "PROFILE-100-507"
         message:
-          type: 
+          type:
             - string
-          examples: 
+          examples:
             - "we have run out of storage; this is embarrassing, and someone have been paged"
     ProviderConfig:
-      type: 
+      type:
         - object
       properties:
         name:
-          type: 
+          type:
             - string
         alternateName:
-          type: 
+          type:
             - string
         providerId:
-          type: 
+          type:
             - string

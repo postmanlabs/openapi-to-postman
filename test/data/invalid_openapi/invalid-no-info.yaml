@@ -6,14 +6,14 @@ tags:
     description: Everything about your Pets
     externalDocs:
       description: Find out more
-      url: 'http://swagger.io'
+      url: http://swagger.io
   - name: store
     description: Operations about user
   - name: user
     description: Access to Petstore orders
     externalDocs:
       description: Find out more about our store
-      url: 'http://swagger.io'
+      url: http://swagger.io
 paths:
   /pet:
     post:
@@ -528,7 +528,7 @@ paths:
           description: User not found
 externalDocs:
   description: Find out more about Swagger
-  url: 'http://swagger.io'
+  url: http://swagger.io
 components:
   requestBodies:
     UserArray:

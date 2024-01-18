@@ -51,7 +51,7 @@ info:
 
   version: 1.0.0
   title: Swagger Petstore
-  termsOfService: 'http://swagger.io/terms/'
+  termsOfService: http://swagger.io/terms/
   contact:
     name: API Support
     email: apiteam@swagger.io
@@ -61,7 +61,7 @@ info:
     altText: Petstore logo
   license:
     name: Apache 2.0
-    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
 externalDocs:
   description: Find out how to create Github repo for your OpenAPI spec.
   url: 'https://github.com/Rebilly/generator-openapi-repo'
@@ -201,7 +201,7 @@ paths:
               default: '8843'
             basePath:
               default: v2
-  
+
   '/pet/{petId}':
     get:
       tags:
