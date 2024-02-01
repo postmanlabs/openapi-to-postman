@@ -33,10 +33,11 @@ describe('openapi2postmanv2 ', function() {
   });
 
   it('should show appropriate messages for invalid input', function (done) {
-    exec('./bin/openapi2postmanv2.js -s test/data/invalid_openapi/multiple-components.yaml', function(err, stdout) {
-      expect(err).to.be.null;
-      expect(stdout).to.include('duplicated mapping key');
-      done();
-    });
+    exec('./bin/openapi2postmanv2.js -s test/data/invalid_openapi/multiple-components.yaml',
+      function(err, stdout, stderr) {
+        expect(err).to.be.null;
+        expect(stderr).to.include('duplicated mapping key');
+        done();
+      });
   });
 });

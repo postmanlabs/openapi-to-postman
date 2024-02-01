@@ -947,19 +947,19 @@ describe('The convert v2 Function', function() {
     });
   });
 
-  it('should not return undefined in the error message if spec is not valid JSON/YAML', function(done) {
+  it('should return correct error message if spec is not valid JSON/YAML', function(done) {
     // invalid JSON
-    Converter.convertV2({ type: 'string', data: '{"key": { "value" : } ' }, {}, (err, conversionResult) => {
-      expect(err).to.be.null;
-      expect(conversionResult.result).to.be.false;
-      expect(conversionResult.reason).to.not.include('undefined');
+    Converter.convertV2({ type: 'string', data: '{"key": { "value" : } ' }, {}, (err) => {
+      expect(err).to.not.be.null;
+      expect(err.name).to.eql('UserError');
+      expect(err.message).to.include('Invalid format. Input must be in YAML or JSON format.');
     });
 
     // invalid YAML
-    Converter.convertV2({ type: 'string', data: ' :' }, {}, (err, conversionResult) => {
-      expect(err).to.be.null;
-      expect(conversionResult.result).to.be.false;
-      expect(conversionResult.reason).to.not.include('undefined');
+    Converter.convertV2({ type: 'string', data: ' :' }, {}, (err) => {
+      expect(err).to.not.be.null;
+      expect(err.name).to.eql('UserError');
+      expect(err.message).to.include('Invalid format. Input must be in YAML or JSON format.');
       done();
     });
   });
@@ -967,10 +967,10 @@ describe('The convert v2 Function', function() {
   it('should throw an invalid format error and not semantic version missing error when yaml.safeLoad ' +
   'does not throw an error while parsing yaml', function(done) {
     // YAML for which yaml.safeLoad does not throw an error
-    Converter.convertV2({ type: 'string', data: 'no error yaml' }, {}, (err, conversionResult) => {
-      expect(err).to.be.null;
-      expect(conversionResult.result).to.be.false;
-      expect(conversionResult.reason).to.not.include('Specification must contain a semantic version number' +
+    Converter.convertV2({ type: 'string', data: 'no error yaml' }, {}, (err) => {
+      expect(err).to.not.be.null;
+      expect(err.name).to.eql('UserError');
+      expect(err.message).to.not.include('Specification must contain a semantic version number' +
       ' of the OAS specification');
       done();
     });
@@ -1244,10 +1244,10 @@ describe('The convert v2 Function', function() {
   it('The converter must throw an error for invalid null info', function (done) {
     var openapi = fs.readFileSync(invalidNullInfo, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi },
-      {}, (err, conversionResult) => {
-        expect(err).to.be.null;
-        expect(conversionResult.result).to.equal(false);
-        expect(conversionResult.reason)
+      {}, (err) => {
+        expect(err).to.not.be.null;
+        expect(err.name).to.eql('UserError');
+        expect(err.message)
           .to.equal('Specification must contain an Info Object for the meta-data of the API');
         done();
       });
@@ -1256,10 +1256,10 @@ describe('The convert v2 Function', function() {
   it('The converter must throw an error for invalid null info title', function (done) {
     var openapi = fs.readFileSync(invalidNullInfoTitle, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi },
-      {}, (err, conversionResult) => {
-        expect(err).to.be.null;
-        expect(conversionResult.result).to.equal(false);
-        expect(conversionResult.reason)
+      {}, (err) => {
+        expect(err).to.not.be.null;
+        expect(err.name).to.eql('UserError');
+        expect(err.message)
           .to.equal('Specification must contain a title in order to generate a collection');
         done();
       });
@@ -1268,10 +1268,10 @@ describe('The convert v2 Function', function() {
   it('The converter must throw an error for invalid null info version', function (done) {
     var openapi = fs.readFileSync(invalidNullInfoVersion, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi },
-      {}, (err, conversionResult) => {
-        expect(err).to.be.null;
-        expect(conversionResult.result).to.equal(false);
-        expect(conversionResult.reason)
+      {}, (err) => {
+        expect(err).to.not.be.null;
+        expect(err.name).to.eql('UserError');
+        expect(err.message)
           .to.equal('Specification must contain a semantic version number of the API in the Info Object');
         done();
       });
