@@ -3,7 +3,9 @@
 const { MODULE_VERSION } = require('./lib/schemapack.js');
 
 const _ = require('lodash'),
-  SchemaPack = require('./lib/schemapack.js').SchemaPack;
+  SchemaPack = require('./lib/schemapack.js').SchemaPack,
+  UserError = require('./lib/common/UserError'),
+  DEFAULT_INVALID_ERROR = 'Provided definition is invalid';
 
 module.exports = {
   // Old API wrapping the new API
@@ -13,7 +15,7 @@ module.exports = {
     if (schema.validated) {
       return schema.convert(cb);
     }
-    return cb(null, schema.validationResult);
+    return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
   },
 
   convertV2: function(input, options, cb) {
@@ -23,7 +25,7 @@ module.exports = {
       return schema.convertV2(cb);
     }
 
-    return cb(null, schema.validationResult);
+    return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
   },
 
   validate: function (input) {
