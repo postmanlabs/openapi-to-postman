@@ -4,6 +4,10 @@
 
 ## [v4.20.0] - 2024-02-15
 
+### Added
+
+-   Added support for reporting UserErrors in case when OpenAPI definition to converted is invalid.
+
 ## [v4.19.0] - 2024-01-18
 
 ## [v4.18.0] - 2023-09-28
