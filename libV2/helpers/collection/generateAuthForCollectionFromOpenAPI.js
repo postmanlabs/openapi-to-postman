@@ -10,8 +10,8 @@ const _ = require('lodash'),
  * Generate auth for collection/request
  */
 
-module.exports = function (openapi, securitySet) {
-  let securityDef, helper;
+module.exports = function (openapi, securitySet, shouldCheckForMultipleKeys) {
+  let securityDef, authHelper;
 
   // return false if security set is not defined
   // or is an empty array
@@ -21,8 +21,9 @@ module.exports = function (openapi, securitySet) {
   }
 
   _.forEach(securitySet, (security) => {
+    let helper;
     if (_.isObject(security) && _.isEmpty(security)) {
-      helper = {
+      authHelper = {
         type: 'noauth'
       };
       return false;
@@ -172,8 +173,19 @@ module.exports = function (openapi, securitySet) {
 
     // stop searching for helper if valid auth scheme is found
     if (!_.isEmpty(helper)) {
+      if (_.isEmpty(authHelper)) {
+        authHelper = helper;
+      }
+      else if (helper.type === 'apikey') {
+        authHelper.extraAPIKeys = !authHelper.extraAPIKeys ? [] : authHelper.extraAPIKeys;
+        authHelper.extraAPIKeys.push(helper);
+      }
+    }
+
+    if (!_.isEmpty(authHelper) && !shouldCheckForMultipleKeys) {
+      // Already got a security schema no need to check further
       return false;
     }
   });
-  return helper;
+  return authHelper;
 };
