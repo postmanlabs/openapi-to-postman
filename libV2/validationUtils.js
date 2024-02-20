@@ -160,7 +160,7 @@ function safeSchemaFaker (context, oldSchema, resolveFor, parameterSourceOption,
   resolvedSchema = concreteUtils.fixExamplesByVersion(resolvedSchema);
   key = JSON.stringify(resolvedSchema);
 
-  if (resolveTo === 'schema') {
+  if (resolveTo === 'schema' || resolveTo === 'hybrid') {
     key = 'resolveToSchema ' + key;
     schemaFaker.option({
       useExamplesValue: false,
