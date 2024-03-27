@@ -4,6 +4,10 @@
 
 ## [v4.20.1] - 2024-03-27
 
+### Fixed
+
+-   Fixed an issue where schemas under allOf keyword having additionalProperties set to false were not generating bodies correctly.
+
 ## [v4.20.0] - 2024-02-15
 
 ### Added
