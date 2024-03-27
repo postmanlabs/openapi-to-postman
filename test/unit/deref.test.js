@@ -516,6 +516,76 @@ describe('DEREF FUNCTION TESTS ', function() {
       });
       done();
     });
+
+    it('should resolve schemas under allOf keyword with additionalProperties set to false correctly', function (done) {
+      var schema = {
+        'allOf': [
+          {
+            'type': 'object',
+            'additionalProperties': false,
+            'properties': {
+              'source': {
+                'type': 'string',
+                'format': 'uuid'
+              },
+              'status': {
+                'type': 'string',
+                'enum': ['incomplete', 'completed', 'refunded']
+              },
+              'actionId': { 'type': 'integer', 'minimum': 5 },
+              'result': { 'type': 'object' }
+            },
+            'required': ['source', 'actionId', 'result']
+          },
+          {
+            'additionalProperties': false,
+            'properties': {
+              'result': {
+                'type': 'object',
+                'properties': {
+                  'err': { 'type': 'string' },
+                  'data': { 'type': 'object' }
+                }
+              },
+              'status': {
+                'type': 'string',
+                'enum': ['no_market', 'too_small', 'too_large']
+              }
+            }
+          }
+        ]
+      };
+
+      expect(deref.resolveAllOf(
+        schema,
+        'REQUEST',
+        { concreteUtils: schemaUtils30X },
+        { resolveTo: 'example' }
+      )).to.deep.equal({
+        type: 'object',
+        additionalProperties: false,
+        required: ['source', 'actionId', 'result'],
+        properties: {
+          source: {
+            type: 'string',
+            format: 'uuid'
+          },
+          status: {
+            type: 'string',
+            enum: ['incomplete', 'completed', 'refunded', 'no_market', 'too_small', 'too_large']
+          },
+          actionId: { 'type': 'integer', 'minimum': 5 },
+          result: {
+            type: 'object',
+            properties: {
+              err: { 'type': 'string' },
+              data: { 'type': 'object' }
+            }
+          }
+        }
+      });
+      done();
+    });
   });
 
   describe('_getEscaped should', function() {
