@@ -2091,6 +2091,28 @@ describe('The convert v2 Function', function() {
       });
     });
 
+    it('[GITHUB #417] - should convert file with allOf schemas containing additionalProperties as false ', function() {
+      const fileSource = path.join(__dirname, VALID_OPENAPI_PATH, 'allOfAdditionalProperties.json'),
+        fileData = fs.readFileSync(fileSource, 'utf8'),
+        input = {
+          type: 'string',
+          data: fileData
+        };
+
+      Converter.convertV2(input, {
+        optimizeConversion: false
+      }, (err, result) => {
+        const expectedRequestBody = JSON.parse(result.output[0].data.item[0].item[0].item[0].request.body.raw);
+
+        expect(err).to.be.null;
+        expect(result.result).to.be.true;
+
+        expect(expectedRequestBody).to.be.an('object');
+        expect(expectedRequestBody).to.have.keys(['phoneNumber', 'zipCode', 'countryCode', 'state', 'city',
+          'address1', 'lastName', 'firstName', 'email', 'campaignId']);
+      });
+    });
+
     it('Should convert a swagger document with XML example correctly', function(done) {
       const fileData = fs.readFileSync(path.join(__dirname, SWAGGER_20_FOLDER_YAML, 'xml_example.yaml'), 'utf8'),
         input = {

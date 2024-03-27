@@ -456,6 +456,8 @@ let QUERYPARAM = 'query',
           return resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef));
         })
       }), {
+        // below option is required to make sure schemas with additionalProperties set to false are resolved correctly
+        ignoreAdditionalProperties: true,
         resolvers: {
           // for keywords in OpenAPI schema that are not standard defined JSON schema keywords, use default resolver
           defaultResolver: (compacted) => { return compacted[0]; },
