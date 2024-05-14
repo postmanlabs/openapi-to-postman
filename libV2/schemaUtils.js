@@ -1082,7 +1082,16 @@ let QUERYPARAM = 'query',
 
   /**
    * Generates postman equivalent examples which contains request and response mappings of
-   * each example based on examples mentioned ind definition
+   * each example based on examples mentioned in definition
+   *
+   * This matching between request bodies and response bodies are done in following order.
+   * 1. Try matching keys from request and response examples
+   * 2. If any key matching is found, we'll generate example from it and ignore non-matching keys
+   * 3. If no matching key is found, we'll generate examples based on positional matching.
+   *
+   * Positional matching means first example in request body will be matched with first example
+   * in response body and so on. Any left over request or response body for which
+   * positional matching is not found, we'll use first req/res example.
    *
    * @param {Object} context - Global context object
    * @param {Object} responseExamples - Examples defined in the response
@@ -1101,10 +1110,7 @@ let QUERYPARAM = 'query',
         return _.toLower(example.key) === _.toLower(key);
       };
 
-    /**
-     * To generate examples, we first try to do matching of request and response examples based on example keys,
-     * If there is any matching found, we'll create example from it and ignore non-matching keys
-     */
+    // Do keys matching first and ignore any leftover req/res body for which matching is not found
     if (matchedKeys.length) {
       _.forEach(matchedKeys, (key) => {
         const matchedRequestExamples = _.filter(requestBodyExamples, (example) => {
@@ -1139,6 +1145,7 @@ let QUERYPARAM = 'query',
       return pmExamples;
     }
 
+    // No key matching between req and res were found, so perform positional matching now
     _.forEach(responseExamples, (responseExample, index) => {
 
       if (!_.isObject(responseExample)) {
@@ -1185,6 +1192,7 @@ let QUERYPARAM = 'query',
     let responseExample,
       responseExampleData;
 
+    // Add any left over request body examples with first response body as matching
     for (let i = 0; i < requestBodyExamples.length; i++) {
 
       if (!usedRequestExamples[i] || pmExamples.length === 0) {
