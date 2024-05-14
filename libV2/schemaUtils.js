@@ -1153,19 +1153,13 @@ let QUERYPARAM = 'query',
       }
 
       let responseExampleData = getExampleData(context, { [responseExample.key]: responseExample.value }),
-        requestExample,
-        matchedRequestBodyExamples = _.filter(requestBodyExamples, ['contentType', responseExample.contentType]);
-
-      // If content-types are not matching, match with any present content-types
-      if (_.isEmpty(matchedRequestBodyExamples)) {
-        matchedRequestBodyExamples = requestBodyExamples;
-      }
+        requestExample;
 
       if (isXMLExample) {
         responseExampleData = getXMLExampleData(context, responseExampleData, responseBodySchema);
       }
 
-      if (_.isEmpty(matchedRequestBodyExamples)) {
+      if (_.isEmpty(requestBodyExamples)) {
         pmExamples.push({
           response: responseExampleData,
           name: _.get(responseExample, 'value.summary') || responseExample.key
@@ -1384,7 +1378,15 @@ let QUERYPARAM = 'query',
           };
         });
       }
-      return generateExamples(context, responseExamples, requestBodyExamples, requestBodySchema, isBodyTypeXML);
+
+      let matchedRequestBodyExamples = _.filter(requestBodyExamples, ['contentType', bodyType]);
+
+      // If content-types are not matching, match with any present content-types
+      if (_.isEmpty(matchedRequestBodyExamples)) {
+        matchedRequestBodyExamples = requestBodyExamples;
+      }
+
+      return generateExamples(context, responseExamples, matchedRequestBodyExamples, requestBodySchema, isBodyTypeXML);
     }
 
     return [{ [bodyKey]: bodyData }];
