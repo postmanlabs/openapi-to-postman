@@ -1,0 +1,127 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Swagger Petstore",
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [{
+    "url": "http://petstore.swagger.io/v1"
+  }],
+  "paths": {
+    "/pets": {
+      "post": {
+        "summary": "List all pets",
+        "operationId": "pets - updated",
+        "tags": [
+          "pets"
+        ],
+        "parameters": [{
+          "name": "limit1",
+          "in": "query",
+          "description": "How many items to return at one time (max 100)",
+          "schema": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+             "schema": {
+              "$ref": "#/components/schemas/Error"
+             },
+             "examples": {
+               "ok_example": {
+                 "value": {
+                    "message": "ok"
+                 }
+               },
+               "not_ok_example": {
+                 "value": {
+                  "message": "fail"
+                 }
+               }
+             }
+            },
+            "application/xml": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              },
+              "examples": {
+                "ok_example": {
+                  "value": {
+                     "message": "ok"
+                  }
+                },
+                "not_ok_example": {
+                  "value": {
+                   "message": "fail"
+                  }
+                }
+              }
+             }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "message": "Not Found"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "message": "Not Found"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "message": "Found",
+                  "code": 200123
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
