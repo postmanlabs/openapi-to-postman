@@ -1092,7 +1092,52 @@ let QUERYPARAM = 'query',
    * @returns {Array} Examples for corresponding operation
    */
   generateExamples = (context, responseExamples, requestBodyExamples, responseBodySchema, isXMLExample) => {
-    const pmExamples = [];
+    const pmExamples = [],
+      responseExampleKeys = _.map(responseExamples, 'key'),
+      requestBodyExampleKeys = _.map(requestBodyExamples, 'key'),
+      matchedKeys = _.intersectionBy(responseExampleKeys, requestBodyExampleKeys, _.toLower),
+      usedRequestExamples = _.fill(Array(requestBodyExamples.length), false),
+      exampleKeyComparator = (example, key) => {
+        return _.toLower(example.key) === _.toLower(key);
+      };
+
+    /**
+     * To generate examples, we first try to do matching of request and response examples based on example keys,
+     * If there is any matching found, we'll create example from it and ignore non-matching keys
+     */
+    if (matchedKeys.length) {
+      _.forEach(matchedKeys, (key) => {
+        const matchedRequestExamples = _.filter(requestBodyExamples, (example) => {
+            return exampleKeyComparator(example, key);
+          }),
+          responseExample = _.find(responseExamples, (example) => {
+            return exampleKeyComparator(example, key);
+          });
+
+        let requestExample = _.find(matchedRequestExamples, ['contentType', _.get(responseExample, 'contentType')]),
+          responseExampleData;
+
+        if (!requestExample) {
+          requestExample = _.head(matchedRequestExamples);
+        }
+
+        responseExampleData = getExampleData(context, { [responseExample.key]: responseExample.value });
+
+        if (isXMLExample) {
+          responseExampleData = getXMLExampleData(context, responseExampleData, responseBodySchema);
+        }
+
+        pmExamples.push({
+          request: getExampleData(context, { [requestExample.key]: requestExample.value }),
+          response: responseExampleData,
+          name: _.get(responseExample, 'value.summary') ||
+            (responseExample.key !== '_default' && responseExample.key) ||
+            _.get(requestExample, 'value.summary') || requestExample.key || 'Example'
+        });
+      });
+
+      return pmExamples;
+    }
 
     _.forEach(responseExamples, (responseExample, index) => {
 
@@ -1101,13 +1146,19 @@ let QUERYPARAM = 'query',
       }
 
       let responseExampleData = getExampleData(context, { [responseExample.key]: responseExample.value }),
-        requestExample;
+        requestExample,
+        matchedRequestBodyExamples = _.filter(requestBodyExamples, ['contentType', responseExample.contentType]);
+
+      // If content-types are not matching, match with any present content-types
+      if (_.isEmpty(matchedRequestBodyExamples)) {
+        matchedRequestBodyExamples = requestBodyExamples;
+      }
 
       if (isXMLExample) {
         responseExampleData = getXMLExampleData(context, responseExampleData, responseBodySchema);
       }
 
-      if (_.isEmpty(requestBodyExamples)) {
+      if (_.isEmpty(matchedRequestBodyExamples)) {
         pmExamples.push({
           response: responseExampleData,
           name: _.get(responseExample, 'value.summary') || responseExample.key
@@ -1115,46 +1166,12 @@ let QUERYPARAM = 'query',
         return;
       }
 
-      requestExample = _.find(requestBodyExamples, (example, index) => {
-        if (
-          example.contentType === responseExample.contentType &&
-          _.toLower(example.key) === _.toLower(responseExample.key)
-        ) {
-          requestBodyExamples[index].isUsed = true;
-          return true;
-        }
-        return false;
-      });
-
-      // If exact content type is not matching, pick first content type with same example key
-      if (!requestExample) {
-        requestExample = _.find(requestBodyExamples, (example, index) => {
-          if (_.toLower(example.key) === _.toLower(responseExample.key)) {
-            requestBodyExamples[index].isUsed = true;
-            return true;
-          }
-          return false;
-        });
+      if (requestBodyExamples[index] && !usedRequestExamples[index]) {
+        requestExample = requestBodyExamples[index];
+        usedRequestExamples[index] = true;
       }
-
-      if (!requestExample) {
-        if (requestBodyExamples[index] && !requestBodyExamples[index].isUsed) {
-          requestExample = requestBodyExamples[index];
-          requestBodyExamples[index].isUsed = true;
-        }
-        else {
-          for (let i = 0; i < requestBodyExamples.length; i++) {
-            if (!requestBodyExamples[i].isUsed) {
-              requestExample = requestBodyExamples[i];
-              requestBodyExamples[i].isUsed = true;
-              break;
-            }
-          }
-
-          if (!requestExample) {
-            requestExample = requestBodyExamples[0];
-          }
-        }
+      else {
+        requestExample = requestBodyExamples[0];
       }
 
       pmExamples.push({
@@ -1170,7 +1187,7 @@ let QUERYPARAM = 'query',
 
     for (let i = 0; i < requestBodyExamples.length; i++) {
 
-      if (!requestBodyExamples[i].isUsed || pmExamples.length === 0) {
+      if (!usedRequestExamples[i] || pmExamples.length === 0) {
         if (!responseExample) {
           responseExample = _.head(responseExamples);
 
