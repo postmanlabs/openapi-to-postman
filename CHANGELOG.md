@@ -4,6 +4,10 @@
 
 ## [v4.21.0] - 2024-05-17
 
+### Added
+
+-   Added support for simplified request and response body matching in case of multiple examples.
+
 ## [v4.20.1] - 2024-03-27
 
 ### Fixed
