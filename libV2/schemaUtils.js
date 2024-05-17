@@ -1082,7 +1082,16 @@ let QUERYPARAM = 'query',
 
   /**
    * Generates postman equivalent examples which contains request and response mappings of
-   * each example based on examples mentioned ind definition
+   * each example based on examples mentioned in definition
+   *
+   * This matching between request bodies and response bodies are done in following order.
+   * 1. Try matching keys from request and response examples
+   * 2. If any key matching is found, we'll generate example from it and ignore non-matching keys
+   * 3. If no matching key is found, we'll generate examples based on positional matching.
+   *
+   * Positional matching means first example in request body will be matched with first example
+   * in response body and so on. Any left over request or response body for which
+   * positional matching is not found, we'll use first req/res example.
    *
    * @param {Object} context - Global context object
    * @param {Object} responseExamples - Examples defined in the response
@@ -1092,8 +1101,51 @@ let QUERYPARAM = 'query',
    * @returns {Array} Examples for corresponding operation
    */
   generateExamples = (context, responseExamples, requestBodyExamples, responseBodySchema, isXMLExample) => {
-    const pmExamples = [];
+    const pmExamples = [],
+      responseExampleKeys = _.map(responseExamples, 'key'),
+      requestBodyExampleKeys = _.map(requestBodyExamples, 'key'),
+      matchedKeys = _.intersectionBy(responseExampleKeys, requestBodyExampleKeys, _.toLower),
+      usedRequestExamples = _.fill(Array(requestBodyExamples.length), false),
+      exampleKeyComparator = (example, key) => {
+        return _.toLower(example.key) === _.toLower(key);
+      };
 
+    // Do keys matching first and ignore any leftover req/res body for which matching is not found
+    if (matchedKeys.length) {
+      _.forEach(matchedKeys, (key) => {
+        const matchedRequestExamples = _.filter(requestBodyExamples, (example) => {
+            return exampleKeyComparator(example, key);
+          }),
+          responseExample = _.find(responseExamples, (example) => {
+            return exampleKeyComparator(example, key);
+          });
+
+        let requestExample = _.find(matchedRequestExamples, ['contentType', _.get(responseExample, 'contentType')]),
+          responseExampleData;
+
+        if (!requestExample) {
+          requestExample = _.head(matchedRequestExamples);
+        }
+
+        responseExampleData = getExampleData(context, { [responseExample.key]: responseExample.value });
+
+        if (isXMLExample) {
+          responseExampleData = getXMLExampleData(context, responseExampleData, responseBodySchema);
+        }
+
+        pmExamples.push({
+          request: getExampleData(context, { [requestExample.key]: requestExample.value }),
+          response: responseExampleData,
+          name: _.get(responseExample, 'value.summary') ||
+            (responseExample.key !== '_default' && responseExample.key) ||
+            _.get(requestExample, 'value.summary') || requestExample.key || 'Example'
+        });
+      });
+
+      return pmExamples;
+    }
+
+    // No key matching between req and res were found, so perform positional matching now
     _.forEach(responseExamples, (responseExample, index) => {
 
       if (!_.isObject(responseExample)) {
@@ -1115,46 +1167,12 @@ let QUERYPARAM = 'query',
         return;
       }
 
-      requestExample = _.find(requestBodyExamples, (example, index) => {
-        if (
-          example.contentType === responseExample.contentType &&
-          _.toLower(example.key) === _.toLower(responseExample.key)
-        ) {
-          requestBodyExamples[index].isUsed = true;
-          return true;
-        }
-        return false;
-      });
-
-      // If exact content type is not matching, pick first content type with same example key
-      if (!requestExample) {
-        requestExample = _.find(requestBodyExamples, (example, index) => {
-          if (_.toLower(example.key) === _.toLower(responseExample.key)) {
-            requestBodyExamples[index].isUsed = true;
-            return true;
-          }
-          return false;
-        });
+      if (requestBodyExamples[index] && !usedRequestExamples[index]) {
+        requestExample = requestBodyExamples[index];
+        usedRequestExamples[index] = true;
       }
-
-      if (!requestExample) {
-        if (requestBodyExamples[index] && !requestBodyExamples[index].isUsed) {
-          requestExample = requestBodyExamples[index];
-          requestBodyExamples[index].isUsed = true;
-        }
-        else {
-          for (let i = 0; i < requestBodyExamples.length; i++) {
-            if (!requestBodyExamples[i].isUsed) {
-              requestExample = requestBodyExamples[i];
-              requestBodyExamples[i].isUsed = true;
-              break;
-            }
-          }
-
-          if (!requestExample) {
-            requestExample = requestBodyExamples[0];
-          }
-        }
+      else {
+        requestExample = requestBodyExamples[0];
       }
 
       pmExamples.push({
@@ -1168,9 +1186,10 @@ let QUERYPARAM = 'query',
     let responseExample,
       responseExampleData;
 
+    // Add any left over request body examples with first response body as matching
     for (let i = 0; i < requestBodyExamples.length; i++) {
 
-      if (!requestBodyExamples[i].isUsed || pmExamples.length === 0) {
+      if (!usedRequestExamples[i] || pmExamples.length === 0) {
         if (!responseExample) {
           responseExample = _.head(responseExamples);
 
@@ -1359,7 +1378,15 @@ let QUERYPARAM = 'query',
           };
         });
       }
-      return generateExamples(context, responseExamples, requestBodyExamples, requestBodySchema, isBodyTypeXML);
+
+      let matchedRequestBodyExamples = _.filter(requestBodyExamples, ['contentType', bodyType]);
+
+      // If content-types are not matching, match with any present content-types
+      if (_.isEmpty(matchedRequestBodyExamples)) {
+        matchedRequestBodyExamples = requestBodyExamples;
+      }
+
+      return generateExamples(context, responseExamples, matchedRequestBodyExamples, requestBodySchema, isBodyTypeXML);
     }
 
     return [{ [bodyKey]: bodyData }];
