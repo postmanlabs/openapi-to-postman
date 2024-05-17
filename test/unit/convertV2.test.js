@@ -102,7 +102,11 @@ const expect = require('chai').expect,
   multiExampleRequestResponse =
     path.join(__dirname, VALID_OPENAPI_PATH, '/multiExampleRequestResponse.yaml'),
   multiExampleMatchingRequestResponse =
-    path.join(__dirname, VALID_OPENAPI_PATH, '/multiExampleMatchingRequestResponse.yaml');
+    path.join(__dirname, VALID_OPENAPI_PATH, '/multiExampleMatchingRequestResponse.yaml'),
+  multiContentTypesMultiExample =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/multiContentTypesMultiExample.json'),
+  multiExampleRequestVariousResponse =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/multiExampleRequestVariousResponse.yaml');
 
 
 describe('The convert v2 Function', function() {
@@ -2544,44 +2548,50 @@ describe('The convert v2 Function', function() {
         });
     });
 
-    it('both request and response body contains multiple examples with matching keys', function(done) {
-      var openapi = fs.readFileSync(multiExampleMatchingRequestResponse, 'utf8');
-      Converter.convertV2({ type: 'string', data: openapi }, { parametersResolution: 'Example' },
-        (err, conversionResult) => {
-          expect(err).to.be.null;
-          expect(conversionResult.result).to.equal(true);
-          expect(conversionResult.output.length).to.equal(1);
-          expect(conversionResult.output[0].type).to.equal('collection');
-          expect(conversionResult.output[0].data).to.have.property('info');
-          expect(conversionResult.output[0].data).to.have.property('item');
-          expect(conversionResult.output[0].data.item[0].item.length).to.equal(1);
+    it('both request and response body contains multiple examples with matching keys and ignore non matching keys',
+      function(done) {
+        const openapi = fs.readFileSync(multiExampleMatchingRequestResponse, 'utf8');
+        Converter.convertV2({ type: 'string', data: openapi }, { parametersResolution: 'Example' },
+          (err, conversionResult) => {
+            expect(err).to.be.null;
+            expect(conversionResult.result).to.equal(true);
+            expect(conversionResult.output.length).to.equal(1);
+            expect(conversionResult.output[0].type).to.equal('collection');
+            expect(conversionResult.output[0].data).to.have.property('info');
+            expect(conversionResult.output[0].data).to.have.property('item');
+            expect(conversionResult.output[0].data.item[0].item.length).to.equal(1);
 
-          const item = conversionResult.output[0].data.item[0].item[0];
+            const item = conversionResult.output[0].data.item[0].item[0];
 
-          expect(JSON.parse(item.request.body.raw)).to.eql({
-            includedFields: ['user', 'height', 'weight']
-          });
-          expect(item.response).to.have.lengthOf(2);
-          expect(item.response[0].name).to.eql('Complete request');
-          expect(item.response[0]._postman_previewlanguage).to.eql('json');
-          expect(JSON.parse(item.response[0].body)).to.eql({
-            user: 1,
-            height: 168,
-            weight: 44
-          });
-          expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql({
-            includedFields: ['user', 'height', 'weight']
-          });
+            expect(JSON.parse(item.request.body.raw)).to.eql({
+              includedFields: ['user', 'height', 'weight']
+            });
 
-          expect(item.response[1].name).to.eql('Request with only required params');
-          expect(item.response[1]._postman_previewlanguage).to.eql('json');
-          expect(JSON.parse(item.response[1].body)).to.eql({ user: 1 });
-          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql({
-            includedFields: ['user']
+            /**
+             * Even though both req and res has 3 examples, only 2 example should be present
+             * as only 2 examples have matching keys
+             */
+            expect(item.response).to.have.lengthOf(2);
+            expect(item.response[0].name).to.eql('Complete request');
+            expect(item.response[0]._postman_previewlanguage).to.eql('json');
+            expect(JSON.parse(item.response[0].body)).to.eql({
+              user: 1,
+              height: 168,
+              weight: 44
+            });
+            expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql({
+              includedFields: ['user', 'height', 'weight']
+            });
+
+            expect(item.response[1].name).to.eql('Request with only required params');
+            expect(item.response[1]._postman_previewlanguage).to.eql('json');
+            expect(JSON.parse(item.response[1].body)).to.eql({ user: 1 });
+            expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql({
+              includedFields: ['user']
+            });
+            done();
           });
-          done();
-        });
-    });
+      });
 
     it('both request and response body contains multiple examples in mentioned order when no matching keys',
       function(done) {
@@ -2624,5 +2634,98 @@ describe('The convert v2 Function', function() {
             done();
           });
       });
+
+    it('request body and responses contain multiple content types and multiple examples', function(done) {
+      const openapi = fs.readFileSync(multiContentTypesMultiExample, 'utf8');
+      Converter.convertV2({ type: 'string', data: openapi }, { parametersResolution: 'Example' },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item[0].item.length).to.equal(1);
+
+          const item = conversionResult.output[0].data.item[0].item[0],
+            okReqExample = { message: 'ok' },
+            failReqExample = { message: 'fail' },
+            okResExample = { message: 'Found', code: 200123 },
+            failResExample = { message: 'Not Found' };
+
+          expect(JSON.parse(item.request.body.raw)).to.eql(okReqExample);
+          expect(item.response).to.have.lengthOf(4);
+          expect(item.response[0].name).to.eql('ok_example');
+          expect(item.response[0].code).to.eql(200);
+          expect(item.response[0]._postman_previewlanguage).to.eql('json');
+          expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql(okReqExample);
+          expect(JSON.parse(item.response[0].body)).to.eql(okResExample);
+
+          expect(item.response[1].name).to.eql('not_ok_example');
+          expect(item.response[1].code).to.eql(200);
+          expect(item.response[1]._postman_previewlanguage).to.eql('json');
+          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql(failReqExample);
+          expect(JSON.parse(item.response[1].body)).to.eql(okResExample);
+
+          expect(item.response[2].name).to.eql('ok_example');
+          expect(item.response[2].code).to.eql(500);
+          expect(item.response[2]._postman_previewlanguage).to.eql('json');
+          expect(JSON.parse(item.response[2].originalRequest.body.raw)).to.eql(okReqExample);
+          expect(JSON.parse(item.response[2].body)).to.eql(failResExample);
+
+          expect(item.response[3].name).to.eql('not_ok_example');
+          expect(item.response[3].code).to.eql(500);
+          expect(item.response[3]._postman_previewlanguage).to.eql('json');
+          expect(JSON.parse(item.response[3].originalRequest.body.raw)).to.eql(failReqExample);
+          expect(JSON.parse(item.response[3].body)).to.eql(failResExample);
+          done();
+        });
+    });
+
+    it('request body and responses contain multiple examples with various response code ' +
+      'having single or multiple examples', function(done) {
+      const openapi = fs.readFileSync(multiExampleRequestVariousResponse, 'utf8');
+      Converter.convertV2({ type: 'string', data: openapi }, { parametersResolution: 'Example' },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item[0].item.length).to.equal(1);
+
+          const item = conversionResult.output[0].data.item[0].item[0],
+            reqBody1 = { includedFields: ['user', 'height', 'weight'] },
+            reqBody2 = { includedFields: ['eyeColor'] };
+
+          expect(JSON.parse(item.request.body.raw)).to.eql(reqBody1);
+          expect(item.response).to.have.lengthOf(4);
+          expect(item.response[0].name).to.eql('Request with only required params');
+          expect(item.response[0].code).to.eql(200);
+          expect(item.response[0]._postman_previewlanguage).to.eql('json');
+          expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql(reqBody1);
+          expect(JSON.parse(item.response[0].body)).to.eql({ user: 1 });
+
+          expect(item.response[1].name).to.eql('Request with only bad params');
+          expect(item.response[1].code).to.eql(400);
+          expect(item.response[1]._postman_previewlanguage).to.eql('json');
+          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql(reqBody2);
+          expect(JSON.parse(item.response[1].body)).to.eql({ eyeColor: 'gray' });
+
+          expect(item.response[2].name).to.eql('Failed request - Negative user');
+          expect(item.response[2].code).to.eql(500);
+          expect(item.response[2]._postman_previewlanguage).to.eql('json');
+          expect(JSON.parse(item.response[2].originalRequest.body.raw)).to.eql(reqBody1);
+          expect(JSON.parse(item.response[2].body)).to.eql({ user: -99 });
+
+          expect(item.response[3].name).to.eql('Failed request - All negatives');
+          expect(item.response[3].code).to.eql(500);
+          expect(item.response[3]._postman_previewlanguage).to.eql('json');
+          expect(JSON.parse(item.response[3].originalRequest.body.raw)).to.eql(reqBody2);
+          expect(JSON.parse(item.response[3].body)).to.eql({ user: -999, height: -168, weight: -44 });
+          done();
+        });
+    });
   });
 });
