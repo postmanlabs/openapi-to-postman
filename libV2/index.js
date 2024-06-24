@@ -213,6 +213,11 @@ module.exports = {
       }
     });
 
+    // Remove duplicate variables as different requests could end up creating same variables
+    if (!_.isEmpty(collection.variable)) {
+      collection.variable = _.uniqBy(collection.variable, 'key');
+    }
+
     return cb(null, {
       result: true,
       output: [{
