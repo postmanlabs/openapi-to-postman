@@ -106,7 +106,9 @@ const expect = require('chai').expect,
   multiContentTypesMultiExample =
     path.join(__dirname, VALID_OPENAPI_PATH, '/multiContentTypesMultiExample.json'),
   multiExampleRequestVariousResponse =
-    path.join(__dirname, VALID_OPENAPI_PATH, '/multiExampleRequestVariousResponse.yaml');
+    path.join(__dirname, VALID_OPENAPI_PATH, '/multiExampleRequestVariousResponse.yaml'),
+  duplicateCollectionVars =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/duplicateCollectionVars.json');
 
 
 describe('The convert v2 Function', function() {
@@ -2727,5 +2729,23 @@ describe('The convert v2 Function', function() {
           done();
         });
     });
+  });
+
+  it('[Github #11884] Should not contain duplicate variables created from requests path', function (done) {
+    const openapi = fs.readFileSync(duplicateCollectionVars, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, { parametersResolution: 'Example' },
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data).to.have.property('variable');
+        expect(conversionResult.output[0].data.variable).to.have.lengthOf(2);
+        expect(conversionResult.output[0].data.variable[0]).to.have.property('key', 'baseUrl');
+        expect(conversionResult.output[0].data.variable[1]).to.have.property('key', 'MyParam');
+        done();
+      });
   });
 });

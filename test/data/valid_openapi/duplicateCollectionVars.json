@@ -1,0 +1,56 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "MyTitle",
+    "description": "My Description",
+    "version": "1.0.0",
+    "x-ms-generated-by": {
+      "toolName": "Microsoft.OpenApi.OData",
+      "toolVersion": "1.0.9.0"
+    }
+  },
+  "paths": {
+    "/Path1({MyParam})": {
+      "description": "My path1 description",
+      "get": {
+        "tags": [
+          "MyTag"
+        ],
+        "summary": "does path1",
+        "operationId": "Path1",
+        "parameters": [
+          {
+            "name": "MyParam",
+            "in": "path",
+            "description": "My Param",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ]
+      }
+    },
+    "/Path2({MyParam})": {
+      "description": "My path2 description",
+      "get": {
+        "tags": [
+          "MyTag"
+        ],
+        "summary": "does path2",
+        "operationId": "Path2",
+        "parameters": [
+          {
+            "name": "MyParam",
+            "in": "path",
+            "description": "My Param",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ]
+      }
+    }
+  }
+}
