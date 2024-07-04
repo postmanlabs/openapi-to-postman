@@ -1086,7 +1086,13 @@ let QUERYPARAM = 'query',
    *
    * This matching between request bodies and response bodies are done in following order.
    * 1. Try matching keys from request and response examples
+   *
+   *    (We'll also be considering any request body example with response code as key
+   *    that's matching default response body example if present
+   *    See fro example - test/data/valid_openapi/multiExampleResponseCodeMatching.json)
+   *
    * 2. If any key matching is found, we'll generate example from it and ignore non-matching keys
+   *
    * 3. If no matching key is found, we'll generate examples based on positional matching.
    *
    * Positional matching means first example in request body will be matched with first example
@@ -1104,11 +1110,20 @@ let QUERYPARAM = 'query',
     const pmExamples = [],
       responseExampleKeys = _.map(responseExamples, 'key'),
       requestBodyExampleKeys = _.map(requestBodyExamples, 'key'),
-      matchedKeys = _.intersectionBy(responseExampleKeys, requestBodyExampleKeys, _.toLower),
       usedRequestExamples = _.fill(Array(requestBodyExamples.length), false),
       exampleKeyComparator = (example, key) => {
         return _.toLower(example.key) === _.toLower(key);
       };
+
+    let matchedKeys = _.intersectionBy(responseExampleKeys, requestBodyExampleKeys, _.toLower),
+      isResponseCodeMatching = false;
+
+    if (!matchedKeys.length && responseExamples.length === 1 && responseExamples[0].key === '_default') {
+      const responseCodes = _.map(responseExamples, 'responseCode');
+
+      matchedKeys = _.intersectionBy(responseCodes, requestBodyExampleKeys, _.toLower);
+      isResponseCodeMatching = matchedKeys.length > 0;
+    }
 
     // Do keys matching first and ignore any leftover req/res body for which matching is not found
     if (matchedKeys.length) {
@@ -1117,6 +1132,10 @@ let QUERYPARAM = 'query',
             return exampleKeyComparator(example, key);
           }),
           responseExample = _.find(responseExamples, (example) => {
+            if (isResponseCodeMatching) {
+              return example.responseCode === key;
+            }
+
             return exampleKeyComparator(example, key);
           });
 
@@ -1183,6 +1202,7 @@ let QUERYPARAM = 'query',
       });
     });
 
+    // eslint-disable-next-line one-var
     let responseExample,
       responseExampleData;
 
@@ -1221,10 +1241,13 @@ let QUERYPARAM = 'query',
    * @param {Object} requestBodySchema - Schema of the request / response body
    * @param {String} bodyType - Content type of the body
    * @param {Boolean} isExampleBody - Whether the body is example body
+   * @param {String} responseCode - Response code
    * @param {Object} requestBodyExamples - Examples defined in the request body
    * @returns {Array} Request / Response body data
    */
-  resolveBodyData = (context, requestBodySchema, bodyType, isExampleBody = false, requestBodyExamples) => {
+  resolveBodyData = (context, requestBodySchema, bodyType, isExampleBody = false,
+    responseCode = null, requestBodyExamples = {}
+  ) => {
     let { parametersResolution, indentCharacter } = context.computedOptions,
       headerFamily = getHeaderFamily(bodyType),
       bodyData = '',
@@ -1366,7 +1389,8 @@ let QUERYPARAM = 'query',
       responseExamples = [{
         key: '_default',
         value: bodyData,
-        contentType: bodyType
+        contentType: bodyType,
+        responseCode
       }];
 
       if (!_.isEmpty(examples)) {
@@ -1839,9 +1863,10 @@ let QUERYPARAM = 'query',
    * @param {Object} context - Global context object
    * @param {Object} responseBody - Response body schema
    * @param {Object} requestBodyExamples - Examples defined in the request body of corresponding operation
+   * @param {String} code - Response code
    * @returns {Array} - Postman examples
    */
-  resolveResponseBody = (context, responseBody = {}, requestBodyExamples) => {
+  resolveResponseBody = (context, responseBody = {}, requestBodyExamples = {}, code = null) => {
     let responseContent,
       bodyType,
       allBodyData,
@@ -1868,7 +1893,7 @@ let QUERYPARAM = 'query',
     bodyType = getRawBodyType(responseContent);
     headerFamily = getHeaderFamily(bodyType);
 
-    allBodyData = resolveBodyData(context, responseContent[bodyType], bodyType, true, requestBodyExamples);
+    allBodyData = resolveBodyData(context, responseContent[bodyType], bodyType, true, code, requestBodyExamples);
 
     return _.map(allBodyData, (bodyData) => {
       let requestBodyData = bodyData.request,
@@ -2081,7 +2106,7 @@ let QUERYPARAM = 'query',
       let responseSchema = _.has(responseObj, '$ref') ? resolveSchema(context, responseObj) : responseObj,
         { includeAuthInfoInExample } = context.computedOptions,
         auth = request.auth,
-        resolvedExamples = resolveResponseBody(context, responseSchema, requestBodyExamples) || {},
+        resolvedExamples = resolveResponseBody(context, responseSchema, requestBodyExamples, code) || {},
         headers = resolveResponseHeaders(context, responseSchema.headers);
 
       _.forOwn(resolvedExamples, (resolvedExample = {}) => {

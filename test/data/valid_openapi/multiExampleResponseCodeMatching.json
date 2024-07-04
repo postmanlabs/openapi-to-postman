@@ -1,0 +1,282 @@
+{
+  "x-generator": "NSwag v13.19.0.0 (NJsonSchema v10.9.0.0 (Newtonsoft.Json v13.0.0.0))",
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Postman Example API",
+    "description": "postman Test. \r\n\r\n © Copyright 2024.",
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "https://localhost:1234"
+    }
+  ],
+  "paths": {
+    "/addUser": {
+      "post": {
+        "tags": [
+          "PostmanExample"
+        ],
+        "summary": "Add User",
+        "description": "Add new user to system and define his access.",
+        "operationId": "PostmanExample_AddUser",
+        "requestBody": {
+          "x-name": "command",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddUserCommand"
+              },
+              "examples": {
+                "200": {
+                  "value": {
+                    "userDetail": {
+                      "roleId": 1,
+                      "department": "Admin 1",
+                      "email": "123@gmail.com"
+                    }
+                  }
+                },
+                "400": {
+                  "value": {
+                    "userDetail": {
+                      "roleId": null,
+                      "department": "Admin 1",
+                      "email": ""
+                    }
+                  }
+                },
+                "404": {
+                  "value": {
+                    "userDetail": {
+                      "roleId": 0,
+                      "department": "Admin 0",
+                      "email": "123@gmail.com"
+                    }
+                  }
+                },
+                "409": {
+                  "value": {
+                    "userDetail": {
+                      "roleId": 1,
+                      "department": "Admin 1",
+                      "email": "123@gmail.com"
+                    }
+                  }
+                },
+                "500": {
+                  "value": {
+                    "userDetail": {
+                      "roleId": 0,
+                      "department": null,
+                      "email": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                },
+                "example": {
+                  "userId": 12
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponse"
+                },
+                "example": {
+                  "hasErrorMessage": true,
+                  "errorMessage": "Bad Request",
+                  "validationsErrors": [
+                    {
+                      "propertyName": "RoleID",
+                      "errorMessage": "Can not be null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponse"
+                },
+                "example": {
+                  "message": "AddUserDetailsCommand : User Role Not Found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictErrorResponse"
+                },
+                "example": {
+                  "message": "AddUserDetailsCommand : Duplicate"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnexpectedErrorResponse"
+                },
+                "example": {
+                  "message": "AddUserDetailsCommand : System Error message"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UserResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Response"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "userId": {
+                "type": "integer",
+                "format": "int32",
+                "nullable": true
+              }
+            }
+          }
+        ]
+      },
+      "Response": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "BadRequestResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "hasErrorMessage": {
+            "type": "boolean"
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "validationsErrors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "propertyName": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "NotFoundResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ConflictErrorResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "UnexpectedErrorResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "AddUserCommand": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AddUserCommandResponse"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "userDetail": {
+                "$ref": "#/components/schemas/UserInformationDto"
+              }
+            }
+          }
+        ]
+      },
+      "UserInformationDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "roleId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "department": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "AddUserCommandResponse": {
+        "type": "object",
+        "additionalProperties": false
+      }
+    }
+  }
+}
