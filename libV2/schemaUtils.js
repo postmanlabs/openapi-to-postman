@@ -1118,6 +1118,7 @@ let QUERYPARAM = 'query',
     let matchedKeys = _.intersectionBy(responseExampleKeys, requestBodyExampleKeys, _.toLower),
       isResponseCodeMatching = false;
 
+    // Only match in case of default response example matching with any request body example
     if (!matchedKeys.length && responseExamples.length === 1 && responseExamples[0].key === '_default') {
       const responseCodes = _.map(responseExamples, 'responseCode');
 
@@ -1132,6 +1133,7 @@ let QUERYPARAM = 'query',
             return exampleKeyComparator(example, key);
           }),
           responseExample = _.find(responseExamples, (example) => {
+            // If there is a response code key-matching, then only match with keys based on response code
             if (isResponseCodeMatching) {
               return example.responseCode === key;
             }
