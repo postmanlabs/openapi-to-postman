@@ -106,7 +106,11 @@ const expect = require('chai').expect,
   multiContentTypesMultiExample =
     path.join(__dirname, VALID_OPENAPI_PATH, '/multiContentTypesMultiExample.json'),
   multiExampleRequestVariousResponse =
-    path.join(__dirname, VALID_OPENAPI_PATH, '/multiExampleRequestVariousResponse.yaml');
+    path.join(__dirname, VALID_OPENAPI_PATH, '/multiExampleRequestVariousResponse.yaml'),
+  multiExampleResponseCodeMatching =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/multiExampleResponseCodeMatching.json'),
+  duplicateCollectionVars =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/duplicateCollectionVars.json');
 
 
 describe('The convert v2 Function', function() {
@@ -2727,5 +2731,92 @@ describe('The convert v2 Function', function() {
           done();
         });
     });
+
+    it('request body and responses contain examples with matching keys as response codes', function(done) {
+      const openapi = fs.readFileSync(multiExampleResponseCodeMatching, 'utf8');
+      Converter.convertV2({ type: 'string', data: openapi }, { parametersResolution: 'Example' },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+          expect(conversionResult.output.length).to.equal(1);
+          expect(conversionResult.output[0].type).to.equal('collection');
+          expect(conversionResult.output[0].data).to.have.property('info');
+          expect(conversionResult.output[0].data).to.have.property('item');
+          expect(conversionResult.output[0].data.item[0].item.length).to.equal(1);
+
+          const item = conversionResult.output[0].data.item[0].item[0],
+            defaultReqBody = {
+              userDetail: {
+                roleId: 1,
+                department: 'Admin 1',
+                email: '123@gmail.com'
+              }
+            };
+
+          expect(JSON.parse(item.request.body.raw)).to.eql(defaultReqBody);
+          expect(item.response).to.have.lengthOf(5);
+
+          expect(item.response[0].name).to.eql('200');
+          expect(item.response[0].code).to.eql(200);
+          expect(item.response[0]._postman_previewlanguage).to.eql('json');
+          expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql(defaultReqBody);
+          expect(JSON.parse(item.response[0].body)).to.eql({ userId: 12 });
+
+          expect(item.response[1].name).to.eql('400');
+          expect(item.response[1].code).to.eql(400);
+          expect(item.response[1]._postman_previewlanguage).to.eql('json');
+          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql({
+            userDetail: { roleId: null, department: 'Admin 1', email: '' }
+          });
+          expect(JSON.parse(item.response[1].body)).to.eql({
+            hasErrorMessage: true,
+            errorMessage: 'Bad Request',
+            validationsErrors: [{ propertyName: 'RoleID', errorMessage: 'Can not be null' }]
+          });
+
+          expect(item.response[2].name).to.eql('404');
+          expect(item.response[2].code).to.eql(404);
+          expect(item.response[2]._postman_previewlanguage).to.eql('json');
+          expect(JSON.parse(item.response[2].originalRequest.body.raw)).to.eql({
+            userDetail: { roleId: 0, department: 'Admin 0', email: '123@gmail.com' }
+          });
+          expect(JSON.parse(item.response[2].body)).to.eql({ message: 'AddUserDetailsCommand : User Role Not Found' });
+
+          expect(item.response[3].name).to.eql('409');
+          expect(item.response[3].code).to.eql(409);
+          expect(item.response[3]._postman_previewlanguage).to.eql('json');
+          expect(JSON.parse(item.response[3].originalRequest.body.raw)).to.eql({
+            userDetail: { roleId: 1, department: 'Admin 1', email: '123@gmail.com' }
+          });
+          expect(JSON.parse(item.response[3].body)).to.eql({ message: 'AddUserDetailsCommand : Duplicate' });
+
+          expect(item.response[4].name).to.eql('500');
+          expect(item.response[4].code).to.eql(500);
+          expect(item.response[4]._postman_previewlanguage).to.eql('json');
+          expect(JSON.parse(item.response[4].originalRequest.body.raw)).to.eql({
+            userDetail: { roleId: 0, department: null, email: null }
+          });
+          expect(JSON.parse(item.response[4].body)).to.eql({ message: 'AddUserDetailsCommand : System Error message' });
+          done();
+        });
+    });
+  });
+
+  it('[Github #11884] Should not contain duplicate variables created from requests path', function (done) {
+    const openapi = fs.readFileSync(duplicateCollectionVars, 'utf8');
+    Converter.convertV2({ type: 'string', data: openapi }, { parametersResolution: 'Example' },
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output.length).to.equal(1);
+        expect(conversionResult.output[0].type).to.equal('collection');
+        expect(conversionResult.output[0].data).to.have.property('info');
+        expect(conversionResult.output[0].data).to.have.property('item');
+        expect(conversionResult.output[0].data).to.have.property('variable');
+        expect(conversionResult.output[0].data.variable).to.have.lengthOf(2);
+        expect(conversionResult.output[0].data.variable[0]).to.have.property('key', 'baseUrl');
+        expect(conversionResult.output[0].data.variable[1]).to.have.property('key', 'MyParam');
+        done();
+      });
   });
 });

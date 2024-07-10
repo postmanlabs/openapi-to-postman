@@ -2,7 +2,10 @@
 // TODO: REMOVE THIS ☝🏻
 
 const _ = require('lodash'),
-  sdk = require('postman-collection'),
+  { Header } = require('postman-collection/lib/collection/header'),
+  { QueryParam } = require('postman-collection/lib/collection/query-param'),
+  { Url } = require('postman-collection/lib/collection/url'),
+  { Variable } = require('postman-collection/lib/collection/variable'),
   async = require('async'),
   crypto = require('crypto'),
   schemaFaker = require('../assets/json-schema-faker.js'),
@@ -853,9 +856,9 @@ function checkContentTypeHeader (headers, transactionPathPrefix, schemaPathPrefi
  */
 function generateSdkParam (param, location) {
   const sdkElementMap = {
-    'query': sdk.QueryParam,
-    'header': sdk.Header,
-    'path': sdk.Variable
+    'query': QueryParam,
+    'header': Header,
+    'path': Variable
   };
 
   let generatedParam = {
@@ -1012,7 +1015,7 @@ function convertToPmCollectionVariables (serverVariables, keyName, serverUrl = '
   if (serverVariables) {
     _.forOwn(serverVariables, (value, key) => {
       let description = getParameterDescription(value);
-      variables.push(new sdk.Variable({
+      variables.push(new Variable({
         key: key,
         value: value.default || '',
         description: description
@@ -1020,7 +1023,7 @@ function convertToPmCollectionVariables (serverVariables, keyName, serverUrl = '
     });
   }
   if (keyName) {
-    variables.push(new sdk.Variable({
+    variables.push(new Variable({
       key: keyName,
       value: serverUrl,
       type: 'string'
@@ -2535,7 +2538,7 @@ module.exports = {
       queryParams = [...(requestUrl.query || [])];
 
       // SDK URL object. Get raw string representation.
-      requestUrl = (new sdk.Url(requestUrl)).toString();
+      requestUrl = (new Url(requestUrl)).toString();
     }
 
     // 1. Look at transaction.request.URL + method, and find matching request from schema

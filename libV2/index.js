@@ -1,6 +1,6 @@
 /* eslint-disable one-var */
 const _ = require('lodash'),
-  sdk = require('postman-collection'),
+  { Collection } = require('postman-collection/lib/collection/collection'),
   GraphLib = require('graphlib'),
   generateSkeletonTreeFromOpenAPI = require('./helpers/collection/generateSkeletionTreeFromOpenAPI'),
   generateCollectionFromOpenAPI = require('./helpers/collection/generateCollectionFromOpenAPI'),
@@ -45,7 +45,7 @@ module.exports = {
         case 'collection': {
           // dummy collection to be generated.
           const { data, variables } = generateCollectionFromOpenAPI(context, node);
-          collection = new sdk.Collection(data);
+          collection = new Collection(data);
 
           collection = collection.toJSON();
 
@@ -212,6 +212,11 @@ module.exports = {
         default: break;
       }
     });
+
+    // Remove duplicate variables as different requests could end up creating same variables
+    if (!_.isEmpty(collection.variable)) {
+      collection.variable = _.uniqBy(collection.variable, 'key');
+    }
 
     return cb(null, {
       result: true,
