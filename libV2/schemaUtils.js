@@ -1659,15 +1659,17 @@ let QUERYPARAM = 'query',
       };
     }
 
-    if (requestContent[URLENCODED]) {
-      return resolveUrlEncodedRequestBodyForPostmanRequest(context, requestContent[URLENCODED]);
+    for (const contentType in requestContent) {
+      if (contentType === URLENCODED) {
+        return resolveUrlEncodedRequestBodyForPostmanRequest(context, requestContent[contentType]);
+      }
+      else if (contentType === FORM_DATA) {
+        return resolveFormDataRequestBodyForPostmanRequest(context, requestContent[contentType]);
+      }
+      else {
+        return resolveRawModeRequestBodyForPostmanRequest(context, requestContent);
+      }
     }
-
-    if (requestContent[FORM_DATA]) {
-      return resolveFormDataRequestBodyForPostmanRequest(context, requestContent[FORM_DATA]);
-    }
-
-    return resolveRawModeRequestBodyForPostmanRequest(context, requestContent);
   },
 
   resolvePathItemParams = (context, operationParam, pathParam) => {
