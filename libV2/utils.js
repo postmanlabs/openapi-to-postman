@@ -1,5 +1,6 @@
-const sdk = require('postman-collection'),
-  _ = require('lodash'),
+const _ = require('lodash'),
+  { Item } = require('postman-collection/lib/collection/item'),
+  { Response } = require('postman-collection/lib/collection/response'),
 
   // This is the default collection name if one can't be inferred from the OpenAPI spec
   COLLECTION_NAME = 'Imported from OpenAPI',
@@ -30,7 +31,7 @@ const sdk = require('postman-collection'),
     response.code = response.code.replace(/X|x/g, '0');
     response.code = response.code === 'default' ? 500 : _.toSafeInteger(response.code);
 
-    let sdkResponse = new sdk.Response({
+    let sdkResponse = new Response({
       name: response.name,
       code: response.code,
       header: response.headers,
@@ -50,7 +51,7 @@ const sdk = require('postman-collection'),
     return sdkResponse;
   },
   generateRequestItemObject = (requestObject) => {
-    const requestItem = new sdk.Item(requestObject),
+    const requestItem = new Item(requestObject),
       queryParams = _.get(requestObject, 'request.params.queryParams'),
       pathParams = _.get(requestObject, 'request.params.pathParams', []),
       headers = _.get(requestObject, 'request.headers', []),

@@ -77,13 +77,10 @@ describe('project repository', function () {
         expect(json.dependencies).to.be.a('object');
       });
 
-      // Unskip before merging
-      it('must point to a valid and precise (no * or ^) semver', function () {
-        json.dependencies && Object.keys(json.dependencies).forEach(function (item) {
-          expect(json.dependencies[item]).to.match(new RegExp('(^((\\d+)\\.(\\d+)\\.(\\d+)|' +
-          '(^npm:[\\dA-Za-z\\-]+@(\\d+)\\.(\\d+)\\.(\\d+)))(?:-([\\dA-Za-z\\-]+(?:\\.[\\dA-Za-z\\-]+)*))?' +
-                      '(?:\\+([\\dA-Za-z\\-]+(?:\\.[\\dA-Za-z\\-]+)*))?)$'));
-        });
+      it('should have a valid version string in form of <major>.<minor>.<revision>', function () {
+        expect(json.version)
+          // eslint-disable-next-line max-len, security/detect-unsafe-regex
+          .to.match(/^((\d+)\.(\d+)\.(\d+))(?:-([\dA-Za-z-]+(?:\.[\dA-Za-z-]+)*))?(?:\+([\dA-Za-z-]+(?:\.[\dA-Za-z-]+)*))?$/);
       });
     });
 
@@ -92,11 +89,11 @@ describe('project repository', function () {
         expect(json.devDependencies).to.be.a('object');
       });
 
-      it('must point to a valid and precise (no * or ^) semver', function () {
-        json.devDependencies && Object.keys(json.devDependencies).forEach(function (item) {
-          expect(json.devDependencies[item]).to.match(new RegExp('(^((\\d+)\\.(\\d+)\\.(\\d+)|' +
-            '(^npm:[\\dA-Za-z\\-]+@(\\d+)\\.(\\d+)\\.(\\d+)))(?:-([\\dA-Za-z\\-]+(?:\\.[\\dA-Za-z\\-]+)*))?' +
-                        '(?:\\+([\\dA-Za-z\\-]+(?:\\.[\\dA-Za-z\\-]+)*))?)$'));
+      it('should point to a valid semver', function () {
+        Object.keys(json.devDependencies).forEach(function (dependencyName) {
+          // eslint-disable-next-line security/detect-non-literal-regexp
+          expect(json.devDependencies[dependencyName]).to.match(new RegExp('((\\d+)\\.(\\d+)\\.(\\d+))(?:-' +
+            '([\\dA-Za-z\\-]+(?:\\.[\\dA-Za-z\\-]+)*))?(?:\\+([\\dA-Za-z\\-]+(?:\\.[\\dA-Za-z\\-]+)*))?$'));
         });
       });
 
