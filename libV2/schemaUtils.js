@@ -1684,6 +1684,9 @@ let QUERYPARAM = 'query',
       else if (preferredRequestBodyType === 'form-data' && formDataRequestBody) {
         return formDataRequestBody;
       }
+      else if (preferredRequestBodyType === 'raw' && rawModeRequestBody) {
+        return rawModeRequestBody;
+      }
     }
 
     // If preferredRequestBodyType is not provided, return the first available request body
