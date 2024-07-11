@@ -1676,11 +1676,22 @@ let QUERYPARAM = 'query',
       }
     }
 
-    if (preferredRequestBodyType === 'x-www-form-urlencoded' && encodedRequestBody) {
+    // Check if preferredRequestBodyType is provided and return the corresponding request body if available
+    if (preferredRequestBodyType) {
+      if (preferredRequestBodyType === 'x-www-form-urlencoded' && encodedRequestBody) {
+        return encodedRequestBody;
+      }
+      else if (preferredRequestBodyType === 'form-data' && formDataRequestBody) {
+        return formDataRequestBody;
+      }
+    }
+
+    // If preferredRequestBodyType is not provided, return the first available request body
+    if (encodedRequestBody) {
       return encodedRequestBody;
     }
-    else if (preferredRequestBodyType === 'form-data' && formDataRequestBody) {
-      return encodedRequestBody;
+    else if (formDataRequestBody) {
+      return formDataRequestBody;
     }
     else {
       return rawModeRequestBody;
