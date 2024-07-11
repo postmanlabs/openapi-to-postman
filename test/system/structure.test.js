@@ -237,7 +237,7 @@ const optionIds = [
       name: 'Select request body type',
       type: 'enum',
       default: 'x-www-form-urlencoded',
-      availableOptions: ['x-www-form-urlencoded', 'form-data', 'Raw'],
+      availableOptions: ['x-www-form-urlencoded', 'form-data', 'raw'],
       description: 'When there are multiple content-types defined in the request body of OpenAPI, select the ' +
         'preferred option content-type as request body.',
       external: true,
