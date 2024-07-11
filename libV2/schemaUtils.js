@@ -1645,7 +1645,8 @@ let QUERYPARAM = 'query',
       formDataRequestBody,
       rawModeRequestBody;
 
-    const { preferredRequestBodyType } = context.computedOptions;
+    const { preferredRequestBodyType: optionRequestBodyType } = context.computedOptions,
+      preferredRequestBodyType = optionRequestBodyType || 'x-www-form-urlencoded';
 
     if (!requestBody) {
       return requestBody;
@@ -1667,12 +1668,21 @@ let QUERYPARAM = 'query',
     for (const contentType in requestContent) {
       if (contentType === URLENCODED) {
         encodedRequestBody = resolveUrlEncodedRequestBodyForPostmanRequest(context, requestContent[contentType]);
+        if (preferredRequestBodyType === 'first-listed') {
+          return encodedRequestBody;
+        }
       }
       else if (contentType === FORM_DATA) {
         formDataRequestBody = resolveFormDataRequestBodyForPostmanRequest(context, requestContent[contentType]);
+        if (preferredRequestBodyType === 'first-listed') {
+          return formDataRequestBody;
+        }
       }
       else {
         rawModeRequestBody = resolveRawModeRequestBodyForPostmanRequest(context, requestContent);
+        if (preferredRequestBodyType === 'first-listed') {
+          return rawModeRequestBody;
+        }
       }
     }
 
@@ -1689,16 +1699,8 @@ let QUERYPARAM = 'query',
       }
     }
 
-    // If preferredRequestBodyType is not provided, return the first available request body
-    if (encodedRequestBody) {
-      return encodedRequestBody;
-    }
-    else if (formDataRequestBody) {
-      return formDataRequestBody;
-    }
-    else {
-      return rawModeRequestBody;
-    }
+    // Fallback
+    return rawModeRequestBody;
   },
 
   resolvePathItemParams = (context, operationParam, pathParam) => {
@@ -2267,6 +2269,7 @@ module.exports = {
   },
 
   resolveResponseForPostmanRequest,
+  resolveRequestBodyForPostmanRequest,
   resolveRefFromSchema,
   resolveSchema
 };
