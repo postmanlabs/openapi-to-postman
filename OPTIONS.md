@@ -22,3 +22,4 @@ enableOptionalParameters|boolean|-|true|Optional parameters aren't selected in t
 keepImplicitHeaders|boolean|-|false|Whether to keep implicit headers from the OpenAPI specification, which are removed by default.|CONVERSION|v2, v1
 includeDeprecated|boolean|-|true|Select whether to include deprecated operations, parameters, and properties in generated collection or not|CONVERSION, VALIDATION|v2, v1
 alwaysInheritAuthentication|boolean|-|false|Whether authentication details should be included on every request, or always inherited from the collection.|CONVERSION|v2, v1
+preferredRequestBodyType|enum|x-www-form-urlencoded, form-data, raw|x-www-form-urlencoded|When there are multiple content-types defined in the request body of OpenAPI, select the preferred option content-type as request body.|CONVERSION|v2, v1

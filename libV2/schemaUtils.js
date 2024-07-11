@@ -1640,7 +1640,12 @@ let QUERYPARAM = 'query',
 
   resolveRequestBodyForPostmanRequest = (context, operationItem) => {
     let requestBody = operationItem.requestBody,
-      requestContent;
+      requestContent,
+      encodedRequestBody,
+      formDataRequestBody,
+      rawModeRequestBody;
+
+    const { preferredRequestBodyType } = context.computedOptions;
 
     if (!requestBody) {
       return requestBody;
@@ -1659,15 +1664,27 @@ let QUERYPARAM = 'query',
       };
     }
 
-    if (requestContent[URLENCODED]) {
-      return resolveUrlEncodedRequestBodyForPostmanRequest(context, requestContent[URLENCODED]);
+    for (const contentType in requestContent) {
+      if (contentType === URLENCODED) {
+        encodedRequestBody = resolveUrlEncodedRequestBodyForPostmanRequest(context, requestContent[contentType]);
+      }
+      else if (contentType === FORM_DATA) {
+        formDataRequestBody = resolveFormDataRequestBodyForPostmanRequest(context, requestContent[contentType]);
+      }
+      else {
+        rawModeRequestBody = resolveRawModeRequestBodyForPostmanRequest(context, requestContent);
+      }
     }
 
-    if (requestContent[FORM_DATA]) {
-      return resolveFormDataRequestBodyForPostmanRequest(context, requestContent[FORM_DATA]);
+    if (preferredRequestBodyType === 'x-www-form-urlencoded' && encodedRequestBody) {
+      return encodedRequestBody;
     }
-
-    return resolveRawModeRequestBodyForPostmanRequest(context, requestContent);
+    else if (preferredRequestBodyType === 'form-data' && formDataRequestBody) {
+      return encodedRequestBody;
+    }
+    else {
+      return rawModeRequestBody;
+    }
   },
 
   resolvePathItemParams = (context, operationParam, pathParam) => {
