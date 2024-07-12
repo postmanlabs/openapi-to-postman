@@ -101,7 +101,7 @@ describe('resolveRequestBodyForPostmanRequest function', function () {
     expect(result.body.mode).to.equal('urlencoded');
   });
 
-  it('should return raw request body as fallback when preferredRequestBodyType is not a valid option', function () {
+  it('should return encoded request body as fallback when preferredRequestBodyType is not a valid option', function () {
     const contextTest = {
         concreteUtils,
         schemaCache: {},
@@ -114,7 +114,7 @@ describe('resolveRequestBodyForPostmanRequest function', function () {
       operationItemTest = operationItem.put,
       result = resolveRequestBodyForPostmanRequest(contextTest, operationItemTest);
 
-    expect(result.body.mode).to.equal('raw');
+    expect(result.body.mode).to.equal('urlencoded');
   });
 
   it('should return encoded request body when preferredRequestBodyType is x-www-form-urlencoded', function () {
