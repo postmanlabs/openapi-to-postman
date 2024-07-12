@@ -1699,8 +1699,17 @@ let QUERYPARAM = 'query',
       }
     }
 
-    // Fallback
-    return rawModeRequestBody;
+    // Legacy fallback
+    // If preferredRequestBodyType is not provided, return the first available request body
+    if (encodedRequestBody) {
+      return encodedRequestBody;
+    }
+    else if (formDataRequestBody) {
+      return formDataRequestBody;
+    }
+    else {
+      return rawModeRequestBody;
+    }
   },
 
   resolvePathItemParams = (context, operationParam, pathParam) => {
