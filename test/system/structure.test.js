@@ -236,7 +236,7 @@ const optionIds = [
     }, preferredRequestBodyType: {
       name: 'Select request body type',
       type: 'enum',
-      default: 'x-www-form-urlencoded',
+      default: 'first-listed',
       availableOptions: ['x-www-form-urlencoded', 'form-data', 'raw', 'first-listed'],
       description: 'When there are multiple content-types defined in the request body of OpenAPI, the conversion ' +
         'selects the preferred option content-type as request body.If "first-listed" is set, the first ' +
