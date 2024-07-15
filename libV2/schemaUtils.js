@@ -1646,7 +1646,7 @@ let QUERYPARAM = 'query',
       rawModeRequestBody;
 
     const { preferredRequestBodyType: optionRequestBodyType } = context.computedOptions,
-      preferredRequestBodyType = optionRequestBodyType || 'x-www-form-urlencoded';
+      preferredRequestBodyType = optionRequestBodyType || 'first-listed';
 
     if (!requestBody) {
       return requestBody;
@@ -1694,22 +1694,9 @@ let QUERYPARAM = 'query',
       else if (preferredRequestBodyType === 'form-data' && formDataRequestBody) {
         return formDataRequestBody;
       }
-      else if (preferredRequestBodyType === 'raw' && rawModeRequestBody) {
-        return rawModeRequestBody;
-      }
     }
 
-    // Legacy fallback
-    // If preferredRequestBodyType is not provided, return the first available request body
-    if (encodedRequestBody) {
-      return encodedRequestBody;
-    }
-    else if (formDataRequestBody) {
-      return formDataRequestBody;
-    }
-    else {
-      return rawModeRequestBody;
-    }
+    return rawModeRequestBody;
   },
 
   resolvePathItemParams = (context, operationParam, pathParam) => {

@@ -86,7 +86,7 @@ const {
 
 describe('resolveRequestBodyForPostmanRequest function', function () {
 
-  it('should return encoded request body when preferredRequestBodyType is not set', function () {
+  it('should return first-listed request body when preferredRequestBodyType is not set', function () {
     const contextTest = {
         concreteUtils,
         schemaCache: {},
@@ -98,10 +98,10 @@ describe('resolveRequestBodyForPostmanRequest function', function () {
       operationItemTest = operationItem.put,
       result = resolveRequestBodyForPostmanRequest(contextTest, operationItemTest);
 
-    expect(result.body.mode).to.equal('urlencoded');
+    expect(result.body.mode).to.equal('raw');
   });
 
-  it('should return encoded request body as fallback when preferredRequestBodyType is not a valid option', function () {
+  it('should return first-listed request body when preferredRequestBodyType is not a valid option', function () {
     const contextTest = {
         concreteUtils,
         schemaCache: {},
@@ -114,7 +114,7 @@ describe('resolveRequestBodyForPostmanRequest function', function () {
       operationItemTest = operationItem.put,
       result = resolveRequestBodyForPostmanRequest(contextTest, operationItemTest);
 
-    expect(result.body.mode).to.equal('urlencoded');
+    expect(result.body.mode).to.equal('raw');
   });
 
   it('should return encoded request body when preferredRequestBodyType is x-www-form-urlencoded', function () {

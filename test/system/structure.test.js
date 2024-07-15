@@ -241,7 +241,7 @@ const optionIds = [
       description: 'When there are multiple content-types defined in the request body of OpenAPI, the conversion ' +
         'selects the preferred option content-type as request body.If "first-listed" is set, the first ' +
         'content-type defined in the OpenAPI spec will be selected.',
-      external: true,
+      external: false,
       usage: ['CONVERSION']
     }
   };
