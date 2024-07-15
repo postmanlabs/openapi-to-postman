@@ -323,8 +323,8 @@ describe('getOptions', function() {
 describe('OPTIONS.md', function() {
   it('must contain all details of options', function () {
     const optionsDoc = fs.readFileSync('OPTIONS.md', 'utf-8'),
-      v1Options = getOptions(undefined, { external: true, moduleVersion: 'v1' }),
-      v2Options = getOptions(undefined, { external: true, moduleVersion: 'v2' }),
+      v1Options = getOptions(undefined, { moduleVersion: 'v1' }),
+      v2Options = getOptions(undefined, { moduleVersion: 'v2' }),
       allOptions = _.uniqBy(_.concat(v1Options, v2Options), 'id');
 
     expect(optionsDoc).to.eql(generateOptionsDoc(allOptions));
