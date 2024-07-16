@@ -479,11 +479,11 @@ let QUERYPARAM = 'query',
    * @param {Object} context - Global context
    * @param {Object} schema - Schema that is to be resolved
    * @param {Number} [stack] - Current recursion depth
-   * @param {String} resolveFor - For which action this resoltion is to be done
+   * @param {String} resolveFor - For which action this resolution is to be done
    * @param {Object} seenRef - Map of all the references that have been resolved
    * @todo: Explore using a directed graph/tree for maintaining seen ref
    *
-   * @returns {Object} Returns the object that staisfies the schema
+   * @returns {Object} Returns the object that satisfies the schema
    */
   resolveSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}) => {
     if (!schema) {
@@ -574,6 +574,11 @@ let QUERYPARAM = 'query',
         // Skip property resolution if it's not schema object
         if (!_.isObject(property)) {
           return;
+        }
+
+        // Set type to binary
+        if (property.format === 'binary') {
+          property.type = 'binary';
         }
 
         if (

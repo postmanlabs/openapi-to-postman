@@ -1,0 +1,37 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Form Data - Binary - OpenAPI 3.0",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/uploadImage": {
+      "post": {
+        "summary": "uploads an image",
+        "description": "",
+        "operationId": "uploadFile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "inputfile": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "The file to be uploaded."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    }
+  }
+}
