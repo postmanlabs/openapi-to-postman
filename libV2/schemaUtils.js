@@ -1640,7 +1640,13 @@ let QUERYPARAM = 'query',
 
   resolveRequestBodyForPostmanRequest = (context, operationItem) => {
     let requestBody = operationItem.requestBody,
-      requestContent;
+      requestContent,
+      encodedRequestBody,
+      formDataRequestBody,
+      rawModeRequestBody;
+
+    const { preferredRequestBodyType: optionRequestBodyType } = context.computedOptions,
+      preferredRequestBodyType = optionRequestBodyType || 'first-listed';
 
     if (!requestBody) {
       return requestBody;
@@ -1659,15 +1665,38 @@ let QUERYPARAM = 'query',
       };
     }
 
-    if (requestContent[URLENCODED]) {
-      return resolveUrlEncodedRequestBodyForPostmanRequest(context, requestContent[URLENCODED]);
+    for (const contentType in requestContent) {
+      if (contentType === URLENCODED) {
+        encodedRequestBody = resolveUrlEncodedRequestBodyForPostmanRequest(context, requestContent[contentType]);
+        if (preferredRequestBodyType === 'first-listed') {
+          return encodedRequestBody;
+        }
+      }
+      else if (contentType === FORM_DATA) {
+        formDataRequestBody = resolveFormDataRequestBodyForPostmanRequest(context, requestContent[contentType]);
+        if (preferredRequestBodyType === 'first-listed') {
+          return formDataRequestBody;
+        }
+      }
+      else {
+        rawModeRequestBody = resolveRawModeRequestBodyForPostmanRequest(context, requestContent);
+        if (preferredRequestBodyType === 'first-listed') {
+          return rawModeRequestBody;
+        }
+      }
     }
 
-    if (requestContent[FORM_DATA]) {
-      return resolveFormDataRequestBodyForPostmanRequest(context, requestContent[FORM_DATA]);
+    // Check if preferredRequestBodyType is provided and return the corresponding request body if available
+    if (preferredRequestBodyType) {
+      if (preferredRequestBodyType === 'x-www-form-urlencoded' && encodedRequestBody) {
+        return encodedRequestBody;
+      }
+      else if (preferredRequestBodyType === 'form-data' && formDataRequestBody) {
+        return formDataRequestBody;
+      }
     }
 
-    return resolveRawModeRequestBodyForPostmanRequest(context, requestContent);
+    return rawModeRequestBody;
   },
 
   resolvePathItemParams = (context, operationParam, pathParam) => {
@@ -2236,6 +2265,7 @@ module.exports = {
   },
 
   resolveResponseForPostmanRequest,
+  resolveRequestBodyForPostmanRequest,
   resolveRefFromSchema,
   resolveSchema
 };

@@ -30,7 +30,8 @@ const optionIds = [
     'includeDeprecated',
     'parametersResolution',
     'disabledParametersValidation',
-    'alwaysInheritAuthentication'
+    'alwaysInheritAuthentication',
+    'preferredRequestBodyType'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -38,7 +39,7 @@ const optionIds = [
       type: 'boolean',
       default: true,
       description: 'Importing will collapse all folders that have only one child element and lack ' +
-      'persistent folder-level data.'
+        'persistent folder-level data.'
     },
     requestParametersResolution: {
       name: 'Request parameter generation',
@@ -46,9 +47,9 @@ const optionIds = [
       default: 'Schema',
       availableOptions: ['Example', 'Schema'],
       description: 'Select whether to generate the request parameters based on the' +
-      ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the' +
-      ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
-      ' in the schema.'
+        ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the' +
+        ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
+        ' in the schema.'
     },
     exampleParametersResolution: {
       name: 'Response parameter generation',
@@ -56,9 +57,9 @@ const optionIds = [
       default: 'Example',
       availableOptions: ['Example', 'Schema'],
       description: 'Select whether to generate the response parameters based on the' +
-      ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the' +
-      ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
-      ' in the schema.'
+        ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the' +
+        ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
+        ' in the schema.'
     },
     folderStrategy: {
       name: 'Folder organization',
@@ -88,8 +89,8 @@ const optionIds = [
       default: 'Fallback',
       availableOptions: ['Url', 'Fallback'],
       description: 'Determines how the requests inside the generated collection will be named.' +
-      ' If “Fallback” is selected, the request will be named after one of the following schema' +
-      ' values: `summary`, `operationId`, `description`, `url`.'
+        ' If “Fallback” is selected, the request will be named after one of the following schema' +
+        ' values: `summary`, `operationId`, `description`, `url`.'
     },
     schemaFaker: {
       name: 'Enable Schema Faking',
@@ -210,9 +211,9 @@ const optionIds = [
       default: 'Schema',
       availableOptions: ['Example', 'Schema'],
       description: 'Select whether to generate the request and response parameters based on the' +
-      ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the' +
-      ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
-      ' in the schema.',
+        ' [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the' +
+        ' [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject)' +
+        ' in the schema.',
       external: true,
       usage: ['CONVERSION']
     },
@@ -231,6 +232,16 @@ const optionIds = [
       description: 'Whether authentication details should be included on every request, or always inherited from ' +
         'the collection.',
       external: true,
+      usage: ['CONVERSION']
+    }, preferredRequestBodyType: {
+      name: 'Select request body type',
+      type: 'enum',
+      default: 'first-listed',
+      availableOptions: ['x-www-form-urlencoded', 'form-data', 'raw', 'first-listed'],
+      description: 'When there are multiple content-types defined in the request body of OpenAPI, the conversion ' +
+        'selects the preferred option content-type as request body.If "first-listed" is set, the first ' +
+        'content-type defined in the OpenAPI spec will be selected.',
+      external: false,
       usage: ['CONVERSION']
     }
   };
@@ -312,8 +323,8 @@ describe('getOptions', function() {
 describe('OPTIONS.md', function() {
   it('must contain all details of options', function () {
     const optionsDoc = fs.readFileSync('OPTIONS.md', 'utf-8'),
-      v1Options = getOptions(undefined, { external: true, moduleVersion: 'v1' }),
-      v2Options = getOptions(undefined, { external: true, moduleVersion: 'v2' }),
+      v1Options = getOptions(undefined, { moduleVersion: 'v1' }),
+      v2Options = getOptions(undefined, { moduleVersion: 'v2' }),
       allOptions = _.uniqBy(_.concat(v1Options, v2Options), 'id');
 
     expect(optionsDoc).to.eql(generateOptionsDoc(allOptions));
