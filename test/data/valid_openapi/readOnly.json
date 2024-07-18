@@ -20,7 +20,6 @@
 								"schema": {
 									"type": "array",
 									"items": {
-										"type": "object",
 										"$ref": "#/components/schemas/Pet"
 									}
 								}
@@ -34,20 +33,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"properties": {
-									"id": {
-										"type": "integer",
-										"format": "int64",
-										"readOnly": true
-									},
-									"name": {
-										"type": "string"
-									},
-									"tag": {
-										"type": "string",
-										"writeOnly": true
-									}
-								}
+								"$ref": "#/components/schemas/Pet"
 							}
 						}
 					}

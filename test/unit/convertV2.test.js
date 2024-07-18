@@ -110,7 +110,9 @@ const expect = require('chai').expect,
   multiExampleResponseCodeMatching =
     path.join(__dirname, VALID_OPENAPI_PATH, '/multiExampleResponseCodeMatching.json'),
   duplicateCollectionVars =
-    path.join(__dirname, VALID_OPENAPI_PATH, '/duplicateCollectionVars.json');
+    path.join(__dirname, VALID_OPENAPI_PATH, '/duplicateCollectionVars.json'),
+  readOnlySpec =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/readOnly.json');
 
 
 describe('The convert v2 Function', function() {
@@ -2819,4 +2821,20 @@ describe('The convert v2 Function', function() {
         done();
       });
   });
+
+  it('[Github #12255] Should respects readOnly and writeOnly properties in requestBody or response schema',
+    function(done) {
+      var openapi = fs.readFileSync(readOnlySpec, 'utf8'),
+        options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+      Converter.convert({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+        let requestBody = conversionResult.output[0].data.item[0].item[1].request.body.raw,
+          responseBody = conversionResult.output[0].data.item[0].item[0].response[0].body;
+        expect(err).to.be.null;
+        expect(requestBody).to.equal('{\n  "name": "<string>",\n  "tag": "<string>"\n}');
+        expect(responseBody).to.equal('[\n  {\n    "id": "<long>",\n    "name": "<string>"\n  }' +
+        ',\n  {\n    "id": "<long>",\n    "name": "<string>"\n  }\n]');
+
+        done();
+      });
+    });
 });
