@@ -269,16 +269,16 @@ let QUERYPARAM = 'query',
    * @param {Object} context - Global context object
    * @param {Object} readOnlyPropCache - readOnly properties cache to be merged
    * @param {Object} writeOnlyPropCache - writeOnly properties cache to be merged
-   * @param {Object} currentPath - Current path being resolved relative to original schema
+   * @param {Object} currentPath - Current path (json-pointer) being resolved relative to original schema
    * @returns {void}
    */
   mergeReadWritePropCache = (context, readOnlyPropCache, writeOnlyPropCache, currentPath = '') => {
     _.forOwn(readOnlyPropCache, (value, key) => {
-      context.readOnlyPropCache[`${currentPath}${key}`] = true;
+      context.readOnlyPropCache[utils.mergeJsonPath(currentPath, key)] = true;
     });
 
     _.forOwn(writeOnlyPropCache, (value, key) => {
-      context.writeOnlyPropCache[`${currentPath}${key}`] = true;
+      context.writeOnlyPropCache[utils.mergeJsonPath(currentPath, key)] = true;
     });
   },
 
@@ -487,7 +487,7 @@ let QUERYPARAM = 'query',
    * @param {Number} [stack] - Current recursion depth
    * @param {*} resolveFor - resolve refs for flow validation/conversion (value to be one of VALIDATION/CONVERSION)
    * @param {Object} seenRef - Map of all the references that have been resolved
-   * @param {String} currentPath - Current path being resolved relative to original schema
+   * @param {String} currentPath - Current path (json-pointer) being resolved relative to original schema
    *
    * @returns {Object} Resolved schema
    */
@@ -524,7 +524,7 @@ let QUERYPARAM = 'query',
    * @param {Number} [stack] - Current recursion depth
    * @param {String} resolveFor - For which action this resolution is to be done
    * @param {Object} seenRef - Map of all the references that have been resolved
-   * @param {String} currentPath - Current path being resolved relative to original schema
+   * @param {String} currentPath - Current path (json-pointer) being resolved relative to original schema
    * @todo: Explore using a directed graph/tree for maintaining seen ref
    *
    * @returns {Object} Returns the object that satisfies the schema
@@ -569,9 +569,9 @@ let QUERYPARAM = 'query',
         return _resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef), currentPath);
       }
 
-      return { [compositeKeyword]: _.map(compositeSchema, (schemaElement) => {
+      return { [compositeKeyword]: _.map(compositeSchema, (schemaElement, index) => {
         return _resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef),
-          `${currentPath}.${compositeKeyword}`);
+          utils.addToJsonPath(currentPath, [compositeKeyword, index]));
       }) };
     }
 
@@ -664,16 +664,7 @@ let QUERYPARAM = 'query',
           return;
         }
 
-        const currentPropPath = `${currentPath}.properties.${propertyName}`;
-
-        // Keep track of readOnly and writeOnly properties to resolve request and responses accordingly later.
-        if (property.readOnly) {
-          context.readOnlyPropCache[currentPropPath] = true;
-        }
-
-        if (property.writeOnly) {
-          context.writeOnlyPropCache[currentPropPath] = true;
-        }
+        const currentPropPath = utils.addToJsonPath(currentPath, ['properties', propertyName]);
 
         resolvedSchemaProps[propertyName] = _resolveSchema(context, property, stack, resolveFor,
           _.cloneDeep(seenRef), currentPropPath);
@@ -685,7 +676,7 @@ let QUERYPARAM = 'query',
     // If schema is of type array
     else if (concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.array) && schema.items) {
       schema.items = _resolveSchema(context, schema.items, stack, resolveFor, _.cloneDeep(seenRef),
-        `${currentPath}.items`);
+        utils.addToJsonPath(currentPath, ['items']));
     }
     // Any properties to ignored should not be available in schema
     else if (_.every(SCHEMA_PROPERTIES_TO_EXCLUDE, (schemaKey) => { return !schema.hasOwnProperty(schemaKey); })) {
@@ -718,7 +709,7 @@ let QUERYPARAM = 'query',
     if (schema.hasOwnProperty('additionalProperties')) {
       schema.additionalProperties = _.isBoolean(schema.additionalProperties) ? schema.additionalProperties :
         _resolveSchema(context, schema.additionalProperties, stack, resolveFor, _.cloneDeep(seenRef),
-          `${currentPath}.additionalProperties`);
+          utils.addToJsonPath(currentPath, ['additionalProperties']));
       schema.type = schema.type || SCHEMA_TYPES.object;
     }
 
@@ -731,6 +722,15 @@ let QUERYPARAM = 'query',
           );
         }
       });
+    }
+
+    // Keep track of readOnly and writeOnly properties to resolve request and responses accordingly later.
+    if (schema.readOnly) {
+      context.readOnlyPropCache[currentPath] = true;
+    }
+
+    if (schema.writeOnly) {
+      context.writeOnlyPropCache[currentPath] = true;
     }
 
     return schema;
@@ -769,12 +769,14 @@ let QUERYPARAM = 'query',
 
     if (isResponseSchema) {
       _.forOwn(context.writeOnlyPropCache, (value, key) => {
-        _.unset(resolvedSchema, key.substring(1));
+        // We need to make sure to remove empty strings via _.compact that are added while forming json-pointer
+        _.unset(resolvedSchema, utils.getJsonPathArray(key));
       });
     }
     else {
       _.forOwn(context.readOnlyPropCache, (value, key) => {
-        _.unset(resolvedSchema, key.substring(1));
+        // We need to make sure to remove empty strings via _.compact that are added while forming json-pointer
+        _.unset(resolvedSchema, utils.getJsonPathArray(key));
       });
     }
 

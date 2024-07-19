@@ -112,7 +112,15 @@ const expect = require('chai').expect,
   duplicateCollectionVars =
     path.join(__dirname, VALID_OPENAPI_PATH, '/duplicateCollectionVars.json'),
   readOnlySpec =
-    path.join(__dirname, VALID_OPENAPI_PATH, '/readOnly.json');
+    path.join(__dirname, VALID_OPENAPI_PATH, '/readOnly.json'),
+  readOnlyRefSpec =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyRef.json'),
+  readOnlyAllOfSpec =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyAllOf.json'),
+  readOnlyOneOfSpec =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyOneOf.json'),
+  readOnlyNestedSpec =
+    path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyNested.json');
 
 
 describe('The convert v2 Function', function() {
@@ -2822,19 +2830,102 @@ describe('The convert v2 Function', function() {
       });
   });
 
-  it('[Github #12255] Should respects readOnly and writeOnly properties in requestBody or response schema',
-    function(done) {
+  describe('[Github #12255] Should handle readOnly and writeOnly correctly', function() {
+    it('when definition contains inline schemas', function(done) {
       var openapi = fs.readFileSync(readOnlySpec, 'utf8'),
         options = { schemaFaker: true, exampleParametersResolution: 'schema' };
       Converter.convert({ type: 'string', data: openapi }, options, (err, conversionResult) => {
-        let requestBody = conversionResult.output[0].data.item[0].item[1].request.body.raw,
-          responseBody = conversionResult.output[0].data.item[0].item[0].response[0].body;
+        let requestBody = JSON.parse(conversionResult.output[0].data.item[0].item[1].request.body.raw),
+          responseBody = JSON.parse(conversionResult.output[0].data.item[0].item[0].response[0].body);
         expect(err).to.be.null;
-        expect(requestBody).to.equal('{\n  "name": "<string>",\n  "tag": "<string>"\n}');
-        expect(responseBody).to.equal('[\n  {\n    "id": "<long>",\n    "name": "<string>"\n  }' +
-        ',\n  {\n    "id": "<long>",\n    "name": "<string>"\n  }\n]');
-
+        expect(requestBody).to.eql({ name: '<string>', tag: '<string>' });
+        expect(responseBody).to.eql([
+          { id: '<long>', name: '<string>' },
+          { id: '<long>', name: '<string>' }
+        ]);
         done();
       });
     });
+
+    it('when definition contains $ref in schemas', function(done) {
+      var openapi = fs.readFileSync(readOnlyRefSpec, 'utf8'),
+        options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+      Converter.convert({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+        let requestBody = JSON.parse(conversionResult.output[0].data.item[0].item[1].request.body.raw),
+          responseBody = JSON.parse(conversionResult.output[0].data.item[0].item[0].response[0].body);
+        expect(err).to.be.null;
+        expect(requestBody).to.eql({ name: '<string>', tag: '<string>' });
+        expect(responseBody).to.eql([
+          { id: '<long>', name: '<string>' },
+          { id: '<long>', name: '<string>' }
+        ]);
+        done();
+      });
+    });
+
+    it('when definition contains composite keyword "allOf" in schema', function(done) {
+      var openapi = fs.readFileSync(readOnlyAllOfSpec, 'utf8'),
+        options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+      Converter.convert({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+        let requestBody = JSON.parse(conversionResult.output[0].data.item[0].item[1].request.body.raw),
+          responseBody = JSON.parse(conversionResult.output[0].data.item[0].item[0].response[0].body);
+        expect(err).to.be.null;
+        expect(requestBody).to.eql({
+          name: '<string>', tag: '<string>',
+          'user.name': '<string>', 'user.tag': '<string>'
+        });
+        expect(responseBody).to.eql([
+          { id: '<long>', name: '<string>', 'user.id': '<long>', 'user.name': '<string>' },
+          { id: '<long>', name: '<string>', 'user.id': '<long>', 'user.name': '<string>' }
+        ]);
+        done();
+      });
+    });
+
+    it('when definition contains composite keyword "oneOf" in schema', function(done) {
+      var openapi = fs.readFileSync(readOnlyOneOfSpec, 'utf8'),
+        options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+      Converter.convert({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+        let requestBody = JSON.parse(conversionResult.output[0].data.item[0].item[1].request.body.raw),
+          responseBody = JSON.parse(conversionResult.output[0].data.item[0].item[0].response[0].body);
+        expect(err).to.be.null;
+        expect(requestBody).to.eql({
+          'user/name': '<string>', 'user/tag': '<string>'
+        });
+        expect(responseBody).to.eql([
+          { 'user/id': '<long>', 'user/name': '<string>' },
+          { 'user/id': '<long>', 'user/name': '<string>' }
+        ]);
+        done();
+      });
+    });
+
+    it('when definition contains schemas with nested array and object schema types', function(done) {
+      var openapi = fs.readFileSync(readOnlyNestedSpec, 'utf8'),
+        options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+      Converter.convert({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+        let requestBody = JSON.parse(conversionResult.output[0].data.item[0].item[1].request.body.raw),
+          responseBody = JSON.parse(conversionResult.output[0].data.item[0].item[0].response[0].body);
+        expect(err).to.be.null;
+
+        // Assert readOnly property to not be in request body and other/writeOnly properties to be in response body
+        expect(requestBody).to.not.have.property('id');
+        expect(requestBody).to.have.property('name', '<string>');
+        expect(requestBody).to.have.property('tag', '<string>');
+        expect(requestBody.address).to.not.have.property('addressCode');
+        expect(requestBody.address).to.have.property('city', '<string>');
+        expect(requestBody.address).to.have.property('state', '<string>');
+
+        // Assert writeOnly property to not be in request body and other/readOnly properties to be in response body
+        expect(responseBody).to.have.property('name', '<string>');
+        expect(responseBody.pet).to.have.property('id', '<long>');
+        expect(responseBody.pet).to.have.property('name', '<string>');
+        expect(responseBody.pet).to.not.have.property('tag', '<string>');
+        expect(responseBody.pet.address).to.have.property('addressCode');
+        expect(responseBody.pet.address).to.have.property('city', '<string>');
+        expect(responseBody.pet.address).to.not.have.property('state', '<string>');
+        done();
+      });
+    });
+  });
 });
