@@ -85,7 +85,8 @@ schemaFaker.option({
   maxItems: 20, // limit on maximum number of items faked for (type: array)
   useDefaultValue: true,
   ignoreMissingRefs: true,
-  avoidExampleItemsLength: true // option to avoid validating type array schema example's minItems and maxItems props.
+  avoidExampleItemsLength: true, // option to avoid validating type array schema example's minItems and maxItems props.
+  failOnInvalidFormat: false
 });
 
 /**
