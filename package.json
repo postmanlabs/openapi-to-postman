@@ -124,7 +124,7 @@
     "js-yaml": "4.1.0",
     "json-schema-merge-allof": "0.8.1",
     "lodash": "4.17.21",
-    "neotraverse": "0.6.14",
+    "neotraverse": "0.6.15",
     "oas-resolver-browser": "2.5.6",
     "object-hash": "3.0.0",
     "graphlib": "2.1.8",
