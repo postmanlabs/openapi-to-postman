@@ -4,8 +4,6 @@
 
 ## [v4.23.1] - 2024-07-22
 
-## [v4.23.0] - 2024-07-22
-
 ### Added
 
 -   Conversion - Added option to set preferred request body content-type and use the first mentioned content-type as request body.
@@ -14,10 +12,6 @@
 
 -   Fixed issue with getOptions() API where default module version was still v1.
 -   Fix to convert "format:binary" to "type:file" for requests with formdata body.
-
-### Chore
-
--   Replace traverse with neotraverse to reduce related dependencies.
 
 ## [v4.22.0] - 2024-07-10
 
@@ -645,9 +639,7 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 [Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.23.1...HEAD
 
-[v4.23.1]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.23.0...v4.23.1
-
-[v4.23.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.22.0...v4.23.0
+[v4.23.1]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.22.0...v4.23.1
 
 [v4.22.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.21.0...v4.22.0
 
