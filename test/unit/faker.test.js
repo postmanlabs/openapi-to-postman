@@ -13,7 +13,8 @@ describe('JSON SCHEMA FAKER TESTS', function () {
       useDefaultValue: true,
       useExamplesValue: true,
       ignoreMissingRefs: true,
-      avoidExampleItemsLength: false
+      avoidExampleItemsLength: false,
+      failOnInvalidFormat: false
     });
   });
 
@@ -27,7 +28,8 @@ describe('JSON SCHEMA FAKER TESTS', function () {
       maxItems: 20,
       useDefaultValue: true,
       ignoreMissingRefs: true,
-      avoidExampleItemsLength: true
+      avoidExampleItemsLength: true,
+      failOnInvalidFormat: false
     });
   });
 
