@@ -4,6 +4,19 @@
 
 ## [v4.23.0] - 2024-07-22
 
+### Added
+
+-   Conversion - Added option to set preferred request body content-type and use the first mentioned content-type as request body.
+
+### Fixed
+
+-   Fixed issue with getOptions() API where default module version was still v1.
+-   Fix to convert "format:binary" to "type:file" for requests with formdata body.
+
+### Chore
+
+-   Replace traverse with neotraverse to reduce related dependencies.
+
 ## [v4.22.0] - 2024-07-10
 
 ### Chore
