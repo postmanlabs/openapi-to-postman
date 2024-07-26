@@ -111,7 +111,8 @@ const expect = require('chai').expect,
     path.join(__dirname, VALID_OPENAPI_PATH, '/multiExampleResponseCodeMatching.json'),
   duplicateCollectionVars =
     path.join(__dirname, VALID_OPENAPI_PATH, '/duplicateCollectionVars.json'),
-  issue795 = path.join(__dirname, VALID_OPENAPI_PATH, '/form-binary-file.json');
+  issue795 = path.join(__dirname, VALID_OPENAPI_PATH, '/form-binary-file.json'),
+  issue817 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#817-enum.yaml');
 
 
 describe('The convert v2 Function', function() {
@@ -2841,4 +2842,64 @@ describe('The convert v2 Function', function() {
       done();
     });
   });
+
+  it('[Github #817] Should convert using Example parameter resolution', function (done) {
+    var openapi = fs.readFileSync(issue817, 'utf8'),
+      reqQuery;
+    Converter.convertV2({ type: 'string', data: openapi }, {
+      requestNameSource: 'Fallback',
+      indentCharacter: 'Space',
+      collapseFolders: true,
+      optimizeConversion: true,
+      parametersResolution: 'Example'
+    }, (err, conversionResult) => {
+
+      reqQuery = conversionResult.output[0].data.item[0].item[0].item[0].request.url.query[0];
+
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(reqQuery.value).to.equal('created_at');
+      done();
+    });
+  });
+
+  it('[Github #817] Should convert using Schema parameter resolution', function (done) {
+    var openapi = fs.readFileSync(issue817, 'utf8'),
+      reqQuery;
+    Converter.convertV2({ type: 'string', data: openapi }, {
+      requestNameSource: 'Fallback',
+      indentCharacter: 'Space',
+      collapseFolders: true,
+      optimizeConversion: true,
+      parametersResolution: 'Schema'
+    }, (err, conversionResult) => {
+
+      reqQuery = conversionResult.output[0].data.item[0].item[0].item[0].request.url.query[0];
+
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(reqQuery.value).to.equal('<string>');
+      done();
+    });
+  });
+
+  it('[Github #817] Should fallback to default Schema parameter resolution', function (done) {
+    var openapi = fs.readFileSync(issue817, 'utf8'),
+      reqQuery;
+    Converter.convertV2({ type: 'string', data: openapi }, {
+      requestNameSource: 'Fallback',
+      indentCharacter: 'Space',
+      collapseFolders: true,
+      optimizeConversion: true
+    }, (err, conversionResult) => {
+
+      reqQuery = conversionResult.output[0].data.item[0].item[0].item[0].request.url.query[0];
+
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(reqQuery.value).to.equal('<string>');
+      done();
+    });
+  });
+
 });
