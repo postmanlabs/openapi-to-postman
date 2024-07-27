@@ -4,12 +4,18 @@ info:
   title: 817-Enum
 paths:
   /crm/contacts:
-    get:
-      operationId: contactsAll
-      summary: List contacts
-      description: List contacts
+    post:
+      operationId: contactsCreate
+      summary: Post contacts
+      description: Post contacts
       parameters:
         - $ref: '#/components/parameters/contactsSort'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Website'
       responses:
         '200': {}
 components:
@@ -24,20 +30,42 @@ components:
         $ref: '#/components/schemas/ContactsSort'
   schemas:
     ContactsSort:
-      type: object
-      example:
-        by: created_at
-      properties:
-        by:
-          type: string
-          description: The field on which to sort the Contacts
-          enum:
-            - created_at
-            - updated_at
-            - name
-            - first_name
-            - last_name
-            - email
-          example: created_at
-      required:
+        type: object
+        example:
+          by: created_at
+        properties:
+          by:
+            type: string
+            description: The field on which to sort the Contacts
+            enum:
+              - created_at
+              - updated_at
+              - name
+              - first_name
+              - last_name
+              - email
+            example: created_at
+        required:
         - by
+    Website:
+      type: object
+      required:
+        - url
+      properties:
+        id:
+          type: string
+          example: '12345'
+          nullable: true
+        url:
+          type: string
+          example: 'http://example.com'
+          minLength: 1
+        category:
+          type: string
+          enum:
+            - primary
+            - secondary
+            - work
+            - personal
+            - other
+          example: work
