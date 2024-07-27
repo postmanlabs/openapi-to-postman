@@ -186,7 +186,7 @@ describe('resolveRequestBodyForPostmanRequest function', function () {
 
 describe('resolveSchema function', function () {
 
-  it('should return string for simple property', function () {
+  it('should return schema value "string" for simple property', function () {
     const contextTest = {
         concreteUtils,
         schemaCache: {},
@@ -205,7 +205,28 @@ describe('resolveSchema function', function () {
 
     expect(result.default).to.equal('<string>');
   });
-  it('should return string for nested property', function () {
+
+  it('should return example value for simple property', function () {
+    const contextTest = {
+        concreteUtils,
+        schemaCache: {},
+        schemaFakerCache: {},
+        computedOptions: {
+          parametersResolution: 'example',
+          stackLimit: 10,
+          includeDeprecated: false
+        }
+      },
+      schema = {
+        'type': 'string',
+        'example': 'abc'
+      },
+      result = resolveSchema(contextTest, schema, 0, 'conversion');
+
+    expect(result.example).to.equal('abc');
+  });
+
+  it('should return schema value "string" for nested property', function () {
     const contextTest = {
         concreteUtils,
         schemaCache: {},
@@ -230,7 +251,32 @@ describe('resolveSchema function', function () {
     expect(result.properties.foo.default).to.equal('<string>');
   });
 
-  it('should return string for ENUM property', function () {
+  it('should return example value for nested property', function () {
+    const contextTest = {
+        concreteUtils,
+        schemaCache: {},
+        schemaFakerCache: {},
+        computedOptions: {
+          parametersResolution: 'example',
+          stackLimit: 10,
+          includeDeprecated: false
+        }
+      },
+      schema = {
+        'type': 'object',
+        'properties': {
+          'foo': {
+            'type': 'string',
+            'example': 'abc'
+          }
+        }
+      },
+      result = resolveSchema(contextTest, schema, 0, 'conversion');
+
+    expect(result.properties.foo.example).to.equal('abc');
+  });
+
+  it('should return schema value "string" for ENUM property', function () {
     const contextTest = {
         concreteUtils,
         schemaCache: {},
@@ -260,5 +306,37 @@ describe('resolveSchema function', function () {
       result = resolveSchema(contextTest, schema, 0, 'conversion');
 
     expect(result.properties.foo.default).to.equal('<string>');
+  });
+
+  it('should return example value for ENUM property', function () {
+    const contextTest = {
+        concreteUtils,
+        schemaCache: {},
+        schemaFakerCache: {},
+        computedOptions: {
+          parametersResolution: 'example',
+          stackLimit: 10,
+          includeDeprecated: false
+        }
+      },
+      schema = {
+        'type': 'object',
+        'properties': {
+          'foo': {
+            'type': 'string',
+            'enum': [
+              'primary',
+              'secondary',
+              'work',
+              'personal',
+              'other'
+            ],
+            'example': 'work'
+          }
+        }
+      },
+      result = resolveSchema(contextTest, schema, 0, 'conversion');
+
+    expect(result.properties.foo.example).to.equal('work');
   });
 });
