@@ -2271,7 +2271,6 @@ module.exports = {
 
   resolveResponseForPostmanRequest,
   resolveRequestBodyForPostmanRequest,
-  resolveBodyData,
   resolveRefFromSchema,
   resolveSchema
 };
