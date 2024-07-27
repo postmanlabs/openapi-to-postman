@@ -1,4 +1,5 @@
 const {
+    resolveSchema,
     resolveRequestBodyForPostmanRequest
   } = require('../../libV2/schemaUtils.js'),
   concreteUtils = require('../../lib/30XUtils/schemaUtils30X'),
@@ -181,4 +182,83 @@ describe('resolveRequestBodyForPostmanRequest function', function () {
     expect(result.body.mode).to.equal('raw');
   });
 
+});
+
+describe('resolveSchema function', function () {
+
+  it('should return string for simple property', function () {
+    const contextTest = {
+        concreteUtils,
+        schemaCache: {},
+        schemaFakerCache: {},
+        computedOptions: {
+          parametersResolution: 'schema',
+          stackLimit: 10,
+          includeDeprecated: false
+        }
+      },
+      schema = {
+        'type': 'string',
+        'example': 'abc'
+      },
+      result = resolveSchema(contextTest, schema, 0, 'conversion');
+
+    expect(result.default).to.equal('<string>');
+  });
+  it('should return string for nested property', function () {
+    const contextTest = {
+        concreteUtils,
+        schemaCache: {},
+        schemaFakerCache: {},
+        computedOptions: {
+          parametersResolution: 'schema',
+          stackLimit: 10,
+          includeDeprecated: false
+        }
+      },
+      schema = {
+        'type': 'object',
+        'properties': {
+          'foo': {
+            'type': 'string',
+            'example': 'abc'
+          }
+        }
+      },
+      result = resolveSchema(contextTest, schema, 0, 'conversion');
+
+    expect(result.properties.foo.default).to.equal('<string>');
+  });
+
+  it('should return string for ENUM property', function () {
+    const contextTest = {
+        concreteUtils,
+        schemaCache: {},
+        schemaFakerCache: {},
+        computedOptions: {
+          parametersResolution: 'schema',
+          stackLimit: 10,
+          includeDeprecated: false
+        }
+      },
+      schema = {
+        'type': 'object',
+        'properties': {
+          'foo': {
+            'type': 'string',
+            'enum': [
+              'primary',
+              'secondary',
+              'work',
+              'personal',
+              'other'
+            ],
+            'example': 'primary'
+          }
+        }
+      },
+      result = resolveSchema(contextTest, schema, 0, 'conversion');
+
+    expect(result.properties.foo.default).to.equal('<string>');
+  });
 });
