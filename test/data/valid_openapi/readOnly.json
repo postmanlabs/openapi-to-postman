@@ -21,7 +21,20 @@
 									"type": "array",
 									"items": {
 										"type": "object",
-										"$ref": "#/components/schemas/Pet"
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "readOnly": true
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "tag": {
+                        "type": "string",
+                        "writeOnly": true
+                      }
+                    }
 									}
 								}
 							}
@@ -55,26 +68,6 @@
 				"responses": {
 					"200": {
 						"description": "Successfully created a pet"
-					}
-				}
-			}
-		}
-	},
-	"components": {
-		"schemas": {
-			"Pet": {
-				"properties": {
-					"id": {
-						"type": "integer",
-						"format": "int64",
-						"readOnly": true
-					},
-					"name": {
-						"type": "string"
-					},
-					"tag": {
-						"type": "string",
-						"writeOnly": true
 					}
 				}
 			}

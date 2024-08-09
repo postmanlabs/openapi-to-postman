@@ -1,0 +1,95 @@
+{
+	"openapi": "3.0.0",
+	"info": {
+		"version": "1.0.0",
+		"title": "Swagger Petstore"
+	},
+	"servers": [
+		{
+			"url": "http://petstore.swagger.io/v1"
+		}
+	],
+	"paths": {
+		"/pets": {
+      "get": {
+				"responses": {
+					"200": {
+						"description": "Successfull",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"$ref": "#/components/schemas/UserPet"
+									}
+								}
+							}
+						}
+					}
+				}
+			},
+      "post": {
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+                "$ref": "#/components/schemas/UserPet"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Successfully created a pet"
+					}
+				}
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"Pet": {
+				"properties": {
+					"id": {
+						"type": "integer",
+						"format": "int64",
+						"readOnly": true
+					},
+					"name": {
+						"type": "string"
+					},
+					"tag": {
+						"type": "string",
+						"writeOnly": true
+					}
+				}
+			},
+      "User": {
+				"properties": {
+					"user/id": {
+						"type": "integer",
+						"format": "int64",
+						"readOnly": true
+					},
+					"user/name": {
+						"type": "string"
+					},
+					"user/tag": {
+						"type": "string",
+						"writeOnly": true
+					}
+				}
+			},
+      "UserPet": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/User"
+          },
+          {
+            "$ref": "#/components/schemas/Pet"
+          }
+        ]
+      }
+		}
+	}
+}
