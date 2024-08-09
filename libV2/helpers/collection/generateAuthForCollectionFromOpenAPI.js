@@ -28,7 +28,9 @@ module.exports = function (openapi, securitySet) {
       return false;
     }
 
-    securityDef = _.get(openapi, ['securityDefs', Object.keys(security)[0]]);
+    const currentAuthName = Object.keys(security)[0];
+
+    securityDef = _.get(openapi, ['securityDefs', currentAuthName]);
 
     if (!_.isObject(securityDef)) {
       return;
@@ -111,9 +113,18 @@ module.exports = function (openapi, securitySet) {
 
         // Fields supported by all flows -> refreshUrl, scopes
         if (!_.isEmpty(flowObj.scopes)) {
+          let localScopeNames = Array.isArray(security[currentAuthName]) ? security[currentAuthName] : [],
+            globalScopeNames = Object.keys(flowObj.scopes),
+            scopeNames = _.intersection(globalScopeNames, localScopeNames);
+
+          // If no scopes are provided, use global level security scopes
+          if (_.isEmpty(scopeNames)) {
+            scopeNames = globalScopeNames;
+          }
+
           helper.oauth2.push({
             key: 'scope',
-            value: Object.keys(flowObj.scopes).join(' ')
+            value: scopeNames.join(' ')
           });
         }
 
