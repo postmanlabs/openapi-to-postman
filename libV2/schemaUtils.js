@@ -45,6 +45,7 @@ const schemaFaker = require('../assets/json-schema-faker'),
     'ipv4', 'ipv6',
     'regex',
     'uuid',
+    'binary',
     'json-pointer',
     'int64',
     'float',
@@ -652,7 +653,6 @@ let QUERYPARAM = 'query',
         if (
           property.format === 'decimal' ||
           property.format === 'byte' ||
-          property.format === 'binary' ||
           property.format === 'password' ||
           property.format === 'unix-time'
         ) {
@@ -983,7 +983,6 @@ let QUERYPARAM = 'query',
       for (const prop in resolvedSchema.properties) {
         if (resolvedSchema.properties.hasOwnProperty(prop)) {
           if (
-            resolvedSchema.properties[prop].format === 'binary' ||
             resolvedSchema.properties[prop].format === 'byte' ||
             resolvedSchema.properties[prop].format === 'decimal'
           ) {
@@ -1508,7 +1507,6 @@ let QUERYPARAM = 'query',
             }
 
             if (
-              requestBodySchema.properties[prop].format === 'binary' ||
               requestBodySchema.properties[prop].format === 'byte' ||
               requestBodySchema.properties[prop].format === 'decimal'
             ) {
@@ -1668,7 +1666,7 @@ let QUERYPARAM = 'query',
 
       // TODO: Add handling for headers from encoding
 
-      if (paramSchema && paramSchema.type === 'binary') {
+      if (paramSchema && paramSchema.type === 'string' && paramSchema.format === 'binary') {
         param = {
           key,
           value: '',

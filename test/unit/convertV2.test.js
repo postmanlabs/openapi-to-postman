@@ -120,7 +120,8 @@ const expect = require('chai').expect,
   readOnlyOneOfSpec =
     path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyOneOf.json'),
   readOnlyNestedSpec =
-    path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyNested.json');
+    path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyNested.json'),
+  issue795 = path.join(__dirname, VALID_OPENAPI_PATH, '/form-binary-file.json');
 
 
 describe('The convert v2 Function', function() {
@@ -2926,6 +2927,27 @@ describe('The convert v2 Function', function() {
         expect(responseBody.pet.address).to.not.have.property('state', '<string>');
         done();
       });
+    });
+  });
+
+  it('[Github #795] Should properly convert format binary to form data', function (done) {
+    var openapi = fs.readFileSync(issue795, 'utf8'),
+      reqBody, formData;
+    Converter.convertV2({ type: 'string', data: openapi }, {
+      requestNameSource: 'Fallback',
+      indentCharacter: 'Space',
+      collapseFolders: true,
+      optimizeConversion: true,
+      parametersResolution: 'schema'
+    }, (err, conversionResult) => {
+
+      reqBody = conversionResult.output[0].data.item[0].item[0].request.body;
+      formData = reqBody.formdata[0];
+
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(formData.type).to.equal('file');
+      done();
     });
   });
 });
