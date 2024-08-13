@@ -4,6 +4,14 @@
 
 ## [v4.24.0] - 2024-08-13
 
+### Added
+
+-   [#98](https://github.com/postmanlabs/openapi-to-postman/issues/98) [12255](https://github.com/postmanlabs/postman-app-support/issues/12255) Added support for readOnly and writeOnly properties to be correctly present in generated collection.
+
+### Chore
+
+-   Replaced traverse with neotraverse.
+
 ## [v4.23.1] - 2024-07-22
 
 ### Added
