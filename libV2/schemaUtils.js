@@ -254,13 +254,43 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * Resets cache storing readOnly and writeOnly property map.
+   *
+   * @param {Object} context - Global context object
+   * @returns {void}
+   */
+  resetReadWritePropCache = (context) => {
+    context.readOnlyPropCache = {};
+    context.writeOnlyPropCache = {};
+  },
+
+  /**
+   * Merges provided readOnly writeOnly properties cache with existing cache present in context
+   *
+   * @param {Object} context - Global context object
+   * @param {Object} readOnlyPropCache - readOnly properties cache to be merged
+   * @param {Object} writeOnlyPropCache - writeOnly properties cache to be merged
+   * @param {Object} currentPath - Current path (json-pointer) being resolved relative to original schema
+   * @returns {void}
+   */
+  mergeReadWritePropCache = (context, readOnlyPropCache, writeOnlyPropCache, currentPath = '') => {
+    _.forOwn(readOnlyPropCache, (value, key) => {
+      context.readOnlyPropCache[utils.mergeJsonPath(currentPath, key)] = true;
+    });
+
+    _.forOwn(writeOnlyPropCache, (value, key) => {
+      context.writeOnlyPropCache[utils.mergeJsonPath(currentPath, key)] = true;
+    });
+  },
+
+  /**
    * Resolve a given ref from the schema
    * @param {Object} context - Global context object
    * @param {Object} $ref - Ref that is to be resolved
    * @param {Number} stackDepth - Depth of the current stack for Ref resolution
    * @param {Object} seenRef - Seen Reference map
    *
-   * @returns {Object} Returns the object that staisfies the schema
+   * @returns {Object} Returns the object that satisfies the schema
    */
   resolveRefFromSchema = (context, $ref, stackDepth = 0, seenRef = {}) => {
     const { specComponents } = context,
@@ -274,7 +304,11 @@ let QUERYPARAM = 'query',
     seenRef[$ref] = true;
 
     if (context.schemaCache[$ref]) {
-      return context.schemaCache[$ref];
+      // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
+      mergeReadWritePropCache(context, context.schemaCache[$ref].readOnlyPropCache,
+        context.schemaCache[$ref].writeOnlyPropCache);
+
+      return context.schemaCache[$ref].schema;
     }
 
     if (!_.isFunction($ref.split)) {
@@ -330,7 +364,7 @@ let QUERYPARAM = 'query',
    * @param {Number} stackDepth - Depth of the current stack for Ref resolution
    * @param {Object} seenRef - Seen Reference map
    *
-   * @returns {Object} Returns the object that staisfies the schema
+   * @returns {Object} Returns the object that satisfies the schema
    */
   resolveRefForExamples = (context, $ref, stackDepth = 0, seenRef = {}) => {
     const { specComponents } = context,
@@ -344,7 +378,11 @@ let QUERYPARAM = 'query',
     seenRef[$ref] = true;
 
     if (context.schemaCache[$ref]) {
-      return context.schemaCache[$ref];
+      // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
+      mergeReadWritePropCache(context, context.schemaCache[$ref].readOnlyPropCache,
+        context.schemaCache[$ref].writeOnlyPropCache);
+
+      return context.schemaCache[$ref].schema;
     }
 
     if (!_.isFunction($ref.split)) {
@@ -391,7 +429,11 @@ let QUERYPARAM = 'query',
     }
 
     // Add the resolved schema to the global schema cache
-    context.schemaCache[$ref] = resolvedExample;
+    context.schemaCache[$ref] = {
+      schema: resolvedExample,
+      readOnlyPropCache: {},
+      writeOnlyPropCache: {}
+    };
 
     return resolvedExample;
   },
@@ -439,22 +481,23 @@ let QUERYPARAM = 'query',
   },
 
   /**
-   * Handle resoltion of allOf property of schema
+   * Handle resolution of allOf property of schema
    *
    * @param {Object} context - Global context object
    * @param {Object} schema - Schema to be resolved
    * @param {Number} [stack] - Current recursion depth
    * @param {*} resolveFor - resolve refs for flow validation/conversion (value to be one of VALIDATION/CONVERSION)
    * @param {Object} seenRef - Map of all the references that have been resolved
+   * @param {String} currentPath - Current path (json-pointer) being resolved relative to original schema
    *
    * @returns {Object} Resolved schema
    */
-  resolveAllOfSchema = (context, schema, stack, resolveFor = CONVERSION, seenRef = {}) => {
+  resolveAllOfSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}, currentPath = '') => {
     try {
       return mergeAllOf(_.assign(schema, {
         allOf: _.map(schema.allOf, (schema) => {
           // eslint-disable-next-line no-use-before-define
-          return resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef));
+          return _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
         })
       }), {
         // below option is required to make sure schemas with additionalProperties set to false are resolved correctly
@@ -482,11 +525,12 @@ let QUERYPARAM = 'query',
    * @param {Number} [stack] - Current recursion depth
    * @param {String} resolveFor - For which action this resolution is to be done
    * @param {Object} seenRef - Map of all the references that have been resolved
+   * @param {String} currentPath - Current path (json-pointer) being resolved relative to original schema
    * @todo: Explore using a directed graph/tree for maintaining seen ref
    *
    * @returns {Object} Returns the object that satisfies the schema
    */
-  resolveSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}) => {
+  _resolveSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}, currentPath = '') => {
     if (!schema) {
       return new Error('Schema is empty');
     }
@@ -523,16 +567,17 @@ let QUERYPARAM = 'query',
       });
 
       if (resolveFor === CONVERSION) {
-        return resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef));
+        return _resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef), currentPath);
       }
 
-      return { [compositeKeyword]: _.map(compositeSchema, (schemaElement) => {
-        return resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef));
+      return { [compositeKeyword]: _.map(compositeSchema, (schemaElement, index) => {
+        return _resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef),
+          utils.addToJsonPath(currentPath, [compositeKeyword, index]));
       }) };
     }
 
     if (schema.allOf) {
-      return resolveAllOfSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef));
+      return resolveAllOfSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
     }
 
     if (schema.$ref) {
@@ -547,14 +592,42 @@ let QUERYPARAM = 'query',
       seenRef[schemaRef] = true;
 
       if (context.schemaCache[schemaRef]) {
-        schema = context.schemaCache[schemaRef];
+        // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
+        mergeReadWritePropCache(context, context.schemaCache[schemaRef].readOnlyPropCache,
+          context.schemaCache[schemaRef].writeOnlyPropCache, currentPath);
+
+        schema = context.schemaCache[schemaRef].schema;
       }
       else {
+        const existingReadPropCache = context.readOnlyPropCache,
+          existingWritePropCache = context.writeOnlyPropCache;
+
         schema = resolveRefFromSchema(context, schemaRef, stack, _.cloneDeep(seenRef));
-        schema = resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef));
+
+        /**
+         * Reset readOnly and writeOnly prop cache before resolving schema to make sure
+         * we have fresh cache for $ref resolution which will be stored as part of schemaCache
+         */
+        resetReadWritePropCache(context);
+        schema = _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), '');
 
         // Add the resolved schema to the global schema cache
-        context.schemaCache[schemaRef] = schema;
+        context.schemaCache[schemaRef] = {
+          schema,
+          readOnlyPropCache: context.readOnlyPropCache,
+          writeOnlyPropCache: context.writeOnlyPropCache
+        };
+
+        // eslint-disable-next-line one-var
+        const newReadPropCache = context.readOnlyPropCache,
+          newWritePropCache = context.writeOnlyPropCache;
+
+        // Assign existing readOnly and writeOnly prop cache back to global context cache
+        context.readOnlyPropCache = existingReadPropCache;
+        context.writeOnlyPropCache = existingWritePropCache;
+
+        // Merge existing and current cache to make sure we have all the properties in cache
+        mergeReadWritePropCache(context, newReadPropCache, newWritePropCache, currentPath);
       }
       return schema;
     }
@@ -591,7 +664,10 @@ let QUERYPARAM = 'query',
           return;
         }
 
-        resolvedSchemaProps[propertyName] = resolveSchema(context, property, stack, resolveFor, _.cloneDeep(seenRef));
+        const currentPropPath = utils.addToJsonPath(currentPath, ['properties', propertyName]);
+
+        resolvedSchemaProps[propertyName] = _resolveSchema(context, property, stack, resolveFor,
+          _.cloneDeep(seenRef), currentPropPath);
       });
 
       schema.properties = resolvedSchemaProps;
@@ -599,7 +675,8 @@ let QUERYPARAM = 'query',
     }
     // If schema is of type array
     else if (concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.array) && schema.items) {
-      schema.items = resolveSchema(context, schema.items, stack, resolveFor, _.cloneDeep(seenRef));
+      schema.items = _resolveSchema(context, schema.items, stack, resolveFor, _.cloneDeep(seenRef),
+        utils.addToJsonPath(currentPath, ['items']));
     }
     // Any properties to ignored should not be available in schema
     else if (_.every(SCHEMA_PROPERTIES_TO_EXCLUDE, (schemaKey) => { return !schema.hasOwnProperty(schemaKey); })) {
@@ -631,7 +708,8 @@ let QUERYPARAM = 'query',
 
     if (schema.hasOwnProperty('additionalProperties')) {
       schema.additionalProperties = _.isBoolean(schema.additionalProperties) ? schema.additionalProperties :
-        resolveSchema(context, schema.additionalProperties, stack, resolveFor, _.cloneDeep(seenRef));
+        _resolveSchema(context, schema.additionalProperties, stack, resolveFor, _.cloneDeep(seenRef),
+          utils.addToJsonPath(currentPath, ['additionalProperties']));
       schema.type = schema.type || SCHEMA_TYPES.object;
     }
 
@@ -646,7 +724,63 @@ let QUERYPARAM = 'query',
       });
     }
 
+    // Keep track of readOnly and writeOnly properties to resolve request and responses accordingly later.
+    if (schema.readOnly) {
+      context.readOnlyPropCache[currentPath] = true;
+    }
+
+    if (schema.writeOnly) {
+      context.writeOnlyPropCache[currentPath] = true;
+    }
+
     return schema;
+  },
+
+  /**
+   * Wrapper around _resolveSchema which resolves a given schema
+   *
+   * @param {Object} context - Global context
+   * @param {Object} schema - Schema that is to be resolved
+   * @param {Object} resolutionMeta - Metadata of resolution taking place
+   * @param {Number} resolutionMeta.stack - Current recursion depth
+   * @param {String} resolutionMeta.resolveFor - For which action this resolution is to be done
+   * @param {Object} resolutionMeta.seenRef - Map of all the references that have been resolved
+   * @param {Boolean} resolutionMeta.isResponseSchema - Whether schema is from response or not
+   *
+   * @returns {Object} Returns the object that satisfies the schema
+   */
+  resolveSchema = (context, schema,
+    { stack = 0, resolveFor = CONVERSION, seenRef = {}, isResponseSchema = false } = {}
+  ) => {
+    // reset readOnly and writeOnly prop cache before resolving schema to make sure we have fresh cache
+    resetReadWritePropCache(context);
+
+    let resolvedSchema = _resolveSchema(context, schema, stack, resolveFor, seenRef);
+
+    /**
+     * If readOnly or writeOnly properties are present in the schema, we need to clone original schema first.
+     * Because we modify original resolved schema and delete readOnly or writeOnly properties from it
+     * depending upon if schema belongs to Request or Response.
+     * This is done to avoid modifying original schema object and to keep it intact for future use.
+     */
+    if (!_.isEmpty(context.readOnlyPropCache) || !_.isEmpty(context.writeOnlyPropCache)) {
+      resolvedSchema = _.cloneDeep(resolvedSchema);
+    }
+
+    if (isResponseSchema) {
+      _.forOwn(context.writeOnlyPropCache, (value, key) => {
+        // We need to make sure to remove empty strings via _.compact that are added while forming json-pointer
+        _.unset(resolvedSchema, utils.getJsonPathArray(key));
+      });
+    }
+    else {
+      _.forOwn(context.readOnlyPropCache, (value, key) => {
+        // We need to make sure to remove empty strings via _.compact that are added while forming json-pointer
+        _.unset(resolvedSchema, utils.getJsonPathArray(key));
+      });
+    }
+
+    return resolvedSchema;
   },
 
   /**
@@ -654,6 +788,8 @@ let QUERYPARAM = 'query',
    *
    * @param {Object} context - Required context from related SchemaPack function
    * @param {Object} param - OpenAPI Parameter object
+   * @param {Object} options - Options object
+   * @param {Boolean} options.isResponseSchema - Whether schema is from response or not
    * @returns {Object} - Information regarding parameter serialisation. Contains following properties.
    * {
    *  style - style property defined/inferred from schema
@@ -664,7 +800,7 @@ let QUERYPARAM = 'query',
    *  isExplodable - whether params can be exploded (serialised value can contain key and value)
    * }
    */
-  getParamSerialisationInfo = (context, param) => {
+  getParamSerialisationInfo = (context, param, { isResponseSchema = false } = {}) => {
     let paramName = _.get(param, 'name'),
       paramSchema,
       style, // style property defined/inferred from schema
@@ -682,7 +818,7 @@ let QUERYPARAM = 'query',
     }
 
     // Resolve the ref and composite schemas
-    paramSchema = resolveSchema(context, param.schema);
+    paramSchema = resolveSchema(context, param.schema, { isResponseSchema });
 
     isExplodable = paramSchema.type === 'object';
 
@@ -796,16 +932,20 @@ let QUERYPARAM = 'query',
    *
    * @param {Object} context - Required context from related SchemaPack function
    * @param {Object} param - Parameter that is to be resolved from schema
-   * @param {String} schemaFormat - Corresponding schema format (can be one of xml/default)
+   * @param {Object} options - Addition options
+   * @param {String} options.schemaFormat - Corresponding schema format (can be one of xml/default)
+   * @param {Boolean} options.isResponseSchema - Whether schema is from response or not
    * @returns {*} Value of the parameter
    */
-  resolveValueOfParameter = (context, param, schemaFormat = SCHEMA_FORMATS.DEFAULT) => {
+  resolveValueOfParameter = (context, param,
+    { schemaFormat = SCHEMA_FORMATS.DEFAULT, isResponseSchema = false } = {}
+  ) => {
     if (!param || !param.hasOwnProperty('schema')) {
       return '';
     }
 
     const { indentCharacter } = context.computedOptions,
-      resolvedSchema = resolveSchema(context, param.schema),
+      resolvedSchema = resolveSchema(context, param.schema, { isResponseSchema }),
       { parametersResolution } = context.computedOptions,
       shouldGenerateFromExample = parametersResolution === 'example',
       hasExample = param.example !== undefined ||
@@ -917,9 +1057,19 @@ let QUERYPARAM = 'query',
       (parameter.enum ? ' (This can only be one of ' + parameter.enum + ')' : '');
   },
 
-  serialiseParamsBasedOnStyle = (context, param, paramValue) => {
+  /**
+   * Serialise Param based on mentioned style field in schema object
+   *
+   * @param {Object} context - Global context object
+   * @param {Object} param - OpenAPI Parameter object
+   * @param {*} paramValue - Value of the parameter
+   * @param {Object} options - Additional options for serialisation
+   * @param {Boolean} options.isResponseSchema - Whether schema is from response or not
+   * @returns {Array} - Array of key-value pairs for the parameter
+   */
+  serialiseParamsBasedOnStyle = (context, param, paramValue, { isResponseSchema = false } = {}) => {
     const { style, explode, startValue, propSeparator, keyValueSeparator, isExplodable } =
-      getParamSerialisationInfo(context, param),
+      getParamSerialisationInfo(context, param, { isResponseSchema }),
       { enableOptionalParameters } = context.computedOptions;
 
     let serialisedValue = '',
@@ -1264,7 +1414,7 @@ let QUERYPARAM = 'query',
     }
 
     if (requestBodySchema.$ref) {
-      requestBodySchema = resolveSchema(context, requestBodySchema);
+      requestBodySchema = resolveSchema(context, requestBodySchema, { isResponseSchema: isExampleBody });
     }
 
     /**
@@ -1313,7 +1463,7 @@ let QUERYPARAM = 'query',
     examples = requestBodySchema.examples || _.get(requestBodySchema, 'schema.examples');
 
     requestBodySchema = requestBodySchema.schema || requestBodySchema;
-    requestBodySchema = resolveSchema(context, requestBodySchema);
+    requestBodySchema = resolveSchema(context, requestBodySchema, { isResponseSchema: isExampleBody });
 
     // If schema object has example defined, try to use that if no example is defiend at request body level
     if (example === undefined && _.get(requestBodySchema, 'example') !== undefined) {
@@ -1338,7 +1488,7 @@ let QUERYPARAM = 'query',
       requestBodySchema = requestBodySchema.schema || requestBodySchema;
 
       if (requestBodySchema.$ref) {
-        requestBodySchema = resolveSchema(context, requestBodySchema);
+        requestBodySchema = resolveSchema(context, requestBodySchema, { isResponseSchema: isExampleBody });
       }
 
       if (isBodyTypeXML) {
@@ -1910,7 +2060,7 @@ let QUERYPARAM = 'query',
     }
 
     if (responseBody.$ref) {
-      responseBody = resolveSchema(context, responseBody);
+      responseBody = resolveSchema(context, responseBody, { isResponseSchema: true });
     }
 
     responseContent = responseBody.content;
@@ -1971,7 +2121,7 @@ let QUERYPARAM = 'query',
       { includeDeprecated } = context.computedOptions;
 
     if (_.has(responseHeaders, '$ref')) {
-      responseHeaders = resolveSchema(context, responseHeaders);
+      responseHeaders = resolveSchema(context, responseHeaders, { isResponseSchema: true });
     }
 
     _.forOwn(responseHeaders, (value, headerName) => {
@@ -1983,7 +2133,7 @@ let QUERYPARAM = 'query',
         return;
       }
 
-      let headerValue = resolveValueOfParameter(context, value);
+      let headerValue = resolveValueOfParameter(context, value, { isResponseSchema: true });
 
       if (typeof headerValue === 'number' || typeof headerValue === 'boolean') {
         // the SDK will keep the number-ness,
@@ -1994,7 +2144,7 @@ let QUERYPARAM = 'query',
       }
 
       const headerData = Object.assign({}, value, { name: headerName }),
-        serialisedHeader = serialiseParamsBasedOnStyle(context, headerData, headerValue);
+        serialisedHeader = serialiseParamsBasedOnStyle(context, headerData, headerValue, { isResponseSchema: true });
 
       headers.push(...serialisedHeader);
     });
@@ -2095,7 +2245,7 @@ let QUERYPARAM = 'query',
     // store all request examples which will be used for creation of examples with correct request and response matching
     if (typeof requestBody === 'object') {
       if (requestBody.$ref) {
-        requestBody = resolveSchema(context, requestBody);
+        requestBody = resolveSchema(context, requestBody, { isResponseSchema: true });
       }
 
       requestContent = requestBody.content;
@@ -2114,7 +2264,8 @@ let QUERYPARAM = 'query',
                 const exampleData = getExampleData(context, { [name]: exampleObj });
 
                 if (isBodyTypeXML) {
-                  let bodyData = getXMLExampleData(context, exampleData, resolveSchema(context, content.schema));
+                  let bodyData = getXMLExampleData(context, exampleData, resolveSchema(context, content.schema,
+                    { isResponseSchema: true }));
 
                   exampleObj.value = getXmlVersionContent(bodyData);
                 }
@@ -2132,7 +2283,8 @@ let QUERYPARAM = 'query',
     }
 
     _.forOwn(operationItem.responses, (responseObj, code) => {
-      let responseSchema = _.has(responseObj, '$ref') ? resolveSchema(context, responseObj) : responseObj,
+      let responseSchema = _.has(responseObj, '$ref') ?
+          resolveSchema(context, responseObj, { isResponseSchema: true }) : responseObj,
         { includeAuthInfoInExample } = context.computedOptions,
         auth = request.auth,
         resolvedExamples = resolveResponseBody(context, responseSchema, requestBodyExamples, code) || {},

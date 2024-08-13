@@ -1,4 +1,5 @@
 const _ = require('lodash'),
+  jsonPointer = require('json-pointer'),
   { Item } = require('postman-collection/lib/collection/item'),
   { Response } = require('postman-collection/lib/collection/response'),
 
@@ -198,6 +199,48 @@ module.exports = {
     }
 
     return title;
+  },
+
+  /**
+   * Adds provided property array to the given JSON path
+   *
+   * @param {string} jsonPath - JSON path to which properties should be added
+   * @param {array} propArray - Array of properties to be added to JSON path
+   * @returns {string} - Combined JSON path
+   */
+  addToJsonPath: function (jsonPath, propArray) {
+    const jsonPathArray = jsonPointer.parse(jsonPath),
+      escapedPropArray = _.map(propArray, (prop) => {
+        return jsonPointer.escape(prop);
+      });
+
+    return jsonPointer.compile(jsonPathArray.concat(escapedPropArray));
+  },
+
+  /**
+   * Merges two JSON paths. i.e. Parent JSON path and Child JSON path
+   *
+   * @param {string} parentJsonPath - Parent JSON path
+   * @param {string} childJsonPath - Child JSON path
+   * @returns {string} - Merged JSON path
+   */
+  mergeJsonPath: function (parentJsonPath, childJsonPath) {
+    let jsonPathArray = jsonPointer.parse(parentJsonPath);
+
+    // Merges childJsonPath with parentJsonPath
+    jsonPathArray = jsonPathArray.concat(jsonPointer.parse(childJsonPath));
+
+    return jsonPointer.compile(jsonPathArray);
+  },
+
+  /**
+   * Gets JSON path in array from string JSON path
+   *
+   * @param {string} jsonPath - input JSON path
+   * @returns {array} - Parsed JSON path (each part is distributed in an array)
+   */
+  getJsonPathArray: function (jsonPath) {
+    return jsonPointer.parse(jsonPointer.unescape(jsonPath));
   },
 
   generatePmResponseObject,
