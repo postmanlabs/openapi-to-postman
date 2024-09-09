@@ -104,7 +104,7 @@ module.exports = {
           }
           catch (error) {
             console.error(error);
-            throw error;
+            break;
           }
 
           collection.variable.push(...collectionVariables);
