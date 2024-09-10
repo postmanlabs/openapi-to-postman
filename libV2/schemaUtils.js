@@ -469,7 +469,7 @@ let QUERYPARAM = 'query',
     exampleKey = Object.keys(exampleObj)[0];
     example = exampleObj[exampleKey];
 
-    if (example.$ref) {
+    if (example && example.$ref) {
       example = resolveExampleData(context, example);
     }
 
