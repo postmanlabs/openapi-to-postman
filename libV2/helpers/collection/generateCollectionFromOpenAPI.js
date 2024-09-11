@@ -1,6 +1,6 @@
 const _ = require('lodash'),
   utils = require('../../utils'),
-  generateAuthrForCollectionFromOpenAPI = require('./generateAuthForCollectionFromOpenAPI'),
+  generateAuthForCollectionFromOpenAPI = require('./generateAuthForCollectionFromOpenAPI'),
 
   /**
    * Returns a description that's usable at the collection-level
@@ -99,7 +99,7 @@ module.exports = function ({ openapi }) {
         name: utils.getCollectionName(_.get(openapi, 'info.title')),
         description: getCollectionDescription(openapi)
       },
-      auth: generateAuthrForCollectionFromOpenAPI(openapi, openapi.security)
+      auth: generateAuthForCollectionFromOpenAPI(openapi, openapi.security)
     },
     variables: collectionVariables
   };

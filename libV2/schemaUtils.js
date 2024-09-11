@@ -2352,6 +2352,57 @@ let QUERYPARAM = 'query',
     });
 
     return { responses, acceptHeader: requestAcceptHeader };
+  },
+
+  areMultipleAPIKeysPresent = (openapi) => {
+    const securitySet = _.get(openapi, 'security', []);
+    let count = 0;
+
+    _.forEach(securitySet, (security) => {
+      if (_.isEmpty(security)) {
+        return;
+      }
+
+      let securityDef = _.get(openapi, ['securityDefs', Object.keys(security)[0]]);
+
+      if (!_.isObject(securityDef)) {
+        return;
+      }
+
+      if (securityDef.type === 'apiKey') {
+        count += 1;
+      }
+    });
+
+    return count > 1;
+  },
+
+  getExtraAPIKeyParams = (authHelper) => {
+    const extraAPIKeys = _.get(authHelper, 'extraAPIKeys', []);
+    let headers = [],
+      queryParams = [];
+
+    // Remove extraAPIKeys property
+    _.set(authHelper, 'extraAPIKeys', undefined);
+
+    extraAPIKeys.forEach((apiKey) => {
+      let keyValuePair = {
+        key: _.get(apiKey, 'apikey.0.value'),
+        value: _.get(apiKey, 'apikey.1.value')
+      };
+
+      if (_.get(apiKey, 'apikey.2.value') === 'header') {
+        headers.push(keyValuePair);
+      }
+      else {
+        queryParams.push(keyValuePair);
+      }
+    });
+
+    return {
+      headers,
+      queryParams
+    };
   };
 
 module.exports = {
@@ -2373,12 +2424,31 @@ module.exports = {
       requestBody = resolveRequestBodyForPostmanRequest(context, operationItem[method]),
       request,
       securitySchema = _.get(operationItem, [method, 'security']),
-      authHelper = generateAuthForCollectionFromOpenAPI(context.openapi, securitySchema),
-      { alwaysInheritAuthentication } = context.computedOptions;
-
+      authHelper = generateAuthForCollectionFromOpenAPI(context.openapi, securitySchema, true),
+      { alwaysInheritAuthentication } = context.computedOptions,
+      extraAPIKeys;
     headers.push(..._.get(requestBody, 'headers', []));
     pathVariables.push(...baseUrlData.pathVariables);
     collectionVariables.push(...baseUrlData.collectionVariables);
+
+    // If more than one API key is present in the security definition then add it as
+    // extra headers
+    if (!_.isEmpty(authHelper) && !_.isEmpty(authHelper.extraAPIKeys)) {
+      extraAPIKeys = getExtraAPIKeyParams(authHelper);
+    }
+
+    // If no security is present at request level then check if it is present at global level
+    // and if multiple api keys are present there then add them as extra headers
+    if (_.isEmpty(authHelper) && areMultipleAPIKeysPresent(context.openapi)) {
+      authHelper = generateAuthForCollectionFromOpenAPI(context.openapi, _.get(context.openapi, 'security', []), true);
+      extraAPIKeys = getExtraAPIKeyParams(authHelper);
+    }
+
+    if (!_.isEmpty) {
+      headers.push(...extraAPIKeys.headers);
+      queryParams.push(...extraAPIKeys.queryParams);
+    }
+
 
     url = _.get(baseUrlData, 'baseUrl', '') + url;
 
