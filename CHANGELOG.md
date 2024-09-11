@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [v4.24.0] - 2024-08-13
+
+### Added
+
+-   [#98](https://github.com/postmanlabs/openapi-to-postman/issues/98) [12255](https://github.com/postmanlabs/postman-app-support/issues/12255) Added support for readOnly and writeOnly properties to be correctly present in generated collection.
+
+### Chore
+
+-   Replaced traverse with neotraverse.
+
 ## [v4.23.1] - 2024-07-22
 
 ### Added
@@ -637,7 +647,9 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.23.1...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.24.0...HEAD
+
+[v4.24.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.23.1...v4.24.0
 
 [v4.23.1]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.22.0...v4.23.1
 
