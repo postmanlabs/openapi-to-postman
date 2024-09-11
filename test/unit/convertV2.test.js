@@ -111,8 +111,6 @@ const expect = require('chai').expect,
     path.join(__dirname, VALID_OPENAPI_PATH, '/multiExampleResponseCodeMatching.json'),
   duplicateCollectionVars =
     path.join(__dirname, VALID_OPENAPI_PATH, '/duplicateCollectionVars.json'),
-  issue795 = path.join(__dirname, VALID_OPENAPI_PATH, '/form-binary-file.json'),
-  issue817 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#817-enum.yaml');
   readOnlySpec =
     path.join(__dirname, VALID_OPENAPI_PATH, '/readOnly.json'),
   readOnlyRefSpec =
@@ -123,6 +121,7 @@ const expect = require('chai').expect,
     path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyOneOf.json'),
   readOnlyNestedSpec =
     path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyNested.json'),
+  issue817 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#817-enum.yaml'),
   issue795 = path.join(__dirname, VALID_OPENAPI_PATH, '/form-binary-file.json');
 
 describe('The convert v2 Function', function() {
