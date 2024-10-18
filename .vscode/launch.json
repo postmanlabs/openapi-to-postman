@@ -1,0 +1,49 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "node",
+        "request": "launch",
+        "name": "Conversion",
+        "runtimeArgs": [
+          "--max-old-space-size=8192",
+          "--inspect"
+        ],
+        "program": "${workspaceFolder}/test.js"
+      },
+      {
+        "args": [
+          "tdd",
+          "--timeout",
+          "999999",
+          "--colors",
+          "${workspaceFolder}/test/unit/**/**.test.js"
+        ],
+        "internalConsoleOptions": "openOnSessionStart",
+        "name": "Mocha Tests",
+        "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+        "request": "launch",
+        "skipFiles": [
+          "<node_internals>/**"
+        ],
+        "type": "node"
+      },
+      {
+        "args": [
+          "tdd",
+          "--timeout",
+          "999999",
+          "--colors",
+          "${workspaceFolder}/test/system/**/**.test.js"
+        ],
+        "internalConsoleOptions": "openOnSessionStart",
+        "name": "System tests",
+        "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+        "request": "launch",
+        "skipFiles": [
+          "<node_internals>/**"
+        ],
+        "type": "node"
+      }
+    ]
+  }
