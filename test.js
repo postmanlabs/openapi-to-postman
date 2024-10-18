@@ -17,7 +17,7 @@ var Converter = require('./index.js'),
 
     // requestParametersResolution: 'Schema',
     // exampleParametersResolution: 'Schema',
-    stackLimit: 8,
+    // stackLimit: 8,
     // keepImplicitHeaders: true,
     // enableOptionalParameters: false,
     optimizeConversion: false
