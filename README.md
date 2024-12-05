@@ -33,7 +33,7 @@
 ---
 ---
 
-## 💭 Getting Started
+<h2 id="getting-started">💭 Getting Started</h2>
 
 To use the converter as a Node module, you need to have a copy of the NodeJS runtime. The easiest way to do this is through npm. If you have NodeJS installed you have npm installed as well.
 
@@ -48,7 +48,7 @@ $ npm i -g openapi-to-postmanv2
 ```
 
 
-## 📖 Command Line Interface
+<h2 id="command-line-interface">📖 Command Line Interface</h2>
 
 The converter can be used as a CLI tool as well. The following [command line options](#options) are available.
 
@@ -107,7 +107,7 @@ $ openapi2postmanv2 --test
 ```
 
 
-## 🛠 Using the converter as a NodeJS module
+<h2 id="using-the-converter-as-a-nodejs-module">🛠 Using the converter as a NodeJS module</h2>
 
 In order to use the convert in your node application, you need to import the package using `require`.
 
@@ -219,7 +219,7 @@ The validate function is synchronous and returns a status object which conforms 
 
 - `reason` - Provides a reason for an unsuccessful validation of the specification
 
-## 🧭 Conversion Schema
+<h2 id="conversion-schema">🧭 Conversion Schema</h2>
 
 | *postman* | *openapi* | *related options* |
 | --- | --- | :---: |
