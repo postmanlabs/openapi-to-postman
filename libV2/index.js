@@ -228,7 +228,7 @@ module.exports = {
         data: collection
       }],
       analytics: this.analytics || {},
-      extractedTypes: finalExtractedTypesList
+      extractedTypes: context.enableTypeFetching ? finalExtractedTypesList : []
     });
   },
 
