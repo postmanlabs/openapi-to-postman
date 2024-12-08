@@ -132,7 +132,7 @@
     "path-browserify": "1.0.1",
     "postman-collection": "^4.4.0",
     "swagger2openapi": "7.0.8",
-    "uuid": "^11.0.3",
+    "uuid": "^8.3.2",
     "yaml": "1.10.2"
   },
   "author": "Postman Labs <help@getpostman.com>",
