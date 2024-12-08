@@ -767,10 +767,23 @@ let QUERYPARAM = 'query',
           let res = processSchema(prop).properties;
           propertyDetails.properties = res;
         }
+        else if (prop.type === 'array' && prop.items) {
+          propertyDetails.items = processSchema(prop.items);
+        }
 
         schemaDetails.properties[key] = propertyDetails;
       }
       return schemaDetails;
+    }
+    else if (resolvedSchema.type === 'array' && resolvedSchema.items) {
+      // Handle array type schema
+      const arrayDetails = {
+        type: resolvedSchema.type || 'unknown',
+        items: processSchema(resolvedSchema.items)
+      };
+      if (resolvedSchema.minItems !== undefined) { arrayDetails.minItems = resolvedSchema.minItems; }
+      if (resolvedSchema.maxItems !== undefined) { arrayDetails.maxItems = resolvedSchema.maxItems; }
+      return arrayDetails;
     }
     return {
       type: resolvedSchema.type || 'unknown'
@@ -2615,10 +2628,8 @@ module.exports = {
         resolvedExampleTypes
       } = resolveResponseForPostmanRequest(context, operationItem[method], request);
 
-    methodPath = method + path;
     requestBlock = { request: unifiedRequestTypes, response: resolvedExampleTypes };
-    requestObj = { [methodPath]: requestBlock };
-    extractedTypesList.push(requestObj);
+    extractedTypesList.push(requestBlock);
 
     // add accept header if found and not present already
     if (!_.isEmpty(acceptHeader)) {

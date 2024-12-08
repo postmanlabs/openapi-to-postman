@@ -220,15 +220,24 @@ module.exports = {
     if (!_.isEmpty(collection.variable)) {
       collection.variable = _.uniqBy(collection.variable, 'key');
     }
-
+    if (context.enableTypeFetching) {
+      return cb(null, {
+        result: true,
+        output: [{
+          type: 'collection',
+          data: collection
+        }],
+        analytics: this.analytics || {},
+        extractedTypes: finalExtractedTypesList || []
+      });
+    }
     return cb(null, {
       result: true,
       output: [{
         type: 'collection',
         data: collection
       }],
-      analytics: this.analytics || {},
-      extractedTypes: context.enableTypeFetching ? finalExtractedTypesList : []
+      analytics: this.analytics || {}
     });
   },
 
