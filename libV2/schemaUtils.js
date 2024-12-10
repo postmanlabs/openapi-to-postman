@@ -2628,8 +2628,10 @@ module.exports = {
         resolvedExampleTypes
       } = resolveResponseForPostmanRequest(context, operationItem[method], request);
 
+    methodPath = method + path;
     requestBlock = { request: unifiedRequestTypes, response: resolvedExampleTypes };
-    extractedTypesList.push(requestBlock);
+    requestObj = { [methodPath]: requestBlock };
+    extractedTypesList.push(requestObj);
 
     // add accept header if found and not present already
     if (!_.isEmpty(acceptHeader)) {
