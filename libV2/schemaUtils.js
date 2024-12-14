@@ -1,6 +1,5 @@
 const generateAuthForCollectionFromOpenAPI = require('./helpers/collection/generateAuthForCollectionFromOpenAPI');
 const utils = require('./utils');
-const { v4: uuidv4 } = require('uuid');
 
 const schemaFaker = require('../assets/json-schema-faker'),
   _ = require('lodash'),
@@ -2488,14 +2487,12 @@ let QUERYPARAM = 'query',
       let headers = resolveResponseHeaders(context, responseSchema.headers),
         bodyHeaderObj,
         respBlock,
-        uuid;
-      resolvedHeadersList = context.resolvedSchemaTypes;
+        resolvedHeadersList = context.resolvedSchemaTypes;
       bodyHeaderObj =
       resolvedExamplesList ? {
         body: JSON.stringify(resolvedExamplesList[0], null, 2),
         headers: JSON.stringify(resolvedHeadersList, null, 2) } : {};
-      uuid = uuidv4();
-      respBlock = { [uuid]: bodyHeaderObj };
+      respBlock = { [code]: bodyHeaderObj };
       Object.assign(finalRespBlock, respBlock);
 
       context.resolvedSchemaTypes = null;
