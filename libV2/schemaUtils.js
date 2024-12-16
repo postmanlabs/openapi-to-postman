@@ -749,15 +749,15 @@ let QUERYPARAM = 'query',
         const propertyDetails = {
           type: prop.type || 'unknown',
           required: requiredProperties.has(key) || parentRequired.has(key),
-          enum: prop.enum || null,
-          minLength: prop.minLength || null,
-          maxLength: prop.maxLength || null,
-          minimum: prop.minimum || null,
-          maximum: prop.maximum || null,
-          pattern: prop.pattern || null,
-          example: prop.example || null,
-          description: prop.description || null,
-          format: prop.format || null
+          enum: prop.enum || undefined,
+          minLength: prop.minLength || undefined,
+          maxLength: prop.maxLength || undefined,
+          minimum: prop.minimum || undefined,
+          maximum: prop.maximum || undefined,
+          pattern: prop.pattern || undefined,
+          example: prop.example || undefined,
+          description: prop.description || undefined,
+          format: prop.format || undefined
         };
         if (prop.$ref) {
           propertyDetails.properties = processSchema(prop);
@@ -848,13 +848,13 @@ let QUERYPARAM = 'query',
           properties = {
             type: prop.type || 'unknown',
             required: requiredProperties.has(key),
-            enum: prop.enum || null,
-            minLength: prop.minLength || null,
-            maxLength: prop.maxLength || null,
-            minimum: prop.minimum || null,
-            maximum: prop.maximum || null,
-            pattern: prop.pattern || null,
-            example: prop.example || null
+            enum: prop.enum || undefined,
+            minLength: prop.minLength || undefined,
+            maxLength: prop.maxLength || undefined,
+            minimum: prop.minimum || undefined,
+            maximum: prop.maximum || undefined,
+            pattern: prop.pattern || undefined,
+            example: prop.example || undefined
           };
         propertyDetails = { keyName, properties };
         if (keyName) {
@@ -2019,13 +2019,13 @@ let QUERYPARAM = 'query',
         keyName = name;
         properties = {
           type: schema.type || 'unknown',
-          enum: schema.enum || null,
-          minLength: schema.minLength || null,
-          maxLength: schema.maxLength || null,
-          minimum: schema.minimum || null,
-          maximum: schema.maximum || null,
-          pattern: schema.pattern || null,
-          example: schema.example || null
+          enum: schema.enum || undefined,
+          minLength: schema.minLength || undefined,
+          maxLength: schema.maxLength || undefined,
+          minimum: schema.minimum || undefined,
+          maximum: schema.maximum || undefined,
+          pattern: schema.pattern || undefined,
+          example: schema.example || undefined
         };
       }
       propertyDetails = { keyName, properties };
@@ -2078,13 +2078,13 @@ let QUERYPARAM = 'query',
         keyName = name;
         properties = {
           type: schema.type || 'unknown',
-          enum: schema.enum || null,
-          minLength: schema.minLength || null,
-          maxLength: schema.maxLength || null,
-          minimum: schema.minimum || null,
-          maximum: schema.maximum || null,
-          pattern: schema.pattern || null,
-          example: schema.example || null
+          enum: schema.enum || undefined,
+          minLength: schema.minLength || undefined,
+          maxLength: schema.maxLength || undefined,
+          minimum: schema.minimum || undefined,
+          maximum: schema.maximum || undefined,
+          pattern: schema.pattern || undefined,
+          example: schema.example || undefined
         };
       }
       propertyDetails = { keyName, properties };
@@ -2168,13 +2168,13 @@ let QUERYPARAM = 'query',
         keyName = name;
         properties = {
           type: schema.type || 'unknown',
-          enum: schema.enum || null,
-          minLength: schema.minLength || null,
-          maxLength: schema.maxLength || null,
-          minimum: schema.minimum || null,
-          maximum: schema.maximum || null,
-          pattern: schema.pattern || null,
-          example: schema.example || null
+          enum: schema.enum || undefined,
+          minLength: schema.minLength || undefined,
+          maxLength: schema.maxLength || undefined,
+          minimum: schema.minimum || undefined,
+          maximum: schema.maximum || undefined,
+          pattern: schema.pattern || undefined,
+          example: schema.example || undefined
         };
       }
       propertyDetails = { keyName, properties };
@@ -2320,13 +2320,13 @@ let QUERYPARAM = 'query',
         keyName = name;
         properties = {
           type: schema.type || 'unknown',
-          enum: schema.enum || null,
-          minLength: schema.minLength || null,
-          maxLength: schema.maxLength || null,
-          minimum: schema.minimum || null,
-          maximum: schema.maximum || null,
-          pattern: schema.pattern || null,
-          example: schema.example || null
+          enum: schema.enum || undefined,
+          minLength: schema.minLength || undefined,
+          maxLength: schema.maxLength || undefined,
+          minimum: schema.minimum || undefined,
+          maximum: schema.maximum || undefined,
+          pattern: schema.pattern || undefined,
+          example: schema.example || undefined
         };
 
       }
