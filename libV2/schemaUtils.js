@@ -2589,8 +2589,7 @@ module.exports = {
       { alwaysInheritAuthentication } = context.computedOptions,
       methodPath,
       requestBlock,
-      requestObj,
-      extractedTypesList = [];
+      extractedTypesObject = {};
     context.resolvedSchemaTypes = null;
     headers.push(..._.get(requestBody, 'headers', []));
     pathVariables.push(...baseUrlData.pathVariables);
@@ -2627,8 +2626,7 @@ module.exports = {
 
     methodPath = method + path;
     requestBlock = { request: unifiedRequestTypes, response: resolvedExampleTypes };
-    requestObj = { [methodPath]: requestBlock };
-    extractedTypesList.push(requestObj);
+    Object.assign(extractedTypesObject, { [methodPath]: requestBlock });
 
     // add accept header if found and not present already
     if (!_.isEmpty(acceptHeader)) {
@@ -2643,7 +2641,7 @@ module.exports = {
         })
       },
       collectionVariables,
-      extractedTypesList
+      extractedTypesObject
     };
   },
 

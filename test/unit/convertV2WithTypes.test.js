@@ -83,7 +83,7 @@ describe('convertV2WithTypes', function() {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.extractedTypes).to.not.be.undefined;
-        expect(conversionResult.extractedTypes.length).to.not.equal(0);
+        expect(Object.keys(conversionResult.extractedTypes).length).to.not.equal(0);
       }
     );
   });
@@ -97,24 +97,25 @@ describe('convertV2WithTypes', function() {
       { type: 'file', data: testSpec1 }, { requestNameSource: 'url' }, (err, conversionResult) => {
 
         expect(err).to.be.null;
-        expect(conversionResult.extractedTypes).to.be.an('array').that.is.not.empty;
-        const element = conversionResult.extractedTypes[0];
+        expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+        for (const [path, element] of Object.entries(conversionResult.extractedTypes)) {
+          expect(element).to.be.an('object').that.includes.keys('request');
+          expect(element).to.be.an('object').that.includes.keys('response');
+          expect(path).to.be.a('string');
 
-        expect(element).to.be.an('object').that.includes.keys('request');
-        expect(element).to.be.an('object').that.includes.keys('response');
-        const { response } = element;
-        expect(response).to.be.an('object').that.is.not.empty;
-        const [key, value] = Object.entries(response)[1];
-        expect(key).to.be.a('string');
-        const schema = JSON.parse(value.body),
-          transformedSchema = transformSchema(schema),
-          validate = ajv.compile(transformedSchema),
-          valid = validate(example);
+          const { response } = element;
+          expect(response).to.be.an('object').that.is.not.empty;
+          const [key, value] = Object.entries(response)[1];
+          expect(key).to.be.a('string');
 
-        expect(value).to.have.property('body').that.is.a('string');
+          const schema = JSON.parse(value.body),
+            transformedSchema = transformSchema(schema),
+            validate = ajv.compile(transformedSchema),
+            valid = validate(example);
 
-
-        expect(valid, `Validation failed for key: ${key} with errors: ${JSON.stringify(validate.errors)}`).to.be.true;
+          expect(value).to.have.property('body').that.is.a('string');
+          expect(valid, `Validation failed for key: ${key} with errors: ${JSON.stringify(validate.errors)}`).to.be.true;
+        }
       });
   });
 
@@ -137,12 +138,10 @@ describe('convertV2WithTypes', function() {
 
     Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
       expect(err).to.be.null;
-      expect(conversionResult.extractedTypes).to.be.an('array').that.is.not.empty;
+      expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
 
-      // Validate the first extracted type
-      const element = conversionResult.extractedTypes[0];
+      const element = Object.values(conversionResult.extractedTypes)[0];
       const { response } = element;
-
       // Get the schema from the response
       const [key, value] = Object.entries(response)[0];
       expect(value).to.have.property('body').that.is.a('string');
@@ -153,6 +152,7 @@ describe('convertV2WithTypes', function() {
         valid = validate(example);
       expect(valid, `Validation failed for key: ${key} with errors: ${JSON.stringify(validate.errors)}`).to.be.true;
       done();
-    });
+    }
+    );
   });
 });

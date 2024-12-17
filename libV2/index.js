@@ -33,7 +33,7 @@ module.exports = {
     let preOrderTraversal = GraphLib.alg.preorder(collectionTree, 'root:collection');
 
     let collection = {},
-      finalExtractedTypesList = [];
+      finalExtractedTypesObject = {};
 
     /**
      * individually start generating the folder, request, collection
@@ -93,17 +93,18 @@ module.exports = {
           let request = {},
             collectionVariables = [],
             requestObject = {},
-            extractedTypesList = [];
+            extractedTypesObject = {};
 
           try {
-            ({ request, collectionVariables, extractedTypesList } = resolvePostmanRequest(context,
+            ({ request, collectionVariables, extractedTypesObject } = resolvePostmanRequest(context,
               context.openapi.paths[node.meta.path],
               node.meta.path,
               node.meta.method
             ));
 
             requestObject = generateRequestItemObject(request);
-            finalExtractedTypesList = finalExtractedTypesList.concat(extractedTypesList);
+            finalExtractedTypesObject = Object.assign({}, finalExtractedTypesObject, extractedTypesObject);
+
           }
           catch (error) {
             console.error(error);
@@ -228,7 +229,7 @@ module.exports = {
           data: collection
         }],
         analytics: this.analytics || {},
-        extractedTypes: finalExtractedTypesList || []
+        extractedTypes: finalExtractedTypesObject || []
       });
     }
     return cb(null, {
