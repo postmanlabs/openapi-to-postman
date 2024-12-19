@@ -742,13 +742,15 @@ let QUERYPARAM = 'query',
     if (resolvedSchema.type === 'object' && resolvedSchema.properties) {
       const schemaDetails = {
           type: resolvedSchema.type || 'unknown',
-          properties: {}
+          properties: {},
+          required: []
         },
         requiredProperties = new Set(resolvedSchema.required || []);
+
       for (let [key, prop] of Object.entries(resolvedSchema.properties)) {
         const propertyDetails = {
           type: prop.type || 'unknown',
-          required: requiredProperties.has(key) || parentRequired.has(key),
+          deprecated: prop.deprecated || false,
           enum: prop.enum || undefined,
           minLength: prop.minLength || undefined,
           maxLength: prop.maxLength || undefined,
@@ -759,18 +761,28 @@ let QUERYPARAM = 'query',
           description: prop.description || undefined,
           format: prop.format || undefined
         };
+
+        if (requiredProperties.has(key) || parentRequired.has(key)) {
+          schemaDetails.required.push(key);
+        }
         if (prop.$ref) {
-          propertyDetails.properties = processSchema(prop);
+          propertyDetails.properties = processSchema(prop, parentRequired = requiredProperties);
         }
         else if (prop.properties) {
-          let res = processSchema(prop).properties;
-          propertyDetails.properties = res;
+          let res = processSchema(prop);
+          propertyDetails.properties = res.properties;
+          if (res.required) {
+            propertyDetails.required = res.required;
+          }
         }
         else if (prop.type === 'array' && prop.items) {
-          propertyDetails.items = processSchema(prop.items);
+          propertyDetails.items = processSchema(prop.items, parentRequired = requiredProperties);
         }
 
         schemaDetails.properties[key] = propertyDetails;
+      }
+      if (schemaDetails.required && schemaDetails.required.length === 0) {
+        schemaDetails.required = undefined;
       }
       return schemaDetails;
     }
@@ -2019,6 +2031,8 @@ let QUERYPARAM = 'query',
         keyName = name;
         properties = {
           type: schema.type || 'unknown',
+          required: param.required || false,
+          deprecated: param.deprecated || false,
           enum: schema.enum || undefined,
           minLength: schema.minLength || undefined,
           maxLength: schema.maxLength || undefined,
@@ -2078,6 +2092,8 @@ let QUERYPARAM = 'query',
         keyName = name;
         properties = {
           type: schema.type || 'unknown',
+          required: param.required || false,
+          deprecated: param.deprecated || false,
           enum: schema.enum || undefined,
           minLength: schema.minLength || undefined,
           maxLength: schema.maxLength || undefined,
@@ -2168,6 +2184,8 @@ let QUERYPARAM = 'query',
         keyName = name;
         properties = {
           type: schema.type || 'unknown',
+          required: param.required || false,
+          deprecated: param.deprecated || false,
           enum: schema.enum || undefined,
           minLength: schema.minLength || undefined,
           maxLength: schema.maxLength || undefined,
@@ -2320,6 +2338,8 @@ let QUERYPARAM = 'query',
         keyName = name;
         properties = {
           type: schema.type || 'unknown',
+          required: schema.required || false,
+          deprecated: schema.deprecated || false,
           enum: schema.enum || undefined,
           minLength: schema.minLength || undefined,
           maxLength: schema.maxLength || undefined,

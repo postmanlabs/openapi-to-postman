@@ -23,6 +23,7 @@ const expect = require('chai').expect,
         (acc, [key, value]) => {
           acc[key] = {
             type: value.type,
+            deprecated: value.deprecated || false,
             enum: value.enum !== null ? value.enum : undefined,
             minLength: value.minLength !== null ? value.minLength : undefined,
             maxLength: value.maxLength !== null ? value.maxLength : undefined,
