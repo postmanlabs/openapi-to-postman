@@ -820,8 +820,7 @@ let QUERYPARAM = 'query',
     // reset readOnly and writeOnly prop cache before resolving schema to make sure we have fresh cache
     resetReadWritePropCache(context);
     let resolvedSchema = _resolveSchema(context, schema, stack, resolveFor, seenRef),
-      resolvedSchemaTypes = [],
-      propertyDetails = {};
+      resolvedSchemaTypes = [];
 
     /**
      * If readOnly or writeOnly properties are present in the schema, we need to clone original schema first.
@@ -850,29 +849,6 @@ let QUERYPARAM = 'query',
     if (isBodySchema && context.enableTypeFetching) {
       let properties = processSchema(resolvedSchema);
       resolvedSchemaTypes.push(properties);
-      context.resolvedSchemaTypes = resolvedSchemaTypes;
-    }
-    // for fetching types for $ref in request params
-    else if (context.enableTypeFetching && isResponseSchema && resolvedSchema.properties) {
-      const requiredProperties = new Set(resolvedSchema.required || []);
-      for (let [key, prop] of Object.entries(resolvedSchema.properties || {})) {
-        let keyName = key,
-          properties = {
-            type: prop.type || 'unknown',
-            required: requiredProperties.has(key),
-            enum: prop.enum || undefined,
-            minLength: prop.minLength || undefined,
-            maxLength: prop.maxLength || undefined,
-            minimum: prop.minimum || undefined,
-            maximum: prop.maximum || undefined,
-            pattern: prop.pattern || undefined,
-            example: prop.example || undefined
-          };
-        propertyDetails = { keyName, properties };
-        if (keyName) {
-          resolvedSchemaTypes.push(propertyDetails);
-        }
-      }
       context.resolvedSchemaTypes = resolvedSchemaTypes;
     }
     return resolvedSchema;
@@ -2031,6 +2007,8 @@ let QUERYPARAM = 'query',
         keyName = name;
         properties = {
           type: schema.type || 'unknown',
+          format: schema.format || undefined,
+          default: schema.default || undefined,
           required: param.required || false,
           deprecated: param.deprecated || false,
           enum: schema.enum || undefined,
@@ -2092,6 +2070,8 @@ let QUERYPARAM = 'query',
         keyName = name;
         properties = {
           type: schema.type || 'unknown',
+          format: schema.format || undefined,
+          default: schema.default || undefined,
           required: param.required || false,
           deprecated: param.deprecated || false,
           enum: schema.enum || undefined,
@@ -2184,6 +2164,8 @@ let QUERYPARAM = 'query',
         keyName = name;
         properties = {
           type: schema.type || 'unknown',
+          format: schema.format || undefined,
+          default: schema.default || undefined,
           required: param.required || false,
           deprecated: param.deprecated || false,
           enum: schema.enum || undefined,
@@ -2338,6 +2320,8 @@ let QUERYPARAM = 'query',
         keyName = name;
         properties = {
           type: schema.type || 'unknown',
+          format: schema.format || undefined,
+          default: schema.default || undefined,
           required: schema.required || false,
           deprecated: schema.deprecated || false,
           enum: schema.enum || undefined,
