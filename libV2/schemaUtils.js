@@ -765,9 +765,6 @@ let QUERYPARAM = 'query',
         if (requiredProperties.has(key) || parentRequired.has(key)) {
           schemaDetails.required.push(key);
         }
-        if (prop.$ref) {
-          propertyDetails.properties = processSchema(prop, parentRequired = requiredProperties);
-        }
         else if (prop.properties) {
           let res = processSchema(prop);
           propertyDetails.properties = res.properties;
@@ -1993,11 +1990,15 @@ let QUERYPARAM = 'query',
         param = resolveSchema(context, param);
       }
 
+      if (_.has(param.schema, '$ref')) {
+        param.schema = resolveSchema(context, param.schema);
+      }
+
       if (param.in !== QUERYPARAM || (!includeDeprecated && param.deprecated)) {
         return;
       }
 
-      let propertyDetails = {},
+      let queryParamTypeInfo = {},
         properties = {},
         keyName,
         paramValue = resolveValueOfParameter(context, param);
@@ -2020,9 +2021,9 @@ let QUERYPARAM = 'query',
           example: schema.example || undefined
         };
       }
-      propertyDetails = { keyName, properties };
+      queryParamTypeInfo = { keyName, properties };
       if (keyName && param.schema && param.schema.type) {
-        queryParamTypes.push(propertyDetails);
+        queryParamTypes.push(queryParamTypeInfo);
       }
 
       if (typeof paramValue === 'number' || typeof paramValue === 'boolean') {
@@ -2056,11 +2057,15 @@ let QUERYPARAM = 'query',
         param = resolveSchema(context, param);
       }
 
+      if (_.has(param.schema, '$ref')) {
+        param.schema = resolveSchema(context, param.schema);
+      }
+
       if (param.in !== PATHPARAM) {
         return;
       }
 
-      let propertyDetails = {},
+      let pathParamTypeInfo = {},
         properties = {},
         keyName,
         paramValue = resolveValueOfParameter(context, param);
@@ -2083,9 +2088,9 @@ let QUERYPARAM = 'query',
           example: schema.example || undefined
         };
       }
-      propertyDetails = { keyName, properties };
+      pathParamTypeInfo = { keyName, properties };
       if (keyName && param.schema && param.schema.type) {
-        pathParamTypes.push(propertyDetails);
+        pathParamTypes.push(pathParamTypeInfo);
       }
 
       if (typeof paramValue === 'number' || typeof paramValue === 'boolean') {
@@ -2146,6 +2151,10 @@ let QUERYPARAM = 'query',
         param = resolveSchema(context, param);
       }
 
+      if (_.has(param.schema, '$ref')) {
+        param.schema = resolveSchema(context, param.schema);
+      }
+
       if (param.in !== HEADER || (!includeDeprecated && param.deprecated)) {
         return;
       }
@@ -2154,7 +2163,7 @@ let QUERYPARAM = 'query',
         return;
       }
 
-      let propertyDetails = {},
+      let headerTypeInfo = {},
         properties = {},
         keyName,
         paramValue = resolveValueOfParameter(context, param);
@@ -2177,10 +2186,10 @@ let QUERYPARAM = 'query',
           example: schema.example || undefined
         };
       }
-      propertyDetails = { keyName, properties };
+      headerTypeInfo = { keyName, properties };
 
       if (keyName && param.schema && param.schema.type) {
-        headerTypes.push(propertyDetails);
+        headerTypes.push(headerTypeInfo);
       }
 
       if (typeof paramValue === 'number' || typeof paramValue === 'boolean') {
@@ -2298,7 +2307,7 @@ let QUERYPARAM = 'query',
       }
 
       let headerValue = resolveValueOfParameter(context, value, { isResponseSchema: true }),
-        propertyDetails = {},
+        headerTypeInfo = {},
         properties = {},
         keyName;
 
@@ -2334,9 +2343,9 @@ let QUERYPARAM = 'query',
         };
 
       }
-      propertyDetails = { keyName, properties };
+      headerTypeInfo = { keyName, properties };
       if (keyName && headerData.schema && headerData.schema.type) {
-        headerTypes.push(propertyDetails);
+        headerTypes.push(headerTypeInfo);
       }
     });
 
@@ -2560,7 +2569,6 @@ let QUERYPARAM = 'query',
         responses.push(response);
       });
     });
-    // console.log('finalRespBlock is ', JSON.stringify(finalRespBlock, null, 2));
     return {
       responses,
       acceptHeader: requestAcceptHeader,
@@ -2593,7 +2601,7 @@ module.exports = {
       { alwaysInheritAuthentication } = context.computedOptions,
       methodPath,
       requestBlock,
-      extractedTypesObject = {};
+      typesObject = {};
     context.resolvedSchemaTypes = null;
     headers.push(..._.get(requestBody, 'headers', []));
     pathVariables.push(...baseUrlData.pathVariables);
@@ -2616,10 +2624,10 @@ module.exports = {
     };
 
     const unifiedRequestTypes = {
-        body: JSON.stringify(bodyTypes, null, 4),
-        headers: JSON.stringify(headerTypes, null, 4),
-        pathParam: JSON.stringify(pathParamTypes, null, 4),
-        queryParam: JSON.stringify(queryParamTypes, null, 4)
+        body: JSON.stringify(bodyTypes, null, 2),
+        headers: JSON.stringify(headerTypes, null, 2),
+        pathParam: JSON.stringify(pathParamTypes, null, 2),
+        queryParam: JSON.stringify(queryParamTypes, null, 2)
       },
 
       {
@@ -2630,7 +2638,7 @@ module.exports = {
 
     methodPath = method + path;
     requestBlock = { request: unifiedRequestTypes, response: resolvedExampleTypes };
-    Object.assign(extractedTypesObject, { [methodPath]: requestBlock });
+    Object.assign(typesObject, { [methodPath]: requestBlock });
 
     // add accept header if found and not present already
     if (!_.isEmpty(acceptHeader)) {
@@ -2645,7 +2653,7 @@ module.exports = {
         })
       },
       collectionVariables,
-      extractedTypesObject
+      typesObject
     };
   },
 

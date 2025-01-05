@@ -93,17 +93,17 @@ module.exports = {
           let request = {},
             collectionVariables = [],
             requestObject = {},
-            extractedTypesObject = {};
+            typesObject = {};
 
           try {
-            ({ request, collectionVariables, extractedTypesObject } = resolvePostmanRequest(context,
+            ({ request, collectionVariables, typesObject } = resolvePostmanRequest(context,
               context.openapi.paths[node.meta.path],
               node.meta.path,
               node.meta.method
             ));
 
             requestObject = generateRequestItemObject(request);
-            finalExtractedTypesObject = Object.assign({}, finalExtractedTypesObject, extractedTypesObject);
+            finalExtractedTypesObject = Object.assign({}, finalExtractedTypesObject, typesObject);
 
           }
           catch (error) {
