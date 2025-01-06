@@ -33,7 +33,7 @@ module.exports = {
     let preOrderTraversal = GraphLib.alg.preorder(collectionTree, 'root:collection');
 
     let collection = {},
-      finalExtractedTypesObject = {};
+      extractedTypesObject = {};
 
     /**
      * individually start generating the folder, request, collection
@@ -103,7 +103,7 @@ module.exports = {
             ));
 
             requestObject = generateRequestItemObject(request);
-            finalExtractedTypesObject = Object.assign({}, finalExtractedTypesObject, typesObject);
+            extractedTypesObject = Object.assign({}, extractedTypesObject, typesObject);
 
           }
           catch (error) {
@@ -229,7 +229,7 @@ module.exports = {
           data: collection
         }],
         analytics: this.analytics || {},
-        extractedTypes: finalExtractedTypesObject || []
+        extractedTypes: extractedTypesObject || {}
       });
     }
     return cb(null, {

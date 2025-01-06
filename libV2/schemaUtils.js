@@ -736,8 +736,13 @@ let QUERYPARAM = 'query',
     return schema;
   },
 
-  /** process and resolves types from nested schema structure **/
-
+  /**
+ * Processes and resolves types from Nested JSON schema structure.
+ *
+ * @param {Object} resolvedSchema - The resolved JSON schema to process.
+ * @param {Set<string>} [parentRequired=new Set()] - A set of parent-required property keys to inherit.
+ * @returns {Object} The processed schema details.
+ */
   processSchema = (resolvedSchema, parentRequired = new Set()) => {
     if (resolvedSchema.type === 'object' && resolvedSchema.properties) {
       const schemaDetails = {
@@ -750,12 +755,12 @@ let QUERYPARAM = 'query',
       for (let [key, prop] of Object.entries(resolvedSchema.properties)) {
         const propertyDetails = {
           type: prop.type || 'unknown',
-          deprecated: prop.deprecated || false,
+          deprecated: prop.deprecated,
           enum: prop.enum || undefined,
-          minLength: prop.minLength || undefined,
-          maxLength: prop.maxLength || undefined,
-          minimum: prop.minimum || undefined,
-          maximum: prop.maximum || undefined,
+          minLength: prop.minLength !== undefined ? prop.minLength : undefined,
+          maxLength: prop.maxLength !== undefined ? prop.maxLength : undefined,
+          minimum: prop.minimum !== undefined ? prop.minimum : undefined,
+          maximum: prop.maximum !== undefined ? prop.maximum : undefined,
           pattern: prop.pattern || undefined,
           example: prop.example || undefined,
           description: prop.description || undefined,
@@ -765,7 +770,7 @@ let QUERYPARAM = 'query',
         if (requiredProperties.has(key) || parentRequired.has(key)) {
           schemaDetails.required.push(key);
         }
-        else if (prop.properties) {
+        if (prop.properties) {
           let res = processSchema(prop);
           propertyDetails.properties = res.properties;
           if (res.required) {
@@ -784,7 +789,6 @@ let QUERYPARAM = 'query',
       return schemaDetails;
     }
     else if (resolvedSchema.type === 'array' && resolvedSchema.items) {
-      // Handle array type schema
       const arrayDetails = {
         type: resolvedSchema.type || 'unknown',
         items: processSchema(resolvedSchema.items)
@@ -812,12 +816,11 @@ let QUERYPARAM = 'query',
    * @returns {Object} Returns the object that satisfies the schema
    */
   resolveSchema = (context, schema,
-    { stack = 0, resolveFor = CONVERSION, seenRef = {}, isResponseSchema = false, isBodySchema = false } = {}
+    { stack = 0, resolveFor = CONVERSION, seenRef = {}, isResponseSchema = false } = {}
   ) => {
     // reset readOnly and writeOnly prop cache before resolving schema to make sure we have fresh cache
     resetReadWritePropCache(context);
-    let resolvedSchema = _resolveSchema(context, schema, stack, resolveFor, seenRef),
-      resolvedSchemaTypes = [];
+    let resolvedSchema = _resolveSchema(context, schema, stack, resolveFor, seenRef);
 
     /**
      * If readOnly or writeOnly properties are present in the schema, we need to clone original schema first.
@@ -840,13 +843,6 @@ let QUERYPARAM = 'query',
         // We need to make sure to remove empty strings via _.compact that are added while forming json-pointer
         _.unset(resolvedSchema, utils.getJsonPathArray(key));
       });
-    }
-
-    // for fetching types from request and response body $ref and nested $ref
-    if (isBodySchema && context.enableTypeFetching) {
-      let properties = processSchema(resolvedSchema);
-      resolvedSchemaTypes.push(properties);
-      context.resolvedSchemaTypes = resolvedSchemaTypes;
     }
     return resolvedSchema;
   },
@@ -1475,7 +1471,8 @@ let QUERYPARAM = 'query',
       bodyKey = isExampleBody ? 'response' : 'request',
       responseExamples,
       example,
-      examples;
+      examples,
+      resolvedSchemaTypes = [];
 
     if (_.isEmpty(requestBodySchema)) {
       return [{ [bodyKey]: bodyData }];
@@ -1485,7 +1482,7 @@ let QUERYPARAM = 'query',
       requestBodySchema = resolveSchema(
         context,
         requestBodySchema,
-        { isResponseSchema: isExampleBody, isBodySchema: true }
+        { isResponseSchema: isExampleBody }
       );
     }
 
@@ -1539,7 +1536,7 @@ let QUERYPARAM = 'query',
     requestBodySchema = resolveSchema(
       context,
       requestBodySchema,
-      { isResponseSchema: isExampleBody, isBodySchema: true });
+      { isResponseSchema: isExampleBody });
 
     // If schema object has example defined, try to use that if no example is defiend at request body level
     if (example === undefined && _.get(requestBodySchema, 'example') !== undefined) {
@@ -1567,7 +1564,7 @@ let QUERYPARAM = 'query',
         requestBodySchema = resolveSchema(
           context,
           requestBodySchema,
-          { isResponseSchema: isExampleBody, isBodySchema: true });
+          { isResponseSchema: isExampleBody });
       }
 
       if (isBodyTypeXML) {
@@ -1593,7 +1590,11 @@ let QUERYPARAM = 'query',
             }
           });
         }
-
+        if (context.enableTypeFetching && requestBodySchema.type !== undefined &&
+           requestBodySchema.type !== 'unknown') {
+          let properties = processSchema(requestBodySchema);
+          resolvedSchemaTypes.push(properties);
+        }
         // This is to handle cases when the jsf throws errors on finding unsupported types/formats
         try {
           bodyData = fakeSchema(context, requestBodySchema, shouldGenerateFromExample);
@@ -1642,7 +1643,7 @@ let QUERYPARAM = 'query',
       return generateExamples(context, responseExamples, matchedRequestBodyExamples, requestBodySchema, isBodyTypeXML);
     }
 
-    return [{ [bodyKey]: bodyData }];
+    return [{ [bodyKey]: bodyData }, resolvedSchemaTypes[0]];
   },
 
   resolveUrlEncodedRequestBodyForPostmanRequest = (context, requestBodyContent) => {
@@ -1652,17 +1653,21 @@ let QUERYPARAM = 'query',
         mode: 'urlencoded',
         urlencoded: urlEncodedParams
       },
-      resolvedBody;
+      resolvedBody,
+      result,
+      resolvedSchemaTypeObject;
 
     if (_.isEmpty(requestBodyContent)) {
       return requestBodyData;
     }
 
     if (_.has(requestBodyContent, 'schema.$ref')) {
-      requestBodyContent.schema = resolveSchema(context, requestBodyContent.schema, { isBodySchema: true });
+      requestBodyContent.schema = resolveSchema(context, requestBodyContent.schema);
     }
 
-    resolvedBody = resolveBodyData(context, requestBodyContent.schema)[0];
+    result = resolveBodyData(context, requestBodyContent.schema);
+    resolvedBody = result[0];
+    resolvedSchemaTypeObject = result[1];
     resolvedBody && (bodyData = resolvedBody.request);
 
     const encoding = requestBodyContent.encoding || {};
@@ -1697,7 +1702,8 @@ let QUERYPARAM = 'query',
       headers: [{
         key: 'Content-Type',
         value: URLENCODED
-      }]
+      }],
+      resolvedSchemaTypeObject
     };
   },
 
@@ -1709,13 +1715,17 @@ let QUERYPARAM = 'query',
         mode: 'formdata',
         formdata: formDataParams
       },
-      resolvedBody;
+      resolvedBody,
+      result,
+      resolvedSchemaTypeObject;
 
     if (_.isEmpty(requestBodyContent)) {
       return requestBodyData;
     }
 
-    resolvedBody = resolveBodyData(context, requestBodyContent.schema)[0];
+    result = resolveBodyData(context, requestBodyContent.schema);
+    resolvedBody = result[0];
+    resolvedSchemaTypeObject = result[1];
     resolvedBody && (bodyData = resolvedBody.request);
 
     encoding = _.get(requestBodyContent, 'encoding', {});
@@ -1728,7 +1738,7 @@ let QUERYPARAM = 'query',
         param;
 
       requestBodySchema = _.has(requestBodyContent, 'schema.$ref') ?
-        resolveSchema(context, requestBodyContent.schema, { isBodySchema: true }) :
+        resolveSchema(context, requestBodyContent.schema) :
         _.get(requestBodyContent, 'schema');
 
       paramSchema = _.get(requestBodySchema, ['properties', key], {});
@@ -1773,7 +1783,8 @@ let QUERYPARAM = 'query',
       headers: [{
         key: 'Content-Type',
         value: FORM_DATA
-      }]
+      }],
+      resolvedSchemaTypeObject
     };
   },
 
@@ -1818,7 +1829,9 @@ let QUERYPARAM = 'query',
       headerFamily,
       dataToBeReturned = {},
       { concreteUtils } = context,
-      resolvedBody;
+      resolvedBody,
+      result,
+      resolvedSchemaTypeObject;
 
     headerFamily = getHeaderFamily(bodyType);
 
@@ -1829,7 +1842,9 @@ let QUERYPARAM = 'query',
     }
     // Handling for Raw mode data
     else {
-      resolvedBody = resolveBodyData(context, requestContent[bodyType], bodyType)[0];
+      result = resolveBodyData(context, requestContent[bodyType], bodyType);
+      resolvedBody = result[0];
+      resolvedSchemaTypeObject = result[1];
       resolvedBody && (bodyData = resolvedBody.request);
 
       if ((bodyType === TEXT_XML || bodyType === APP_XML || headerFamily === HEADER_TYPE.XML)) {
@@ -1861,7 +1876,8 @@ let QUERYPARAM = 'query',
       headers: [{
         key: 'Content-Type',
         value: bodyType
-      }]
+      }],
+      resolvedSchemaTypeObject
     };
   },
 
@@ -1880,7 +1896,7 @@ let QUERYPARAM = 'query',
     }
 
     if (requestBody.$ref) {
-      requestBody = resolveSchema(context, requestBody, { isBodySchema: true });
+      requestBody = resolveSchema(context, requestBody);
     }
 
     requestContent = requestBody.content;
@@ -2013,10 +2029,10 @@ let QUERYPARAM = 'query',
           required: param.required || false,
           deprecated: param.deprecated || false,
           enum: schema.enum || undefined,
-          minLength: schema.minLength || undefined,
-          maxLength: schema.maxLength || undefined,
-          minimum: schema.minimum || undefined,
-          maximum: schema.maximum || undefined,
+          minLength: schema.minLength !== undefined ? schema.minLength : undefined,
+          maxLength: schema.maxLength !== undefined ? schema.maxLength : undefined,
+          minimum: schema.minimum !== undefined ? schema.minimum : undefined,
+          maximum: schema.maximum !== undefined ? schema.maximum : undefined,
           pattern: schema.pattern || undefined,
           example: schema.example || undefined
         };
@@ -2080,10 +2096,10 @@ let QUERYPARAM = 'query',
           required: param.required || false,
           deprecated: param.deprecated || false,
           enum: schema.enum || undefined,
-          minLength: schema.minLength || undefined,
-          maxLength: schema.maxLength || undefined,
-          minimum: schema.minimum || undefined,
-          maximum: schema.maximum || undefined,
+          minLength: schema.minLength !== undefined ? schema.minLength : undefined,
+          maxLength: schema.maxLength !== undefined ? schema.maxLength : undefined,
+          minimum: schema.minimum !== undefined ? schema.minimum : undefined,
+          maximum: schema.maximum !== undefined ? schema.maximum : undefined,
           pattern: schema.pattern || undefined,
           example: schema.example || undefined
         };
@@ -2178,10 +2194,10 @@ let QUERYPARAM = 'query',
           required: param.required || false,
           deprecated: param.deprecated || false,
           enum: schema.enum || undefined,
-          minLength: schema.minLength || undefined,
-          maxLength: schema.maxLength || undefined,
-          minimum: schema.minimum || undefined,
-          maximum: schema.maximum || undefined,
+          minLength: schema.minLength !== undefined ? schema.minLength : undefined,
+          maxLength: schema.maxLength !== undefined ? schema.maxLength : undefined,
+          minimum: schema.minimum !== undefined ? schema.minimum : undefined,
+          maximum: schema.maximum !== undefined ? schema.maximum : undefined,
           pattern: schema.pattern || undefined,
           example: schema.example || undefined
         };
@@ -2225,14 +2241,16 @@ let QUERYPARAM = 'query',
       acceptHeader,
       emptyResponse = [{
         body: undefined
-      }];
+      }],
+      resolvedResponseBodyResult,
+      resolvedResponseBodyTypes;
 
     if (_.isEmpty(responseBody)) {
       return emptyResponse;
     }
 
     if (responseBody.$ref) {
-      responseBody = resolveSchema(context, responseBody, { isResponseSchema: true, isBodySchema: true });
+      responseBody = resolveSchema(context, responseBody, { isResponseSchema: true });
     }
 
     responseContent = responseBody.content;
@@ -2244,7 +2262,10 @@ let QUERYPARAM = 'query',
     bodyType = getRawBodyType(responseContent);
     headerFamily = getHeaderFamily(bodyType);
 
-    allBodyData = resolveBodyData(context, responseContent[bodyType], bodyType, true, code, requestBodyExamples);
+    resolvedResponseBodyResult = resolveBodyData(
+      context, responseContent[bodyType], bodyType, true, code, requestBodyExamples);
+    allBodyData = resolvedResponseBodyResult;
+    resolvedResponseBodyTypes = resolvedResponseBodyResult[1];
 
     return _.map(allBodyData, (bodyData) => {
       let requestBodyData = bodyData.request,
@@ -2283,7 +2304,8 @@ let QUERYPARAM = 'query',
         }],
         name: exampleName,
         bodyType,
-        acceptHeader
+        acceptHeader,
+        resolvedResponseBodyTypes: resolvedResponseBodyTypes
       };
     });
   },
@@ -2334,10 +2356,10 @@ let QUERYPARAM = 'query',
           required: schema.required || false,
           deprecated: schema.deprecated || false,
           enum: schema.enum || undefined,
-          minLength: schema.minLength || undefined,
-          maxLength: schema.maxLength || undefined,
-          minimum: schema.minimum || undefined,
-          maximum: schema.maximum || undefined,
+          minLength: schema.minLength !== undefined ? schema.minLength : undefined,
+          maxLength: schema.maxLength !== undefined ? schema.maxLength : undefined,
+          minimum: schema.minimum !== undefined ? schema.minimum : undefined,
+          maximum: schema.maximum !== undefined ? schema.maximum : undefined,
           pattern: schema.pattern || undefined,
           example: schema.example || undefined
         };
@@ -2349,10 +2371,7 @@ let QUERYPARAM = 'query',
       }
     });
 
-    if (context.enableTypeFetching) {
-      context.resolvedSchemaTypes = headerTypes;
-    }
-    return headers;
+    return { resolvedHeaderTypes: headerTypes, headers };
   },
 
   getPreviewLangugaForResponseBody = (bodyType) => {
@@ -2444,14 +2463,13 @@ let QUERYPARAM = 'query',
       rawBodyType,
       headerFamily,
       isBodyTypeXML,
-      resolvedExamplesList = [],
-      resolvedHeadersList = [],
-      finalRespBlock = {};
+      resolvedExamplesObject = {},
+      responseBlock = {};
 
     // store all request examples which will be used for creation of examples with correct request and response matching
     if (typeof requestBody === 'object') {
       if (requestBody.$ref) {
-        requestBody = resolveSchema(context, requestBody, { isResponseSchema: true, isBodySchema: true });
+        requestBody = resolveSchema(context, requestBody, { isResponseSchema: true });
       }
 
       requestContent = requestBody.content;
@@ -2471,7 +2489,7 @@ let QUERYPARAM = 'query',
 
                 if (isBodyTypeXML) {
                   let bodyData = getXMLExampleData(context, exampleData, resolveSchema(context, content.schema,
-                    { isResponseSchema: true, isBodySchema: true }));
+                    { isResponseSchema: true }));
 
                   exampleObj.value = getXmlVersionContent(bodyData);
                 }
@@ -2490,25 +2508,24 @@ let QUERYPARAM = 'query',
 
     _.forOwn(operationItem.responses, (responseObj, code) => {
       let responseSchema = _.has(responseObj, '$ref') ? (
-          resolveSchema(context, responseObj, { isResponseSchema: true, isBodySchema: true })) : responseObj,
+          resolveSchema(context, responseObj, { isResponseSchema: true })) : responseObj,
         { includeAuthInfoInExample } = context.computedOptions,
         auth = request.auth,
         resolvedExamples = resolveResponseBody(context, responseSchema, requestBodyExamples, code) || {};
-      resolvedExamplesList = context.resolvedSchemaTypes;
-      context.resolvedSchemaTypes = null;
+      resolvedExamplesObject = resolvedExamples[0] && resolvedExamples[0].resolvedResponseBodyTypes;
       // eslint-disable-next-line one-var
-      let headers = resolveResponseHeaders(context, responseSchema.headers),
-        bodyHeaderObj,
-        respBlock,
-        resolvedHeadersList = context.resolvedSchemaTypes;
-      bodyHeaderObj =
-      resolvedExamplesList ? {
-        body: JSON.stringify(resolvedExamplesList[0], null, 2),
-        headers: JSON.stringify(resolvedHeadersList, null, 2) } : {};
-      respBlock = { [code]: bodyHeaderObj };
-      Object.assign(finalRespBlock, respBlock);
+      let { resolvedHeaderTypes, headers } = resolveResponseHeaders(context, responseSchema.headers),
+        responseBodyHeaderObj,
+        responseTypes;
+      responseBodyHeaderObj = resolvedExamplesObject ?
+        {
+          body: JSON.stringify(resolvedExamplesObject, null, 2),
+          headers: JSON.stringify(resolvedHeaderTypes, null, 2)
+        } : {};
 
-      context.resolvedSchemaTypes = null;
+      responseTypes = { [code]: responseBodyHeaderObj };
+      Object.assign(responseBlock, responseTypes);
+
       _.forOwn(resolvedExamples, (resolvedExample = {}) => {
         let { body, contentHeader = [], bodyType, acceptHeader, name } = resolvedExample,
           resolvedRequestBody = _.get(resolvedExample, 'request.body'),
@@ -2572,8 +2589,7 @@ let QUERYPARAM = 'query',
     return {
       responses,
       acceptHeader: requestAcceptHeader,
-      resolvedExampleTypes: finalRespBlock,
-      resolvedHeadersList
+      unifiedResponseTypes: responseBlock
     };
   };
 
@@ -2594,15 +2610,17 @@ module.exports = {
       { pathParamTypes, pathParams } = resolvePathParamsForPostmanRequest(context, operationItem, method),
       { pathVariables, collectionVariables } = filterCollectionAndPathVariables(url, pathParams),
       requestBody = resolveRequestBodyForPostmanRequest(context, operationItem[method]),
-      bodyTypes = context.resolvedSchemaTypes ? context.resolvedSchemaTypes[0] : {},
+      bodyTypes = requestBody && requestBody.resolvedSchemaTypeObject,
       request,
       securitySchema = _.get(operationItem, [method, 'security']),
       authHelper = generateAuthForCollectionFromOpenAPI(context.openapi, securitySchema),
       { alwaysInheritAuthentication } = context.computedOptions,
-      methodPath,
+      requestIdentifier,
       requestBlock,
       typesObject = {};
-    context.resolvedSchemaTypes = null;
+    if (requestBody && requestBody.resolvedSchemaTypeObject) {
+      delete requestBody.resolvedSchemaTypeObject;
+    }
     headers.push(..._.get(requestBody, 'headers', []));
     pathVariables.push(...baseUrlData.pathVariables);
     collectionVariables.push(...baseUrlData.collectionVariables);
@@ -2633,12 +2651,12 @@ module.exports = {
       {
         responses,
         acceptHeader,
-        resolvedExampleTypes
+        unifiedResponseTypes
       } = resolveResponseForPostmanRequest(context, operationItem[method], request);
 
-    methodPath = method + path;
-    requestBlock = { request: unifiedRequestTypes, response: resolvedExampleTypes };
-    Object.assign(typesObject, { [methodPath]: requestBlock });
+    requestIdentifier = method + path;
+    requestBlock = { request: unifiedRequestTypes, response: unifiedResponseTypes };
+    Object.assign(typesObject, { [requestIdentifier]: requestBlock });
 
     // add accept header if found and not present already
     if (!_.isEmpty(acceptHeader)) {
