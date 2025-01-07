@@ -739,49 +739,51 @@ let QUERYPARAM = 'query',
   /**
  * Processes and resolves types from Nested JSON schema structure.
  *
- * @param {Object} resolvedSchema - The resolved JSON schema to process.
- * @param {Set<string>} [parentRequired=new Set()] - A set of parent-required property keys to inherit.
+ * @param {Object} resolvedSchema - The resolved JSON schema to process for type extraction.
  * @returns {Object} The processed schema details.
  */
   processSchema = (resolvedSchema) => {
     if (resolvedSchema.type === 'object' && resolvedSchema.properties) {
       const schemaDetails = {
-          type: resolvedSchema.type || 'unknown',
+          type: resolvedSchema.type,
           properties: {},
           required: []
         },
         requiredProperties = new Set(resolvedSchema.required || []);
 
-      for (let [key, prop] of Object.entries(resolvedSchema.properties)) {
+      for (let [propName, propValue] of Object.entries(resolvedSchema.properties)) {
+        if (!propValue.type) {
+          continue;
+        }
         const propertyDetails = {
-          type: prop.type || 'unknown',
-          deprecated: prop.deprecated,
-          enum: prop.enum || undefined,
-          minLength: prop.minLength !== undefined ? prop.minLength : undefined,
-          maxLength: prop.maxLength !== undefined ? prop.maxLength : undefined,
-          minimum: prop.minimum !== undefined ? prop.minimum : undefined,
-          maximum: prop.maximum !== undefined ? prop.maximum : undefined,
-          pattern: prop.pattern || undefined,
-          example: prop.example !== undefined ? prop.example : undefined,
-          description: prop.description !== undefined ? prop.description : undefined,
-          format: prop.format || undefined
+          type: propValue.type,
+          deprecated: propValue.deprecated,
+          enum: propValue.enum || undefined,
+          minLength: propValue.minLength,
+          maxLength: propValue.maxLength,
+          minimum: propValue.minimum,
+          maximum: propValue.maximum,
+          pattern: propValue.pattern,
+          example: propValue.example,
+          description: propValue.description,
+          format: propValue.format
         };
 
-        if (requiredProperties.has(key)) {
-          schemaDetails.required.push(key);
+        if (requiredProperties.has(propName)) {
+          schemaDetails.required.push(propName);
         }
-        if (prop.properties) {
-          let res = processSchema(prop);
-          propertyDetails.properties = res.properties;
-          if (res.required) {
-            propertyDetails.required = res.required;
+        if (propValue.properties) {
+          let processedProperties = processSchema(propValue);
+          propertyDetails.properties = processedProperties.properties;
+          if (processedProperties.required) {
+            propertyDetails.required = processedProperties.required;
           }
         }
-        else if (prop.type === 'array' && prop.items) {
-          propertyDetails.items = processSchema(prop.items);
+        else if (propValue.type === 'array' && propValue.items) {
+          propertyDetails.items = processSchema(propValue.items);
         }
 
-        schemaDetails.properties[key] = propertyDetails;
+        schemaDetails.properties[propName] = propertyDetails;
       }
       if (schemaDetails.required && schemaDetails.required.length === 0) {
         schemaDetails.required = undefined;
@@ -790,7 +792,7 @@ let QUERYPARAM = 'query',
     }
     else if (resolvedSchema.type === 'array' && resolvedSchema.items) {
       const arrayDetails = {
-        type: resolvedSchema.type || 'unknown',
+        type: resolvedSchema.type,
         items: processSchema(resolvedSchema.items)
       };
       if (resolvedSchema.minItems !== undefined) { arrayDetails.minItems = resolvedSchema.minItems; }
@@ -798,7 +800,7 @@ let QUERYPARAM = 'query',
       return arrayDetails;
     }
     return {
-      type: resolvedSchema.type || 'unknown'
+      type: resolvedSchema.type
     };
   },
 
@@ -820,6 +822,7 @@ let QUERYPARAM = 'query',
   ) => {
     // reset readOnly and writeOnly prop cache before resolving schema to make sure we have fresh cache
     resetReadWritePropCache(context);
+
     let resolvedSchema = _resolveSchema(context, schema, stack, resolveFor, seenRef);
 
     /**
@@ -844,6 +847,7 @@ let QUERYPARAM = 'query',
         _.unset(resolvedSchema, utils.getJsonPathArray(key));
       });
     }
+
     return resolvedSchema;
   },
 
@@ -1590,6 +1594,7 @@ let QUERYPARAM = 'query',
             }
           });
         }
+
         // This is to handle cases when the jsf throws errors on finding unsupported types/formats
         try {
           bodyData = fakeSchema(context, requestBodySchema, shouldGenerateFromExample);
@@ -1603,11 +1608,12 @@ let QUERYPARAM = 'query',
           bodyData = '';
         }
       }
+
     }
-    if (context.enableTypeFetching && requestBodySchema.type !== undefined &&
-      requestBodySchema.type !== 'unknown') {
-      let properties = processSchema(requestBodySchema);
-      resolvedSchemaTypes.push(properties);
+
+    if (context.enableTypeFetching && requestBodySchema.type !== undefined) {
+      const requestBodySchemaTypes = processSchema(requestBodySchema);
+      resolvedSchemaTypes.push(requestBodySchemaTypes);
     }
 
     // Generate multiple examples when either request or response contains more than one example
@@ -1639,13 +1645,16 @@ let QUERYPARAM = 'query',
       if (_.isEmpty(matchedRequestBodyExamples)) {
         matchedRequestBodyExamples = requestBodyExamples;
       }
+
       const generatedBody = generateExamples(
         context, responseExamples, matchedRequestBodyExamples, requestBodySchema, isBodyTypeXML);
+
       return {
         generatedBody,
         resolvedSchemaType: resolvedSchemaTypes[0]
       };
     }
+
     return {
       generatedBody: [{ [bodyKey]: bodyData }],
       resolvedSchemaType: resolvedSchemaTypes[0]
@@ -1660,7 +1669,7 @@ let QUERYPARAM = 'query',
         urlencoded: urlEncodedParams
       },
       resolvedBody,
-      result,
+      resolvedBodyResult,
       resolvedSchemaTypeObject;
 
     if (_.isEmpty(requestBodyContent)) {
@@ -1671,15 +1680,16 @@ let QUERYPARAM = 'query',
       requestBodyContent.schema = resolveSchema(context, requestBodyContent.schema);
     }
 
-    result = resolveBodyData(context, requestBodyContent.schema);
+    resolvedBodyResult = resolveBodyData(context, requestBodyContent.schema);
     resolvedBody =
-    result && Array.isArray(result.generatedBody) && result.generatedBody.length > 0 ?
-      result.generatedBody[0] :
+
+    resolvedBodyResult && Array.isArray(resolvedBodyResult.generatedBody) &&
+     resolvedBodyResult.generatedBody[0] ?
+      resolvedBodyResult.generatedBody[0] :
       undefined;
-    resolvedSchemaTypeObject =
-    result && result.resolvedSchemaType !== undefined ?
-      result.resolvedSchemaType :
-      undefined;
+
+    resolvedSchemaTypeObject = resolvedBodyResult &&
+     resolvedBodyResult.resolvedSchemaType ? resolvedBodyResult.resolvedSchemaType : undefined;
     resolvedBody && (bodyData = resolvedBody.request);
 
     const encoding = requestBodyContent.encoding || {};
@@ -1728,22 +1738,25 @@ let QUERYPARAM = 'query',
         formdata: formDataParams
       },
       resolvedBody,
-      result,
+      resolvedBodyResult,
       resolvedSchemaTypeObject;
 
     if (_.isEmpty(requestBodyContent)) {
       return requestBodyData;
     }
 
-    result = resolveBodyData(context, requestBodyContent.schema);
+    resolvedBodyResult = resolveBodyData(context, requestBodyContent.schema);
     resolvedBody =
-      result && Array.isArray(result.generatedBody) && result.generatedBody.length > 0 ?
-        result.generatedBody[0] :
-        undefined;
+    resolvedBodyResult && Array.isArray(resolvedBodyResult.generatedBody) &&
+     resolvedBodyResult.generatedBody[0] ?
+      resolvedBodyResult.generatedBody[0] :
+      undefined;
+
     resolvedSchemaTypeObject =
-      result && result.resolvedSchemaType !== undefined ?
+      resolvedBodyResult && resolvedBodyResult.resolvedSchemaType ?
         result.resolvedSchemaType :
         undefined;
+
     resolvedBody && (bodyData = resolvedBody.request);
 
     encoding = _.get(requestBodyContent, 'encoding', {});
@@ -1848,7 +1861,7 @@ let QUERYPARAM = 'query',
       dataToBeReturned = {},
       { concreteUtils } = context,
       resolvedBody,
-      result,
+      resolvedBodyResult,
       resolvedSchemaTypeObject;
 
     headerFamily = getHeaderFamily(bodyType);
@@ -1860,15 +1873,18 @@ let QUERYPARAM = 'query',
     }
     // Handling for Raw mode data
     else {
-      result = resolveBodyData(context, requestContent[bodyType], bodyType);
+      resolvedBodyResult = resolveBodyData(context, requestContent[bodyType], bodyType);
       resolvedBody =
-        result && Array.isArray(result.generatedBody) && result.generatedBody.length > 0 ?
-          result.generatedBody[0] :
-          undefined;
+      resolvedBodyResult && Array.isArray(resolvedBodyResult.generatedBody) &&
+       resolvedBodyResult.generatedBody[0] ?
+        resolvedBodyResult.generatedBody[0] :
+        undefined;
+
       resolvedSchemaTypeObject =
-        result && result.resolvedSchemaType !== undefined ?
-          result.resolvedSchemaType :
+        resolvedBodyResult && resolvedBodyResult.resolvedSchemaType ?
+          resolvedBodyResult.resolvedSchemaType :
           undefined;
+
       resolvedBody && (bodyData = resolvedBody.request);
 
       if ((bodyType === TEXT_XML || bodyType === APP_XML || headerFamily === HEADER_TYPE.XML)) {
@@ -2015,20 +2031,21 @@ let QUERYPARAM = 'query',
     return reqParam;
   },
 
-  createProperties = (schema, param) => {
+  createProperties = (param) => {
+    const { schema } = param;
     return {
-      type: schema.type || 'unknown',
-      format: schema.format || undefined,
-      default: schema.default !== undefined ? schema.default : undefined,
+      type: schema.type,
+      format: schema.format,
+      default: schema.default,
       required: param.required || false,
       deprecated: param.deprecated || false,
       enum: schema.enum || undefined,
-      minLength: schema.minLength !== undefined ? schema.minLength : undefined,
-      maxLength: schema.maxLength !== undefined ? schema.maxLength : undefined,
-      minimum: schema.minimum !== undefined ? schema.minimum : undefined,
-      maximum: schema.maximum !== undefined ? schema.maximum : undefined,
-      pattern: schema.pattern || undefined,
-      example: schema.example !== undefined ? schema.example : undefined
+      minLength: schema.minLength,
+      maxLength: schema.maxLength,
+      minimum: schema.minimum,
+      maximum: schema.maximum,
+      pattern: schema.pattern,
+      example: schema.example
     };
   },
 
@@ -2060,15 +2077,14 @@ let QUERYPARAM = 'query',
         keyName,
         paramValue = resolveValueOfParameter(context, param);
 
-      if (param && param.schema) {
-        const { name, schema } = param;
-        keyName = name;
-        properties = createProperties(schema, param);
+      if (param && param.name && param.schema && param.schema.type) {
+        keyName = param.name;
+        properties = createProperties(param);
       }
+
       queryParamTypeInfo = { keyName, properties };
-      if (keyName && param.schema && param.schema.type) {
-        queryParamTypes.push(queryParamTypeInfo);
-      }
+
+      queryParamTypes.push(queryParamTypeInfo);
 
       if (typeof paramValue === 'number' || typeof paramValue === 'boolean') {
         // the SDK will keep the number-ness,
@@ -2114,16 +2130,13 @@ let QUERYPARAM = 'query',
         keyName,
         paramValue = resolveValueOfParameter(context, param);
 
-      if (param && param.schema) {
-        const { name, schema } = param;
-        keyName = name;
-        properties = createProperties(schema, param);
+      if (param && param.name && param.schema && param.schema.type) {
+        keyName = param.name;
+        properties = createProperties(param);
       }
 
       pathParamTypeInfo = { keyName, properties };
-      if (keyName && param.schema && param.schema.type) {
-        pathParamTypes.push(pathParamTypeInfo);
-      }
+      pathParamTypes.push(pathParamTypeInfo);
 
       if (typeof paramValue === 'number' || typeof paramValue === 'boolean') {
         // the SDK will keep the number-ness,
@@ -2202,10 +2215,10 @@ let QUERYPARAM = 'query',
         paramValue = resolveValueOfParameter(context, param);
 
       if (param && param.name && param.schema && param.schema.type) {
-        const { name, schema } = param;
-        keyName = name;
-        properties = createProperties(schema, param);
+        keyName = param.name;
+        properties = createProperties(param);
       }
+
       headerTypeInfo = { keyName, properties };
 
       headerTypes.push(headerTypeInfo);
@@ -2354,17 +2367,17 @@ let QUERYPARAM = 'query',
         keyName = name;
         properties = {
           type: schema.type,
-          format: schema.format || undefined,
-          default: schema.default !== undefined ? schema.default : undefined,
+          format: schema.format,
+          default: schema.default,
           required: schema.required || false,
           deprecated: schema.deprecated || false,
           enum: schema.enum || undefined,
-          minLength: schema.minLength !== undefined ? schema.minLength : undefined,
-          maxLength: schema.maxLength !== undefined ? schema.maxLength : undefined,
-          minimum: schema.minimum !== undefined ? schema.minimum : undefined,
-          maximum: schema.maximum !== undefined ? schema.maximum : undefined,
-          pattern: schema.pattern || undefined,
-          example: schema.example !== undefined ? schema.example : undefined
+          minLength: schema.minLength,
+          maxLength: schema.maxLength,
+          minimum: schema.minimum,
+          maximum: schema.maximum,
+          pattern: schema.pattern,
+          example: schema.example
         };
 
       }
@@ -2516,7 +2529,6 @@ let QUERYPARAM = 'query',
         { resolvedHeaderTypes, headers } = resolveResponseHeaders(context, responseSchema.headers),
         responseBodyHeaderObj;
       resolvedExamplesObject = resolvedExamples[0] && resolvedExamples[0].resolvedResponseBodyTypes;
-      // eslint-disable-next-line one-var
       responseBodyHeaderObj =
         {
           body: JSON.stringify(resolvedExamplesObject, null, 2),

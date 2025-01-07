@@ -1,4 +1,9 @@
+/* eslint-disable max-len */
+// Disabling max Length for better visibility of the expectedExtractedTypes
+
 /* eslint-disable one-var */
+// Disabling as we want the checks to run in order of their declaration
+
 const expect = require('chai').expect,
   Converter = require('../../index.js'),
   fs = require('fs'),
@@ -58,6 +63,47 @@ describe('convertV2WithTypes should generate collection confirming to collection
       expect(conversionResult.output[0].data).to.have.property('item');
       done();
     });
+  });
+
+  it('should validate parameters of the collection', function (done) {
+    const openapi = fs.readFileSync(testSpec1, 'utf8'),
+      options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+
+    Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.output).to.be.an('array').that.is.not.empty;
+
+      const firstFolder = conversionResult.output[0].data.item[0];
+      expect(firstFolder).to.have.property('name', 'pets');
+
+      const listAllPets = firstFolder.item[0];
+      expect(listAllPets).to.have.property('name', 'List all pets');
+      expect(listAllPets.request.method).to.equal('GET');
+
+      const createPet = firstFolder.item[1];
+      expect(createPet).to.have.property('name', '/pets');
+      expect(createPet.request.method).to.equal('POST');
+      expect(createPet.request.body.mode).to.equal('raw');
+      expect(createPet.request.body.raw).to.include('request body comes here');
+
+      const queryParams = listAllPets.request.url.query;
+      expect(queryParams).to.be.an('array').that.has.length(3);
+      expect(queryParams[0]).to.have.property('key', 'limit');
+      expect(queryParams[0]).to.have.property('value', '<string>');
+
+      const headers = listAllPets.request.header;
+      expect(headers).to.be.an('array').that.is.not.empty;
+      expect(headers[0]).to.have.property('key', 'variable');
+      expect(headers[0]).to.have.property('value', '<string>,<string>');
+
+      const response = listAllPets.response[0];
+      expect(response).to.have.property('status', 'OK');
+      expect(response).to.have.property('code', 200);
+      expect(response.body).to.include('"id": "<long>"');
+
+      done();
+    }
+    );
   });
 
   it('Should generate collection conforming to schema for and fail if not valid ' +
@@ -156,4 +202,90 @@ describe('convertV2WithTypes', function() {
     }
     );
   });
+
+  it('should resolve extractedTypes into correct schema structure', function(done) {
+    const expectedExtractedTypes = {
+        'get/pets': {
+          'request': {
+            'headers': '[\n  {\n    "keyName": "variable",\n    "properties": {\n      "type": "array",\n      "required": false,\n      "deprecated": false\n    }\n  }\n]',
+            'pathParam': '[]',
+            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false,\n      "deprecated": false\n    }\n  },\n  {\n    "keyName": "variable2",\n    "properties": {\n      "type": "array",\n      "required": false,\n      "deprecated": false\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array",\n      "required": false,\n      "deprecated": false\n    }\n  }\n]'
+          },
+          'response': {
+            '200': {
+              'body': '{\n  "type": "array",\n  "items": {\n    "type": "object",\n    "properties": {\n      "id": {\n        "type": "integer",\n        "format": "int64"\n      },\n      "name": {\n        "type": "string"\n      },\n      "tag": {\n        "type": "string"\n      }\n    },\n    "required": [\n      "id",\n      "name"\n    ]\n  }\n}',
+              'headers': '[\n  {\n    "keyName": "x-next",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false,\n      "deprecated": false\n    }\n  }\n]'
+            },
+            'default': {
+              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
+              'headers': '[]'
+            }
+          }
+        },
+        'post/pets': {
+          'request': {
+            'headers': '[]',
+            'pathParam': '[]',
+            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false,\n      "deprecated": false\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array",\n      "required": false,\n      "deprecated": false\n    }\n  }\n]'
+          },
+          'response': {
+            '201': {
+              'headers': '[]'
+            },
+            'default': {
+              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
+              'headers': '[\n  {\n    "properties": {}\n  }\n]'
+            }
+          }
+        },
+        'get/pet/{petId}': {
+          'request': {
+            'headers': '[]',
+            'pathParam': '[\n  {\n    "keyName": "petId",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": true,\n      "deprecated": false\n    }\n  }\n]',
+            'queryParam': '[]'
+          },
+          'response': {
+            '200': {
+              'body': '{\n  "type": "array",\n  "items": {\n    "type": "object",\n    "properties": {\n      "id": {\n        "type": "integer",\n        "format": "int64"\n      },\n      "name": {\n        "type": "string"\n      },\n      "tag": {\n        "type": "string"\n      }\n    },\n    "required": [\n      "id",\n      "name"\n    ]\n  }\n}',
+              'headers': '[]'
+            },
+            'default': {
+              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
+              'headers': '[]'
+            }
+          }
+        },
+        'post/pet/{petId}': {
+          'request': {
+            'headers': '[]',
+            'pathParam': '[\n  {\n    "keyName": "petId",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": true,\n      "deprecated": false\n    }\n  }\n]',
+            'queryParam': '[]'
+          },
+          'response': {
+            '200': {
+              'body': '{\n  "type": "array",\n  "items": {\n    "type": "object",\n    "properties": {\n      "id": {\n        "type": "integer",\n        "format": "int64"\n      },\n      "name": {\n        "type": "string"\n      },\n      "tag": {\n        "type": "string"\n      }\n    },\n    "required": [\n      "id",\n      "name"\n    ]\n  }\n}',
+              'headers': '[]'
+            },
+            'default': {
+              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
+              'headers': '[]'
+            }
+          }
+        }
+      },
+      openapi = fs.readFileSync(testSpec1, 'utf8'),
+      options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+
+    Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+      const extractedTypes = conversionResult.extractedTypes;
+      expect(JSON.parse(JSON.stringify(extractedTypes))).to.deep.equal(
+        JSON.parse(JSON.stringify(expectedExtractedTypes)));
+      done();
+    }
+    );
+  });
+
 });
