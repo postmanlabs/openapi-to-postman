@@ -743,7 +743,7 @@ let QUERYPARAM = 'query',
  * @param {Set<string>} [parentRequired=new Set()] - A set of parent-required property keys to inherit.
  * @returns {Object} The processed schema details.
  */
-  processSchema = (resolvedSchema, parentRequired = new Set()) => {
+  processSchema = (resolvedSchema) => {
     if (resolvedSchema.type === 'object' && resolvedSchema.properties) {
       const schemaDetails = {
           type: resolvedSchema.type || 'unknown',
@@ -767,7 +767,7 @@ let QUERYPARAM = 'query',
           format: prop.format || undefined
         };
 
-        if (requiredProperties.has(key) || parentRequired.has(key)) {
+        if (requiredProperties.has(key)) {
           schemaDetails.required.push(key);
         }
         if (prop.properties) {
@@ -778,7 +778,7 @@ let QUERYPARAM = 'query',
           }
         }
         else if (prop.type === 'array' && prop.items) {
-          propertyDetails.items = processSchema(prop.items, parentRequired = requiredProperties);
+          propertyDetails.items = processSchema(prop.items);
         }
 
         schemaDetails.properties[key] = propertyDetails;
@@ -2119,6 +2119,7 @@ let QUERYPARAM = 'query',
         keyName = name;
         properties = createProperties(schema, param);
       }
+
       pathParamTypeInfo = { keyName, properties };
       if (keyName && param.schema && param.schema.type) {
         pathParamTypes.push(pathParamTypeInfo);
@@ -2136,6 +2137,7 @@ let QUERYPARAM = 'query',
 
       pmParams.push(...deserialisedParams);
     });
+
     return { pathParamTypes, pathParams: pmParams };
   },
 
@@ -2199,16 +2201,14 @@ let QUERYPARAM = 'query',
         keyName,
         paramValue = resolveValueOfParameter(context, param);
 
-      if (param && param.schema) {
+      if (param && param.name && param.schema && param.schema.type) {
         const { name, schema } = param;
         keyName = name;
         properties = createProperties(schema, param);
       }
       headerTypeInfo = { keyName, properties };
 
-      if (keyName && param.schema && param.schema.type) {
-        headerTypes.push(headerTypeInfo);
-      }
+      headerTypes.push(headerTypeInfo);
 
       if (typeof paramValue === 'number' || typeof paramValue === 'boolean') {
         // the SDK will keep the number-ness,
@@ -2222,6 +2222,7 @@ let QUERYPARAM = 'query',
 
       pmParams.push(...deserialisedParams);
     });
+
     return { headerTypes, headers: pmParams };
   },
 
@@ -2267,9 +2268,7 @@ let QUERYPARAM = 'query',
     resolvedResponseBodyResult = resolveBodyData(
       context, responseContent[bodyType], bodyType, true, code, requestBodyExamples);
     allBodyData = resolvedResponseBodyResult.generatedBody;
-    resolvedResponseBodyTypes = resolvedResponseBodyResult ?
-      resolvedResponseBodyResult.resolvedSchemaType :
-      undefined;
+    resolvedResponseBodyTypes = resolvedResponseBodyResult.resolvedSchemaType;
 
     return _.map(allBodyData, (bodyData) => {
       let requestBodyData = bodyData.request,
@@ -2350,11 +2349,11 @@ let QUERYPARAM = 'query',
 
       headers.push(...serialisedHeader);
 
-      if (headerData && headerData.schema) {
+      if (headerData && headerData.name && headerData.schema && headerData.schema.type) {
         const { name, schema } = headerData;
         keyName = name;
         properties = {
-          type: schema.type || 'unknown',
+          type: schema.type,
           format: schema.format || undefined,
           default: schema.default !== undefined ? schema.default : undefined,
           required: schema.required || false,
@@ -2370,9 +2369,7 @@ let QUERYPARAM = 'query',
 
       }
       headerTypeInfo = { keyName, properties };
-      if (keyName && headerData.schema && headerData.schema.type) {
-        headerTypes.push(headerTypeInfo);
-      }
+      headerTypes.push(headerTypeInfo);
     });
 
     return { resolvedHeaderTypes: headerTypes, headers };
@@ -2468,7 +2465,7 @@ let QUERYPARAM = 'query',
       headerFamily,
       isBodyTypeXML,
       resolvedExamplesObject = {},
-      responseBlock = {};
+      responseTypes = {};
 
     // store all request examples which will be used for creation of examples with correct request and response matching
     if (typeof requestBody === 'object') {
@@ -2515,20 +2512,18 @@ let QUERYPARAM = 'query',
           resolveSchema(context, responseObj, { isResponseSchema: true })) : responseObj,
         { includeAuthInfoInExample } = context.computedOptions,
         auth = request.auth,
-        resolvedExamples = resolveResponseBody(context, responseSchema, requestBodyExamples, code) || {};
+        resolvedExamples = resolveResponseBody(context, responseSchema, requestBodyExamples, code) || {},
+        { resolvedHeaderTypes, headers } = resolveResponseHeaders(context, responseSchema.headers),
+        responseBodyHeaderObj;
       resolvedExamplesObject = resolvedExamples[0] && resolvedExamples[0].resolvedResponseBodyTypes;
       // eslint-disable-next-line one-var
-      let { resolvedHeaderTypes, headers } = resolveResponseHeaders(context, responseSchema.headers),
-        responseBodyHeaderObj,
-        responseTypes;
-      responseBodyHeaderObj = resolvedExamplesObject ?
+      responseBodyHeaderObj =
         {
           body: JSON.stringify(resolvedExamplesObject, null, 2),
           headers: JSON.stringify(resolvedHeaderTypes, null, 2)
-        } : {};
+        };
 
-      responseTypes = { [code]: responseBodyHeaderObj };
-      Object.assign(responseBlock, responseTypes);
+      Object.assign(responseTypes, { [code]: responseBodyHeaderObj });
 
       _.forOwn(resolvedExamples, (resolvedExample = {}) => {
         let { body, contentHeader = [], bodyType, acceptHeader, name } = resolvedExample,
@@ -2593,7 +2588,7 @@ let QUERYPARAM = 'query',
     return {
       responses,
       acceptHeader: requestAcceptHeader,
-      unifiedResponseTypes: responseBlock
+      responseTypes: responseTypes
     };
   };
 
@@ -2614,17 +2609,13 @@ module.exports = {
       { pathParamTypes, pathParams } = resolvePathParamsForPostmanRequest(context, operationItem, method),
       { pathVariables, collectionVariables } = filterCollectionAndPathVariables(url, pathParams),
       requestBody = resolveRequestBodyForPostmanRequest(context, operationItem[method]),
-      bodyTypes = requestBody && requestBody.resolvedSchemaTypeObject,
+      requestBodyTypes = requestBody && requestBody.resolvedSchemaTypeObject,
       request,
       securitySchema = _.get(operationItem, [method, 'security']),
       authHelper = generateAuthForCollectionFromOpenAPI(context.openapi, securitySchema),
       { alwaysInheritAuthentication } = context.computedOptions,
       requestIdentifier,
-      requestBlock,
-      typesObject = {};
-    if (requestBody && requestBody.resolvedSchemaTypeObject) {
-      delete requestBody.resolvedSchemaTypeObject;
-    }
+      requestTypesObject = {};
     headers.push(..._.get(requestBody, 'headers', []));
     pathVariables.push(...baseUrlData.pathVariables);
     collectionVariables.push(...baseUrlData.collectionVariables);
@@ -2645,8 +2636,8 @@ module.exports = {
       auth: alwaysInheritAuthentication ? undefined : authHelper
     };
 
-    const unifiedRequestTypes = {
-        body: JSON.stringify(bodyTypes, null, 2),
+    const requestTypes = {
+        body: JSON.stringify(requestBodyTypes, null, 2),
         headers: JSON.stringify(headerTypes, null, 2),
         pathParam: JSON.stringify(pathParamTypes, null, 2),
         queryParam: JSON.stringify(queryParamTypes, null, 2)
@@ -2655,12 +2646,12 @@ module.exports = {
       {
         responses,
         acceptHeader,
-        unifiedResponseTypes
+        responseTypes
       } = resolveResponseForPostmanRequest(context, operationItem[method], request);
 
     requestIdentifier = method + path;
-    requestBlock = { request: unifiedRequestTypes, response: unifiedResponseTypes };
-    Object.assign(typesObject, { [requestIdentifier]: requestBlock });
+    Object.assign(requestTypesObject,
+      { [requestIdentifier]: { request: requestTypes, response: responseTypes } });
 
     // add accept header if found and not present already
     if (!_.isEmpty(acceptHeader)) {
@@ -2675,7 +2666,7 @@ module.exports = {
         })
       },
       collectionVariables,
-      typesObject
+      requestTypesObject
     };
   },
 
