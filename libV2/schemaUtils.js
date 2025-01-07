@@ -762,8 +762,8 @@ let QUERYPARAM = 'query',
           minimum: prop.minimum !== undefined ? prop.minimum : undefined,
           maximum: prop.maximum !== undefined ? prop.maximum : undefined,
           pattern: prop.pattern || undefined,
-          example: prop.example || undefined,
-          description: prop.description || undefined,
+          example: prop.example !== undefined ? prop.example : undefined,
+          description: prop.description !== undefined ? prop.description : undefined,
           format: prop.format || undefined
         };
 
@@ -2015,6 +2015,23 @@ let QUERYPARAM = 'query',
     return reqParam;
   },
 
+  createProperties = (schema, param) => {
+    return {
+      type: schema.type || 'unknown',
+      format: schema.format || undefined,
+      default: schema.default !== undefined ? schema.default : undefined,
+      required: param.required || false,
+      deprecated: param.deprecated || false,
+      enum: schema.enum || undefined,
+      minLength: schema.minLength !== undefined ? schema.minLength : undefined,
+      maxLength: schema.maxLength !== undefined ? schema.maxLength : undefined,
+      minimum: schema.minimum !== undefined ? schema.minimum : undefined,
+      maximum: schema.maximum !== undefined ? schema.maximum : undefined,
+      pattern: schema.pattern || undefined,
+      example: schema.example !== undefined ? schema.example : undefined
+    };
+  },
+
   resolveQueryParamsForPostmanRequest = (context, operationItem, method) => {
     const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
       pmParams = [],
@@ -2046,20 +2063,7 @@ let QUERYPARAM = 'query',
       if (param && param.schema) {
         const { name, schema } = param;
         keyName = name;
-        properties = {
-          type: schema.type || 'unknown',
-          format: schema.format || undefined,
-          default: schema.default || undefined,
-          required: param.required || false,
-          deprecated: param.deprecated || false,
-          enum: schema.enum || undefined,
-          minLength: schema.minLength !== undefined ? schema.minLength : undefined,
-          maxLength: schema.maxLength !== undefined ? schema.maxLength : undefined,
-          minimum: schema.minimum !== undefined ? schema.minimum : undefined,
-          maximum: schema.maximum !== undefined ? schema.maximum : undefined,
-          pattern: schema.pattern || undefined,
-          example: schema.example || undefined
-        };
+        properties = createProperties(schema, param);
       }
       queryParamTypeInfo = { keyName, properties };
       if (keyName && param.schema && param.schema.type) {
@@ -2113,20 +2117,7 @@ let QUERYPARAM = 'query',
       if (param && param.schema) {
         const { name, schema } = param;
         keyName = name;
-        properties = {
-          type: schema.type || 'unknown',
-          format: schema.format || undefined,
-          default: schema.default || undefined,
-          required: param.required || false,
-          deprecated: param.deprecated || false,
-          enum: schema.enum || undefined,
-          minLength: schema.minLength !== undefined ? schema.minLength : undefined,
-          maxLength: schema.maxLength !== undefined ? schema.maxLength : undefined,
-          minimum: schema.minimum !== undefined ? schema.minimum : undefined,
-          maximum: schema.maximum !== undefined ? schema.maximum : undefined,
-          pattern: schema.pattern || undefined,
-          example: schema.example || undefined
-        };
+        properties = createProperties(schema, param);
       }
       pathParamTypeInfo = { keyName, properties };
       if (keyName && param.schema && param.schema.type) {
@@ -2211,20 +2202,7 @@ let QUERYPARAM = 'query',
       if (param && param.schema) {
         const { name, schema } = param;
         keyName = name;
-        properties = {
-          type: schema.type || 'unknown',
-          format: schema.format || undefined,
-          default: schema.default || undefined,
-          required: param.required || false,
-          deprecated: param.deprecated || false,
-          enum: schema.enum || undefined,
-          minLength: schema.minLength !== undefined ? schema.minLength : undefined,
-          maxLength: schema.maxLength !== undefined ? schema.maxLength : undefined,
-          minimum: schema.minimum !== undefined ? schema.minimum : undefined,
-          maximum: schema.maximum !== undefined ? schema.maximum : undefined,
-          pattern: schema.pattern || undefined,
-          example: schema.example || undefined
-        };
+        properties = createProperties(schema, param);
       }
       headerTypeInfo = { keyName, properties };
 
@@ -2378,7 +2356,7 @@ let QUERYPARAM = 'query',
         properties = {
           type: schema.type || 'unknown',
           format: schema.format || undefined,
-          default: schema.default || undefined,
+          default: schema.default !== undefined ? schema.default : undefined,
           required: schema.required || false,
           deprecated: schema.deprecated || false,
           enum: schema.enum || undefined,
@@ -2387,7 +2365,7 @@ let QUERYPARAM = 'query',
           minimum: schema.minimum !== undefined ? schema.minimum : undefined,
           maximum: schema.maximum !== undefined ? schema.maximum : undefined,
           pattern: schema.pattern || undefined,
-          example: schema.example || undefined
+          example: schema.example !== undefined ? schema.example : undefined
         };
 
       }
