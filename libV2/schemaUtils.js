@@ -1590,11 +1590,6 @@ let QUERYPARAM = 'query',
             }
           });
         }
-        if (context.enableTypeFetching && requestBodySchema.type !== undefined &&
-           requestBodySchema.type !== 'unknown') {
-          let properties = processSchema(requestBodySchema);
-          resolvedSchemaTypes.push(properties);
-        }
         // This is to handle cases when the jsf throws errors on finding unsupported types/formats
         try {
           bodyData = fakeSchema(context, requestBodySchema, shouldGenerateFromExample);
@@ -1608,6 +1603,11 @@ let QUERYPARAM = 'query',
           bodyData = '';
         }
       }
+    }
+    if (context.enableTypeFetching && requestBodySchema.type !== undefined &&
+      requestBodySchema.type !== 'unknown') {
+      let properties = processSchema(requestBodySchema);
+      resolvedSchemaTypes.push(properties);
     }
 
     // Generate multiple examples when either request or response contains more than one example
@@ -1639,11 +1639,17 @@ let QUERYPARAM = 'query',
       if (_.isEmpty(matchedRequestBodyExamples)) {
         matchedRequestBodyExamples = requestBodyExamples;
       }
-
-      return generateExamples(context, responseExamples, matchedRequestBodyExamples, requestBodySchema, isBodyTypeXML);
+      const generatedBody = generateExamples(
+        context, responseExamples, matchedRequestBodyExamples, requestBodySchema, isBodyTypeXML);
+      return {
+        generatedBody,
+        resolvedSchemaType: resolvedSchemaTypes[0]
+      };
     }
-
-    return [{ [bodyKey]: bodyData }, resolvedSchemaTypes[0]];
+    return {
+      generatedBody: [{ [bodyKey]: bodyData }],
+      resolvedSchemaType: resolvedSchemaTypes[0]
+    };
   },
 
   resolveUrlEncodedRequestBodyForPostmanRequest = (context, requestBodyContent) => {
@@ -1666,8 +1672,14 @@ let QUERYPARAM = 'query',
     }
 
     result = resolveBodyData(context, requestBodyContent.schema);
-    resolvedBody = result[0];
-    resolvedSchemaTypeObject = result[1];
+    resolvedBody =
+    result && Array.isArray(result.generatedBody) && result.generatedBody.length > 0 ?
+      result.generatedBody[0] :
+      undefined;
+    resolvedSchemaTypeObject =
+    result && result.resolvedSchemaType !== undefined ?
+      result.resolvedSchemaType :
+      undefined;
     resolvedBody && (bodyData = resolvedBody.request);
 
     const encoding = requestBodyContent.encoding || {};
@@ -1724,8 +1736,14 @@ let QUERYPARAM = 'query',
     }
 
     result = resolveBodyData(context, requestBodyContent.schema);
-    resolvedBody = result[0];
-    resolvedSchemaTypeObject = result[1];
+    resolvedBody =
+      result && Array.isArray(result.generatedBody) && result.generatedBody.length > 0 ?
+        result.generatedBody[0] :
+        undefined;
+    resolvedSchemaTypeObject =
+      result && result.resolvedSchemaType !== undefined ?
+        result.resolvedSchemaType :
+        undefined;
     resolvedBody && (bodyData = resolvedBody.request);
 
     encoding = _.get(requestBodyContent, 'encoding', {});
@@ -1843,8 +1861,14 @@ let QUERYPARAM = 'query',
     // Handling for Raw mode data
     else {
       result = resolveBodyData(context, requestContent[bodyType], bodyType);
-      resolvedBody = result[0];
-      resolvedSchemaTypeObject = result[1];
+      resolvedBody =
+        result && Array.isArray(result.generatedBody) && result.generatedBody.length > 0 ?
+          result.generatedBody[0] :
+          undefined;
+      resolvedSchemaTypeObject =
+        result && result.resolvedSchemaType !== undefined ?
+          result.resolvedSchemaType :
+          undefined;
       resolvedBody && (bodyData = resolvedBody.request);
 
       if ((bodyType === TEXT_XML || bodyType === APP_XML || headerFamily === HEADER_TYPE.XML)) {
@@ -2264,8 +2288,10 @@ let QUERYPARAM = 'query',
 
     resolvedResponseBodyResult = resolveBodyData(
       context, responseContent[bodyType], bodyType, true, code, requestBodyExamples);
-    allBodyData = [resolvedResponseBodyResult[0]];
-    resolvedResponseBodyTypes = resolvedResponseBodyResult[1];
+    allBodyData = resolvedResponseBodyResult.generatedBody;
+    resolvedResponseBodyTypes = resolvedResponseBodyResult ?
+      resolvedResponseBodyResult.resolvedSchemaType :
+      undefined;
 
     return _.map(allBodyData, (bodyData) => {
       let requestBodyData = bodyData.request,
