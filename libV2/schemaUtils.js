@@ -2264,7 +2264,7 @@ let QUERYPARAM = 'query',
 
     resolvedResponseBodyResult = resolveBodyData(
       context, responseContent[bodyType], bodyType, true, code, requestBodyExamples);
-    allBodyData = resolvedResponseBodyResult;
+    allBodyData = [resolvedResponseBodyResult[0]];
     resolvedResponseBodyTypes = resolvedResponseBodyResult[1];
 
     return _.map(allBodyData, (bodyData) => {
