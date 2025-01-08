@@ -2168,8 +2168,8 @@ let QUERYPARAM = 'query',
   resolveHeadersForPostmanRequest = (context, operationItem, method) => {
     const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
       pmParams = [],
+      headerTypes = [],
       { keepImplicitHeaders, includeDeprecated } = context.computedOptions;
-    let headerTypes = [];
 
     _.forEach(params, (param) => {
       if (!_.isObject(param)) {
@@ -2506,8 +2506,8 @@ let QUERYPARAM = 'query',
         responseBodyHeaderObj;
 
       /* since resolvedExamples is a list of objects, we are picking the head element everytime
-      as the types are generated per example and even if we have response having same status code,
-      we resolve them all together */
+      as the types are generated per example and since we have response having same status code,
+      so their type would be also same */
 
       resolvedExamplesObject = resolvedExamples[0] && resolvedExamples[0].resolvedResponseBodyTypes;
 
