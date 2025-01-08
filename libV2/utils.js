@@ -28,10 +28,6 @@ const _ = require('lodash'),
     originalRequest.header = _.get(response, 'originalRequest.headers', []);
     originalRequest.body = requestItem.request.body;
 
-    // replace 'X' char with '0'
-    response.code = response.code.replace(/X|x/g, '0');
-    response.code = response.code === 'default' ? 500 : _.toSafeInteger(response.code);
-
     let sdkResponse = new Response({
       name: response.name,
       code: response.code,

@@ -2,7 +2,9 @@
 // Disabling max Length for better visibility of the expectedExtractedTypes
 
 /* eslint-disable one-var */
-// Disabling as we want the checks to run in order of their declaration
+/* Disabling as we want the checks to run in order of their declaration as declaring everything as once
+  even though initial declarations fails with test won't do any good */
+
 
 const expect = require('chai').expect,
   Converter = require('../../index.js'),
@@ -49,7 +51,7 @@ const expect = require('chai').expect,
   };
 
 
-describe('convertV2WithTypes should generate collection confirming to collection schema', function() {
+describe('convertV2WithTypes should generate collection conforming to collection schema', function() {
 
   it('Should generate collection conforming to schema for and fail if not valid ' +
         testSpec, function(done) {
@@ -135,7 +137,7 @@ describe('convertV2WithTypes', function() {
     );
   });
 
-  it('should validate the schema' + testSpec1, function() {
+  it('should validate the generated type object' + testSpec1, function() {
     const example = {
       code: 200,
       message: 'Success'
@@ -189,7 +191,6 @@ describe('convertV2WithTypes', function() {
 
       const element = Object.values(conversionResult.extractedTypes)[0];
       const { response } = element;
-      // Get the schema from the response
       const [key, value] = Object.entries(response)[0];
       expect(value).to.have.property('body').that.is.a('string');
 
@@ -216,7 +217,7 @@ describe('convertV2WithTypes', function() {
               'body': '{\n  "type": "array",\n  "items": {\n    "type": "object",\n    "properties": {\n      "id": {\n        "type": "integer",\n        "format": "int64"\n      },\n      "name": {\n        "type": "string"\n      },\n      "tag": {\n        "type": "string"\n      }\n    },\n    "required": [\n      "id",\n      "name"\n    ]\n  }\n}',
               'headers': '[\n  {\n    "keyName": "x-next",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false,\n      "deprecated": false\n    }\n  }\n]'
             },
-            'default': {
+            '500': {
               'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }
@@ -232,9 +233,9 @@ describe('convertV2WithTypes', function() {
             '201': {
               'headers': '[]'
             },
-            'default': {
+            '500': {
               'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
-              'headers': '[\n  {\n    "properties": {}\n  }\n]'
+              'headers': '[]'
             }
           }
         },
@@ -249,7 +250,7 @@ describe('convertV2WithTypes', function() {
               'body': '{\n  "type": "array",\n  "items": {\n    "type": "object",\n    "properties": {\n      "id": {\n        "type": "integer",\n        "format": "int64"\n      },\n      "name": {\n        "type": "string"\n      },\n      "tag": {\n        "type": "string"\n      }\n    },\n    "required": [\n      "id",\n      "name"\n    ]\n  }\n}',
               'headers': '[]'
             },
-            'default': {
+            '500': {
               'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }
@@ -266,7 +267,7 @@ describe('convertV2WithTypes', function() {
               'body': '{\n  "type": "array",\n  "items": {\n    "type": "object",\n    "properties": {\n      "id": {\n        "type": "integer",\n        "format": "int64"\n      },\n      "name": {\n        "type": "string"\n      },\n      "tag": {\n        "type": "string"\n      }\n    },\n    "required": [\n      "id",\n      "name"\n    ]\n  }\n}',
               'headers': '[]'
             },
-            'default': {
+            '500': {
               'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }

@@ -1682,14 +1682,12 @@ let QUERYPARAM = 'query',
 
     resolvedBodyResult = resolveBodyData(context, requestBodyContent.schema);
     resolvedBody =
+      resolvedBodyResult &&
+      Array.isArray(resolvedBodyResult.generatedBody) &&
+      resolvedBodyResult.generatedBody[0];
 
-    resolvedBodyResult && Array.isArray(resolvedBodyResult.generatedBody) &&
-     resolvedBodyResult.generatedBody[0] ?
-      resolvedBodyResult.generatedBody[0] :
-      undefined;
+    resolvedSchemaTypeObject = resolvedBodyResult && resolvedBodyResult.resolvedSchemaType;
 
-    resolvedSchemaTypeObject = resolvedBodyResult &&
-     resolvedBodyResult.resolvedSchemaType ? resolvedBodyResult.resolvedSchemaType : undefined;
     resolvedBody && (bodyData = resolvedBody.request);
 
     const encoding = requestBodyContent.encoding || {};
@@ -1747,15 +1745,11 @@ let QUERYPARAM = 'query',
 
     resolvedBodyResult = resolveBodyData(context, requestBodyContent.schema);
     resolvedBody =
-    resolvedBodyResult && Array.isArray(resolvedBodyResult.generatedBody) &&
-     resolvedBodyResult.generatedBody[0] ?
-      resolvedBodyResult.generatedBody[0] :
-      undefined;
+      resolvedBodyResult &&
+      Array.isArray(resolvedBodyResult.generatedBody) &&
+      resolvedBodyResult.generatedBody[0];
 
-    resolvedSchemaTypeObject =
-      resolvedBodyResult && resolvedBodyResult.resolvedSchemaType ?
-        result.resolvedSchemaType :
-        undefined;
+    resolvedSchemaTypeObject = resolvedBodyResult && resolvedBodyResult.resolvedSchemaType;
 
     resolvedBody && (bodyData = resolvedBody.request);
 
@@ -1875,15 +1869,11 @@ let QUERYPARAM = 'query',
     else {
       resolvedBodyResult = resolveBodyData(context, requestContent[bodyType], bodyType);
       resolvedBody =
-      resolvedBodyResult && Array.isArray(resolvedBodyResult.generatedBody) &&
-       resolvedBodyResult.generatedBody[0] ?
-        resolvedBodyResult.generatedBody[0] :
-        undefined;
+        resolvedBodyResult &&
+        Array.isArray(resolvedBodyResult.generatedBody) &&
+        resolvedBodyResult.generatedBody[0];
 
-      resolvedSchemaTypeObject =
-        resolvedBodyResult && resolvedBodyResult.resolvedSchemaType ?
-          resolvedBodyResult.resolvedSchemaType :
-          undefined;
+      resolvedSchemaTypeObject = resolvedBodyResult && resolvedBodyResult.resolvedSchemaType;
 
       resolvedBody && (bodyData = resolvedBody.request);
 
@@ -2074,17 +2064,13 @@ let QUERYPARAM = 'query',
 
       let queryParamTypeInfo = {},
         properties = {},
-        keyName,
         paramValue = resolveValueOfParameter(context, param);
 
       if (param && param.name && param.schema && param.schema.type) {
-        keyName = param.name;
         properties = createProperties(param);
+        queryParamTypeInfo = { keyName: param.name, properties };
+        queryParamTypes.push(queryParamTypeInfo);
       }
-
-      queryParamTypeInfo = { keyName, properties };
-
-      queryParamTypes.push(queryParamTypeInfo);
 
       if (typeof paramValue === 'number' || typeof paramValue === 'boolean') {
         // the SDK will keep the number-ness,
@@ -2105,8 +2091,8 @@ let QUERYPARAM = 'query',
 
   resolvePathParamsForPostmanRequest = (context, operationItem, method) => {
     const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
-      pmParams = [];
-    let pathParamTypes = [];
+      pmParams = [],
+      pathParamTypes = [];
 
     _.forEach(params, (param) => {
       if (!_.isObject(param)) {
@@ -2127,16 +2113,13 @@ let QUERYPARAM = 'query',
 
       let pathParamTypeInfo = {},
         properties = {},
-        keyName,
         paramValue = resolveValueOfParameter(context, param);
 
       if (param && param.name && param.schema && param.schema.type) {
-        keyName = param.name;
         properties = createProperties(param);
+        pathParamTypeInfo = { keyName: param.name, properties };
+        pathParamTypes.push(pathParamTypeInfo);
       }
-
-      pathParamTypeInfo = { keyName, properties };
-      pathParamTypes.push(pathParamTypeInfo);
 
       if (typeof paramValue === 'number' || typeof paramValue === 'boolean') {
         // the SDK will keep the number-ness,
@@ -2211,17 +2194,13 @@ let QUERYPARAM = 'query',
 
       let headerTypeInfo = {},
         properties = {},
-        keyName,
         paramValue = resolveValueOfParameter(context, param);
 
       if (param && param.name && param.schema && param.schema.type) {
-        keyName = param.name;
         properties = createProperties(param);
+        headerTypeInfo = { keyName: param.name, properties };
+        headerTypes.push(headerTypeInfo);
       }
-
-      headerTypeInfo = { keyName, properties };
-
-      headerTypes.push(headerTypeInfo);
 
       if (typeof paramValue === 'number' || typeof paramValue === 'boolean') {
         // the SDK will keep the number-ness,
@@ -2328,8 +2307,8 @@ let QUERYPARAM = 'query',
 
   resolveResponseHeaders = (context, responseHeaders) => {
     const headers = [],
-      { includeDeprecated } = context.computedOptions;
-    let headerTypes = [];
+      { includeDeprecated } = context.computedOptions,
+      headerTypes = [];
 
     if (_.has(responseHeaders, '$ref')) {
       responseHeaders = resolveSchema(context, responseHeaders, { isResponseSchema: true });
@@ -2346,8 +2325,7 @@ let QUERYPARAM = 'query',
 
       let headerValue = resolveValueOfParameter(context, value, { isResponseSchema: true }),
         headerTypeInfo = {},
-        properties = {},
-        keyName;
+        properties = {};
 
       if (typeof headerValue === 'number' || typeof headerValue === 'boolean') {
         // the SDK will keep the number-ness,
@@ -2363,8 +2341,7 @@ let QUERYPARAM = 'query',
       headers.push(...serialisedHeader);
 
       if (headerData && headerData.name && headerData.schema && headerData.schema.type) {
-        const { name, schema } = headerData;
-        keyName = name;
+        const { schema } = headerData;
         properties = {
           type: schema.type,
           format: schema.format,
@@ -2379,10 +2356,9 @@ let QUERYPARAM = 'query',
           pattern: schema.pattern,
           example: schema.example
         };
-
+        headerTypeInfo = { keyName: headerData.name, properties };
+        headerTypes.push(headerTypeInfo);
       }
-      headerTypeInfo = { keyName, properties };
-      headerTypes.push(headerTypeInfo);
     });
 
     return { resolvedHeaderTypes: headerTypes, headers };
@@ -2521,19 +2497,29 @@ let QUERYPARAM = 'query',
     }
 
     _.forOwn(operationItem.responses, (responseObj, code) => {
-      let responseSchema = _.has(responseObj, '$ref') ? (
-          resolveSchema(context, responseObj, { isResponseSchema: true })) : responseObj,
+      let responseSchema = _.has(responseObj, '$ref') ?
+          resolveSchema(context, responseObj, { isResponseSchema: true }) : responseObj,
         { includeAuthInfoInExample } = context.computedOptions,
         auth = request.auth,
         resolvedExamples = resolveResponseBody(context, responseSchema, requestBodyExamples, code) || {},
         { resolvedHeaderTypes, headers } = resolveResponseHeaders(context, responseSchema.headers),
         responseBodyHeaderObj;
+
+      /* since resolvedExamples is a list of objects, we are picking the head element everytime
+      as the types are generated per example and even if we have response having same status code,
+      we resolve them all together */
+
       resolvedExamplesObject = resolvedExamples[0] && resolvedExamples[0].resolvedResponseBodyTypes;
+
       responseBodyHeaderObj =
         {
           body: JSON.stringify(resolvedExamplesObject, null, 2),
           headers: JSON.stringify(resolvedHeaderTypes, null, 2)
         };
+
+      // replace 'X' char in code with '0' | E.g. 5xx -> 500
+      code = code.replace(/X|x/g, '0');
+      code = code === 'default' ? 500 : _.toSafeInteger(code);
 
       Object.assign(responseTypes, { [code]: responseBodyHeaderObj });
 
