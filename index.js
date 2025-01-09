@@ -28,6 +28,17 @@ module.exports = {
     return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
   },
 
+  convertV2WithTypes: function(input, options, cb) {
+    const enableTypeFetching = true;
+    var schema = new SchemaPack(input, options, MODULE_VERSION.V2, enableTypeFetching);
+
+    if (schema.validated) {
+      return schema.convertV2(cb);
+    }
+
+    return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
+  },
+
   validate: function (input) {
     var schema = new SchemaPack(input);
     return schema.validationResult;
