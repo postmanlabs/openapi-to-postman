@@ -205,9 +205,9 @@ describe('The convert v2 Function', function() {
   tooManyRefs, function(done) {
     var openapi = fs.readFileSync(tooManyRefs, 'utf8');
     Converter.convertV2({ type: 'string', data: openapi }, { schemaFaker: true }, (err, conversionResult) => {
-
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
+      expect(conversionResult).to.not.have.property('extractedTypes');
       expect(conversionResult.output.length).to.equal(1);
       expect(conversionResult.output[0].type).to.equal('collection');
       expect(conversionResult.output[0].data).to.have.property('info');
