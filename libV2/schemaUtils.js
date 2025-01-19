@@ -2513,8 +2513,8 @@ let QUERYPARAM = 'query',
 
       responseBodyHeaderObj =
         {
-          body: JSON.stringify(resolvedExamplesObject, null, 2),
-          headers: JSON.stringify(resolvedHeaderTypes, null, 2)
+          body: resolvedExamplesObject,
+          headers: resolvedHeaderTypes
         };
 
       // replace 'X' char in code with '0' | E.g. 5xx -> 500
@@ -2635,10 +2635,10 @@ module.exports = {
     };
 
     const requestTypes = {
-        body: JSON.stringify(requestBodyTypes, null, 2),
-        headers: JSON.stringify(headerTypes, null, 2),
-        pathParam: JSON.stringify(pathParamTypes, null, 2),
-        queryParam: JSON.stringify(queryParamTypes, null, 2)
+        body: requestBodyTypes,
+        headers: headerTypes,
+        pathParam: pathParamTypes,
+        queryParam: queryParamTypes
       },
 
       {

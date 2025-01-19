@@ -1,0 +1,271 @@
+{
+    "get/pets": {
+      "request": {
+        "headers": [
+          {
+            "keyName": "variable",
+            "properties": {
+              "type": "array",
+              "required": false,
+              "deprecated": false
+            }
+          }
+        ],
+        "pathParam": [],
+        "queryParam": [
+          {
+            "keyName": "limit",
+            "properties": {
+              "type": "string",
+              "default": "<string>",
+              "required": false,
+              "deprecated": false
+            }
+          },
+          {
+            "keyName": "variable2",
+            "properties": {
+              "type": "array",
+              "required": false,
+              "deprecated": false
+            }
+          },
+          {
+            "keyName": "variable3",
+            "properties": {
+              "type": "array",
+              "required": false,
+              "deprecated": false
+            }
+          }
+        ]
+      },
+      "response": {
+        "200": {
+          "body": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "tag": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          },
+          "headers": [
+            {
+              "keyName": "x-next",
+              "properties": {
+                "type": "string",
+                "default": "<string>",
+                "required": false,
+                "deprecated": false
+              }
+            }
+          ]
+        },
+        "500": {
+          "body": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "integer"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          },
+          "headers": []
+        }
+      }
+    },
+    "post/pets": {
+      "request": {
+        "headers": [],
+        "pathParam": [],
+        "queryParam": [
+          {
+            "keyName": "limit",
+            "properties": {
+              "type": "string",
+              "default": "<string>",
+              "required": false,
+              "deprecated": false
+            }
+          },
+          {
+            "keyName": "variable3",
+            "properties": {
+              "type": "array",
+              "required": false,
+              "deprecated": false
+            }
+          }
+        ]
+      },
+      "response": {
+        "201": {
+          "headers": []
+        },
+        "500": {
+          "body": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "integer"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          },
+          "headers": []
+        }
+      }
+    },
+    "get/pet/{petId}": {
+      "request": {
+        "headers": [],
+        "pathParam": [
+          {
+            "keyName": "petId",
+            "properties": {
+              "type": "string",
+              "default": "<string>",
+              "required": true,
+              "deprecated": false
+            }
+          }
+        ],
+        "queryParam": []
+      },
+      "response": {
+        "200": {
+          "body": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "tag": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          },
+          "headers": []
+        },
+        "500": {
+          "body": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "integer"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          },
+          "headers": []
+        }
+      }
+    },
+    "post/pet/{petId}": {
+      "request": {
+        "headers": [],
+        "pathParam": [
+          {
+            "keyName": "petId",
+            "properties": {
+              "type": "string",
+              "default": "<string>",
+              "required": true,
+              "deprecated": false
+            }
+          }
+        ],
+        "queryParam": []
+      },
+      "response": {
+        "200": {
+          "body": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "tag": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          },
+          "headers": []
+        },
+        "500": {
+          "body": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "integer"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          },
+          "headers": []
+        }
+      }
+    }
+  }

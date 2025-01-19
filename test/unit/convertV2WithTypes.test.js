@@ -14,6 +14,7 @@ const expect = require('chai').expect,
   Ajv = require('ajv'),
   testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
   testSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/test1.json'),
+  testSpec1TypeOutput = path.join(__dirname, '../data/unitTestOutput/test1TypeOutput.json'),
   readOnlyNestedSpec =
   path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyNested.json'),
   ajv = new Ajv({ allErrors: true, strict: false }),
@@ -157,12 +158,12 @@ describe('convertV2WithTypes', function() {
           const [key, value] = Object.entries(response)[1];
           expect(key).to.be.a('string');
 
-          const schema = JSON.parse(value.body),
+          const schema = value.body,
             transformedSchema = transformSchema(schema),
             validate = ajv.compile(transformedSchema),
             valid = validate(example);
 
-          expect(value).to.have.property('body').that.is.a('string');
+          expect(value).to.have.property('body').that.is.a('object');
           expect(valid, `Validation failed for key: ${key} with errors: ${JSON.stringify(validate.errors)}`).to.be.true;
         }
       });
@@ -192,9 +193,9 @@ describe('convertV2WithTypes', function() {
       const element = Object.values(conversionResult.extractedTypes)[0];
       const { response } = element;
       const [key, value] = Object.entries(response)[0];
-      expect(value).to.have.property('body').that.is.a('string');
+      expect(value).to.have.property('body').that.is.a('object');
 
-      const schema = JSON.parse(value.body),
+      const schema = value.body,
         transformedSchema = transformSchema(schema),
         validate = ajv.compile(transformedSchema),
         valid = validate(example);
@@ -205,85 +206,17 @@ describe('convertV2WithTypes', function() {
   });
 
   it('should resolve extractedTypes into correct schema structure', function(done) {
-    const expectedExtractedTypes = {
-        'get/pets': {
-          'request': {
-            'headers': '[\n  {\n    "keyName": "variable",\n    "properties": {\n      "type": "array",\n      "required": false,\n      "deprecated": false\n    }\n  }\n]',
-            'pathParam': '[]',
-            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false,\n      "deprecated": false\n    }\n  },\n  {\n    "keyName": "variable2",\n    "properties": {\n      "type": "array",\n      "required": false,\n      "deprecated": false\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array",\n      "required": false,\n      "deprecated": false\n    }\n  }\n]'
-          },
-          'response': {
-            '200': {
-              'body': '{\n  "type": "array",\n  "items": {\n    "type": "object",\n    "properties": {\n      "id": {\n        "type": "integer",\n        "format": "int64"\n      },\n      "name": {\n        "type": "string"\n      },\n      "tag": {\n        "type": "string"\n      }\n    },\n    "required": [\n      "id",\n      "name"\n    ]\n  }\n}',
-              'headers': '[\n  {\n    "keyName": "x-next",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false,\n      "deprecated": false\n    }\n  }\n]'
-            },
-            '500': {
-              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
-              'headers': '[]'
-            }
-          }
-        },
-        'post/pets': {
-          'request': {
-            'headers': '[]',
-            'pathParam': '[]',
-            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false,\n      "deprecated": false\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array",\n      "required": false,\n      "deprecated": false\n    }\n  }\n]'
-          },
-          'response': {
-            '201': {
-              'headers': '[]'
-            },
-            '500': {
-              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
-              'headers': '[]'
-            }
-          }
-        },
-        'get/pet/{petId}': {
-          'request': {
-            'headers': '[]',
-            'pathParam': '[\n  {\n    "keyName": "petId",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": true,\n      "deprecated": false\n    }\n  }\n]',
-            'queryParam': '[]'
-          },
-          'response': {
-            '200': {
-              'body': '{\n  "type": "array",\n  "items": {\n    "type": "object",\n    "properties": {\n      "id": {\n        "type": "integer",\n        "format": "int64"\n      },\n      "name": {\n        "type": "string"\n      },\n      "tag": {\n        "type": "string"\n      }\n    },\n    "required": [\n      "id",\n      "name"\n    ]\n  }\n}',
-              'headers': '[]'
-            },
-            '500': {
-              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
-              'headers': '[]'
-            }
-          }
-        },
-        'post/pet/{petId}': {
-          'request': {
-            'headers': '[]',
-            'pathParam': '[\n  {\n    "keyName": "petId",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": true,\n      "deprecated": false\n    }\n  }\n]',
-            'queryParam': '[]'
-          },
-          'response': {
-            '200': {
-              'body': '{\n  "type": "array",\n  "items": {\n    "type": "object",\n    "properties": {\n      "id": {\n        "type": "integer",\n        "format": "int64"\n      },\n      "name": {\n        "type": "string"\n      },\n      "tag": {\n        "type": "string"\n      }\n    },\n    "required": [\n      "id",\n      "name"\n    ]\n  }\n}',
-              'headers': '[]'
-            },
-            '500': {
-              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
-              'headers': '[]'
-            }
-          }
-        }
-      },
+    const
       openapi = fs.readFileSync(testSpec1, 'utf8'),
+      expectedExtractedTypes = fs.readFileSync(testSpec1TypeOutput, 'utf8'),
       options = { schemaFaker: true, exampleParametersResolution: 'schema' };
 
     Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
       expect(err).to.be.null;
       expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
-
       const extractedTypes = conversionResult.extractedTypes;
-      expect(JSON.parse(JSON.stringify(extractedTypes))).to.deep.equal(
-        JSON.parse(JSON.stringify(expectedExtractedTypes)));
+      expect(JSON.parse(JSON.stringify(extractedTypes, null, 2))).to.deep.equal(JSON.parse(expectedExtractedTypes));
+
       done();
     }
     );
