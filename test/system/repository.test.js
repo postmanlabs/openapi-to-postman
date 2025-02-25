@@ -49,7 +49,7 @@ describe('project repository', function () {
         expect(json.keywords).to.eql(['openapi', 'postman', 'api', 'schema', 'swagger', 'oas']);
 
         expect(json).to.have.property('engines');
-        expect(json.engines).to.eql({ node: '>=8' });
+        expect(json.engines).to.eql({ node: '>=18' });
       });
 
       it('must have a valid version string in form of <major>.<minor>.<revision>', function () {
