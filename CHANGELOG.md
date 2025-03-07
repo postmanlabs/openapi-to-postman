@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [v5.0.0] - 2025-03-07
+
+### Breaking Changes
+
+- Drop support for node < v18.
+
 ## [v4.25.0] - 2025-01-15
 
 ## [v4.24.0] - 2024-08-13
@@ -649,7 +655,9 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.25.0...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v5.0.0...HEAD
+
+[v5.0.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.25.0...v5.0.0
 
 [v4.25.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v4.24.0...v4.25.0
 
