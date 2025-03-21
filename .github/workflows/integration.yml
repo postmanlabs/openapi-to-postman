@@ -22,6 +22,7 @@ jobs:
       - run: npm run test-system
       - run: npm run test-unit | tee coverage.txt && exit ${PIPESTATUS[0]}
       - name: Upload coverage-summary.json
+        if: matrix.node-version == '22.x'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-summary-unit
@@ -43,6 +44,7 @@ jobs:
       - run: npm ci
       - run: npm run test-regression | tee coverage.txt && exit ${PIPESTATUS[0]}
       - name: Upload coverage-summary.json
+        if: matrix.node-version == '22.x'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-summary-integration
