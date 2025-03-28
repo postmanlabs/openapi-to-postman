@@ -235,3 +235,62 @@ The validate function is synchronous and returns a status object which conforms 
 | request.url.variables | parameter (`in = path`) | - |
 | request.url.params | parameter (`in = query`) | - |
 | api_key in (query or header) | components.securitySchemes.api_key | includeAuthInfoInExample |
+
+
+## 🌟 Gemini API Example
+
+Convert a Gemini API specification to Postman:
+
+```javascript
+const Converter = require('openapi-to-postmanv2');
+const fs = require('fs');
+
+// Load Gemini OpenAPI spec
+const geminiSpec = fs.readFileSync('gemini-openapi.json');
+
+Converter.convert(
+  { type: 'string', data: geminiSpec },
+  { 
+    folderStrategy: 'Tags',
+    includeAuthInfoInExample: true 
+  },
+  (err, result) => {
+    if (result.result) {
+      fs.writeFileSync('gemini-collection.json', 
+        JSON.stringify(result.output[0].data, null, 2));
+    }
+  }
+);
+
+## 🌟 Gemini API Example
+
+Convert a Gemini API specification to Postman:
+
+```javascript
+const Converter = require('openapi-to-postmanv2');
+const fs = require('fs');
+
+// Load Gemini OpenAPI spec
+const geminiSpec = fs.readFileSync('gemini-openapi.json');
+
+Converter.convert(
+  { type: 'string', data: geminiSpec },
+  { 
+    folderStrategy: 'Tags',
+    includeAuthInfoInExample: true 
+  },
+  (err, result) => {
+    if (result.result) {
+      fs.writeFileSync('gemini-collection.json', 
+        JSON.stringify(result.output[0].data, null, 2));
+    }
+  }
+);
+```
+
+## 🔧 Common Issues
+
+| Error | Solution |
+|-------|----------|
+| `Too many nesting levels` | Set `stackLimit: 50` in options |
+| Missing path variables | Enable `requestParametersResolution: "Example"` |
