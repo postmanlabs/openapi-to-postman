@@ -1,7 +1,8 @@
+
 <img src="https://voyager.postman.com/logo/postman-logo-orange.svg" width="320" alt="The Postman Logo">
 
-_Supercharge your API workflow._
-_Modern software is built on APIs. Postman helps you develop APIs faster._
+*Supercharge your API workflow.*
+*Modern software is built on APIs. Postman helps you develop APIs faster.*
 
 # OpenAPI 3.0, 3.1 and Swagger 2.0 to Postman Collection
 
@@ -14,14 +15,14 @@ _Modern software is built on APIs. Postman helps you develop APIs faster._
 
 1. [Getting Started](#getting-started)
 2. [Command Line Interface](#command-line-interface)
-   1. [Options](#options)
-   2. [Usage](#usage)
+    1. [Options](#options)
+    2. [Usage](#usage)
 3. [Using the converter as a NodeJS module](#using-the-converter-as-a-nodejs-module)
-   1. [Convert Function](#convert)
-   2. [Options](#options)
-   3. [ConversionResult](#conversionresult)
-   4. [Sample usage](#sample-usage)
-   5. [Validate function](#validate-function)
+    1. [Convert Function](#convert)
+    2. [Options](#options)
+    3. [ConversionResult](#conversionresult)
+    4. [Sample usage](#sample-usage)
+    5. [Validate function](#validate-function)
 4. [Conversion Schema](#conversion-schema)
 
 ---
@@ -29,9 +30,7 @@ _Modern software is built on APIs. Postman helps you develop APIs faster._
 ---
 
 ### 🚀 We now also support OpenAPI 3.1 and Swagger 2.0 along with OpenAPI 3.0.
-
 ---
-
 ---
 
 <h2 id="getting-started">💭 Getting Started</h2>
@@ -47,6 +46,7 @@ If you want to use the converter in the CLI, install it globally with NPM:
 ```terminal
 $ npm i -g openapi-to-postmanv2
 ```
+
 
 <h2 id="command-line-interface">📖 Command Line Interface</h2>
 
@@ -83,38 +83,36 @@ The converter can be used as a CLI tool as well. The following [command line opt
 - `-h`, `--help`
   Specifies all the options along with a few usage examples on the terminal
 
-### Usage
+
+###  Usage
 
 - Takes a specification (spec.yaml) as an input and writes to a file (collection.json) with pretty printing and using provided options
-
 ```terminal
 $ openapi2postmanv2 -s spec.yaml -o collection.json -p -O folderStrategy=Tags,includeAuthInfoInExample=false
 ```
 
 - Takes a specification (spec.yaml) as an input and writes to a file (collection.json) with pretty printing and using provided options via config file
-
 ```terminal
 $ openapi2postmanv2 -s spec.yaml -o collection.json -p  -c ./examples/cli-options-config.json
 ```
 
 - Takes a specification (spec.yaml) as an input and writes to a file (collection.json) with pretty printing and using provided options (Also avoids any `"<Error: Too many levels of nesting to fake this schema>"` kind of errors present in converted collection)
-
 ```terminal
 $ openapi2postmanv2 -s spec.yaml -o collection.json -p -O folderStrategy=Tags,requestParametersResolution=Example,optimizeConversion=false,stackLimit=50
 ```
 
 - Testing the converter
-
 ```terminal
 $ openapi2postmanv2 --test
 ```
+
 
 <h2 id="using-the-converter-as-a-nodejs-module">🛠 Using the converter as a NodeJS module</h2>
 
 In order to use the convert in your node application, you need to import the package using `require`.
 
 ```javascript
-var Converter = require("openapi-to-postmanv2");
+var Converter = require('openapi-to-postmanv2')
 ```
 
 The converter provides the following functions:
@@ -136,7 +134,6 @@ OR
 ```
 
 **options:**
-
 ```javascript
 {
   schemaFaker: true,
@@ -147,11 +144,9 @@ OR
 All three properties are optional. Check the options section below for possible values for each option.
 */
 ```
-
 Note: All possible values of options and their usage can be found over here: [OPTIONS.md](/OPTIONS.md)
 
 **callback:**
-
 ```javascript
 function (err, result) {
   /*
@@ -180,24 +175,21 @@ Check out complete list of options and their usage at [OPTIONS.md](/OPTIONS.md)
 
 - `output` - Contains an array of Postman objects, each one with a `type` and `data`. The only type currently supported is `collection`.
 
+
+
 ### Sample Usage
-
 ```javascript
-const fs = require("fs"),
-  Converter = require("openapi-to-postmanv2"),
-  openapiData = fs.readFileSync("sample-spec.yaml", { encoding: "UTF8" });
+const fs = require('fs'),
+  Converter = require('openapi-to-postmanv2'),
+  openapiData = fs.readFileSync('sample-spec.yaml', {encoding: 'UTF8'});
 
-Converter.convert(
-  { type: "string", data: openapiData },
-  {},
-  (err, conversionResult) => {
+Converter.convert({ type: 'string', data: openapiData },
+  {}, (err, conversionResult) => {
     if (!conversionResult.result) {
-      console.log("Could not convert", conversionResult.reason);
-    } else {
-      console.log(
-        "The collection object is: ",
-        conversionResult.output[0].data
-      );
+      console.log('Could not convert', conversionResult.reason);
+    }
+    else {
+      console.log('The collection object is: ', conversionResult.output[0].data);
     }
   }
 );
@@ -223,24 +215,23 @@ The validate function is synchronous and returns a status object which conforms 
 ```
 
 ##### Validation object explanation
-
 - `result` - true if the data looks like OpenAPI and can be passed to the convert function
 
 - `reason` - Provides a reason for an unsuccessful validation of the specification
 
 <h2 id="conversion-schema">🧭 Conversion Schema</h2>
 
-| _postman_                    | _openapi_                                                               |                    _related options_                     |
-| ---------------------------- | ----------------------------------------------------------------------- | :------------------------------------------------------: | --------------------------------------------- |
-| collectionName               | info.title                                                              |                            -                             |
-| description                  | info.description + info.contact                                         |                            -                             |
-| collectionVariables          | server.variables + pathVariables                                        |                            -                             |
-| folderName                   | paths.path / tags.name                                                  |                      folderStrategy                      |
-| requestName                  | operationItem(method).summary / operationItem(method).operationId / url |                    requestNameSource                     |
-| request.method               | path.method                                                             |                            -                             |
-| request.headers              | parameter (`in = header`)                                               |                            -                             | [link](#Header/Path-param-conversion-example) |
-| request.body                 | operationItem(method).requestBody                                       | requestParametersResolution, exampleParametersResolution |
-| request.url.raw              | server.url (path level server >> openapi server) + path                 |                            -                             |
-| request.url.variables        | parameter (`in = path`)                                                 |                            -                             |
-| request.url.params           | parameter (`in = query`)                                                |                            -                             |
-| api_key in (query or header) | components.securitySchemes.api_key                                      |                 includeAuthInfoInExample                 |
+| *postman* | *openapi* | *related options* |
+| --- | --- | :---: |
+| collectionName | info.title | - |
+| description | info.description + info.contact | - |
+| collectionVariables| server.variables + pathVariables | - |
+| folderName | paths.path / tags.name | folderStrategy |
+| requestName | operationItem(method).summary / operationItem(method).operationId / url | requestNameSource |
+| request.method | path.method | - |
+| request.headers | parameter (`in = header`) | - | [link](#Header/Path-param-conversion-example) |
+| request.body | operationItem(method).requestBody | requestParametersResolution, exampleParametersResolution |
+| request.url.raw | server.url (path level server >> openapi server) + path | - |
+| request.url.variables | parameter (`in = path`) | - |
+| request.url.params | parameter (`in = query`) | - |
+| api_key in (query or header) | components.securitySchemes.api_key | includeAuthInfoInExample |
