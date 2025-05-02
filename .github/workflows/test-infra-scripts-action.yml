@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Track unit-test coverage
-        uses: postman-eng/test-infra-scripts/.github/actions/coverage-pr-comment-action@main
+        uses: postmanlabs/test-infra-scripts/.github/actions/coverage-pr-comment-action@main
         with:
           jobName: 'Unit-Tests'
           coverageType: unit
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Track integration-test coverage
-        uses: postman-eng/test-infra-scripts/.github/actions/coverage-pr-comment-action@main
+        uses: postmanlabs/test-infra-scripts/.github/actions/coverage-pr-comment-action@main
         with:
           jobName: 'Regression'
           coverageType: integration
