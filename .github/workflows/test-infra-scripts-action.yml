@@ -1,0 +1,52 @@
+# owned by test infrastructure team
+name: 'Quality Check Action'
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+env:
+  GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
+  GH_TOKEN: ${{ github.token }}
+  GH_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+  GH_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+  GITHUB_REPOSITORY: ${{ github.repository }}
+
+jobs:
+  track-unit-test-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Track unit-test coverage
+        uses: postmanlabs/test-infra-scripts/.github/actions/coverage-pr-comment-action@main
+        with:
+          jobName: 'Unit-Tests'
+          coverageType: unit
+          squad: api-builder
+          artifactSource: coverage-summary-unit
+          sonarqube_check: false
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          QE_HEVO_WEBHOOK_URL: ${{ secrets.QE_HEVO_WEBHOOK_URL }}
+          QE_HEVO_ACCESS_KEY: ${{ secrets.QE_HEVO_ACCESS_KEY }}
+          QE_HEVO_SECRET_KEY: ${{ secrets.QE_HEVO_SECRET_KEY }}
+          POSTMAN_NPM_TOKEN: ${{ secrets.POSTMAN_NPM_TOKEN }}
+
+  track-integration-test-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Track integration-test coverage
+        uses: postmanlabs/test-infra-scripts/.github/actions/coverage-pr-comment-action@main
+        with:
+          jobName: 'Regression'
+          coverageType: integration
+          squad: api-builder
+          artifactSource: coverage-summary-integration
+          sonarqube_check: false
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          QE_HEVO_WEBHOOK_URL: ${{ secrets.QE_HEVO_WEBHOOK_URL }}
+          QE_HEVO_ACCESS_KEY: ${{ secrets.QE_HEVO_ACCESS_KEY }}
+          QE_HEVO_SECRET_KEY: ${{ secrets.QE_HEVO_SECRET_KEY }}
+          POSTMAN_NPM_TOKEN: ${{ secrets.POSTMAN_NPM_TOKEN }}

@@ -20,8 +20,15 @@ jobs:
       - run: npm ci
       - run: npm run test-lint
       - run: npm run test-system
-      - run: npm run test-unit
-
+      - run: npm run test-unit | tee coverage.txt && exit ${PIPESTATUS[0]}
+      - name: Upload coverage-summary.json
+        if: matrix.node-version == '22.x'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-summary-unit
+          path: |
+              .coverage/coverage-summary.json
+              coverage.txt
   Regression:
     needs: Unit-Tests
     runs-on: ubuntu-latest
@@ -35,4 +42,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
-      - run: npm run test-regression
+      - run: npm run test-regression | tee coverage.txt && exit ${PIPESTATUS[0]}
+      - name: Upload coverage-summary.json
+        if: matrix.node-version == '22.x'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-summary-integration
+          path: |
+              .coverage/coverage-summary.json
+              coverage.txt
