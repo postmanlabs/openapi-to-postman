@@ -5,7 +5,7 @@ on:
   pull_request:
   push:
     branches:
-      - main
+      - develop
 
 env:
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
