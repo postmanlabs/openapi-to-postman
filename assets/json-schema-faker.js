@@ -24261,11 +24261,7 @@ function extend() {
       return generated > 0 ? Math.floor(generated) : Math.ceil(generated);
   };
 
-  var LIPSUM_WORDS = ('Lorem ipsum dolor sit amet consectetur adipisicing elit sed do eiusmod tempor incididunt ut labore'
-      + ' et dolore magna aliqua Ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea'
-      + ' commodo consequat Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla'
-      + ' pariatur Excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est'
-      + ' laborum').split(' ');
+  var LIPSUM_WORDS = ('string').split(' ');
   /**
    * Generates randomized array of single lorem ipsum words.
    *
@@ -24452,6 +24448,8 @@ function extend() {
       minProps = Math.max(optionalsProbability === null || additionalProperties ? random.number(fillProps ? 1 : 0, max) : 0, min);
     }
 
+    let postFix = 0;
+
     while (fillProps) {
       if (!(patternPropertyKeys.length || allowsAdditional)) {
         break;
@@ -24490,7 +24488,7 @@ function extend() {
             current += 1;
           }
         } else {
-          const word = get(requiredProperties) || (wordsGenerator(1) + hash());
+          const word = get(requiredProperties) || ('key_' + postFix++);
 
           if (!props[word]) {
             props[word] = additionalProperties || anyType;
