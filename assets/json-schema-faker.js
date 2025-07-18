@@ -23620,9 +23620,9 @@ function extend() {
 
   var ALL_TYPES = ['array', 'object', 'integer', 'number', 'string', 'boolean', 'null'];
   var MOST_NEAR_DATETIME = 2524608000000;
-  var MIN_INTEGER = -100000000;
-  var MAX_INTEGER = 100000000;
-  var MIN_NUMBER = -100;
+  var MIN_INTEGER = 0;
+  var MAX_INTEGER = 10000;
+  var MIN_NUMBER = 0;
   var MAX_NUMBER = 100;
   var env = {
       ALL_TYPES: ALL_TYPES,
