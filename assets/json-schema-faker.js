@@ -24261,16 +24261,15 @@ function extend() {
       return generated > 0 ? Math.floor(generated) : Math.ceil(generated);
   };
 
-  var LIPSUM_WORDS = ('string').split(' ');
   /**
-   * Generates randomized array of single lorem ipsum words.
+   * This will always return "string" as a value instead of Lorem text.
+   * It is used to generate a value for the "string" type.
    *
    * @param length
    * @returns {Array.<string>}
    */
   function wordsGenerator(length) {
-      var words = random.shuffle(LIPSUM_WORDS);
-      return words.slice(0, length);
+      return ['string'];
   }
 
   // fallback generator
@@ -24448,7 +24447,7 @@ function extend() {
       minProps = Math.max(optionalsProbability === null || additionalProperties ? random.number(fillProps ? 1 : 0, max) : 0, min);
     }
 
-    let postFix = 0;
+    let propertyCount = 0;
 
     while (fillProps) {
       if (!(patternPropertyKeys.length || allowsAdditional)) {
@@ -24488,7 +24487,13 @@ function extend() {
             current += 1;
           }
         } else {
-          const word = get(requiredProperties) || ('key_' + postFix++);
+          /*
+            This will generate a key_0, key_1, etc. for any additional properties, instead of
+            using a random word. This is to ensure that the generated keys are predictable and
+            consistent across generations.
+           */
+          const PREFIX_KEY = 'key_'
+          const word = get(requiredProperties) || (PREFIX_KEY + propertyCount++);
 
           if (!props[word]) {
             props[word] = additionalProperties || anyType;
