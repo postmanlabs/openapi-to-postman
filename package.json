@@ -1,6 +1,6 @@
 {
   "name": "openapi-to-postmanv2",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "Convert a given OpenAPI specification to Postman Collection v2.0",
   "homepage": "https://github.com/postmanlabs/openapi-to-postman",
   "bugs": "https://github.com/postmanlabs/openapi-to-postman/issues",
@@ -150,10 +150,10 @@
   },
   "scripts": {
     "test": "./scripts/test.sh",
-    "test-unit": "nyc --reporter=text -x **/assets/** -x **/test/** ./node_modules/mocha/bin/mocha --timeout 90000 \"test/unit/**/**.test.js\"",
+    "test-unit": "nyc --reporter=text --reporter=json-summary  --report-dir=.coverage -x **/assets/** -x **/test/** ./node_modules/mocha/bin/mocha --timeout 90000 \"test/unit/**/**.test.js\"",
     "test-lint": "./scripts/test-lint.sh",
     "test-system": "./node_modules/mocha/bin/mocha -x **/assets/** -x **/test/** \"test/system/**.test.js\"",
-    "test-regression": "./node_modules/mocha/bin/mocha test/integration/integration.test.js test/unit/sanity.test.js",
+    "test-regression": "nyc --reporter=text --reporter=json-summary  --report-dir=.coverage ./node_modules/mocha/bin/mocha test/integration/integration.test.js test/unit/sanity.test.js",
     "release": "./scripts/release.sh",
     "coverage": "nyc report --reporter=html --reporter=text mocha"
   }
