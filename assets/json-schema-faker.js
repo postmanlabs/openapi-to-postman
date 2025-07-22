@@ -23620,9 +23620,9 @@ function extend() {
 
   var ALL_TYPES = ['array', 'object', 'integer', 'number', 'string', 'boolean', 'null'];
   var MOST_NEAR_DATETIME = 2524608000000;
-  var MIN_INTEGER = -100000000;
-  var MAX_INTEGER = 100000000;
-  var MIN_NUMBER = -100;
+  var MIN_INTEGER = 0;
+  var MAX_INTEGER = 10000;
+  var MIN_NUMBER = 0;
   var MAX_NUMBER = 100;
   var env = {
       ALL_TYPES: ALL_TYPES,
@@ -24261,20 +24261,15 @@ function extend() {
       return generated > 0 ? Math.floor(generated) : Math.ceil(generated);
   };
 
-  var LIPSUM_WORDS = ('Lorem ipsum dolor sit amet consectetur adipisicing elit sed do eiusmod tempor incididunt ut labore'
-      + ' et dolore magna aliqua Ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea'
-      + ' commodo consequat Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla'
-      + ' pariatur Excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est'
-      + ' laborum').split(' ');
   /**
-   * Generates randomized array of single lorem ipsum words.
+   * This will always return "string" as a value instead of Lorem text.
+   * It is used to generate a value for the "string" type.
    *
    * @param length
    * @returns {Array.<string>}
    */
   function wordsGenerator(length) {
-      var words = random.shuffle(LIPSUM_WORDS);
-      return words.slice(0, length);
+      return ['string'];
   }
 
   // fallback generator
@@ -24452,6 +24447,8 @@ function extend() {
       minProps = Math.max(optionalsProbability === null || additionalProperties ? random.number(fillProps ? 1 : 0, max) : 0, min);
     }
 
+    let propertyCount = 0;
+
     while (fillProps) {
       if (!(patternPropertyKeys.length || allowsAdditional)) {
         break;
@@ -24490,7 +24487,13 @@ function extend() {
             current += 1;
           }
         } else {
-          const word = get(requiredProperties) || (wordsGenerator(1) + hash());
+          /*
+            This will generate a key_0, key_1, etc. for any additional properties, instead of
+            using a random word. This is to ensure that the generated keys are predictable and
+            consistent across generations.
+           */
+          const PREFIX_KEY = 'key_'
+          const word = get(requiredProperties) || (PREFIX_KEY + propertyCount++);
 
           if (!props[word]) {
             props[word] = additionalProperties || anyType;
