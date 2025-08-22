@@ -24547,7 +24547,7 @@ function extend() {
    * @returns {string}
    */
   function thunkGenerator(min, max) {
-      if (min === void 0) { min = 0; }
+      if (min === void 0) { min = 6; }
       if (max === void 0) { max = 140; }
       var min = Math.max(0, min), max = random.number(min, max), result = produce();
       // append until length is reached
@@ -24629,7 +24629,7 @@ function extend() {
       'json-pointer': `(/(?:${FRAGMENT.replace(']*', '/]*')}|~[01]))+`,
 
       // some types from https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#data-types (?)
-      uuid: '^(?:urn:uuid:)?[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$',
+      uuid: '^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$',
   };
 
   regexps.iri = regexps['uri-reference'];
