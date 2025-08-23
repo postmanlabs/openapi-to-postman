@@ -176,148 +176,6 @@ let _ = require('lodash'),
     return tree;
   },
 
-  // _generateTreeFromPaths = function (openapi, { includeDeprecated }) {
-  //   /**
-  //    * We will create a unidirectional graph
-  //    */
-  //   let tree = new Graph();
-
-  //   tree.setNode('root:collection', {
-  //     type: 'collection',
-  //     data: {},
-  //     meta: {}
-  //   });
-
-  //   _.forEach(openapi.paths, function (methods, path) {
-  //     let pathSplit = path === '/' ? [path] : _.compact(path.split('/'));
-
-  //     // if after path split we just have one entry
-  //     // that means no folders need to be generated.
-  //     // check for all the methods inside it and expand.
-  //     if (pathSplit.length === 1) {
-  //       /**
-  //        * Always first try to find the node if it already exists.
-  //        * if yes, bail out nothing is needed to be done.
-  //        *
-  //        * if the path length is 1, then also generate
-  //        * the folder otherwise /pet and /pet/:id will never be in same folder.
-  //        */
-  //       // if (!tree.hasNode(`path:${pathSplit[0]}`)) {
-  //       //   tree.setNode(`path:${pathSplit[0]}`, {
-  //       //     type: 'folder',
-  //       //     meta: {
-  //       //       name: pathSplit[0],
-  //       //       path: pathSplit[0],
-  //       //       pathIdentifier: pathIdentifier
-  //       //     },
-  //       //     data: {}
-  //       //   });
-
-  //       //   tree.setEdge('root:collection', `path:${pathSplit[0]}`);
-  //       // }
-
-
-  //       _.forEach(methods, function (data, method) {
-  //         if (!ALLOWED_HTTP_METHODS[method]) {
-  //           return;
-  //         }
-
-  //         /**
-  //          * include deprecated handling.
-  //          * If true, add in the postman collection. If false ignore the request.
-  //          */
-  //         if (!includeDeprecated && data.deprecated) {
-  //           return;
-  //         }
-
-  //         tree.setNode(`path:${pathSplit[0]}:${method}`, {
-  //           type: 'request',
-  //           meta: {
-  //             path: path,
-  //             method: method,
-  //             pathIdentifier: pathSplit[0]
-  //           },
-  //           data: {}
-  //         });
-
-  //         tree.setEdge(`path:${pathSplit[0]}`, `path:${pathSplit[0]}:${method}`);
-  //       });
-  //     }
-
-  //     else {
-  //       _.forEach(pathSplit, function (p, index) {
-  //         let previousPathIdentified = pathSplit.slice(0, index).join('/'),
-  //           pathIdentifier = pathSplit.slice(0, index + 1).join('/');
-
-  //         /**
-  //          * Always first try to find the node if it already exists.
-  //          * if yes, bail out nothing is needed to be done.
-  //          */
-  //         if (tree.hasNode(`path:${pathIdentifier}`)) {
-  //           return;
-  //         }
-
-  //         else {
-  //           tree.setNode(`path:${pathIdentifier}`, {
-  //             type: 'folder',
-  //             meta: {
-  //               name: p,
-  //               path: p,
-  //               pathIdentifier: pathIdentifier
-  //             },
-  //             data: {}
-  //           });
-
-  //           /**
-  //            * If index is 0, this means that we are on the first level.
-  //            * Hence it is folder/request to be added on the first level
-  //            *
-  //            * If after the split we have more than one paths, then we need
-  //            * to add to the previous node.
-  //            */
-  //           tree.setEdge(index === 0 ? 'root:collection' : `path:${previousPathIdentified}`, `path:${pathIdentifier}`);
-  //         }
-  //       });
-
-  //       /**
-  //        * Now for all the methods present in the path, add the request nodes.
-  //        */
-
-  //       _.forEach(methods, function (data, method) {
-  //         if (!ALLOWED_HTTP_METHODS[method]) {
-  //           return;
-  //         }
-
-  //         /**
-  //          * include deprecated handling.
-  //          * If true, add in the postman collection. If false ignore the request.
-  //          */
-  //         if (!includeDeprecated && data.deprecated) {
-  //           return;
-  //         }
-
-  //         // join till the last path i.e. the folder.
-  //         let previousPathIdentified = pathSplit.slice(0, (pathSplit.length)).join('/'),
-  //           pathIdentifier = `${pathSplit.join('/')}:${method}`;
-
-  //         tree.setNode(`path:${pathIdentifier}`, {
-  //           type: 'request',
-  //           data: {},
-  //           meta: {
-  //             path: path,
-  //             method: method,
-  //             pathIdentifier: pathIdentifier
-  //           }
-  //         });
-
-  //         tree.setEdge(`path:${previousPathIdentified}`, `path:${pathIdentifier}`);
-  //       });
-  //     }
-  //   });
-
-  //   return tree;
-  // },
-
   _generateTreeFromTags = function (openapi, { includeDeprecated }) {
     let tree = new Graph(),
 
@@ -424,6 +282,124 @@ let _ = require('lodash'),
     return tree;
   },
 
+  /**
+   * Generates tree structure with nested folders based on tag order
+   * @param {Object} openapi - OpenAPI specification
+   * @param {Object} options - Generation options
+   * @param {boolean} options.includeDeprecated - Whether to include deprecated operations
+   * @returns {Object} - Graph tree with nested folder structure
+   */
+  _generateTreeFromNestedTags = function (openapi, { includeDeprecated }) {
+    let tree = new Graph(),
+
+      tagDescMap = _.reduce(openapi.tags, function (acc, data) {
+        acc[data.name] = data.description;
+
+        return acc;
+      }, {});
+
+    tree.setNode('root:collection', {
+      type: 'collection',
+      data: {},
+      meta: {}
+    });
+
+    /**
+     * Helper function to create nested folder structure for tags
+     * @param {Array} tags - Array of tags to create nested folders for
+     * @returns {String} - Node ID of the deepest folder created
+     */
+    const createNestedFolders = function (tags) {
+      if (!tags || tags.length === 0) {
+        return 'root:collection';
+      }
+
+      let parentNodeId = 'root:collection';
+
+      // Create nested folder structure based on tag order
+      for (let i = 0; i < tags.length; i++) {
+        const tag = tags[i],
+          folderPath = tags.slice(0, i + 1).join(':'),
+          currentNodeId = `path:${folderPath}`;
+
+        // Create folder node if it doesn't exist
+        if (!tree.hasNode(currentNodeId)) {
+          tree.setNode(currentNodeId, {
+            type: 'folder',
+            meta: {
+              path: '',
+              name: tag,
+              description: tagDescMap[tag] || ''
+            },
+            data: {}
+          });
+
+          // Connect to parent (either root collection or previous folder)
+          tree.setEdge(parentNodeId, currentNodeId);
+        }
+
+        parentNodeId = currentNodeId;
+      }
+
+      return parentNodeId;
+    };
+
+    _.forEach(openapi.paths, function (methods, path) {
+      _.forEach(methods, function (data, method) {
+        if (!ALLOWED_HTTP_METHODS[method]) {
+          return;
+        }
+
+        /**
+         * include deprecated handling.
+         * If true, add in the postman collection. If false ignore the request.
+         */
+        if (!includeDeprecated && data.deprecated) {
+          return;
+        }
+
+        /**
+         * Create nested folder structure based on tags order
+         * and place the request in the deepest folder
+         */
+        if (data.tags && data.tags.length > 0) {
+          // Create nested folder structure and get the deepest folder node
+          const deepestFolderNodeId = createNestedFolders(data.tags),
+            // Create a unique request node ID (one per operation)
+            requestNodeId = `request:${path}:${method}`;
+
+          tree.setNode(requestNodeId, {
+            type: 'request',
+            data: {},
+            meta: {
+              tags: data.tags,
+              path: path,
+              method: method
+            }
+          });
+
+          // Connect request to the deepest folder
+          tree.setEdge(deepestFolderNodeId, requestNodeId);
+        }
+        else {
+          // No tags - place request directly under root collection
+          tree.setNode(`path:${path}:${method}`, {
+            type: 'request',
+            data: {},
+            meta: {
+              path: path,
+              method: method
+            }
+          });
+
+          tree.setEdge('root:collection', `path:${path}:${method}`);
+        }
+      });
+    });
+
+    return tree;
+  },
+
   _generateWebhookEndpoints = function (openapi, tree, { includeDeprecated }) {
     if (!_.isEmpty(openapi.webhooks)) {
       tree.setNode(`${PATH_WEBHOOK}:folder`, {
@@ -470,12 +446,18 @@ let _ = require('lodash'),
  *
  * @returns {Object} - tree format
  */
-module.exports = function (openapi, { folderStrategy, includeWebhooks, includeDeprecated }) {
+module.exports = function (openapi, { folderStrategy, includeWebhooks, includeDeprecated, tagsFolderHierarchy }) {
   let skeletonTree;
 
   switch (folderStrategy) {
     case 'tags':
-      skeletonTree = _generateTreeFromTags(openapi, { includeDeprecated });
+      if (tagsFolderHierarchy === 'flat') {
+        skeletonTree = _generateTreeFromTags(openapi, { includeDeprecated });
+      }
+      else {
+        skeletonTree = _generateTreeFromNestedTags(openapi, { includeDeprecated });
+      }
+
       break;
 
     case 'paths':
