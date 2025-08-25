@@ -24547,6 +24547,11 @@ function extend() {
    * @returns {string}
    */
   function thunkGenerator(min, max) {
+      // For properties of type string without any specified examples or detailed properties,
+      // we want the generated value to be called "string".
+      // Hence our wordsGenerator returns a fixed array of ['string']. To help with the same,
+      // we set the fallback min length value as "6" since we don't want the value to be
+      // "strin", "st", "s" etc.
       if (min === void 0) { min = 6; }
       if (max === void 0) { max = 140; }
       var min = Math.max(0, min), max = random.number(min, max), result = produce();
