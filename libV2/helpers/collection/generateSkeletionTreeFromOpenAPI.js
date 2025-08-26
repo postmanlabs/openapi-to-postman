@@ -446,16 +446,16 @@ let _ = require('lodash'),
  *
  * @returns {Object} - tree format
  */
-module.exports = function (openapi, { folderStrategy, includeWebhooks, includeDeprecated, tagsFolderHierarchy }) {
+module.exports = function (openapi, { folderStrategy, includeWebhooks, includeDeprecated, nestedFolderHierarchy }) {
   let skeletonTree;
 
   switch (folderStrategy) {
     case 'tags':
-      if (tagsFolderHierarchy === 'flat') {
-        skeletonTree = _generateTreeFromTags(openapi, { includeDeprecated });
+      if (nestedFolderHierarchy) {
+        skeletonTree = _generateTreeFromNestedTags(openapi, { includeDeprecated });
       }
       else {
-        skeletonTree = _generateTreeFromNestedTags(openapi, { includeDeprecated });
+        skeletonTree = _generateTreeFromTags(openapi, { includeDeprecated });
       }
 
       break;

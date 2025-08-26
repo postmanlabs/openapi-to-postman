@@ -8,7 +8,7 @@ const optionIds = [
     'requestParametersResolution',
     'exampleParametersResolution',
     'folderStrategy',
-    'tagsFolderHierarchy',
+    'nestedFolderHierarchy',
     'indentCharacter',
     'requestNameSource',
     'schemaFaker',
