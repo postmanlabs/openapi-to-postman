@@ -1,0 +1,286 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "help me please",
+    "version": "1.0.0",
+    "description": "Buy or rent spacecrafts updated to new content\n\nContact Support:\n Name: Jon"
+  },
+  "servers": [
+    {
+      "url": "{{baseUrl}}"
+    }
+  ],
+  "paths": {
+    "/spacecraft/{spacecraftId}/help/{helpme}/{help}/{user-id+v1+special}": {
+      "parameters": [
+        {
+          "name": "spacecraftId",
+          "in": "path",
+          "required": true,
+          "description": "(Required) ",
+          "example": "asdfadsfasf",
+          "schema": {
+            "deprecated": false,
+            "type": "string"
+          }
+        },
+        {
+          "name": "helpme",
+          "in": "path",
+          "required": true,
+          "description": "(Required) ",
+          "example": "{{aDSASD}}",
+          "schema": {
+            "deprecated": false,
+            "type": "string"
+          }
+        },
+        {
+          "name": "help",
+          "in": "path",
+          "required": true,
+          "description": "(Required) ",
+          "example": "{{help}}",
+          "schema": {
+            "deprecated": false,
+            "type": "string"
+          }
+        },
+        {
+          "name": "user-id+v1+special",
+          "in": "path",
+          "required": true,
+          "example": "1",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Read a spacecraft",
+        "tags": [
+          "spacecraft",
+          "help"
+        ],
+        "parameters": [
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": false,
+            "example": "application/json",
+            "schema": {
+              "deprecated": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "deprecated": false,
+                  "type": "string"
+                },
+                "example": "application/json"
+              }
+            },
+            "description": "The spacecraft corresponding to the provided `spacecraftId`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "id": "string",
+                  "name": "string",
+                  "type": "string",
+                  "description": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "deprecated": false,
+                  "type": "string"
+                },
+                "example": "application/json"
+              }
+            },
+            "description": "No spacecraft found for the provided `spacecraftId`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "message": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "deprecated": false,
+                  "type": "string"
+                },
+                "example": "application/json"
+              }
+            },
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "message": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a spacecraft",
+        "tags": [
+          "spacecraft"
+        ],
+        "parameters": [
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": false,
+            "example": "application/json",
+            "schema": {
+              "deprecated": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "deprecated": false,
+                  "type": "string"
+                },
+                "example": "application/json"
+              }
+            },
+            "description": "The spacecraft corresponding to the provided `spacecraftId`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "id": "string",
+                  "name": "string",
+                  "type": "string",
+                  "description": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "deprecated": false,
+                  "type": "string"
+                },
+                "example": "application/json"
+              }
+            },
+            "description": "No spacecraft found for the provided `spacecraftId`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "message": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "deprecated": false,
+                  "type": "string"
+                },
+                "example": "application/json"
+              }
+            },
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "message": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

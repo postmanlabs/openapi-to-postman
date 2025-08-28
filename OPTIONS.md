@@ -27,4 +27,5 @@ includeWebhooks|boolean|-|false|Select whether to include Webhooks in the genera
 includeReferenceMap|boolean|-|false|Whether or not to include reference map or not as part of output|BUNDLE|v2, v1
 includeDeprecated|boolean|-|true|Select whether to include deprecated operations, parameters, and properties in generated collection or not|CONVERSION, VALIDATION|v2, v1
 alwaysInheritAuthentication|boolean|-|false|Whether authentication details should be included on every request, or always inherited from the collection.|CONVERSION|v2, v1
+nestedFolderHierarchy|boolean|-|false|Enable this option to create subfolders in the collection based on the order of tags.|CONVERSION|v2
 preferredRequestBodyType|enum|x-www-form-urlencoded, form-data, raw, first-listed|first-listed|When there are multiple content-types defined in the request body of OpenAPI, the conversion selects the preferred option content-type as request body.If "first-listed" is set, the first content-type defined in the OpenAPI spec will be selected.|CONVERSION|v2
