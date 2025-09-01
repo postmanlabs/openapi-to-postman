@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v5.1.0] - 2025-09-01
+
 ## [v5.0.2] - 2025-08-25
 
 ## [v5.0.1] - 2025-07-22
@@ -659,7 +661,9 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v5.0.2...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v5.1.0...HEAD
+
+[v5.1.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v5.0.2...v5.1.0
 
 [v5.0.2]: https://github.com/postmanlabs/openapi-to-postman/compare/v5.0.1...v5.0.2
 
