@@ -8,6 +8,7 @@ const optionIds = [
     'requestParametersResolution',
     'exampleParametersResolution',
     'folderStrategy',
+    'nestedFolderHierarchy',
     'indentCharacter',
     'requestNameSource',
     'schemaFaker',
@@ -67,6 +68,13 @@ const optionIds = [
       default: 'Paths',
       availableOptions: ['Paths', 'Tags'],
       description: 'Select whether to create folders according to the spec’s paths or tags.'
+    },
+    tagsFolderHierarchy: {
+      name: 'Nested folder organization using tags',
+      type: 'enum',
+      default: 'Flat',
+      availableOptions: ['Nested', 'Flat'],
+      description: 'Select whether to create heirarchical folders according to the spec’s tags order.'
     },
     optimizeConversion: {
       name: 'Optimize conversion',

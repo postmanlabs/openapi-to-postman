@@ -1842,6 +1842,41 @@ describe('The convert v2 Function', function() {
       });
   });
 
+  it('Should convert using tags as folder strategy and generated nested folder', function () {
+    const someOperationDeprecatedUsingTags =
+      path.join(__dirname, VALID_OPENAPI_PATH, '/spacecraft_nested_tags.json'),
+      fileData = fs.readFileSync(someOperationDeprecatedUsingTags, 'utf8');
+    Converter.convertV2({ type: 'string', data: fileData },
+      { folderStrategy: 'tags', nestedFolderHierarchy: true },
+      (err, result) => {
+        expect(err).to.be.null;
+        expect(result.result).to.be.true;
+        expect(result.output[0].data.item.length).to.equal(1);
+        expect(result.output[0].data.item[0].name).to.equal('spacecraft');
+        expect(result.output[0].data.item[0].item.length).to.equal(2);
+        expect(result.output[0].data.item[0].item[0].name).to.equal('help');
+        expect(result.output[0].data.item[0].item[0].item.length).to.equal(1);
+        expect(result.output[0].data.item[0].item[0].item[0].name).to.equal('Read a spacecraft');
+        expect(result.output[0].data.item[0].item[0].item[0]).to.have.keys(
+          'event',
+          'id',
+          'name',
+          'protocolProfileBehavior',
+          'request',
+          'response'
+        );
+        expect(result.output[0].data.item[0].item[1].name).to.equal('Create a spacecraft');
+        expect(result.output[0].data.item[0].item[1]).to.have.keys(
+          'event',
+          'id',
+          'name',
+          'protocolProfileBehavior',
+          'request',
+          'response'
+        );
+      });
+  });
+
   describe('[Github #57] - folderStrategy option (value: Tags) ' + tagsFolderSpec, function() {
     async.series({
       pathsOutput: (cb) => {
