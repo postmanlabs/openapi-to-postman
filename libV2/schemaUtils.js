@@ -683,7 +683,7 @@ let QUERYPARAM = 'query',
       if (schema.hasOwnProperty('type')) {
         let { parametersResolution } = context.computedOptions;
 
-        // Override default value to schema for CONVERSION only for parmeter resolution set to schema
+        // Override default value to schema for CONVERSION only for parameter resolution set to schema
         if (resolveFor === CONVERSION && parametersResolution === 'schema') {
           if (!schema.hasOwnProperty('format')) {
             schema.default = '<' + schema.type + '>';
@@ -722,6 +722,13 @@ let QUERYPARAM = 'query',
           );
         }
       });
+
+      let { parametersResolution } = context.computedOptions;
+      if (resolveFor === CONVERSION && parametersResolution === 'schema') {
+        if (schema.hasOwnProperty('type')) {
+          schema.default = '<' + schema.type + '>';
+        }
+      }
     }
 
     // Keep track of readOnly and writeOnly properties to resolve request and responses accordingly later.

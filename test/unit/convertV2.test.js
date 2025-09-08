@@ -121,8 +121,8 @@ const expect = require('chai').expect,
     path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyOneOf.json'),
   readOnlyNestedSpec =
     path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyNested.json'),
+  issue817 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#817-enum.yaml'),
   issue795 = path.join(__dirname, VALID_OPENAPI_PATH, '/form-binary-file.json');
-
 
 describe('The convert v2 Function', function() {
 
@@ -2132,7 +2132,8 @@ describe('The convert v2 Function', function() {
         };
 
       Converter.convertV2(input, {
-        optimizeConversion: false
+        optimizeConversion: false,
+        parametersResolution: 'Example'
       }, (err, result) => {
         const expectedResponseBody = JSON.parse(result.output[0].data.item[0].item[0].response[0].body);
         expect(err).to.be.null;
@@ -2985,4 +2986,73 @@ describe('The convert v2 Function', function() {
       done();
     });
   });
+
+  it('[Github #817] Should convert using Example parameter resolution', function (done) {
+    var openapi = fs.readFileSync(issue817, 'utf8'),
+      reqQuery,
+      reqBody;
+    Converter.convertV2({ type: 'string', data: openapi }, {
+      requestNameSource: 'Fallback',
+      indentCharacter: 'Space',
+      collapseFolders: true,
+      optimizeConversion: true,
+      parametersResolution: 'Example'
+    }, (err, conversionResult) => {
+
+      reqQuery = conversionResult.output[0].data.item[0].item[0].item[0].request.url.query[0];
+      reqBody = JSON.parse(conversionResult.output[0].data.item[0].item[0].item[0].request.body.raw);
+
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(reqQuery.value).to.equal('created_at');
+      expect(reqBody.category).to.equal('work');
+      done();
+    });
+  });
+
+  it('[Github #817] Should convert using Schema parameter resolution', function (done) {
+    var openapi = fs.readFileSync(issue817, 'utf8'),
+      reqQuery,
+      reqBody;
+    Converter.convertV2({ type: 'string', data: openapi }, {
+      requestNameSource: 'Fallback',
+      indentCharacter: 'Space',
+      collapseFolders: true,
+      optimizeConversion: true,
+      parametersResolution: 'Schema'
+    }, (err, conversionResult) => {
+
+      reqQuery = conversionResult.output[0].data.item[0].item[0].item[0].request.url.query[0];
+      reqBody = JSON.parse(conversionResult.output[0].data.item[0].item[0].item[0].request.body.raw);
+
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(reqQuery.value).to.equal('<string>');
+      expect(reqBody.category).to.equal('<string>');
+      done();
+    });
+  });
+
+  it('[Github #817] Should fallback to default Schema parameter resolution', function (done) {
+    var openapi = fs.readFileSync(issue817, 'utf8'),
+      reqQuery,
+      reqBody;
+    Converter.convertV2({ type: 'string', data: openapi }, {
+      requestNameSource: 'Fallback',
+      indentCharacter: 'Space',
+      collapseFolders: true,
+      optimizeConversion: true
+    }, (err, conversionResult) => {
+
+      reqQuery = conversionResult.output[0].data.item[0].item[0].item[0].request.url.query[0];
+      reqBody = JSON.parse(conversionResult.output[0].data.item[0].item[0].item[0].request.body.raw);
+
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(reqQuery.value).to.equal('<string>');
+      expect(reqBody.category).to.equal('<string>');
+      done();
+    });
+  });
+
 });
