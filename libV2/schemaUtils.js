@@ -743,6 +743,30 @@ let QUERYPARAM = 'query',
  * @returns {Object} The processed schema details.
  */
   processSchema = (resolvedSchema) => {
+    if (resolvedSchema.anyOf) {
+      return {
+        anyOf: resolvedSchema.anyOf.map((schema) => {
+          return processSchema(schema);
+        })
+      };
+    }
+
+    if (resolvedSchema.oneOf) {
+      return {
+        oneOf: resolvedSchema.oneOf.map((schema) => {
+          return processSchema(schema);
+        })
+      };
+    }
+
+    if (resolvedSchema.allOf) {
+      return {
+        allOf: resolvedSchema.allOf.map((schema) => {
+          return processSchema(schema);
+        })
+      };
+    }
+
     if (resolvedSchema.type === 'object' && resolvedSchema.properties) {
       const schemaDetails = {
           type: resolvedSchema.type,
@@ -752,7 +776,7 @@ let QUERYPARAM = 'query',
         requiredProperties = new Set(resolvedSchema.required || []);
 
       for (let [propName, propValue] of Object.entries(resolvedSchema.properties)) {
-        if (!propValue.type) {
+        if (!propValue.type && !propValue.anyOf && !propValue.oneOf && !propValue.allOf) {
           continue;
         }
         const propertyDetails = {
@@ -772,7 +796,24 @@ let QUERYPARAM = 'query',
         if (requiredProperties.has(propName)) {
           schemaDetails.required.push(propName);
         }
-        if (propValue.properties) {
+
+        // Handle composite schemas within properties
+        if (propValue.anyOf) {
+          propertyDetails.anyOf = propValue.anyOf.map((schema) => {
+            return processSchema(schema);
+          });
+        }
+        else if (propValue.oneOf) {
+          propertyDetails.oneOf = propValue.oneOf.map((schema) => {
+            return processSchema(schema);
+          });
+        }
+        else if (propValue.allOf) {
+          propertyDetails.allOf = propValue.allOf.map((schema) => {
+            return processSchema(schema);
+          });
+        }
+        else if (propValue.properties) {
           let processedProperties = processSchema(propValue);
           propertyDetails.properties = processedProperties.properties;
           if (processedProperties.required) {
@@ -1490,6 +1531,14 @@ let QUERYPARAM = 'query',
       );
     }
 
+    // For type fetching, process the original schema before any modifications
+    if (context.enableTypeFetching && requestBodySchema) {
+      // Get the actual schema - it might be nested under .schema or be direct
+      const originalSchema = requestBodySchema.schema || requestBodySchema,
+        requestBodySchemaTypes = processSchema(originalSchema);
+      resolvedSchemaTypes.push(requestBodySchemaTypes);
+    }
+
     /**
      * We'll be picking up example data from `value` only if
      * `value` is the only key present at the root level;
@@ -1609,11 +1658,6 @@ let QUERYPARAM = 'query',
         }
       }
 
-    }
-
-    if (context.enableTypeFetching && requestBodySchema.type !== undefined) {
-      const requestBodySchemaTypes = processSchema(requestBodySchema);
-      resolvedSchemaTypes.push(requestBodySchemaTypes);
     }
 
     // Generate multiple examples when either request or response contains more than one example
