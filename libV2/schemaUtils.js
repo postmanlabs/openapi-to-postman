@@ -1523,20 +1523,24 @@ let QUERYPARAM = 'query',
       return [{ [bodyKey]: bodyData }];
     }
 
+    // For type fetching, process the original schema before any modifications
+    if (context.enableTypeFetching && requestBodySchema) {
+      // Get the actual schema - it might be nested under .schema or be direct
+      const originalSchema = requestBodySchema.schema || requestBodySchema,
+        resolvedSchema = resolveSchema(
+          context,
+          originalSchema,
+          { resolveFor: 'PROCESSING' }),
+        requestBodySchemaTypes = processSchema(resolvedSchema);
+      requestBodySchemaTypes && resolvedSchemaTypes.push(requestBodySchemaTypes);
+    }
+
     if (requestBodySchema.$ref) {
       requestBodySchema = resolveSchema(
         context,
         requestBodySchema,
         { isResponseSchema: isExampleBody }
       );
-    }
-
-    // For type fetching, process the original schema before any modifications
-    if (context.enableTypeFetching && requestBodySchema) {
-      // Get the actual schema - it might be nested under .schema or be direct
-      const originalSchema = requestBodySchema.schema || requestBodySchema,
-        requestBodySchemaTypes = processSchema(originalSchema);
-      resolvedSchemaTypes.push(requestBodySchemaTypes);
     }
 
     /**
