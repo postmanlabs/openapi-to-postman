@@ -684,7 +684,7 @@ let QUERYPARAM = 'query',
         let { parametersResolution } = context.computedOptions;
 
         // Override default value to schema for CONVERSION only for parmeter resolution set to schema
-        if (resolveFor === CONVERSION && parametersResolution === 'schema') {
+        if ((resolveFor === CONVERSION || resolveFor === 'PROCESSING') && parametersResolution === 'schema') {
           if (!schema.hasOwnProperty('format')) {
             schema.default = '<' + schema.type + '>';
           }
