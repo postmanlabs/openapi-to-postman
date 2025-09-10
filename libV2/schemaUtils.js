@@ -1530,9 +1530,11 @@ let QUERYPARAM = 'query',
         resolvedSchema = resolveSchema(
           context,
           originalSchema,
-          { resolveFor: 'PROCESSING' }),
-        requestBodySchemaTypes = processSchema(resolvedSchema);
-      requestBodySchemaTypes && resolvedSchemaTypes.push(requestBodySchemaTypes);
+          { resolveFor: 'PROCESSING' });
+
+      if (resolvedSchema.type || resolvedSchema.anyOf || resolvedSchema.oneOf || resolvedSchema.allOf) {
+        resolvedSchemaTypes.push(processSchema(resolvedSchema));
+      }
     }
 
     if (requestBodySchema.$ref) {
