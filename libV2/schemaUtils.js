@@ -128,6 +128,7 @@ schemaFaker.option({
 
 let QUERYPARAM = 'query',
   CONVERSION = 'conversion',
+  TYPES_GENERATION = 'typesGeneration',
   HEADER = 'header',
   PATHPARAM = 'path',
   SCHEMA_TYPES = {
@@ -493,6 +494,15 @@ let QUERYPARAM = 'query',
    * @returns {Object} Resolved schema
    */
   resolveAllOfSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}, currentPath = '') => {
+    if (resolveFor === TYPES_GENERATION) {
+      return {
+        allOf: _.map(schema.allOf, (schema) => {
+          // eslint-disable-next-line no-use-before-define
+          return _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+        })
+      };
+    }
+
     try {
       return mergeAllOf(_.assign(schema, {
         allOf: _.map(schema.allOf, (schema) => {
@@ -684,7 +694,7 @@ let QUERYPARAM = 'query',
         let { parametersResolution } = context.computedOptions;
 
         // Override default value to schema for CONVERSION only for parmeter resolution set to schema
-        if ((resolveFor === CONVERSION || resolveFor === 'PROCESSING') && parametersResolution === 'schema') {
+        if ((resolveFor === CONVERSION || resolveFor === TYPES_GENERATION) && parametersResolution === 'schema') {
           if (!schema.hasOwnProperty('format')) {
             schema.default = '<' + schema.type + '>';
           }
@@ -797,7 +807,6 @@ let QUERYPARAM = 'query',
           schemaDetails.required.push(propName);
         }
 
-        // Handle composite schemas within properties
         if (propValue.anyOf) {
           propertyDetails.anyOf = propValue.anyOf.map((schema) => {
             return processSchema(schema);
@@ -1524,13 +1533,14 @@ let QUERYPARAM = 'query',
     }
 
     // For type fetching, process the original schema before any modifications
+    // This is done to preserve the anyOf, oneOf etc in the original schema
+    // since they are otherwise flattened while resolving the schema
     if (context.enableTypeFetching && requestBodySchema) {
-      // Get the actual schema - it might be nested under .schema or be direct
       const originalSchema = requestBodySchema.schema || requestBodySchema,
         resolvedSchema = resolveSchema(
           context,
           originalSchema,
-          { resolveFor: 'PROCESSING' });
+          { resolveFor: TYPES_GENERATION });
 
       if (resolvedSchema.type || resolvedSchema.anyOf || resolvedSchema.oneOf || resolvedSchema.allOf) {
         resolvedSchemaTypes.push(processSchema(resolvedSchema));

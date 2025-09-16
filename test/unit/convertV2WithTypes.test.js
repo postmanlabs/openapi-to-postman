@@ -289,4 +289,464 @@ describe('convertV2WithTypes', function() {
     );
   });
 
+  describe('composite schema support (anyOf, oneOf, allOf)', function() {
+    it('should extract anyOf schemas in request body', function(done) {
+      const openApiWithAnyOf = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/test': {
+            post: {
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      anyOf: [
+                        {
+                          type: 'object',
+                          properties: {
+                            name: { type: 'string' }
+                          }
+                        },
+                        {
+                          type: 'object',
+                          properties: {
+                            id: { type: 'integer' }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              responses: {
+                '200': {
+                  description: 'Success',
+                  content: {
+                    'application/json': {
+                      schema: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: openApiWithAnyOf }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+        const requestBody = conversionResult.extractedTypes['post/test'].request.body;
+        const parsedRequestBody = JSON.parse(requestBody);
+
+        expect(parsedRequestBody).to.have.property('anyOf');
+        expect(parsedRequestBody.anyOf).to.be.an('array').with.length(2);
+        expect(parsedRequestBody.anyOf[0]).to.have.property('type', 'object');
+        expect(parsedRequestBody.anyOf[0].properties).to.have.property('name');
+        expect(parsedRequestBody.anyOf[1]).to.have.property('type', 'object');
+        expect(parsedRequestBody.anyOf[1].properties).to.have.property('id');
+
+        done();
+      });
+    });
+
+    it('should extract oneOf schemas in response body', function(done) {
+      const openApiWithOneOf = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/test': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'Success',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        oneOf: [
+                          { type: 'string' },
+                          { type: 'integer' },
+                          {
+                            type: 'object',
+                            properties: {
+                              message: { type: 'string' }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: openApiWithOneOf }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+        const responseBody = conversionResult.extractedTypes['get/test'].response['200'].body;
+        const parsedResponseBody = JSON.parse(responseBody);
+
+        expect(parsedResponseBody).to.have.property('oneOf');
+        expect(parsedResponseBody.oneOf).to.be.an('array').with.length(3);
+        expect(parsedResponseBody.oneOf[0]).to.have.property('type', 'string');
+        expect(parsedResponseBody.oneOf[1]).to.have.property('type', 'integer');
+        expect(parsedResponseBody.oneOf[2]).to.have.property('type', 'object');
+        expect(parsedResponseBody.oneOf[2].properties).to.have.property('message');
+
+        done();
+      });
+    });
+
+    it('should extract allOf schemas in request and response bodies', function(done) {
+      const openApiWithAllOf = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/test': {
+            post: {
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      allOf: [
+                        {
+                          type: 'object',
+                          properties: {
+                            baseField: { type: 'string' }
+                          }
+                        },
+                        {
+                          type: 'object',
+                          properties: {
+                            extensionField: { type: 'integer' }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              responses: {
+                '201': {
+                  description: 'Created',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        allOf: [
+                          {
+                            type: 'object',
+                            properties: {
+                              id: { type: 'string' }
+                            }
+                          },
+                          {
+                            type: 'object',
+                            properties: {
+                              timestamp: { type: 'string', format: 'date-time' }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: openApiWithAllOf }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+        // Check request body
+        const requestBody = conversionResult.extractedTypes['post/test'].request.body;
+        const parsedRequestBody = JSON.parse(requestBody);
+
+        expect(parsedRequestBody).to.have.property('allOf');
+        expect(parsedRequestBody.allOf).to.be.an('array').with.length(2);
+        expect(parsedRequestBody.allOf[0].properties).to.have.property('baseField');
+        expect(parsedRequestBody.allOf[1].properties).to.have.property('extensionField');
+
+        // Check response body
+        const responseBody = conversionResult.extractedTypes['post/test'].response['201'].body;
+        const parsedResponseBody = JSON.parse(responseBody);
+
+        expect(parsedResponseBody).to.have.property('allOf');
+        expect(parsedResponseBody.allOf).to.be.an('array').with.length(2);
+        expect(parsedResponseBody.allOf[0].properties).to.have.property('id');
+        expect(parsedResponseBody.allOf[1].properties).to.have.property('timestamp');
+
+        done();
+      });
+    });
+
+    it('should extract nested composite schemas', function(done) {
+      const openApiWithNestedComposite = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/test': {
+            post: {
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        data: {
+                          anyOf: [
+                            {
+                              type: 'object',
+                              properties: {
+                                textData: { type: 'string' }
+                              }
+                            },
+                            {
+                              type: 'object',
+                              properties: {
+                                numericData: { type: 'integer' }
+                              }
+                            }
+                          ]
+                        },
+                        metadata: {
+                          oneOf: [
+                            { type: 'string' },
+                            {
+                              type: 'object',
+                              properties: {
+                                version: { type: 'string' }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              responses: {
+                '200': {
+                  description: 'Success',
+                  content: {
+                    'application/json': {
+                      schema: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: openApiWithNestedComposite }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+        const requestBody = conversionResult.extractedTypes['post/test'].request.body;
+        const parsedRequestBody = JSON.parse(requestBody);
+
+        expect(parsedRequestBody).to.have.property('type', 'object');
+        expect(parsedRequestBody.properties).to.have.property('data');
+        expect(parsedRequestBody.properties).to.have.property('metadata');
+
+        // Check nested anyOf
+        expect(parsedRequestBody.properties.data).to.have.property('anyOf');
+        expect(parsedRequestBody.properties.data.anyOf).to.be.an('array').with.length(2);
+        expect(parsedRequestBody.properties.data.anyOf[0].properties).to.have.property('textData');
+        expect(parsedRequestBody.properties.data.anyOf[1].properties).to.have.property('numericData');
+
+        // Check nested oneOf
+        expect(parsedRequestBody.properties.metadata).to.have.property('oneOf');
+        expect(parsedRequestBody.properties.metadata.oneOf).to.be.an('array').with.length(2);
+        expect(parsedRequestBody.properties.metadata.oneOf[0]).to.have.property('type', 'string');
+        expect(parsedRequestBody.properties.metadata.oneOf[1]).to.have.property('type', 'object');
+
+        done();
+      });
+    });
+
+    it('should extract composite schemas with $ref (structure preserved)', function(done) {
+      const openApiWithRefComposite = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        components: {
+          schemas: {
+            User: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer' },
+                name: { type: 'string' }
+              }
+            },
+            Admin: {
+              type: 'object',
+              properties: {
+                role: { type: 'string' },
+                permissions: { type: 'array', items: { type: 'string' } }
+              }
+            }
+          }
+        },
+        paths: {
+          '/test': {
+            post: {
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      anyOf: [
+                        { $ref: '#/components/schemas/User' },
+                        { $ref: '#/components/schemas/Admin' },
+                        {
+                          type: 'object',
+                          properties: {
+                            guest: { type: 'boolean' }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              responses: {
+                '200': {
+                  description: 'Success',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        allOf: [
+                          { $ref: '#/components/schemas/User' },
+                          {
+                            type: 'object',
+                            properties: {
+                              timestamp: { type: 'string', format: 'date-time' }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: openApiWithRefComposite }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+        // Check request body has anyOf structure
+        const requestBody = conversionResult.extractedTypes['post/test'].request.body;
+        const parsedRequestBody = JSON.parse(requestBody);
+
+        expect(parsedRequestBody).to.have.property('anyOf');
+        expect(parsedRequestBody.anyOf).to.be.an('array').with.length(3);
+        // Note: $ref schemas are resolved to empty objects, but composite structure is preserved
+        expect(parsedRequestBody.anyOf[2]).to.have.property('type', 'object');
+        expect(parsedRequestBody.anyOf[2].properties).to.have.property('guest');
+
+        // Check response body has allOf structure
+        const responseBody = conversionResult.extractedTypes['post/test'].response['200'].body;
+        const parsedResponseBody = JSON.parse(responseBody);
+
+        expect(parsedResponseBody).to.have.property('allOf');
+        expect(parsedResponseBody.allOf).to.be.an('array').with.length(2);
+        expect(parsedResponseBody.allOf[1]).to.have.property('type', 'object');
+        expect(parsedResponseBody.allOf[1].properties).to.have.property('timestamp');
+
+        done();
+      });
+    });
+
+    it('should extract composite schemas in array items', function(done) {
+      const openApiWithArrayComposite = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/test': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'Success',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'array',
+                        items: {
+                          oneOf: [
+                            {
+                              type: 'object',
+                              properties: {
+                                type: { type: 'string', enum: ['user'] },
+                                userData: {
+                                  type: 'object',
+                                  properties: {
+                                    name: { type: 'string' }
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              type: 'object',
+                              properties: {
+                                type: { type: 'string', enum: ['admin'] },
+                                adminData: {
+                                  type: 'object',
+                                  properties: {
+                                    role: { type: 'string' }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: openApiWithArrayComposite }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+        const responseBody = conversionResult.extractedTypes['get/test'].response['200'].body;
+        const parsedResponseBody = JSON.parse(responseBody);
+
+        expect(parsedResponseBody).to.have.property('type', 'array');
+        expect(parsedResponseBody).to.have.property('items');
+        expect(parsedResponseBody.items).to.have.property('oneOf');
+        expect(parsedResponseBody.items.oneOf).to.be.an('array').with.length(2);
+
+        // Check first oneOf option
+        expect(parsedResponseBody.items.oneOf[0]).to.have.property('type', 'object');
+        expect(parsedResponseBody.items.oneOf[0].properties).to.have.property('type');
+        expect(parsedResponseBody.items.oneOf[0].properties).to.have.property('userData');
+
+        // Check second oneOf option
+        expect(parsedResponseBody.items.oneOf[1]).to.have.property('type', 'object');
+        expect(parsedResponseBody.items.oneOf[1].properties).to.have.property('type');
+        expect(parsedResponseBody.items.oneOf[1].properties).to.have.property('adminData');
+
+        done();
+      });
+    });
+  });
+
 });
