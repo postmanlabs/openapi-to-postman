@@ -208,14 +208,14 @@ describe('convertV2WithTypes', function() {
     const expectedExtractedTypes = {
         'get/pets': {
           'request': {
-            'headers': '[\n  {\n    "keyName": "variable",\n    "properties": {\n      "type": "array",\n      "required": false,\n      "deprecated": false\n    }\n  }\n]',
+            'headers': '[\n  {\n    "keyName": "variable",\n    "properties": {\n      "type": "array"\n    }\n  }\n]',
             'pathParam': '[]',
-            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false,\n      "deprecated": false\n    }\n  },\n  {\n    "keyName": "variable2",\n    "properties": {\n      "type": "array",\n      "required": false,\n      "deprecated": false\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array",\n      "required": false,\n      "deprecated": false\n    }\n  }\n]'
+            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false\n    }\n  },\n  {\n    "keyName": "variable2",\n    "properties": {\n      "type": "array"\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array"\n    }\n  }\n]'
           },
           'response': {
             '200': {
               'body': '{\n  "type": "array",\n  "items": {\n    "type": "object",\n    "properties": {\n      "id": {\n        "type": "integer",\n        "format": "int64"\n      },\n      "name": {\n        "type": "string"\n      },\n      "tag": {\n        "type": "string"\n      }\n    },\n    "required": [\n      "id",\n      "name"\n    ]\n  }\n}',
-              'headers': '[\n  {\n    "keyName": "x-next",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false,\n      "deprecated": false\n    }\n  }\n]'
+              'headers': '[\n  {\n    "keyName": "x-next",\n    "properties": {\n      "type": "string",\n      "default": "<string>"\n    }\n  }\n]'
             },
             '500': {
               'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
@@ -227,7 +227,7 @@ describe('convertV2WithTypes', function() {
           'request': {
             'headers': '[]',
             'pathParam': '[]',
-            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false,\n      "deprecated": false\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array",\n      "required": false,\n      "deprecated": false\n    }\n  }\n]'
+            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array"\n    }\n  }\n]'
           },
           'response': {
             '201': {
@@ -242,7 +242,7 @@ describe('convertV2WithTypes', function() {
         'get/pet/{petId}': {
           'request': {
             'headers': '[]',
-            'pathParam': '[\n  {\n    "keyName": "petId",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": true,\n      "deprecated": false\n    }\n  }\n]',
+            'pathParam': '[\n  {\n    "keyName": "petId",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": true\n    }\n  }\n]',
             'queryParam': '[]'
           },
           'response': {
@@ -259,7 +259,7 @@ describe('convertV2WithTypes', function() {
         'post/pet/{petId}': {
           'request': {
             'headers': '[]',
-            'pathParam': '[\n  {\n    "keyName": "petId",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": true,\n      "deprecated": false\n    }\n  }\n]',
+            'pathParam': '[\n  {\n    "keyName": "petId",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": true\n    }\n  }\n]',
             'queryParam': '[]'
           },
           'response': {
