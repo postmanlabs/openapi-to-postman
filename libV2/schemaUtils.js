@@ -128,6 +128,7 @@ schemaFaker.option({
 
 let QUERYPARAM = 'query',
   CONVERSION = 'conversion',
+  TYPES_GENERATION = 'typesGeneration',
   HEADER = 'header',
   PATHPARAM = 'path',
   SCHEMA_TYPES = {
@@ -493,6 +494,15 @@ let QUERYPARAM = 'query',
    * @returns {Object} Resolved schema
    */
   resolveAllOfSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}, currentPath = '') => {
+    if (resolveFor === TYPES_GENERATION) {
+      return {
+        allOf: _.map(schema.allOf, (schema) => {
+          // eslint-disable-next-line no-use-before-define
+          return _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+        })
+      };
+    }
+
     try {
       return mergeAllOf(_.assign(schema, {
         allOf: _.map(schema.allOf, (schema) => {
@@ -684,7 +694,7 @@ let QUERYPARAM = 'query',
         let { parametersResolution } = context.computedOptions;
 
         // Override default value to schema for CONVERSION only for parmeter resolution set to schema
-        if (resolveFor === CONVERSION && parametersResolution === 'schema') {
+        if ((resolveFor === CONVERSION || resolveFor === TYPES_GENERATION) && parametersResolution === 'schema') {
           if (!schema.hasOwnProperty('format')) {
             schema.default = '<' + schema.type + '>';
           }
@@ -743,6 +753,30 @@ let QUERYPARAM = 'query',
  * @returns {Object} The processed schema details.
  */
   processSchema = (resolvedSchema) => {
+    if (resolvedSchema.anyOf) {
+      return {
+        anyOf: resolvedSchema.anyOf.map((schema) => {
+          return processSchema(schema);
+        })
+      };
+    }
+
+    if (resolvedSchema.oneOf) {
+      return {
+        oneOf: resolvedSchema.oneOf.map((schema) => {
+          return processSchema(schema);
+        })
+      };
+    }
+
+    if (resolvedSchema.allOf) {
+      return {
+        allOf: resolvedSchema.allOf.map((schema) => {
+          return processSchema(schema);
+        })
+      };
+    }
+
     if (resolvedSchema.type === 'object' && resolvedSchema.properties) {
       const schemaDetails = {
           type: resolvedSchema.type,
@@ -752,7 +786,7 @@ let QUERYPARAM = 'query',
         requiredProperties = new Set(resolvedSchema.required || []);
 
       for (let [propName, propValue] of Object.entries(resolvedSchema.properties)) {
-        if (!propValue.type) {
+        if (!propValue.type && !propValue.anyOf && !propValue.oneOf && !propValue.allOf) {
           continue;
         }
         const propertyDetails = {
@@ -772,7 +806,23 @@ let QUERYPARAM = 'query',
         if (requiredProperties.has(propName)) {
           schemaDetails.required.push(propName);
         }
-        if (propValue.properties) {
+
+        if (propValue.anyOf) {
+          propertyDetails.anyOf = propValue.anyOf.map((schema) => {
+            return processSchema(schema);
+          });
+        }
+        else if (propValue.oneOf) {
+          propertyDetails.oneOf = propValue.oneOf.map((schema) => {
+            return processSchema(schema);
+          });
+        }
+        else if (propValue.allOf) {
+          propertyDetails.allOf = propValue.allOf.map((schema) => {
+            return processSchema(schema);
+          });
+        }
+        else if (propValue.properties) {
           let processedProperties = processSchema(propValue);
           propertyDetails.properties = processedProperties.properties;
           if (processedProperties.required) {
@@ -1482,6 +1532,21 @@ let QUERYPARAM = 'query',
       return [{ [bodyKey]: bodyData }];
     }
 
+    // For type fetching, process the original schema before any modifications
+    // This is done to preserve the anyOf, oneOf etc in the original schema
+    // since they are otherwise flattened while resolving the schema
+    if (context.enableTypeFetching && requestBodySchema) {
+      const originalSchema = requestBodySchema.schema || requestBodySchema,
+        resolvedSchema = resolveSchema(
+          context,
+          originalSchema,
+          { resolveFor: TYPES_GENERATION });
+
+      if (resolvedSchema.type || resolvedSchema.anyOf || resolvedSchema.oneOf || resolvedSchema.allOf) {
+        resolvedSchemaTypes.push(processSchema(resolvedSchema));
+      }
+    }
+
     if (requestBodySchema.$ref) {
       requestBodySchema = resolveSchema(
         context,
@@ -1609,11 +1674,6 @@ let QUERYPARAM = 'query',
         }
       }
 
-    }
-
-    if (context.enableTypeFetching && requestBodySchema.type !== undefined) {
-      const requestBodySchemaTypes = processSchema(requestBodySchema);
-      resolvedSchemaTypes.push(requestBodySchemaTypes);
     }
 
     // Generate multiple examples when either request or response contains more than one example
