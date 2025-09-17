@@ -653,9 +653,26 @@ describe('convertV2WithTypes', function() {
 
         expect(parsedRequestBody).to.have.property('anyOf');
         expect(parsedRequestBody.anyOf).to.be.an('array').with.length(3);
-        // Note: $ref schemas are resolved to empty objects, but composite structure is preserved
-        expect(parsedRequestBody.anyOf[2]).to.have.property('type', 'object');
-        expect(parsedRequestBody.anyOf[2].properties).to.have.property('guest');
+        expect(parsedRequestBody.anyOf[0]).to.deep.equal({
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            name: { type: 'string' }
+          }
+        });
+        expect(parsedRequestBody.anyOf[1]).to.deep.equal({
+          type: 'object',
+          properties: {
+            role: { type: 'string' },
+            permissions: { type: 'array', items: { type: 'string' } }
+          }
+        });
+        expect(parsedRequestBody.anyOf[2]).to.deep.equal({
+          type: 'object',
+          properties: {
+            guest: { type: 'boolean' }
+          }
+        });
 
         // Check response body has allOf structure
         const responseBody = conversionResult.extractedTypes['post/test'].response['200'].body;
