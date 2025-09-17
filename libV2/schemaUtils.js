@@ -1619,12 +1619,6 @@ let QUERYPARAM = 'query',
     if (context.enableTypeFetching && requestBodySchema.type !== undefined) {
       const requestBodySchemaTypes = processSchema(requestBodySchema);
 
-      if (!_.isEmpty(examples)) {
-        requestBodySchemaTypes.examples = examples;
-      }
-      else if (example !== undefined) {
-        requestBodySchemaTypes.example = example;
-      }
       resolvedSchemaTypes.push(requestBodySchemaTypes);
     }
 
