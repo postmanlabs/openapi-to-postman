@@ -494,6 +494,21 @@ let QUERYPARAM = 'query',
    * @returns {Object} Resolved schema
    */
   resolveAllOfSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}, currentPath = '') => {
+    /*
+      For TYPES_GENERATION, we do not want to merge the allOf schemas
+      instead we want to keep them separate so that we can generate types like:
+      allOf: [
+        { $ref: '#/components/schemas/User' },
+        {
+          type: 'object',
+          properties: {
+            timestamp: { type: 'string', format: 'date-time' }
+          }
+        }
+      ]
+      If we merge the schemas, we will loose the information that the schema was
+      a combination of multiple schemas
+    */
     if (resolveFor === TYPES_GENERATION) {
       return {
         allOf: _.map(schema.allOf, (schema) => {
@@ -553,7 +568,6 @@ let QUERYPARAM = 'query',
 
     stack++;
 
-    // eslint-disable-next-line one-var
     const compositeKeyword = schema.anyOf ? 'anyOf' : 'oneOf',
       { concreteUtils } = context;
 
@@ -628,7 +642,6 @@ let QUERYPARAM = 'query',
           writeOnlyPropCache: context.writeOnlyPropCache
         };
 
-        // eslint-disable-next-line one-var
         const newReadPropCache = context.readOnlyPropCache,
           newWritePropCache = context.writeOnlyPropCache;
 
@@ -1471,7 +1484,6 @@ let QUERYPARAM = 'query',
       });
     });
 
-    // eslint-disable-next-line one-var
     let responseExample,
       responseExampleData;
 
@@ -2114,12 +2126,16 @@ let QUERYPARAM = 'query',
         param = resolveSchema(context, param);
       }
 
-      if (_.has(param.schema, '$ref')) {
-        param.schema = resolveSchema(context, param.schema);
-      }
-
       if (param.in !== QUERYPARAM || (!includeDeprecated && param.deprecated)) {
         return;
+      }
+
+      const shouldResolveSchema = _.has(param, 'schema') &&
+        (_.has(param.schema, '$ref') || _.has(param.schema, 'anyOf') ||
+          _.has(param.schema, 'oneOf') || _.has(param.schema, 'allOf'));
+
+      if (shouldResolveSchema) {
+        param.schema = resolveSchema(context, param.schema);
       }
 
       let queryParamTypeInfo = {},
@@ -2163,12 +2179,17 @@ let QUERYPARAM = 'query',
         param = resolveSchema(context, param);
       }
 
-      if (_.has(param.schema, '$ref')) {
-        param.schema = resolveSchema(context, param.schema);
-      }
-
       if (param.in !== PATHPARAM) {
         return;
+      }
+
+
+      const shouldResolveSchema = _.has(param, 'schema') &&
+        (_.has(param.schema, '$ref') || _.has(param.schema, 'anyOf') ||
+          _.has(param.schema, 'oneOf') || _.has(param.schema, 'allOf'));
+
+      if (shouldResolveSchema) {
+        param.schema = resolveSchema(context, param.schema);
       }
 
       let pathParamTypeInfo = {},
@@ -2240,12 +2261,16 @@ let QUERYPARAM = 'query',
         param = resolveSchema(context, param);
       }
 
-      if (_.has(param.schema, '$ref')) {
-        param.schema = resolveSchema(context, param.schema);
-      }
-
       if (param.in !== HEADER || (!includeDeprecated && param.deprecated)) {
         return;
+      }
+
+      const shouldResolveSchema = _.has(param, 'schema') &&
+        (_.has(param.schema, '$ref') || _.has(param.schema, 'anyOf') ||
+          _.has(param.schema, 'oneOf') || _.has(param.schema, 'allOf'));
+
+      if (shouldResolveSchema) {
+        param.schema = resolveSchema(context, param.schema);
       }
 
       if (!keepImplicitHeaders && _.includes(IMPLICIT_HEADERS, _.toLower(_.get(param, 'name')))) {
@@ -2400,8 +2425,19 @@ let QUERYPARAM = 'query',
 
       headers.push(...serialisedHeader);
 
-      if (headerData && headerData.name && headerData.schema && headerData.schema.type) {
-        const { schema } = headerData;
+      if (headerData && headerData.name && headerData.schema) {
+        let { schema } = headerData;
+        const shouldResolveSchema = _.has(schema, '$ref') || _.has(schema, 'anyOf') ||
+          _.has(schema, 'oneOf') || _.has(schema, 'allOf');
+
+        if (shouldResolveSchema) {
+          schema = resolveSchema(context, schema);
+        }
+
+        if (!schema.type) {
+          return;
+        }
+
         properties = {
           type: schema.type,
           format: schema.format,

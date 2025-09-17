@@ -1,4 +1,3 @@
-/* eslint-disable one-var */
 const _ = require('lodash'),
   { Collection } = require('postman-collection/lib/collection/collection'),
   GraphLib = require('graphlib'),
