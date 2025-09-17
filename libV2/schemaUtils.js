@@ -792,6 +792,8 @@ let QUERYPARAM = 'query',
 
     if (resolvedSchema.type === 'object' && resolvedSchema.properties) {
       const schemaDetails = {
+          description: resolvedSchema.description,
+          title: resolvedSchema.title,
           type: resolvedSchema.type,
           properties: {},
           required: []
@@ -1176,15 +1178,18 @@ let QUERYPARAM = 'query',
    * Gets the description of the parameter.
    * If the parameter is required, it prepends a `(Requried)` before the parameter description
    * If the parameter type is enum, it appends the possible enum values
+   * @param {object} context - Global context object controlling behavior
    * @param {object} parameter - input param for which description needs to be returned
    * @returns {string} description of the parameters
    */
-  getParameterDescription = (parameter) => {
+  getParameterDescription = (context, parameter) => {
     if (!_.isObject(parameter)) {
       return '';
     }
 
-    return (parameter.required ? '(Required) ' : '') + (parameter.description || '') +
+    const requiredPrefix = (context && context.enableTypeFetching) ? '' : (parameter.required ? '(Required) ' : '');
+
+    return requiredPrefix + (parameter.description || '') +
       (parameter.enum ? ' (This can only be one of ' + parameter.enum + ')' : '');
   },
 
@@ -1204,7 +1209,7 @@ let QUERYPARAM = 'query',
       { enableOptionalParameters } = context.computedOptions;
 
     let serialisedValue = '',
-      description = getParameterDescription(param),
+      description = getParameterDescription(context, param),
       paramName = _.get(param, 'name'),
       disabled = !enableOptionalParameters && _.get(param, 'required') !== true,
       pmParams = [],
@@ -1688,6 +1693,18 @@ let QUERYPARAM = 'query',
 
     }
 
+    if (context.enableTypeFetching && requestBodySchema.type !== undefined) {
+      const requestBodySchemaTypes = processSchema(requestBodySchema);
+
+      if (!_.isEmpty(examples)) {
+        requestBodySchemaTypes.examples = examples;
+      }
+      else if (example !== undefined) {
+        requestBodySchemaTypes.example = example;
+      }
+      resolvedSchemaTypes.push(requestBodySchemaTypes);
+    }
+
     // Generate multiple examples when either request or response contains more than one example
     if (
       isExampleBody &&
@@ -1844,7 +1861,7 @@ let QUERYPARAM = 'query',
       paramSchema.required = _.has(paramSchema, 'required') ?
         paramSchema.required :
         _.indexOf(requestBodySchema.required, key) !== -1;
-      description = getParameterDescription(paramSchema);
+      description = getParameterDescription(context, paramSchema);
 
       if (typeof _.get(encoding, `[${key}].contentType`) === 'string') {
         contentType = encoding[key].contentType;
@@ -2099,8 +2116,8 @@ let QUERYPARAM = 'query',
       type: schema.type,
       format: schema.format,
       default: schema.default,
-      required: param.required || false,
-      deprecated: param.deprecated || false,
+      required: param.required,
+      deprecated: param.deprecated,
       enum: schema.enum || undefined,
       minLength: schema.minLength,
       maxLength: schema.maxLength,
@@ -2442,8 +2459,8 @@ let QUERYPARAM = 'query',
           type: schema.type,
           format: schema.format,
           default: schema.default,
-          required: schema.required || false,
-          deprecated: schema.deprecated || false,
+          required: schema.required,
+          deprecated: schema.deprecated,
           enum: schema.enum || undefined,
           minLength: schema.minLength,
           maxLength: schema.maxLength,
