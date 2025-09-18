@@ -209,7 +209,7 @@ describe('convertV2WithTypes', function() {
           'request': {
             'headers': '[\n  {\n    "keyName": "variable",\n    "properties": {\n      "type": "array"\n    }\n  }\n]',
             'pathParam': '[]',
-            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false\n    }\n  },\n  {\n    "keyName": "variable2",\n    "properties": {\n      "type": "array"\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array"\n    }\n  }\n]'
+            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false,\n      "deprecated": false\n    }\n  },\n  {\n    "keyName": "variable2",\n    "properties": {\n      "type": "array"\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array"\n    }\n  }\n]'
           },
           'response': {
             '200': {
@@ -226,7 +226,7 @@ describe('convertV2WithTypes', function() {
           'request': {
             'headers': '[]',
             'pathParam': '[]',
-            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array"\n    }\n  }\n]'
+            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false,\n      "deprecated": false\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array"\n    }\n  }\n]'
           },
           'response': {
             '201': {
