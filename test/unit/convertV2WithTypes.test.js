@@ -1,7 +1,6 @@
 /* eslint-disable max-len */
 // Disabling max Length for better visibility of the expectedExtractedTypes
 
-/* eslint-disable one-var */
 /* Disabling as we want the checks to run in order of their declaration as declaring everything as once
   even though initial declarations fails with test won't do any good */
 
@@ -760,6 +759,220 @@ describe('convertV2WithTypes', function() {
         expect(parsedResponseBody.items.oneOf[1]).to.have.property('type', 'object');
         expect(parsedResponseBody.items.oneOf[1].properties).to.have.property('type');
         expect(parsedResponseBody.items.oneOf[1].properties).to.have.property('adminData');
+
+        done();
+      });
+    });
+
+    it('should extract only first option from composite query parameters, path parameters, request headers, and response headers', function(done) {
+      const openApiWithCompositeParams = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/test/{pathParam}': {
+            get: {
+              parameters: [
+                // Query parameters with composite schemas
+                {
+                  name: 'status',
+                  in: 'query',
+                  schema: {
+                    oneOf: [
+                      { type: 'string', enum: ['active', 'inactive'] },
+                      { type: 'integer', minimum: 1, maximum: 10 }
+                    ]
+                  }
+                },
+                {
+                  name: 'category',
+                  in: 'query',
+                  schema: {
+                    anyOf: [
+                      { type: 'string' },
+                      { type: 'number' }
+                    ]
+                  }
+                },
+                {
+                  name: 'priority',
+                  in: 'query',
+                  schema: {
+                    allOf: [
+                      { type: 'string' },
+                      { minLength: 3 }
+                    ]
+                  }
+                },
+                // Path parameter with composite schema
+                {
+                  name: 'pathParam',
+                  in: 'path',
+                  required: true,
+                  schema: {
+                    oneOf: [
+                      { type: 'string', pattern: '^[a-z]+$' },
+                      { type: 'integer', minimum: 100 }
+                    ]
+                  }
+                },
+                // Header parameters with composite schemas
+                {
+                  name: 'X-Custom-Header',
+                  in: 'header',
+                  schema: {
+                    anyOf: [
+                      { type: 'string', format: 'uuid' },
+                      { type: 'string', enum: ['default', 'custom'] }
+                    ]
+                  }
+                },
+                {
+                  name: 'X-Version',
+                  in: 'header',
+                  schema: {
+                    allOf: [
+                      { type: 'string' },
+                      { pattern: '^v\\d+\\.\\d+$' }
+                    ]
+                  }
+                }
+              ],
+              responses: {
+                '200': {
+                  description: 'Success',
+                  headers: {
+                    'X-Rate-Limit': {
+                      description: 'Rate limit header with composite schema',
+                      schema: {
+                        oneOf: [
+                          { type: 'integer', minimum: 1, maximum: 1000 },
+                          { type: 'string', enum: ['unlimited', 'blocked'] }
+                        ]
+                      }
+                    },
+                    'X-Response-Type': {
+                      description: 'Response type header with composite schema',
+                      schema: {
+                        anyOf: [
+                          { type: 'string', format: 'uri' },
+                          { type: 'string', pattern: '^[A-Z_]+$' }
+                        ]
+                      }
+                    },
+                    'X-Content-Version': {
+                      description: 'Content version header with composite schema',
+                      schema: {
+                        allOf: [
+                          { type: 'string' },
+                          { pattern: '^v\\d+\\.\\d+\\.\\d+$' },
+                          { minLength: 5 }
+                        ]
+                      }
+                    }
+                  },
+                  content: {
+                    'application/json': {
+                      schema: {
+                        anyOf: [
+                          { type: 'string' },
+                          { type: 'object', properties: { message: { type: 'string' } } }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: openApiWithCompositeParams }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+        const extractedTypes = conversionResult.extractedTypes['get/test/{pathParam}'];
+
+        // Verify query parameters extract only first option
+        const queryParams = JSON.parse(extractedTypes.request.queryParam);
+        expect(queryParams).to.be.an('array').with.length(3);
+
+        // Check oneOf query parameter - should extract first option (string with enum)
+        expect(queryParams[0]).to.have.property('keyName', 'status');
+        expect(queryParams[0].properties).to.have.property('type', 'string');
+        expect(queryParams[0].properties).to.have.property('enum');
+        expect(queryParams[0].properties.enum).to.deep.equal(['active', 'inactive']);
+        expect(queryParams[0].properties).to.not.have.property('oneOf');
+
+        // Check anyOf query parameter - should extract first option (string)
+        expect(queryParams[1]).to.have.property('keyName', 'category');
+        expect(queryParams[1].properties).to.have.property('type', 'string');
+        expect(queryParams[1].properties).to.not.have.property('anyOf');
+
+        // Check allOf query parameter - should merge constraints (string with minLength)
+        expect(queryParams[2]).to.have.property('keyName', 'priority');
+        expect(queryParams[2].properties).to.have.property('type', 'string');
+        expect(queryParams[2].properties).to.have.property('minLength', 3);
+        expect(queryParams[2].properties).to.not.have.property('allOf');
+
+        // Verify path parameters extract only first option
+        const pathParams = JSON.parse(extractedTypes.request.pathParam);
+        expect(pathParams).to.be.an('array').with.length(1);
+
+        // Check oneOf path parameter - should extract first option (string with pattern)
+        expect(pathParams[0]).to.have.property('keyName', 'pathParam');
+        expect(pathParams[0].properties).to.have.property('type', 'string');
+        expect(pathParams[0].properties).to.have.property('pattern', '^[a-z]+$');
+        expect(pathParams[0].properties).to.not.have.property('oneOf');
+
+        // Verify headers extract only first option
+        const headers = JSON.parse(extractedTypes.request.headers);
+        expect(headers).to.be.an('array').with.length(2);
+
+        // Check anyOf header - should extract first option (string with format)
+        expect(headers[0]).to.have.property('keyName', 'X-Custom-Header');
+        expect(headers[0].properties).to.have.property('type', 'string');
+        expect(headers[0].properties).to.have.property('format', 'uuid');
+        expect(headers[0].properties).to.not.have.property('anyOf');
+
+        // Check allOf header - should merge constraints (string with pattern)
+        expect(headers[1]).to.have.property('keyName', 'X-Version');
+        expect(headers[1].properties).to.have.property('type', 'string');
+        expect(headers[1].properties).to.have.property('pattern', '^v\\d+\\.\\d+$');
+        expect(headers[1].properties).to.not.have.property('allOf');
+
+        // Verify response body preserves full composite schema
+        const responseBody = conversionResult.extractedTypes['get/test/{pathParam}'].response['200'].body;
+        const parsedResponseBody = JSON.parse(responseBody);
+
+        expect(parsedResponseBody).to.have.property('anyOf');
+        expect(parsedResponseBody.anyOf).to.be.an('array').with.length(2);
+        expect(parsedResponseBody.anyOf[0]).to.have.property('type', 'string');
+        expect(parsedResponseBody.anyOf[1]).to.have.property('type', 'object');
+
+        // Verify response headers extract only first option
+        const responseHeaders = JSON.parse(extractedTypes.response['200'].headers);
+        expect(responseHeaders).to.be.an('array').with.length(3);
+
+        // Check oneOf response header - should extract first option (integer with constraints)
+        expect(responseHeaders[0]).to.have.property('keyName', 'X-Rate-Limit');
+        expect(responseHeaders[0].properties).to.have.property('type', 'integer');
+        expect(responseHeaders[0].properties).to.have.property('minimum', 1);
+        expect(responseHeaders[0].properties).to.have.property('maximum', 1000);
+        expect(responseHeaders[0].properties).to.not.have.property('oneOf');
+
+        // Check anyOf response header - should extract first option (string with format)
+        expect(responseHeaders[1]).to.have.property('keyName', 'X-Response-Type');
+        expect(responseHeaders[1].properties).to.have.property('type', 'string');
+        expect(responseHeaders[1].properties).to.have.property('format', 'uri');
+        expect(responseHeaders[1].properties).to.not.have.property('anyOf');
+
+        // Check allOf response header - should merge constraints (string with pattern and minLength)
+        expect(responseHeaders[2]).to.have.property('keyName', 'X-Content-Version');
+        expect(responseHeaders[2].properties).to.have.property('type', 'string');
+        expect(responseHeaders[2].properties).to.have.property('pattern', '^v\\d+\\.\\d+\\.\\d+$');
+        expect(responseHeaders[2].properties).to.have.property('minLength', 5);
+        expect(responseHeaders[2].properties).to.not.have.property('allOf');
 
         done();
       });

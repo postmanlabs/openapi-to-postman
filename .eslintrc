@@ -195,7 +195,6 @@
       "no-unneeded-ternary": "error",
       "no-whitespace-before-property": "error",
       "object-curly-spacing": ["error", "always"],
-      "one-var": ["error", "always"],
       "one-var-declaration-per-line": "error",
       "operator-assignment": "error",
       "operator-linebreak": ["error", "after"],
