@@ -128,6 +128,7 @@ schemaFaker.option({
 
 let QUERYPARAM = 'query',
   CONVERSION = 'conversion',
+  TYPES_GENERATION = 'typesGeneration',
   HEADER = 'header',
   PATHPARAM = 'path',
   SCHEMA_TYPES = {
@@ -493,6 +494,30 @@ let QUERYPARAM = 'query',
    * @returns {Object} Resolved schema
    */
   resolveAllOfSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}, currentPath = '') => {
+    /*
+      For TYPES_GENERATION, we do not want to merge the allOf schemas
+      instead we want to keep them separate so that we can generate types like:
+      allOf: [
+        { $ref: '#/components/schemas/User' },
+        {
+          type: 'object',
+          properties: {
+            timestamp: { type: 'string', format: 'date-time' }
+          }
+        }
+      ]
+      If we merge the schemas, we will loose the information that the schema was
+      a combination of multiple schemas
+    */
+    if (resolveFor === TYPES_GENERATION) {
+      return {
+        allOf: _.map(schema.allOf, (schema) => {
+          // eslint-disable-next-line no-use-before-define
+          return _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+        })
+      };
+    }
+
     try {
       return mergeAllOf(_.assign(schema, {
         allOf: _.map(schema.allOf, (schema) => {
@@ -543,7 +568,6 @@ let QUERYPARAM = 'query',
 
     stack++;
 
-    // eslint-disable-next-line one-var
     const compositeKeyword = schema.anyOf ? 'anyOf' : 'oneOf',
       { concreteUtils } = context;
 
@@ -618,7 +642,6 @@ let QUERYPARAM = 'query',
           writeOnlyPropCache: context.writeOnlyPropCache
         };
 
-        // eslint-disable-next-line one-var
         const newReadPropCache = context.readOnlyPropCache,
           newWritePropCache = context.writeOnlyPropCache;
 
@@ -684,7 +707,7 @@ let QUERYPARAM = 'query',
         let { parametersResolution } = context.computedOptions;
 
         // Override default value to schema for CONVERSION only for parmeter resolution set to schema
-        if (resolveFor === CONVERSION && parametersResolution === 'schema') {
+        if ((resolveFor === CONVERSION || resolveFor === TYPES_GENERATION) && parametersResolution === 'schema') {
           if (!schema.hasOwnProperty('format')) {
             schema.default = '<' + schema.type + '>';
           }
@@ -743,6 +766,30 @@ let QUERYPARAM = 'query',
  * @returns {Object} The processed schema details.
  */
   processSchema = (resolvedSchema) => {
+    if (resolvedSchema.anyOf) {
+      return {
+        anyOf: resolvedSchema.anyOf.map((schema) => {
+          return processSchema(schema);
+        })
+      };
+    }
+
+    if (resolvedSchema.oneOf) {
+      return {
+        oneOf: resolvedSchema.oneOf.map((schema) => {
+          return processSchema(schema);
+        })
+      };
+    }
+
+    if (resolvedSchema.allOf) {
+      return {
+        allOf: resolvedSchema.allOf.map((schema) => {
+          return processSchema(schema);
+        })
+      };
+    }
+
     if (resolvedSchema.type === 'object' && resolvedSchema.properties) {
       const schemaDetails = {
           description: resolvedSchema.description,
@@ -754,7 +801,7 @@ let QUERYPARAM = 'query',
         requiredProperties = new Set(resolvedSchema.required || []);
 
       for (let [propName, propValue] of Object.entries(resolvedSchema.properties)) {
-        if (!propValue.type) {
+        if (!propValue.type && !propValue.anyOf && !propValue.oneOf && !propValue.allOf) {
           continue;
         }
         const propertyDetails = {
@@ -774,7 +821,23 @@ let QUERYPARAM = 'query',
         if (requiredProperties.has(propName)) {
           schemaDetails.required.push(propName);
         }
-        if (propValue.properties) {
+
+        if (propValue.anyOf) {
+          propertyDetails.anyOf = propValue.anyOf.map((schema) => {
+            return processSchema(schema);
+          });
+        }
+        else if (propValue.oneOf) {
+          propertyDetails.oneOf = propValue.oneOf.map((schema) => {
+            return processSchema(schema);
+          });
+        }
+        else if (propValue.allOf) {
+          propertyDetails.allOf = propValue.allOf.map((schema) => {
+            return processSchema(schema);
+          });
+        }
+        else if (propValue.properties) {
           let processedProperties = processSchema(propValue);
           propertyDetails.properties = processedProperties.properties;
           if (processedProperties.required) {
@@ -1127,7 +1190,12 @@ let QUERYPARAM = 'query',
     const requiredPrefix = (context && context.enableTypeFetching) ? '' : (parameter.required ? '(Required) ' : '');
 
     return requiredPrefix + (parameter.description || '') +
-      (parameter.enum ? ' (This can only be one of ' + parameter.enum + ')' : '');
+      (parameter.enum ?
+        (context && context.enableTypeFetching ?
+          parameter.enum :
+          ' (This can only be one of ' + parameter.enum + ')') :
+        '');
+
   },
 
   /**
@@ -1426,7 +1494,6 @@ let QUERYPARAM = 'query',
       });
     });
 
-    // eslint-disable-next-line one-var
     let responseExample,
       responseExampleData;
 
@@ -1485,6 +1552,21 @@ let QUERYPARAM = 'query',
 
     if (_.isEmpty(requestBodySchema)) {
       return [{ [bodyKey]: bodyData }];
+    }
+
+    // For type fetching, process the original schema before any modifications
+    // This is done to preserve the anyOf, oneOf etc in the original schema
+    // since they are otherwise flattened while resolving the schema
+    if (context.enableTypeFetching && requestBodySchema) {
+      const originalSchema = requestBodySchema.schema || requestBodySchema,
+        resolvedSchema = resolveSchema(
+          context,
+          originalSchema,
+          { resolveFor: TYPES_GENERATION });
+
+      if (resolvedSchema.type || resolvedSchema.anyOf || resolvedSchema.oneOf || resolvedSchema.allOf) {
+        resolvedSchemaTypes.push(processSchema(resolvedSchema));
+      }
     }
 
     if (requestBodySchema.$ref) {
@@ -2060,12 +2142,16 @@ let QUERYPARAM = 'query',
         param = resolveSchema(context, param);
       }
 
-      if (_.has(param.schema, '$ref')) {
-        param.schema = resolveSchema(context, param.schema);
-      }
-
       if (param.in !== QUERYPARAM || (!includeDeprecated && param.deprecated)) {
         return;
+      }
+
+      const shouldResolveSchema = _.has(param, 'schema') &&
+        (_.has(param.schema, '$ref') || _.has(param.schema, 'anyOf') ||
+          _.has(param.schema, 'oneOf') || _.has(param.schema, 'allOf'));
+
+      if (shouldResolveSchema) {
+        param.schema = resolveSchema(context, param.schema);
       }
 
       let queryParamTypeInfo = {},
@@ -2109,12 +2195,17 @@ let QUERYPARAM = 'query',
         param = resolveSchema(context, param);
       }
 
-      if (_.has(param.schema, '$ref')) {
-        param.schema = resolveSchema(context, param.schema);
-      }
-
       if (param.in !== PATHPARAM) {
         return;
+      }
+
+
+      const shouldResolveSchema = _.has(param, 'schema') &&
+        (_.has(param.schema, '$ref') || _.has(param.schema, 'anyOf') ||
+          _.has(param.schema, 'oneOf') || _.has(param.schema, 'allOf'));
+
+      if (shouldResolveSchema) {
+        param.schema = resolveSchema(context, param.schema);
       }
 
       let pathParamTypeInfo = {},
@@ -2186,12 +2277,16 @@ let QUERYPARAM = 'query',
         param = resolveSchema(context, param);
       }
 
-      if (_.has(param.schema, '$ref')) {
-        param.schema = resolveSchema(context, param.schema);
-      }
-
       if (param.in !== HEADER || (!includeDeprecated && param.deprecated)) {
         return;
+      }
+
+      const shouldResolveSchema = _.has(param, 'schema') &&
+        (_.has(param.schema, '$ref') || _.has(param.schema, 'anyOf') ||
+          _.has(param.schema, 'oneOf') || _.has(param.schema, 'allOf'));
+
+      if (shouldResolveSchema) {
+        param.schema = resolveSchema(context, param.schema);
       }
 
       if (!keepImplicitHeaders && _.includes(IMPLICIT_HEADERS, _.toLower(_.get(param, 'name')))) {
@@ -2346,8 +2441,19 @@ let QUERYPARAM = 'query',
 
       headers.push(...serialisedHeader);
 
-      if (headerData && headerData.name && headerData.schema && headerData.schema.type) {
-        const { schema } = headerData;
+      if (headerData && headerData.name && headerData.schema) {
+        let { schema } = headerData;
+        const shouldResolveSchema = _.has(schema, '$ref') || _.has(schema, 'anyOf') ||
+          _.has(schema, 'oneOf') || _.has(schema, 'allOf');
+
+        if (shouldResolveSchema) {
+          schema = resolveSchema(context, schema);
+        }
+
+        if (!schema.type) {
+          return;
+        }
+
         properties = {
           type: schema.type,
           format: schema.format,
