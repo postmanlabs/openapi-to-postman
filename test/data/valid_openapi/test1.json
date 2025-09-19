@@ -281,8 +281,10 @@
 				"in": "query",
 				"description": "component level query param",
 				"required": false,
+				"deprecated": false,
 				"schema": {
-					"type": "string"
+          			"type": "string",
+					"enum": ["medium"]
 				}
 			}
         },
