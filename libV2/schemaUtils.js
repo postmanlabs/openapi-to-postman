@@ -1191,10 +1191,7 @@ let QUERYPARAM = 'query',
 
     return requiredPrefix + (parameter.description || '') +
       (parameter.enum ?
-        (context && context.enableTypeFetching ?
-          parameter.enum :
-          ' (This can only be one of ' + parameter.enum + ')') :
-        '');
+        (context && context.enableTypeFetching ? '' : ' (This can only be one of ' + parameter.enum + ')') : '');
 
   },
 

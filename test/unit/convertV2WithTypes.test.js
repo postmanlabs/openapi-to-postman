@@ -75,6 +75,7 @@ describe('convertV2WithTypes should generate collection conforming to collection
       expect(conversionResult.output).to.be.an('array').that.is.not.empty;
 
       const firstFolder = conversionResult.output[0].data.item[0];
+      const secondFolder = conversionResult.output[0].data.item[1];
       expect(firstFolder).to.have.property('name', 'pets');
 
       const listAllPets = firstFolder.item[0];
@@ -82,8 +83,11 @@ describe('convertV2WithTypes should generate collection conforming to collection
       expect(listAllPets.request.method).to.equal('GET');
 
       const createPet = firstFolder.item[1];
+      const getPetById = secondFolder.item[0];
+      const idDescription = getPetById.item[0].request.url.variable[0].description.content;
       expect(createPet).to.have.property('name', '/pets');
       expect(createPet.request.method).to.equal('POST');
+      expect(idDescription).to.equal('The id of the pet to retrieve');
       expect(createPet.request.body.mode).to.equal('raw');
       expect(createPet.request.body.raw).to.include('request body comes here');
 
