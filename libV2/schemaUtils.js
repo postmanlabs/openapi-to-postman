@@ -1187,12 +1187,16 @@ let QUERYPARAM = 'query',
       return '';
     }
 
-    const requiredPrefix = (context && context.enableTypeFetching) ? '' : (parameter.required ? '(Required) ' : '');
+    const requiredPrefix = (context && context.enableTypeFetching) ? '' : (parameter.required ? '(Required) ' : ''),
+      desc = parameter.description || '';
 
-    return requiredPrefix + (parameter.description || '') +
-      (parameter.enum ?
-        (context && context.enableTypeFetching ? '' : ' (This can only be one of ' + parameter.enum + ')') : '');
+    let enumDescription = '';
 
+    if (parameter.enum && !(context && context.enableTypeFetching)) {
+      enumDescription = ' (This can only be one of ' + parameter.enum + ')';
+    }
+
+    return requiredPrefix + desc + enumDescription;
   },
 
   /**
@@ -1693,12 +1697,6 @@ let QUERYPARAM = 'query',
         }
       }
 
-    }
-
-    if (context.enableTypeFetching && requestBodySchema.type !== undefined) {
-      const requestBodySchemaTypes = processSchema(requestBodySchema);
-
-      resolvedSchemaTypes.push(requestBodySchemaTypes);
     }
 
     // Generate multiple examples when either request or response contains more than one example

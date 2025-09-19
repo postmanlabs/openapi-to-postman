@@ -94,7 +94,10 @@ describe('convertV2WithTypes should generate collection conforming to collection
       const queryParams = listAllPets.request.url.query;
       expect(queryParams).to.be.an('array').that.has.length(3);
       expect(queryParams[0]).to.have.property('key', 'limit');
-      expect(queryParams[0]).to.have.property('value', '<string>');
+      // expect(queryParams[0]).to.have.property('value', 'medium');
+      const limitDescription = queryParams[0].description.content;
+      expect(limitDescription).to.equal('component level query param');
+      expect(limitDescription).to.not.include('This can only be one of');
 
       const headers = listAllPets.request.header;
       expect(headers).to.be.an('array').that.is.not.empty;

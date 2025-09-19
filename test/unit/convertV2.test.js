@@ -279,12 +279,18 @@ describe('The convert v2 Function', function() {
   it('Should generate collection conforming to schema for and fail if not valid ' +
   testSpec1, function(done) {
     Converter.convertV2({ type: 'file', data: testSpec1 }, { requestNameSource: 'url' }, (err, conversionResult) => {
+      const firstFolder = conversionResult.output[0].data.item[0];
+      const listAllPets = firstFolder.item[0];
+      const queryParams = listAllPets.request.url.query;
+      const limitDescription = queryParams[0].description.content;
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
       expect(conversionResult.output.length).to.equal(1);
       expect(conversionResult.output[0].type).to.equal('collection');
       expect(conversionResult.output[0].data).to.have.property('info');
       expect(conversionResult.output[0].data).to.have.property('item');
+      expect(limitDescription).to.equal('component level query param (This can only be one of medium)');
+      expect(limitDescription).to.include('This can only be one of');
 
       done();
     });
