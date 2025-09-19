@@ -1191,9 +1191,8 @@ let QUERYPARAM = 'query',
       desc = parameter.description || '';
 
     let enumDescription = '';
-
-    if (parameter.enum && !(context && context.enableTypeFetching)) {
-      enumDescription = ' (This can only be one of ' + parameter.enum + ')';
+    if (parameter && parameter.schema && parameter.schema.enum && !(context && context.enableTypeFetching)) {
+      enumDescription = ' (This can only be one of ' + parameter.schema.enum + ')';
     }
 
     return requiredPrefix + desc + enumDescription;
@@ -1215,7 +1214,7 @@ let QUERYPARAM = 'query',
       { enableOptionalParameters } = context.computedOptions;
 
     let serialisedValue = '',
-      description = getParameterDescription(context, param),
+      description = getParameterDescription(context, param, paramValue),
       paramName = _.get(param, 'name'),
       disabled = !enableOptionalParameters && _.get(param, 'required') !== true,
       pmParams = [],

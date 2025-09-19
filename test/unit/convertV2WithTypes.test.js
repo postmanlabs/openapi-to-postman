@@ -94,7 +94,7 @@ describe('convertV2WithTypes should generate collection conforming to collection
       const queryParams = listAllPets.request.url.query;
       expect(queryParams).to.be.an('array').that.has.length(3);
       expect(queryParams[0]).to.have.property('key', 'limit');
-      // expect(queryParams[0]).to.have.property('value', 'medium');
+      expect(queryParams[0]).to.have.property('value', 'medium');
       const limitDescription = queryParams[0].description.content;
       expect(limitDescription).to.equal('component level query param');
       expect(limitDescription).to.not.include('This can only be one of');
@@ -216,7 +216,7 @@ describe('convertV2WithTypes', function() {
           'request': {
             'headers': '[\n  {\n    "keyName": "variable",\n    "properties": {\n      "type": "array"\n    }\n  }\n]',
             'pathParam': '[]',
-            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false,\n      "deprecated": false\n    }\n  },\n  {\n    "keyName": "variable2",\n    "properties": {\n      "type": "array"\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array"\n    }\n  }\n]'
+            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "required": false,\n      "deprecated": false,\n      "enum": [\n        "medium"\n      ]\n    }\n  },\n  {\n    "keyName": "variable2",\n    "properties": {\n      "type": "array"\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array"\n    }\n  }\n]'
           },
           'response': {
             '200': {
@@ -233,7 +233,7 @@ describe('convertV2WithTypes', function() {
           'request': {
             'headers': '[]',
             'pathParam': '[]',
-            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "default": "<string>",\n      "required": false,\n      "deprecated": false\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array"\n    }\n  }\n]'
+            'queryParam': '[\n  {\n    "keyName": "limit",\n    "properties": {\n      "type": "string",\n      "required": false,\n      "deprecated": false,\n      "enum": [\n        "medium"\n      ]\n    }\n  },\n  {\n    "keyName": "variable3",\n    "properties": {\n      "type": "array"\n    }\n  }\n]'
           },
           'response': {
             '201': {

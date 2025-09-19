@@ -283,9 +283,9 @@
 				"required": false,
 				"deprecated": false,
 				"schema": {
-          			"type": "string"
-				},
-				"enum": ["medium"]
+          			"type": "string",
+					"enum": ["medium"]
+				}
 			}
         },
 		"responses": {
