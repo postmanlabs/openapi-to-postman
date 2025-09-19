@@ -290,7 +290,6 @@ describe('The convert v2 Function', function() {
       expect(conversionResult.output[0].data).to.have.property('info');
       expect(conversionResult.output[0].data).to.have.property('item');
       expect(limitDescription).to.equal('component level query param (This can only be one of medium)');
-      expect(limitDescription).to.include('This can only be one of');
 
       done();
     });

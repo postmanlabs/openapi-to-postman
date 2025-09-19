@@ -1187,7 +1187,7 @@ let QUERYPARAM = 'query',
       return '';
     }
 
-    const requiredPrefix = (context && context.enableTypeFetching) ? '' : (parameter.required ? '(Required) ' : ''),
+    const requiredPrefix = (context && !context.enableTypeFetching && parameter.required ? '(Required) ' : ''),
       desc = parameter.description || '';
 
     let enumDescription = '';
@@ -1214,7 +1214,7 @@ let QUERYPARAM = 'query',
       { enableOptionalParameters } = context.computedOptions;
 
     let serialisedValue = '',
-      description = getParameterDescription(context, param, paramValue),
+      description = getParameterDescription(context, param),
       paramName = _.get(param, 'name'),
       disabled = !enableOptionalParameters && _.get(param, 'required') !== true,
       pmParams = [],

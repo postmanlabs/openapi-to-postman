@@ -97,7 +97,6 @@ describe('convertV2WithTypes should generate collection conforming to collection
       expect(queryParams[0]).to.have.property('value', 'medium');
       const limitDescription = queryParams[0].description.content;
       expect(limitDescription).to.equal('component level query param');
-      expect(limitDescription).to.not.include('This can only be one of');
 
       const headers = listAllPets.request.header;
       expect(headers).to.be.an('array').that.is.not.empty;
