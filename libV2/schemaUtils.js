@@ -866,7 +866,9 @@ let QUERYPARAM = 'query',
       return arrayDetails;
     }
     return {
-      type: resolvedSchema.type
+      type: resolvedSchema.type,
+      description: resolvedSchema.description,
+      title: resolvedSchema.title
     };
   },
 
