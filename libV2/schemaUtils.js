@@ -814,6 +814,7 @@ let QUERYPARAM = 'query',
           maximum: propValue.maximum,
           pattern: propValue.pattern,
           example: propValue.example,
+          title: propValue.title,
           description: propValue.description,
           format: propValue.format
         };
@@ -2106,6 +2107,8 @@ let QUERYPARAM = 'query',
   createProperties = (param) => {
     const { schema } = param;
     return {
+      description: schema.description,
+      title: schema.title,
       type: schema.type,
       format: schema.format,
       default: schema.default,
@@ -2450,6 +2453,8 @@ let QUERYPARAM = 'query',
 
         properties = {
           type: schema.type,
+          description: schema.description,
+          title: schema.title,
           format: schema.format,
           default: schema.default,
           required: schema.required,
