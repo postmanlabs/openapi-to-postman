@@ -13,6 +13,7 @@ const expect = require('chai').expect,
   Ajv = require('ajv'),
   testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
   testSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/test1.json'),
+  testSpec2 = path.join(__dirname, VALID_OPENAPI_PATH + '/test-title-description.json'),
   readOnlyNestedSpec =
   path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyNested.json'),
   ajv = new Ajv({ allErrors: true, strict: false }),
@@ -985,4 +986,118 @@ describe('convertV2WithTypes', function() {
     });
   });
 
+  it('types should contain title and description', function(done) {
+    const openapi = fs.readFileSync(testSpec2, 'utf8'),
+      options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+
+    Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+      const extractedTypes = conversionResult.extractedTypes;
+      const element = extractedTypes['get/widgets/{id}'];
+      expect(element).to.be.an('object').that.includes.keys('request', 'response');
+
+      // Request body
+      const reqBody = JSON.parse(element.request.body);
+      expect(reqBody).to.have.property('title', 'GetWidgetRequest');
+      expect(reqBody).to.have.property('description', 'Parameters that refine the fetch.');
+      expect(reqBody.properties.verbose).to.have.property('title', 'VerboseFlag');
+      expect(reqBody.properties.verbose).to.have.property('description', 'Include extra diagnostics.');
+      expect(reqBody.properties.fields).to.have.property('title', 'FieldSelector');
+      expect(reqBody.properties.fields).to.have.property('description', 'Limit returned fields.');
+      expect(reqBody.properties.fields.items).to.have.property('title', 'Label');
+      expect(reqBody.properties.fields.items).to.have.property('description', 'A descriptive label.');
+
+      // Request headers
+      const reqHeaders = JSON.parse(element.request.headers);
+      expect(reqHeaders).to.be.an('array').with.length.greaterThan(0);
+      expect(reqHeaders[0]).to.have.property('keyName', 'X-Client');
+      expect(reqHeaders[0].properties).to.have.property('title', 'ClientHeader');
+      expect(reqHeaders[0].properties).to.have.property('description', 'Client identifier header schema.');
+      expect(reqHeaders[0].properties).to.have.property('type', 'string');
+
+      // Path params
+      const pathParams = JSON.parse(element.request.pathParam);
+      expect(pathParams).to.be.an('array').with.length(1);
+      expect(pathParams[0]).to.have.property('keyName', 'id');
+      expect(pathParams[0].properties).to.have.property('title', 'WidgetId');
+      expect(pathParams[0].properties).to.have.property('description', 'Schema for a widget ID.');
+
+      // Query params
+      const queryParams = JSON.parse(element.request.queryParam);
+      expect(queryParams).to.be.an('array').with.length(1);
+      expect(queryParams[0]).to.have.property('keyName', 'q');
+      expect(queryParams[0].properties).to.have.property('title', 'QueryTerm');
+      expect(queryParams[0].properties).to.have.property('description', 'Free-form query text.');
+
+      // Response 200 body
+      const res200 = element.response['200'];
+      const res200Body = JSON.parse(res200.body);
+      expect(res200Body).to.have.property('allOf');
+      expect(res200Body.allOf[0]).to.have.property('title', 'BaseWidget');
+      expect(res200Body.allOf[0]).to.have.property('description', 'Base fields of a widget.');
+      expect(res200Body.allOf[0].properties.id).to.have.property('title', 'WidgetId');
+      expect(res200Body.allOf[0].properties.id).to.have.property('description', 'Schema for a widget ID.');
+      expect(res200Body.allOf[0].properties.name).to.have.property('title', 'WidgetName');
+      expect(res200Body.allOf[0].properties.name).to.have.property('description', 'Human-readable widget name.');
+
+      expect(res200Body.allOf[1]).to.have.property('title', 'WidgetExtra');
+      expect(res200Body.allOf[1]).to.have.property('description', 'Extended fields for a widget.');
+      expect(res200Body.allOf[1].properties.labels).to.have.property('title', 'TagList');
+      expect(res200Body.allOf[1].properties.labels).to.have.property('description', 'List of widget tags.');
+      expect(res200Body.allOf[1].properties.labels.items).to.have.property('title', 'Tag');
+      expect(res200Body.allOf[1].properties.labels.items).to.have.property('description', 'A single tag for a widget.');
+      expect(res200Body.allOf[1].properties.attributes).to.have.property('title', 'AttributeMap');
+      expect(res200Body.allOf[1].properties.attributes).to.have.property('description', 'Map of attribute keys to values.');
+      expect(res200Body.allOf[1].properties.diagnostics).to.have.property('title', 'Diagnostics');
+      expect(res200Body.allOf[1].properties.diagnostics).to.have.property('description', 'Extra diagnostic information.');
+      expect(res200Body.allOf[1].properties.diagnostics.properties.correlationId)
+        .to.have.property('title', 'CorrelationId');
+      expect(res200Body.allOf[1].properties.diagnostics.properties.correlationId)
+        .to.have.property('description', 'Server-generated correlation id.');
+      expect(res200Body.allOf[1].properties.diagnostics.properties.dump)
+        .to.have.property('title', 'DebugDump');
+      expect(res200Body.allOf[1].properties.diagnostics.properties.dump)
+        .to.have.property('description', 'Optional debug info blob.');
+
+      expect(res200Body.allOf[2]).to.have.property('oneOf');
+      expect(res200Body.allOf[2].oneOf[0]).to.have.property('title', 'PhysicalWidget');
+      expect(res200Body.allOf[2].oneOf[0]).to.have.property('description', 'A physical widget variant.');
+      expect(res200Body.allOf[2].oneOf[0].properties.weightGrams)
+        .to.have.property('title', 'WeightGrams');
+      expect(res200Body.allOf[2].oneOf[0].properties.weightGrams)
+        .to.have.property('description', 'Weight in grams.');
+      expect(res200Body.allOf[2].oneOf[1]).to.have.property('title', 'VirtualWidget');
+      expect(res200Body.allOf[2].oneOf[1]).to.have.property('description', 'A virtual widget variant.');
+      expect(res200Body.allOf[2].oneOf[1].properties.licenseKey)
+        .to.have.property('title', 'LicenseKey');
+      expect(res200Body.allOf[2].oneOf[1].properties.licenseKey)
+        .to.have.property('description', 'License key string.');
+
+      // Response 404 body
+      const res404Body = JSON.parse(element.response['404'].body);
+      expect(res404Body.allOf[0]).to.have.property('title', 'Error');
+      expect(res404Body.allOf[0]).to.have.property('description', 'Standard error envelope.');
+      expect(res404Body.allOf[0].properties.code).to.have.property('title', 'ErrorCode');
+      expect(res404Body.allOf[0].properties.code).to.have.property('description', 'Numeric error code.');
+      expect(res404Body.allOf[0].properties.message).to.have.property('title', 'ErrorMessage');
+      expect(res404Body.allOf[0].properties.message).to.have.property('description', 'Human-readable error message.');
+      expect(res404Body.allOf[0].properties.details).to.have.property('title', 'ErrorDetails');
+      expect(res404Body.allOf[0].properties.details).to.have.property('description', 'Optional error details.');
+
+      // Response 500 body
+      const res500Body = JSON.parse(element.response['500'].body);
+      expect(res500Body).to.have.property('title', 'Error');
+      expect(res500Body).to.have.property('description', 'Standard error envelope.');
+      expect(res500Body.properties.code).to.have.property('title', 'ErrorCode');
+      expect(res500Body.properties.code).to.have.property('description', 'Numeric error code.');
+      expect(res500Body.properties.message).to.have.property('title', 'ErrorMessage');
+      expect(res500Body.properties.message).to.have.property('description', 'Human-readable error message.');
+      expect(res500Body.properties.details).to.have.property('title', 'ErrorDetails');
+      expect(res500Body.properties.details).to.have.property('description', 'Optional error details.');
+      done();
+    });
+  });
 });
+

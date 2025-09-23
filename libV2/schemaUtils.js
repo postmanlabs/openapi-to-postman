@@ -511,6 +511,8 @@ let QUERYPARAM = 'query',
     */
     if (resolveFor === TYPES_GENERATION) {
       return {
+        title: schema.title,
+        description: schema.description,
         allOf: _.map(schema.allOf, (schema) => {
           // eslint-disable-next-line no-use-before-define
           return _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
@@ -594,10 +596,14 @@ let QUERYPARAM = 'query',
         return _resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef), currentPath);
       }
 
-      return { [compositeKeyword]: _.map(compositeSchema, (schemaElement, index) => {
-        return _resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef),
-          utils.addToJsonPath(currentPath, [compositeKeyword, index]));
-      }) };
+      return {
+        title: schema.title,
+        description: schema.description,
+        [compositeKeyword]: _.map(compositeSchema, (schemaElement, index) => {
+          return _resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef),
+            utils.addToJsonPath(currentPath, [compositeKeyword, index]));
+        })
+      };
     }
 
     if (schema.allOf) {
@@ -768,6 +774,8 @@ let QUERYPARAM = 'query',
   processSchema = (resolvedSchema) => {
     if (resolvedSchema.anyOf) {
       return {
+        title: resolvedSchema.title,
+        description: resolvedSchema.description,
         anyOf: resolvedSchema.anyOf.map((schema) => {
           return processSchema(schema);
         })
@@ -776,6 +784,8 @@ let QUERYPARAM = 'query',
 
     if (resolvedSchema.oneOf) {
       return {
+        title: resolvedSchema.title,
+        description: resolvedSchema.description,
         oneOf: resolvedSchema.oneOf.map((schema) => {
           return processSchema(schema);
         })
@@ -784,6 +794,8 @@ let QUERYPARAM = 'query',
 
     if (resolvedSchema.allOf) {
       return {
+        title: resolvedSchema.title,
+        description: resolvedSchema.description,
         allOf: resolvedSchema.allOf.map((schema) => {
           return processSchema(schema);
         })
