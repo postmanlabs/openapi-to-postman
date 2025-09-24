@@ -1,0 +1,490 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+      "title": "Minimal Titles & Descriptions (with $refs)",
+      "description": "Demonstrates $ref usage where the referenced targets include title/description (or description-only when title is not allowed). Covers schemas (incl. composition, items, additionalProperties), parameters, requestBodies, responses, headers, examples, and links.\n",
+      "version": "1.0.0"
+    },
+    "servers": [
+      {
+        "url": "https://api.example.com/{env}",
+        "description": "Primary API server.",
+        "variables": {
+          "env": {
+            "default": "prod",
+            "enum": [
+              "prod",
+              "staging"
+            ],
+            "description": "Select environment."
+          }
+        }
+      }
+    ],
+    "tags": [
+      {
+        "name": "widgets",
+        "description": "Operations related to widgets.",
+        "externalDocs": {
+          "description": "Widgets tag docs.",
+          "url": "https://example.com/docs/widgets"
+        }
+      }
+    ],
+    "externalDocs": {
+      "description": "API-level docs.",
+      "url": "https://example.com/docs"
+    },
+    "paths": {
+      "/widgets/{id}": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PathWidgetIdParam"
+          }
+        ],
+        "get": {
+          "operationId": "getWidget",
+          "tags": [
+            "widgets"
+          ],
+          "summary": "Get a widget",
+          "description": "Returns a single widget with rich $ref coverage.",
+          "externalDocs": {
+            "description": "More details about this GET.",
+            "url": "https://example.com/docs/get-widget"
+          },
+          "parameters": [
+            {
+              "name": "q",
+              "in": "query",
+              "required": false,
+              "description": "Optional search term.",
+              "schema": {
+                "$ref": "#/components/schemas/QueryTerm"
+              }
+            },
+            {
+              "$ref": "#/components/parameters/CommonHeaderParam"
+            }
+          ],
+          "requestBody": {
+            "$ref": "#/components/requestBodies/GetWidgetRequestBody"
+          },
+          "responses": {
+            "200": {
+              "description": "Successful widget retrieval.",
+              "headers": {
+                "X-Trace-Id": {
+                  "$ref": "#/components/headers/TraceHeader"
+                }
+              },
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Widget"
+                  },
+                  "examples": {
+                    "ok": {
+                      "$ref": "#/components/examples/WidgetExample"
+                    }
+                  }
+                }
+              },
+              "links": {
+                "relatedWidget": {
+                  "$ref": "#/components/links/GetRelated"
+                }
+              }
+            },
+            "404": {
+              "$ref": "#/components/responses/NotFound"
+            },
+            "default": {
+              "$ref": "#/components/responses/StandardError"
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "WidgetId": {
+          "title": "WidgetId",
+          "description": "Schema for a widget ID.",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "QueryTerm": {
+          "title": "QueryTerm",
+          "description": "Free-form query text.",
+          "type": "string",
+          "maxLength": 200
+        },
+        "WidgetName": {
+          "title": "WidgetName",
+          "description": "Human-readable widget name.",
+          "type": "string",
+          "minLength": 1
+        },
+        "Label": {
+          "title": "Label",
+          "description": "A descriptive label.",
+          "type": "string"
+        },
+        "Tag": {
+          "title": "Tag",
+          "description": "A single tag for a widget.",
+          "type": "string"
+        },
+        "AttributeKey": {
+          "title": "AttributeKey",
+          "description": "Key for an attribute map.",
+          "type": "string"
+        },
+        "AttributeValue": {
+          "title": "AttributeValue",
+          "description": "Value for an attribute map.",
+          "type": "string"
+        },
+        "Diagnostics": {
+          "title": "Diagnostics",
+          "description": "Extra diagnostic information.",
+          "type": "object",
+          "properties": {
+            "correlationId": {
+              "title": "CorrelationId",
+              "description": "Server-generated correlation id.",
+              "type": "string"
+            },
+            "dump": {
+              "title": "DebugDump",
+              "description": "Optional debug info blob.",
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "BaseWidget": {
+          "title": "BaseWidget",
+          "description": "Base fields of a widget.",
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/components/schemas/WidgetId"
+            },
+            "name": {
+              "$ref": "#/components/schemas/WidgetName"
+            }
+          },
+          "required": [
+            "id",
+            "name"
+          ]
+        },
+        "PhysicalWidget": {
+          "title": "PhysicalWidget",
+          "description": "A physical widget variant.",
+          "type": "object",
+          "properties": {
+            "weightGrams": {
+              "title": "WeightGrams",
+              "description": "Weight in grams.",
+              "type": "number",
+              "format": "float"
+            }
+          }
+        },
+        "VirtualWidget": {
+          "title": "VirtualWidget",
+          "description": "A virtual widget variant.",
+          "type": "object",
+          "properties": {
+            "licenseKey": {
+              "title": "LicenseKey",
+              "description": "License key string.",
+              "type": "string"
+            }
+          }
+        },
+        "WidgetVariant": {
+          "title": "WidgetVariant",
+          "description": "Represents either a physical or virtual widget.",
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/PhysicalWidget"
+            },
+            {
+              "$ref": "#/components/schemas/VirtualWidget"
+            }
+          ]
+        },
+        "NonEmptyString": {
+          "title": "NonEmptyString",
+          "description": "A string that must not be empty.",
+          "type": "string",
+          "not": {
+            "title": "EmptyString",
+            "description": "An empty string (disallowed here).",
+            "type": "string",
+            "maxLength": 0
+          }
+        },
+        "TagList": {
+          "title": "TagList",
+          "description": "List of widget tags.",
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Tag"
+          }
+        },
+        "AttributeMap": {
+          "title": "AttributeMap",
+          "description": "Map of attribute keys to values.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/components/schemas/AttributeValue"
+          }
+        },
+        "Widget": {
+          "title": "Widget",
+          "description": "The widget resource.",
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/BaseWidget"
+            },
+            {
+              "type": "object",
+              "title": "WidgetExtra",
+              "description": "Extended fields for a widget.",
+              "properties": {
+                "labels": {
+                  "$ref": "#/components/schemas/TagList"
+                },
+                "attributes": {
+                  "$ref": "#/components/schemas/AttributeMap"
+                },
+                "diagnostics": {
+                  "$ref": "#/components/schemas/Diagnostics"
+                }
+              }
+            },
+            {
+              "$ref": "#/components/schemas/WidgetVariant"
+            }
+          ]
+        },
+        "GetWidgetRequest": {
+          "title": "GetWidgetRequest",
+          "description": "Parameters that refine the fetch.",
+          "type": "object",
+          "properties": {
+            "verbose": {
+              "title": "VerboseFlag",
+              "description": "Include extra diagnostics.",
+              "type": "boolean"
+            },
+            "fields": {
+              "title": "FieldSelector",
+              "description": "Limit returned fields.",
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Label"
+              }
+            }
+          }
+        },
+        "Error": {
+          "title": "Error",
+          "description": "Standard error envelope.",
+          "type": "object",
+          "properties": {
+            "code": {
+              "title": "ErrorCode",
+              "description": "Numeric error code.",
+              "type": "integer"
+            },
+            "message": {
+              "title": "ErrorMessage",
+              "description": "Human-readable error message.",
+              "type": "string"
+            },
+            "details": {
+              "title": "ErrorDetails",
+              "description": "Optional error details.",
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "required": [
+            "code",
+            "message"
+          ]
+        }
+      },
+      "parameters": {
+        "PathWidgetIdParam": {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "The widget identifier (path).",
+          "schema": {
+            "$ref": "#/components/schemas/WidgetId"
+          }
+        },
+        "CommonHeaderParam": {
+          "name": "X-Client",
+          "in": "header",
+          "required": false,
+          "description": "Identifies the client application.",
+          "schema": {
+            "title": "ClientHeader",
+            "description": "Client identifier header schema.",
+            "type": "string"
+          }
+        }
+      },
+      "requestBodies": {
+        "GetWidgetRequestBody": {
+          "description": "Optional request body for additional filters.",
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetWidgetRequest"
+              },
+              "examples": {
+                "verbose": {
+                  "$ref": "#/components/examples/VerboseRequestExample"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "NotFound": {
+          "description": "The requested resource was not found.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "NotFoundError",
+                "description": "Not found error payload.",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                ]
+              },
+              "examples": {
+                "example": {
+                  "summary": "Not found",
+                  "description": "Resource could not be located.",
+                  "value": {
+                    "code": 404,
+                    "message": "Not Found"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "StandardError": {
+          "description": "An error occurred.",
+          "headers": {
+            "X-Rate-Limit": {
+              "$ref": "#/components/headers/RateLimitHeader"
+            }
+          },
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              },
+              "examples": {
+                "example": {
+                  "$ref": "#/components/examples/ErrorExample"
+                }
+              }
+            }
+          }
+        }
+      },
+      "headers": {
+        "RateLimitHeader": {
+          "description": "Maximum number of requests allowed in the current window.",
+          "schema": {
+            "title": "RateLimitHeader",
+            "description": "Remaining calls in the time window.",
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "TraceHeader": {
+          "description": "Correlation trace identifier header.",
+          "schema": {
+            "title": "TraceHeaderSchema",
+            "description": "Schema of the trace header value.",
+            "type": "string"
+          }
+        }
+      },
+      "examples": {
+        "WidgetExample": {
+          "summary": "Widget example",
+          "description": "Example of a typical widget payload.",
+          "value": {
+            "id": "w1",
+            "name": "Gadget",
+            "labels": [
+              "alpha",
+              "beta"
+            ],
+            "attributes": {
+              "color": "red"
+            }
+          }
+        },
+        "VerboseRequestExample": {
+          "summary": "Verbose request",
+          "description": "Requests extra diagnostic information.",
+          "value": {
+            "verbose": true,
+            "fields": [
+              "id",
+              "name"
+            ]
+          }
+        },
+        "ErrorExample": {
+          "summary": "Error example",
+          "description": "Example error response.",
+          "value": {
+            "code": 400,
+            "message": "Bad Request"
+          }
+        }
+      },
+      "links": {
+        "GetRelated": {
+          "description": "Re-fetch or navigate to a related widget.",
+          "operationId": "getWidget",
+          "parameters": {
+            "id": "$response.body#/id"
+          }
+        }
+      },
+      "securitySchemes": {
+        "ApiKeyAuth": {
+          "type": "apiKey",
+          "in": "header",
+          "name": "X-API-Key",
+          "description": "Use your API key for authentication."
+        }
+      }
+    },
+    "security": [
+      {
+        "ApiKeyAuth": []
+      }
+    ]
+  }
