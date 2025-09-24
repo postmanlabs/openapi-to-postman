@@ -510,14 +510,19 @@ let QUERYPARAM = 'query',
       a combination of multiple schemas
     */
     if (resolveFor === TYPES_GENERATION) {
-      return {
-        title: schema.title,
-        description: schema.description,
+      const result = {
         allOf: _.map(schema.allOf, (schema) => {
           // eslint-disable-next-line no-use-before-define
           return _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
         })
       };
+      if (schema.title !== undefined) {
+        result.title = schema.title;
+      }
+      if (schema.description !== undefined) {
+        result.description = schema.description;
+      }
+      return result;
     }
 
     try {
@@ -596,14 +601,21 @@ let QUERYPARAM = 'query',
         return _resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef), currentPath);
       }
 
-      return {
-        title: schema.title,
-        description: schema.description,
+      const result = {
         [compositeKeyword]: _.map(compositeSchema, (schemaElement, index) => {
           return _resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef),
             utils.addToJsonPath(currentPath, [compositeKeyword, index]));
         })
       };
+
+      if (schema.title !== undefined) {
+        result.title = schema.title;
+      }
+      if (schema.description !== undefined) {
+        result.description = schema.description;
+      }
+
+      return result;
     }
 
     if (schema.allOf) {
