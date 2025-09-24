@@ -510,12 +510,19 @@ let QUERYPARAM = 'query',
       a combination of multiple schemas
     */
     if (resolveFor === TYPES_GENERATION) {
-      return {
+      const result = {
         allOf: _.map(schema.allOf, (schema) => {
           // eslint-disable-next-line no-use-before-define
           return _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
         })
       };
+      if (schema.title !== undefined) {
+        result.title = schema.title;
+      }
+      if (schema.description !== undefined) {
+        result.description = schema.description;
+      }
+      return result;
     }
 
     try {
@@ -594,10 +601,21 @@ let QUERYPARAM = 'query',
         return _resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef), currentPath);
       }
 
-      return { [compositeKeyword]: _.map(compositeSchema, (schemaElement, index) => {
-        return _resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef),
-          utils.addToJsonPath(currentPath, [compositeKeyword, index]));
-      }) };
+      const result = {
+        [compositeKeyword]: _.map(compositeSchema, (schemaElement, index) => {
+          return _resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef),
+            utils.addToJsonPath(currentPath, [compositeKeyword, index]));
+        })
+      };
+
+      if (schema.title !== undefined) {
+        result.title = schema.title;
+      }
+      if (schema.description !== undefined) {
+        result.description = schema.description;
+      }
+
+      return result;
     }
 
     if (schema.allOf) {
@@ -768,6 +786,8 @@ let QUERYPARAM = 'query',
   processSchema = (resolvedSchema) => {
     if (resolvedSchema.anyOf) {
       return {
+        title: resolvedSchema.title,
+        description: resolvedSchema.description,
         anyOf: resolvedSchema.anyOf.map((schema) => {
           return processSchema(schema);
         })
@@ -776,6 +796,8 @@ let QUERYPARAM = 'query',
 
     if (resolvedSchema.oneOf) {
       return {
+        title: resolvedSchema.title,
+        description: resolvedSchema.description,
         oneOf: resolvedSchema.oneOf.map((schema) => {
           return processSchema(schema);
         })
@@ -784,6 +806,8 @@ let QUERYPARAM = 'query',
 
     if (resolvedSchema.allOf) {
       return {
+        title: resolvedSchema.title,
+        description: resolvedSchema.description,
         allOf: resolvedSchema.allOf.map((schema) => {
           return processSchema(schema);
         })
@@ -814,6 +838,7 @@ let QUERYPARAM = 'query',
           maximum: propValue.maximum,
           pattern: propValue.pattern,
           example: propValue.example,
+          title: propValue.title,
           description: propValue.description,
           format: propValue.format
         };
@@ -865,7 +890,9 @@ let QUERYPARAM = 'query',
       return arrayDetails;
     }
     return {
-      type: resolvedSchema.type
+      type: resolvedSchema.type,
+      description: resolvedSchema.description,
+      title: resolvedSchema.title
     };
   },
 
@@ -2106,6 +2133,8 @@ let QUERYPARAM = 'query',
   createProperties = (param) => {
     const { schema } = param;
     return {
+      description: schema.description,
+      title: schema.title,
       type: schema.type,
       format: schema.format,
       default: schema.default,
@@ -2450,6 +2479,8 @@ let QUERYPARAM = 'query',
 
         properties = {
           type: schema.type,
+          description: schema.description,
+          title: schema.title,
           format: schema.format,
           default: schema.default,
           required: schema.required,
