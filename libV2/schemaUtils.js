@@ -44,12 +44,17 @@ const schemaFaker = require('../assets/json-schema-faker'),
     'hostname',
     'ipv4', 'ipv6',
     'regex',
-    'uuid',
+    'uuid', 'uid',
     'binary',
     'json-pointer',
-    'int64',
+    'base64',
+    'int64', 'int32',
     'float',
-    'double'
+    'double',
+    'url',
+    'http-status-code',
+    'byte',
+    'password'
   ],
 
   typesMap = {
@@ -725,7 +730,7 @@ let QUERYPARAM = 'query',
         let { parametersResolution } = context.computedOptions;
 
         // Override default value to schema for CONVERSION only for parmeter resolution set to schema
-        if ((resolveFor === CONVERSION || resolveFor === TYPES_GENERATION) && parametersResolution === 'schema') {
+        if ((resolveFor === CONVERSION) && parametersResolution === 'schema' && !context.enableTypeFetching) {
           if (!schema.hasOwnProperty('format')) {
             schema.default = '<' + schema.type + '>';
           }
