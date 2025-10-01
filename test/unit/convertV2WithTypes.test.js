@@ -224,7 +224,7 @@ describe('convertV2WithTypes', function() {
               'headers': '[\n  {\n    "keyName": "x-next",\n    "properties": {\n      "type": "string",\n      "default": "<string>"\n    }\n  }\n]'
             },
             '500': {
-              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
+              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer",\n      "format": "int32"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }
           }
@@ -240,7 +240,7 @@ describe('convertV2WithTypes', function() {
               'headers': '[]'
             },
             '500': {
-              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
+              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer",\n      "format": "int32"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }
           }
@@ -257,7 +257,7 @@ describe('convertV2WithTypes', function() {
               'headers': '[]'
             },
             '500': {
-              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
+              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer",\n      "format": "int32"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }
           }
@@ -274,7 +274,7 @@ describe('convertV2WithTypes', function() {
               'headers': '[]'
             },
             '500': {
-              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
+              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer",\n      "format": "int32"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }
           }
