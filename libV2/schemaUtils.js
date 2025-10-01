@@ -44,12 +44,17 @@ const schemaFaker = require('../assets/json-schema-faker'),
     'hostname',
     'ipv4', 'ipv6',
     'regex',
-    'uuid',
+    'uuid', 'uid',
     'binary',
     'json-pointer',
-    'int64',
+    'base64',
+    'int64', 'int32',
     'float',
-    'double'
+    'double',
+    'url',
+    'http-status-code',
+    'byte',
+    'password'
   ],
 
   typesMap = {
