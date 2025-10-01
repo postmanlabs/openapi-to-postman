@@ -1,6 +1,6 @@
 {
   "name": "openapi-to-postmanv2",
-  "version": "5.2.0",
+  "version": "5.3.1",
   "description": "Convert a given OpenAPI specification to Postman Collection v2.0",
   "homepage": "https://github.com/postmanlabs/openapi-to-postman",
   "bugs": "https://github.com/postmanlabs/openapi-to-postman/issues",
@@ -116,10 +116,10 @@
     "openapi2postmanv2": "./bin/openapi2postmanv2.js"
   },
   "dependencies": {
-    "ajv": "8.11.0",
+    "ajv": "^8.11.0",
     "ajv-draft-04": "1.0.0",
     "ajv-formats": "2.1.1",
-    "async": "3.2.4",
+    "async": "3.2.6",
     "commander": "2.20.3",
     "graphlib": "2.1.8",
     "js-yaml": "4.1.0",
