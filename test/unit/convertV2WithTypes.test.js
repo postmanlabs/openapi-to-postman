@@ -209,7 +209,7 @@ describe('convertV2WithTypes', function() {
     );
   });
 
-  it.only('should resolve extractedTypes into correct schema structure', function(done) {
+  it('should resolve extractedTypes into correct schema structure', function(done) {
     const expectedExtractedTypes = {
         'get/pets': {
           'request': {
