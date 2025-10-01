@@ -210,7 +210,7 @@ describe('convertV2WithTypes', function() {
     );
   });
 
-  it.only('should resolve extractedTypes into correct schema structure', function(done) {
+  it('should resolve extractedTypes into correct schema structure', function(done) {
     const expectedExtractedTypes = {
         'get/pets': {
           'request': {
@@ -288,7 +288,6 @@ describe('convertV2WithTypes', function() {
       expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
 
       const extractedTypes = conversionResult.extractedTypes;
-      console.log('extractedTypes is ', JSON.stringify(extractedTypes, null, 2));
       expect(JSON.parse(JSON.stringify(extractedTypes))).to.deep.equal(
         JSON.parse(JSON.stringify(expectedExtractedTypes)));
       done();
