@@ -1082,17 +1082,30 @@ function getRequestParams (context, operationParam, pathParam) {
   // will get precedence
   var reqParam = operationParam.slice();
   pathParam.forEach((param) => {
-    var dupParam = operationParam.find(function(element) {
+    var dupParamIndex = operationParam.findIndex(function(element) {
       return element.name === param.name && element.in === param.in &&
       // the below two conditions because undefined === undefined returns true
         element.name && param.name &&
         element.in && param.in;
     });
-    if (!dupParam) {
+    if (dupParamIndex === -1) {
       // if there's no duplicate param in operationParam,
       // use the one from the common pathParam list
       // this ensures that operationParam is given precedence
       reqParam.push(param);
+    }
+    else {
+      // duplicate exists; prefer operation-level param but fallback description from path-level
+      const opParam = reqParam[dupParamIndex];
+      if (!_.get(opParam, 'description') && _.get(param, 'description')) {
+        opParam.description = param.description;
+      }
+      const opSchemaDescMissing = _.has(opParam, 'schema') && !_.get(opParam, 'schema.description'),
+        pathSchemaDesc = _.get(param, 'schema.description');
+      if (opSchemaDescMissing && pathSchemaDesc) {
+        opParam.schema = opParam.schema || {};
+        opParam.schema.description = pathSchemaDesc;
+      }
     }
   });
   return reqParam;

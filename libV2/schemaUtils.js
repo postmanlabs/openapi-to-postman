@@ -2119,17 +2119,32 @@ let QUERYPARAM = 'query',
     // will get precedence
     var reqParam = operationParam.slice();
     pathParam.forEach((param) => {
-      var dupParam = operationParam.find(function(element) {
+      var dupParamIndex = operationParam.findIndex(function(element) {
         return element.name === param.name && element.in === param.in &&
         // the below two conditions because undefined === undefined returns true
           element.name && param.name &&
           element.in && param.in;
       });
-      if (!dupParam) {
+      if (dupParamIndex === -1) {
         // if there's no duplicate param in operationParam,
         // use the one from the common pathParam list
         // this ensures that operationParam is given precedence
         reqParam.push(param);
+      }
+      else {
+        // duplicate exists; prefer operation-level param but fallback description from path-level
+        var opParam = reqParam[dupParamIndex];
+        // If operation-level description not present, copy from path-level parameter
+        if (!_.get(opParam, 'description') && _.get(param, 'description')) {
+          opParam.description = param.description;
+        }
+        // If operation-level schema exists but lacks description, fallback from path-level schema.description
+        var opSchemaDescMissing = _.has(opParam, 'schema') && !_.get(opParam, 'schema.description');
+        var pathSchemaDesc = _.get(param, 'schema.description');
+        if (opSchemaDescMissing && pathSchemaDesc) {
+          opParam.schema = opParam.schema || {};
+          opParam.schema.description = pathSchemaDesc;
+        }
       }
     });
     return reqParam;
