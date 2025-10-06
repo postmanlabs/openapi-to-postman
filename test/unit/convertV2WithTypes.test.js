@@ -1100,7 +1100,7 @@ describe('convertV2WithTypes', function() {
     });
   });
 
-  it.only('should fallback parameter description from path-level to operation-level duplicates', function(done) {
+  it('should fallback parameter description from path-level to operation-level duplicates', function(done) {
     const openApiWithParamFallback = {
       openapi: '3.0.0',
       info: { title: 'Param Fallback API', version: '1.0.0' },
