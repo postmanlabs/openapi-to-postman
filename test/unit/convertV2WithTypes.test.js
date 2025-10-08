@@ -224,7 +224,7 @@ describe('convertV2WithTypes', function() {
               'headers': '[\n  {\n    "keyName": "x-next",\n    "properties": {\n      "type": "string",\n      "default": "<string>"\n    }\n  }\n]'
             },
             '500': {
-              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
+              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer",\n      "format": "int32"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }
           }
@@ -240,7 +240,7 @@ describe('convertV2WithTypes', function() {
               'headers': '[]'
             },
             '500': {
-              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
+              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer",\n      "format": "int32"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }
           }
@@ -257,7 +257,7 @@ describe('convertV2WithTypes', function() {
               'headers': '[]'
             },
             '500': {
-              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
+              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer",\n      "format": "int32"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }
           }
@@ -274,7 +274,7 @@ describe('convertV2WithTypes', function() {
               'headers': '[]'
             },
             '500': {
-              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
+              'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer",\n      "format": "int32"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }
           }
@@ -1096,6 +1096,69 @@ describe('convertV2WithTypes', function() {
       expect(res500Body.properties.message).to.have.property('description', 'Human-readable error message.');
       expect(res500Body.properties.details).to.have.property('title', 'ErrorDetails');
       expect(res500Body.properties.details).to.have.property('description', 'Optional error details.');
+      done();
+    });
+  });
+
+  it('should fallback parameter description from path-level to operation-level duplicates', function(done) {
+    const openApiWithParamFallback = {
+      openapi: '3.0.0',
+      info: { title: 'Param Fallback API', version: '1.0.0' },
+      paths: {
+        '/pets/{id}': {
+          parameters: [
+            { name: 'id', in: 'path', required: true, description: 'Path id description', schema: { type: 'string' } },
+            { name: 'q', in: 'query', description: 'Path-level query description', schema: { type: 'string' } }
+          ],
+          get: {
+            // Duplicate params at operation-level without description; should inherit from path-level
+            parameters: [
+              { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+              { name: 'q', in: 'query', schema: { type: 'string' } }
+            ],
+            responses: {
+              '200': {
+                description: 'OK',
+                content: { 'application/json': { schema: { type: 'string' } } }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    Converter.convertV2WithTypes({ type: 'json', data: openApiWithParamFallback }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      const rootItems = conversionResult.output[0].data.item;
+      const findFirstRequest = (nodes) => {
+        if (!Array.isArray(nodes)) { return null; }
+        for (let i = 0; i < nodes.length; i++) {
+          const node = nodes[i];
+          if (node && node.request) { return node; }
+          if (node && Array.isArray(node.item)) {
+            const found = findFirstRequest(node.item);
+            if (found) { return found; }
+          }
+        }
+        return null;
+      };
+      const item = findFirstRequest(rootItems);
+      expect(item, 'No request item found in generated collection').to.not.be.null;
+
+      // Path variable description should come from path-level param
+      const pathVars = item.request.url.variable;
+      expect(pathVars).to.be.an('array').with.length(1);
+      expect(pathVars[0]).to.have.property('key', 'id');
+      expect(pathVars[0]).to.have.nested.property('description.content', 'Path id description');
+
+      // Query param description should come from path-level param
+      const queryParams = item.request.url.query;
+      const qParam = queryParams.find((p) => { return p.key === 'q'; });
+      expect(qParam).to.not.be.undefined;
+      expect(qParam).to.have.nested.property('description.content', 'Path-level query description');
+
       done();
     });
   });
