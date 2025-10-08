@@ -1100,12 +1100,6 @@ function getRequestParams (context, operationParam, pathParam) {
       if (!_.get(opParam, 'description') && _.get(param, 'description')) {
         opParam.description = param.description;
       }
-      const opSchemaDescMissing = _.has(opParam, 'schema') && !_.get(opParam, 'schema.description'),
-        pathSchemaDesc = _.get(param, 'schema.description');
-      if (opSchemaDescMissing && pathSchemaDesc) {
-        opParam.schema = opParam.schema || {};
-        opParam.schema.description = pathSchemaDesc;
-      }
     }
   });
   return reqParam;

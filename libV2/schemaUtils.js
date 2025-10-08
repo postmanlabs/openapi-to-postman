@@ -2138,13 +2138,6 @@ let QUERYPARAM = 'query',
         if (!_.get(opParam, 'description') && _.get(param, 'description')) {
           opParam.description = param.description;
         }
-        // If operation-level schema exists but lacks description, fallback from path-level schema.description
-        var opSchemaDescMissing = _.has(opParam, 'schema') && !_.get(opParam, 'schema.description');
-        var pathSchemaDesc = _.get(param, 'schema.description');
-        if (opSchemaDescMissing && pathSchemaDesc) {
-          opParam.schema = opParam.schema || {};
-          opParam.schema.description = pathSchemaDesc;
-        }
       }
     });
     return reqParam;
