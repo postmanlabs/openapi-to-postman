@@ -44,12 +44,17 @@ const schemaFaker = require('../assets/json-schema-faker'),
     'hostname',
     'ipv4', 'ipv6',
     'regex',
-    'uuid',
+    'uuid', 'uid',
     'binary',
     'json-pointer',
-    'int64',
+    'base64',
+    'int64', 'int32',
     'float',
-    'double'
+    'double',
+    'url',
+    'http-status-code',
+    'byte',
+    'password'
   ],
 
   typesMap = {
@@ -2114,17 +2119,25 @@ let QUERYPARAM = 'query',
     // will get precedence
     var reqParam = operationParam.slice();
     pathParam.forEach((param) => {
-      var dupParam = operationParam.find(function(element) {
+      var dupParamIndex = operationParam.findIndex(function(element) {
         return element.name === param.name && element.in === param.in &&
         // the below two conditions because undefined === undefined returns true
           element.name && param.name &&
           element.in && param.in;
       });
-      if (!dupParam) {
+      if (dupParamIndex === -1) {
         // if there's no duplicate param in operationParam,
         // use the one from the common pathParam list
         // this ensures that operationParam is given precedence
         reqParam.push(param);
+      }
+      else {
+        // duplicate exists; prefer operation-level param but fallback description from path-level
+        var opParam = reqParam[dupParamIndex];
+        // If operation-level description not present, copy from path-level parameter
+        if (!_.get(opParam, 'description') && _.get(param, 'description')) {
+          opParam.description = param.description;
+        }
       }
     });
     return reqParam;
