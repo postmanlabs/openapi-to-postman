@@ -1099,5 +1099,111 @@ describe('convertV2WithTypes', function() {
       done();
     });
   });
+
+  it('should pick up the first type for handling union types for parameters', function(done) {
+    const openApiWithUnionTypes = {
+      openapi: '3.1.0',
+      info: {
+        title: 'Union Types Test API',
+        version: '1.0.0'
+      },
+      paths: {
+        '/users/{id}': {
+          get: {
+            parameters: [
+              {
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: {
+                  type: ['string', 'integer'], // Union type - should pick 'string' (first)
+                  description: 'User ID as string or integer'
+                }
+              },
+              {
+                name: 'format',
+                in: 'query',
+                schema: {
+                  type: ['integer', 'string'], // Union type - should pick 'integer' (first)
+                  description: 'Format preference'
+                }
+              },
+              {
+                name: 'auth',
+                in: 'header',
+                schema: {
+                  type: ['string', 'null'], // Union type - should pick 'string' (first)
+                  description: 'Authorization header'
+                }
+              },
+              {
+                name: 'simple',
+                in: 'query',
+                schema: {
+                  type: 'string', // Simple type - should remain 'string'
+                  description: 'Simple string parameter'
+                }
+              }
+            ],
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        name: { type: 'string' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    Converter.convertV2WithTypes({ type: 'json', data: openApiWithUnionTypes }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+      const extractedTypes = conversionResult.extractedTypes;
+      const requestTypes = extractedTypes['get/users/{id}'];
+      expect(requestTypes).to.be.an('object');
+
+      // Check path parameters
+      const pathParams = JSON.parse(requestTypes.request.pathParam);
+      expect(pathParams).to.be.an('array').with.length(1);
+
+      const idParam = pathParams.find((p) => { return p.keyName === 'id'; });
+      expect(idParam).to.be.an('object');
+      expect(idParam.properties.type).to.equal('string'); // First type from ['string', 'integer']
+
+      // Check query parameters
+      const queryParams = JSON.parse(requestTypes.request.queryParam);
+      expect(queryParams).to.be.an('array').with.length(2);
+
+      const formatParam = queryParams.find((p) => { return p.keyName === 'format'; });
+      expect(formatParam).to.be.an('object');
+      expect(formatParam.properties.type).to.equal('integer'); // First type from ['integer', 'string']
+
+      const simpleParam = queryParams.find((p) => { return p.keyName === 'simple'; });
+      expect(simpleParam).to.be.an('object');
+      expect(simpleParam.properties.type).to.equal('string'); // Simple type should remain unchanged
+
+      // Check header parameters
+      const headerParams = JSON.parse(requestTypes.request.headers);
+      expect(headerParams).to.be.an('array').with.length(1);
+
+      const authParam = headerParams.find((p) => { return p.keyName === 'auth'; });
+      expect(authParam).to.be.an('object');
+      expect(authParam.properties.type).to.equal('string'); // First type from ['string', 'null']
+
+      done();
+    });
+  });
 });
 

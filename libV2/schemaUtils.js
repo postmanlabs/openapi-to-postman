@@ -2132,10 +2132,15 @@ let QUERYPARAM = 'query',
 
   createProperties = (param) => {
     const { schema } = param;
+
+    // Handle union types (OpenAPI 3.1.x supports arrays of types like ["string", "integer"])
+    // Pick the first type if it's a union of types
+    const resolvedType = Array.isArray(schema.type) ? schema.type[0] : schema.type;
+
     return {
       description: schema.description,
       title: schema.title,
-      type: schema.type,
+      type: resolvedType,
       format: schema.format,
       default: schema.default,
       required: param.required,
