@@ -2495,8 +2495,12 @@ let QUERYPARAM = 'query',
           return;
         }
 
+        // Handle union types (OpenAPI 3.1.x supports arrays of types like ["string", "integer"])
+        // Pick the first type if it's a union of types
+        const resolvedType = Array.isArray(schema.type) ? schema.type[0] : schema.type;
+
         properties = {
-          type: schema.type,
+          type: resolvedType,
           description: schema.description,
           title: schema.title,
           format: schema.format,

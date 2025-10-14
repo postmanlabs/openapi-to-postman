@@ -1163,7 +1163,7 @@ describe('convertV2WithTypes', function() {
     });
   });
 
-  it('should pick up the first type for handling union types for parameters', function(done) {
+  it('should pick up the first type for handling union types in parameters and response headers', function(done) {
     const openApiWithUnionTypes = {
       openapi: '3.1.0',
       info: {
@@ -1200,17 +1200,37 @@ describe('convertV2WithTypes', function() {
                 }
               },
               {
-                name: 'simple',
+                name: 'singleTypeParam',
                 in: 'query',
                 schema: {
-                  type: 'string', // Simple type - should remain 'string'
+                  type: 'string', // Single type - should remain 'string'
                   description: 'Simple string parameter'
                 }
               }
             ],
             responses: {
               '200': {
-                description: 'Success',
+                description: 'Success response with union type headers',
+                headers: {
+                  'x-rate-limit': {
+                    description: 'Rate limit counter',
+                    schema: {
+                      type: ['integer', 'string'] // Union type - should pick 'integer' (first)
+                    }
+                  },
+                  'x-request-id': {
+                    description: 'Request identifier',
+                    schema: {
+                      type: ['string', 'number'] // Union type - should pick 'string' (first)
+                    }
+                  },
+                  'x-single-type-header': {
+                    description: 'Simple header',
+                    schema: {
+                      type: 'boolean' // Single type - should remain 'boolean'
+                    }
+                  }
+                },
                 content: {
                   'application/json': {
                     schema: {
@@ -1253,17 +1273,37 @@ describe('convertV2WithTypes', function() {
       expect(formatParam).to.be.an('object');
       expect(formatParam.properties.type).to.equal('integer'); // First type from ['integer', 'string']
 
-      const simpleParam = queryParams.find((p) => { return p.keyName === 'simple'; });
-      expect(simpleParam).to.be.an('object');
-      expect(simpleParam.properties.type).to.equal('string'); // Simple type should remain unchanged
+      const singleTypeParam = queryParams.find((p) => { return p.keyName === 'singleTypeParam'; });
+      expect(singleTypeParam).to.be.an('object');
+      expect(singleTypeParam.properties.type).to.equal('string'); // Single type should remain unchanged
 
-      // Check header parameters
+      // Check request header parameters
       const headerParams = JSON.parse(requestTypes.request.headers);
       expect(headerParams).to.be.an('array').with.length(1);
 
       const authParam = headerParams.find((p) => { return p.keyName === 'auth'; });
       expect(authParam).to.be.an('object');
       expect(authParam.properties.type).to.equal('string'); // First type from ['string', 'null']
+
+      // Check response headers - use the first available response status for tests
+      const responseStatuses = Object.keys(requestTypes.response);
+      expect(responseStatuses).to.be.an('array').that.is.not.empty;
+
+      const firstResponseStatus = responseStatuses[0];
+      const responseHeaders = JSON.parse(requestTypes.response[firstResponseStatus].headers);
+      expect(responseHeaders).to.be.an('array').with.length(3);
+
+      const rateLimitHeader = responseHeaders.find((h) => { return h.keyName === 'x-rate-limit'; });
+      expect(rateLimitHeader).to.be.an('object');
+      expect(rateLimitHeader.properties.type).to.equal('integer'); // First type from ['integer', 'string']
+
+      const requestIdHeader = responseHeaders.find((h) => { return h.keyName === 'x-request-id'; });
+      expect(requestIdHeader).to.be.an('object');
+      expect(requestIdHeader.properties.type).to.equal('string'); // First type from ['string', 'number']
+
+      const singleTypeHeader = responseHeaders.find((h) => { return h.keyName === 'x-single-type-header'; });
+      expect(singleTypeHeader).to.be.an('object');
+      expect(singleTypeHeader.properties.type).to.equal('boolean'); // Single type should remain unchanged
 
       done();
     });
