@@ -1206,6 +1206,14 @@ describe('convertV2WithTypes', function() {
                   type: 'string', // Single type - should remain 'string'
                   description: 'Simple string parameter'
                 }
+              },
+              {
+                name: 'emptyUnionParam',
+                in: 'query',
+                schema: {
+                  type: [], // Empty union type - should not have type property
+                  description: 'Empty union type parameter'
+                }
               }
             ],
             responses: {
@@ -1267,7 +1275,7 @@ describe('convertV2WithTypes', function() {
 
       // Check query parameters
       const queryParams = JSON.parse(requestTypes.request.queryParam);
-      expect(queryParams).to.be.an('array').with.length(2);
+      expect(queryParams).to.be.an('array').with.length(3);
 
       const formatParam = queryParams.find((p) => { return p.keyName === 'format'; });
       expect(formatParam).to.be.an('object');
@@ -1276,6 +1284,10 @@ describe('convertV2WithTypes', function() {
       const singleTypeParam = queryParams.find((p) => { return p.keyName === 'singleTypeParam'; });
       expect(singleTypeParam).to.be.an('object');
       expect(singleTypeParam.properties.type).to.equal('string'); // Single type should remain unchanged
+
+      const emptyUnionParam = queryParams.find((p) => { return p.keyName === 'emptyUnionParam'; });
+      expect(emptyUnionParam).to.be.an('object');
+      expect(emptyUnionParam.properties).to.not.have.property('type'); // Empty union should not have type property
 
       // Check request header parameters
       const headerParams = JSON.parse(requestTypes.request.headers);

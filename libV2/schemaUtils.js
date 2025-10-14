@@ -2147,10 +2147,12 @@ let QUERYPARAM = 'query',
     const { schema } = param;
 
     // Handle union types (OpenAPI 3.1.x supports arrays of types like ["string", "integer"])
-    // Pick the first type if it's a union of types
-    const resolvedType = Array.isArray(schema.type) ? schema.type[0] : schema.type;
+    // Pick the first type if it's a union of types, but only if array is not empty
+    const resolvedType = Array.isArray(schema.type) ?
+      (schema.type.length > 0 ? schema.type[0] : undefined) :
+      schema.type;
 
-    return {
+    const properties = {
       description: schema.description,
       title: schema.title,
       type: resolvedType,
@@ -2166,6 +2168,8 @@ let QUERYPARAM = 'query',
       pattern: schema.pattern,
       example: schema.example
     };
+
+    return properties;
   },
 
   resolveQueryParamsForPostmanRequest = (context, operationItem, method) => {
@@ -2496,8 +2500,10 @@ let QUERYPARAM = 'query',
         }
 
         // Handle union types (OpenAPI 3.1.x supports arrays of types like ["string", "integer"])
-        // Pick the first type if it's a union of types
-        const resolvedType = Array.isArray(schema.type) ? schema.type[0] : schema.type;
+        // Pick the first type if it's a union of types, but only if array is not empty
+        const resolvedType = Array.isArray(schema.type) ?
+          (schema.type.length > 0 ? schema.type[0] : undefined) :
+          schema.type;
 
         properties = {
           type: resolvedType,
@@ -2515,6 +2521,7 @@ let QUERYPARAM = 'query',
           pattern: schema.pattern,
           example: schema.example
         };
+
         headerTypeInfo = { keyName: headerData.name, properties };
         headerTypes.push(headerTypeInfo);
       }
