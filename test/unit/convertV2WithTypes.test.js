@@ -1162,5 +1162,162 @@ describe('convertV2WithTypes', function() {
       done();
     });
   });
-});
 
+  it('should pick up the first type for handling union types in parameters and response headers', function(done) {
+    const openApiWithUnionTypes = {
+      openapi: '3.1.0',
+      info: {
+        title: 'Union Types Test API',
+        version: '1.0.0'
+      },
+      paths: {
+        '/users/{id}': {
+          get: {
+            parameters: [
+              {
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: {
+                  type: ['string', 'integer'], // Union type - should pick 'string' (first)
+                  description: 'User ID as string or integer'
+                }
+              },
+              {
+                name: 'format',
+                in: 'query',
+                schema: {
+                  type: ['integer', 'string'], // Union type - should pick 'integer' (first)
+                  description: 'Format preference'
+                }
+              },
+              {
+                name: 'auth',
+                in: 'header',
+                schema: {
+                  type: ['string', 'null'], // Union type - should pick 'string' (first)
+                  description: 'Authorization header'
+                }
+              },
+              {
+                name: 'singleTypeParam',
+                in: 'query',
+                schema: {
+                  type: 'string', // Single type - should remain 'string'
+                  description: 'Simple string parameter'
+                }
+              },
+              {
+                name: 'emptyUnionParam',
+                in: 'query',
+                schema: {
+                  type: [], // Empty union type - should not have type property
+                  description: 'Empty union type parameter'
+                }
+              }
+            ],
+            responses: {
+              '200': {
+                description: 'Success response with union type headers',
+                headers: {
+                  'x-rate-limit': {
+                    description: 'Rate limit counter',
+                    schema: {
+                      type: ['integer', 'string'] // Union type - should pick 'integer' (first)
+                    }
+                  },
+                  'x-request-id': {
+                    description: 'Request identifier',
+                    schema: {
+                      type: ['string', 'number'] // Union type - should pick 'string' (first)
+                    }
+                  },
+                  'x-single-type-header': {
+                    description: 'Simple header',
+                    schema: {
+                      type: 'boolean' // Single type - should remain 'boolean'
+                    }
+                  }
+                },
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        name: { type: 'string' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    Converter.convertV2WithTypes({ type: 'json', data: openApiWithUnionTypes }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+      const extractedTypes = conversionResult.extractedTypes;
+      const requestTypes = extractedTypes['get/users/{id}'];
+      expect(requestTypes).to.be.an('object');
+
+      // Check path parameters
+      const pathParams = JSON.parse(requestTypes.request.pathParam);
+      expect(pathParams).to.be.an('array').with.length(1);
+
+      const idParam = pathParams.find((p) => { return p.keyName === 'id'; });
+      expect(idParam).to.be.an('object');
+      expect(idParam.properties.type).to.equal('string'); // First type from ['string', 'integer']
+
+      // Check query parameters
+      const queryParams = JSON.parse(requestTypes.request.queryParam);
+      expect(queryParams).to.be.an('array').with.length(3);
+
+      const formatParam = queryParams.find((p) => { return p.keyName === 'format'; });
+      expect(formatParam).to.be.an('object');
+      expect(formatParam.properties.type).to.equal('integer'); // First type from ['integer', 'string']
+
+      const singleTypeParam = queryParams.find((p) => { return p.keyName === 'singleTypeParam'; });
+      expect(singleTypeParam).to.be.an('object');
+      expect(singleTypeParam.properties.type).to.equal('string'); // Single type should remain unchanged
+
+      const emptyUnionParam = queryParams.find((p) => { return p.keyName === 'emptyUnionParam'; });
+      expect(emptyUnionParam).to.be.an('object');
+      expect(emptyUnionParam.properties).to.not.have.property('type'); // Empty union should not have type property
+
+      // Check request header parameters
+      const headerParams = JSON.parse(requestTypes.request.headers);
+      expect(headerParams).to.be.an('array').with.length(1);
+
+      const authParam = headerParams.find((p) => { return p.keyName === 'auth'; });
+      expect(authParam).to.be.an('object');
+      expect(authParam.properties.type).to.equal('string'); // First type from ['string', 'null']
+
+      // Check response headers - use the first available response status for tests
+      const responseStatuses = Object.keys(requestTypes.response);
+      expect(responseStatuses).to.be.an('array').that.is.not.empty;
+
+      const firstResponseStatus = responseStatuses[0];
+      const responseHeaders = JSON.parse(requestTypes.response[firstResponseStatus].headers);
+      expect(responseHeaders).to.be.an('array').with.length(3);
+
+      const rateLimitHeader = responseHeaders.find((h) => { return h.keyName === 'x-rate-limit'; });
+      expect(rateLimitHeader).to.be.an('object');
+      expect(rateLimitHeader.properties.type).to.equal('integer'); // First type from ['integer', 'string']
+
+      const requestIdHeader = responseHeaders.find((h) => { return h.keyName === 'x-request-id'; });
+      expect(requestIdHeader).to.be.an('object');
+      expect(requestIdHeader.properties.type).to.equal('string'); // First type from ['string', 'number']
+
+      const singleTypeHeader = responseHeaders.find((h) => { return h.keyName === 'x-single-type-header'; });
+      expect(singleTypeHeader).to.be.an('object');
+      expect(singleTypeHeader.properties.type).to.equal('boolean'); // Single type should remain unchanged
+
+      done();
+    });
+  });
+});

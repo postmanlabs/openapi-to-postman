@@ -2145,10 +2145,17 @@ let QUERYPARAM = 'query',
 
   createProperties = (param) => {
     const { schema } = param;
+
+    // Handle union types (OpenAPI 3.1.x supports arrays of types like ["string", "integer"])
+    // Pick the first type if it's a union of types, but only if array is not empty
+    const resolvedType = Array.isArray(schema.type) ?
+      (schema.type.length > 0 ? schema.type[0] : undefined) :
+      schema.type;
+
     return {
       description: schema.description,
       title: schema.title,
-      type: schema.type,
+      type: resolvedType,
       format: schema.format,
       default: schema.default,
       required: param.required,
@@ -2490,8 +2497,14 @@ let QUERYPARAM = 'query',
           return;
         }
 
+        // Handle union types (OpenAPI 3.1.x supports arrays of types like ["string", "integer"])
+        // Pick the first type if it's a union of types, but only if array is not empty
+        const resolvedType = Array.isArray(schema.type) ?
+          (schema.type.length > 0 ? schema.type[0] : undefined) :
+          schema.type;
+
         properties = {
-          type: schema.type,
+          type: resolvedType,
           description: schema.description,
           title: schema.title,
           format: schema.format,
@@ -2506,6 +2519,7 @@ let QUERYPARAM = 'query',
           pattern: schema.pattern,
           example: schema.example
         };
+
         headerTypeInfo = { keyName: headerData.name, properties };
         headerTypes.push(headerTypeInfo);
       }
