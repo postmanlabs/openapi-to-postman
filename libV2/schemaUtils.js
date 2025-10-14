@@ -2152,7 +2152,7 @@ let QUERYPARAM = 'query',
       (schema.type.length > 0 ? schema.type[0] : undefined) :
       schema.type;
 
-    const properties = {
+    return {
       description: schema.description,
       title: schema.title,
       type: resolvedType,
@@ -2168,8 +2168,6 @@ let QUERYPARAM = 'query',
       pattern: schema.pattern,
       example: schema.example
     };
-
-    return properties;
   },
 
   resolveQueryParamsForPostmanRequest = (context, operationItem, method) => {
