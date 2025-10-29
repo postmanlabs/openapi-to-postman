@@ -1257,11 +1257,32 @@ let QUERYPARAM = 'query',
     switch (style) {
       case 'form':
         if (explode && _.isObject(paramValue)) {
-          const isArrayValue = _.isArray(paramValue);
+          const schemaProps = _.get(param, 'schema.properties', {}),
+            hasProps = _.isObject(schemaProps) && !_.isEmpty(schemaProps),
+            isArrayValue = _.isArray(paramValue);
+
+          // Free-form object: do not emit individual keys
+          if (!hasProps && !isArrayValue) {
+            return pmParams;
+          }
 
           _.forEach(paramValue, (value, key) => {
+            if (isArrayValue) {
+              pmParams.push({
+                key: paramName,
+                value: (value === undefined ? '' : _.toString(value)),
+                description,
+                disabled
+              });
+              return;
+            }
+
+            if (!_.has(schemaProps, key)) {
+              return;
+            }
+
             pmParams.push({
-              key: isArrayValue ? paramName : key,
+              key,
               value: (value === undefined ? '' : _.toString(value)),
               description,
               disabled
