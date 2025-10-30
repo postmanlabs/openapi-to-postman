@@ -174,6 +174,78 @@ describe('convertV2WithTypes', function() {
       });
   });
 
+  it('should not emit schema.deprecated as query param key for form+explode and keep original param', function(done) {
+    const oas = {
+      openapi: '3.0.0',
+      info: { title: 'Form Explode Deprecated Test', version: '1.0.0' },
+      paths: {
+        '/pets': {
+          get: {
+            parameters: [
+              {
+                name: 'qp',
+                in: 'query',
+                schema: { type: 'object', deprecated: true },
+                example: { deprecated: true }
+              }
+            ],
+            responses: { '200': { description: 'ok' } }
+          }
+        }
+      }
+    };
+
+    Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      const items = conversionResult.output[0].data.item;
+      const request = items[0].item ? items[0].item[0].request : items[0].request;
+      const query = request.url.query || [];
+
+      expect(query.some((p) => { return p.key === 'deprecated'; })).to.equal(false);
+      expect(query.some((p) => { return p.key === 'qp'; })).to.equal(true);
+      done();
+    });
+  });
+
+  it('should not emit qp[deprecated] for deepObject and keep original param', function(done) {
+    const oas = {
+      openapi: '3.0.0',
+      info: { title: 'DeepObject Deprecated Test', version: '1.0.0' },
+      paths: {
+        '/pets': {
+          get: {
+            parameters: [
+              {
+                name: 'qp',
+                in: 'query',
+                style: 'deepObject',
+                explode: true,
+                schema: { type: 'object', deprecated: true },
+                example: { deprecated: true }
+              }
+            ],
+            responses: { '200': { description: 'ok' } }
+          }
+        }
+      }
+    };
+
+    Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      const items = conversionResult.output[0].data.item;
+      const request = items[0].item ? items[0].item[0].request : items[0].request;
+      const query = request.url.query || [];
+
+      expect(query.some((p) => { return (/^qp\[deprecated\]/).test(p.key); })).to.equal(false);
+      expect(query.some((p) => { return p.key === 'qp'; })).to.equal(true);
+      done();
+    });
+  });
+
   it('should resolve nested array and object schema types correctly in extractedTypes', function(done) {
     const example = {
         name: 'Buddy',
