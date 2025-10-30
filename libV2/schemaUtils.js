@@ -1258,7 +1258,7 @@ let QUERYPARAM = 'query',
       case 'form':
         if (explode && _.isObject(paramValue)) {
           const isArrayValue = _.isArray(paramValue);
-          // Arrays: emit one entry per item with the parameter name
+          // Arrays
           if (isArrayValue) {
             _.forEach(paramValue, (value) => {
               pmParams.push({
@@ -1292,7 +1292,12 @@ let QUERYPARAM = 'query',
         break;
       case 'deepObject':
         if (_.isObject(paramValue) && !_.isArray(paramValue)) {
-          let extractedParams = extractDeepObjectParams(paramValue, paramName);
+          // Remove schema keys from the value before extraction
+          const schemaKeys = Object.keys(_.get(param, 'schema', {})),
+            filteredValue = _.omit(paramValue, schemaKeys);
+
+          let extractedParams = extractDeepObjectParams(filteredValue, paramName);
+
           _.forEach(extractedParams, (extractedParam) => {
             pmParams.push({
               key: extractedParam.key,
