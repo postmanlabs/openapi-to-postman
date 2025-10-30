@@ -1257,30 +1257,26 @@ let QUERYPARAM = 'query',
     switch (style) {
       case 'form':
         if (explode && _.isObject(paramValue)) {
-          const schemaProps = _.get(param, 'schema.properties', {}),
-            hasProps = _.isObject(schemaProps) && !_.isEmpty(schemaProps),
-            isArrayValue = _.isArray(paramValue);
-
-          // Free-form object: do not emit individual keys
-          if (!hasProps && !isArrayValue) {
-            return pmParams;
-          }
-
-          _.forEach(paramValue, (value, key) => {
-            if (isArrayValue) {
+          const isArrayValue = _.isArray(paramValue);
+          // Arrays: emit one entry per item with the parameter name
+          if (isArrayValue) {
+            _.forEach(paramValue, (value) => {
               pmParams.push({
                 key: paramName,
                 value: (value === undefined ? '' : _.toString(value)),
                 description,
                 disabled
               });
+            });
+            return pmParams;
+          }
+
+          // Objects: emit all keys except those that are schema definition keys
+          const schemaKeys = Object.keys(_.get(param, 'schema', {}));
+          _.forEach(paramValue, (value, key) => {
+            if (schemaKeys.includes(key)) {
               return;
             }
-
-            if (!_.has(schemaProps, key)) {
-              return;
-            }
-
             pmParams.push({
               key,
               value: (value === undefined ? '' : _.toString(value)),
@@ -1288,7 +1284,6 @@ let QUERYPARAM = 'query',
               disabled
             });
           });
-
           return pmParams;
         }
 
@@ -1296,7 +1291,6 @@ let QUERYPARAM = 'query',
       case 'deepObject':
         if (_.isObject(paramValue) && !_.isArray(paramValue)) {
           let extractedParams = extractDeepObjectParams(paramValue, paramName);
-
           _.forEach(extractedParams, (extractedParam) => {
             pmParams.push({
               key: extractedParam.key,
