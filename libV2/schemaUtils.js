@@ -1284,7 +1284,9 @@ let QUERYPARAM = 'query',
               disabled
             });
           });
-          return pmParams;
+          if (pmParams.length) {
+            return pmParams;
+          }
         }
 
         break;
@@ -1299,8 +1301,9 @@ let QUERYPARAM = 'query',
               disabled
             });
           });
-
-          return pmParams;
+          if (pmParams.length) {
+            return pmParams;
+          }
         }
         else if (_.isArray(paramValue)) {
           isNotSerializable = true;
