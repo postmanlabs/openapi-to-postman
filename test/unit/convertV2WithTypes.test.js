@@ -185,8 +185,7 @@ describe('convertV2WithTypes', function() {
               {
                 name: 'qp',
                 in: 'query',
-                schema: { type: 'object', deprecated: true },
-                example: { deprecated: true }
+                schema: { deprecated: true }
               }
             ],
             responses: { '200': { description: 'ok' } }
@@ -222,8 +221,7 @@ describe('convertV2WithTypes', function() {
                 in: 'query',
                 style: 'deepObject',
                 explode: true,
-                schema: { type: 'object', deprecated: true },
-                example: { deprecated: true }
+                schema: { deprecated: true }
               }
             ],
             responses: { '200': { description: 'ok' } }
@@ -242,6 +240,48 @@ describe('convertV2WithTypes', function() {
 
       expect(query.some((p) => { return (/^qp\[deprecated\]/).test(p.key); })).to.equal(false);
       expect(query.some((p) => { return p.key === 'qp'; })).to.equal(true);
+      done();
+    });
+  });
+
+  it('should include declared schema.properties (including keys like type) for form+explode', function(done) {
+    const oas = {
+      openapi: '3.0.0',
+      info: { title: 'Declared Properties Test', version: '1.0.0' },
+      paths: {
+        '/pets': {
+          get: {
+            parameters: [
+              {
+                name: 'qp',
+                in: 'query',
+                schema: {
+                  type: 'object',
+                  deprecated: true,
+                  properties: {
+                    name: { type: 'string' },
+                    type: { type: 'string', deprecated: true }
+                  }
+                }
+              }
+            ],
+            responses: { '200': { description: 'ok' } }
+          }
+        }
+      }
+    };
+
+    Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      const items = conversionResult.output[0].data.item;
+      const request = items[0].item ? items[0].item[0].request : items[0].request;
+      const query = request.url.query || [];
+
+      expect(query.some((p) => { return p.key === 'name'; })).to.equal(true);
+      expect(query.some((p) => { return p.key === 'type'; })).to.equal(true);
+      expect(query.some((p) => { return p.key === 'deprecated'; })).to.equal(false);
       done();
     });
   });

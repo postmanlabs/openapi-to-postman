@@ -1271,19 +1271,34 @@ let QUERYPARAM = 'query',
             return pmParams;
           }
 
-          // Objects: emit all keys except those that are schema definition keys
-          const schemaKeys = Object.keys(_.get(param, 'schema', {}));
-          _.forEach(paramValue, (value, key) => {
-            if (schemaKeys.includes(key)) {
-              return;
-            }
-            pmParams.push({
-              key,
-              value: (value === undefined ? '' : _.toString(value)),
-              description,
-              disabled
+          // Objects:
+          // If declared properties exist, include only declared properties.
+          // Else, exclude top-level schema keys.
+          const schemaProps = _.get(param, 'schema.properties');
+          const hasProps = _.isObject(schemaProps) && !_.isEmpty(schemaProps);
+          if (hasProps) {
+            _.forEach(paramValue, (value, key) => {
+              if (!_.has(schemaProps, key)) { return; }
+              pmParams.push({
+                key,
+                value: (value === undefined ? '' : _.toString(value)),
+                description,
+                disabled
+              });
             });
-          });
+          }
+          else {
+            const schemaKeys = Object.keys(_.get(param, 'schema', {}));
+            _.forEach(paramValue, (value, key) => {
+              if (schemaKeys.includes(key)) { return; }
+              pmParams.push({
+                key,
+                value: (value === undefined ? '' : _.toString(value)),
+                description,
+                disabled
+              });
+            });
+          }
           if (pmParams.length) {
             return pmParams;
           }
@@ -1292,9 +1307,16 @@ let QUERYPARAM = 'query',
         break;
       case 'deepObject':
         if (_.isObject(paramValue) && !_.isArray(paramValue)) {
-          // Remove schema keys from the value before extraction
-          const schemaKeys = Object.keys(_.get(param, 'schema', {})),
+          let filteredValue;
+          const schemaProps = _.get(param, 'schema.properties');
+          const hasProps = _.isObject(schemaProps) && !_.isEmpty(schemaProps);
+          if (hasProps) {
+            filteredValue = _.pick(paramValue, Object.keys(schemaProps));
+          }
+          else {
+            const schemaKeys = Object.keys(_.get(param, 'schema', {}));
             filteredValue = _.omit(paramValue, schemaKeys);
+          }
 
           let extractedParams = extractDeepObjectParams(filteredValue, paramName);
 
