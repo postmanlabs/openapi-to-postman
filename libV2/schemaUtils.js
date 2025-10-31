@@ -1312,6 +1312,14 @@ let QUERYPARAM = 'query',
           const hasProps = _.isObject(schemaProps) && !_.isEmpty(schemaProps);
           if (hasProps) {
             filteredValue = _.pick(paramValue, Object.keys(schemaProps));
+            // Strip each declared property's own schema keys from its value before extraction
+            _.forEach(filteredValue, (propValue, propName) => {
+              if (_.isObject(propValue)) {
+                // taking only the keys that are declared in the schema
+                const propSchemaKeys = Object.keys(_.get(schemaProps, propName, {}));
+                filteredValue[propName] = _.omit(propValue, propSchemaKeys);
+              }
+            });
           }
           else {
             const schemaKeys = Object.keys(_.get(param, 'schema', {}));
