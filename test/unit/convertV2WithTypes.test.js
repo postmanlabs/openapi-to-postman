@@ -174,7 +174,7 @@ describe('convertV2WithTypes', function() {
       });
   });
 
-  it('should not emit schema.deprecated as query param key for form+explode and keep original param', function(done) {
+  it('should handle non existent type in parameter schema', function(done) {
     const oas = {
       openapi: '3.0.0',
       info: { title: 'Form Explode Deprecated Test', version: '1.0.0' },
@@ -201,11 +201,12 @@ describe('convertV2WithTypes', function() {
       expect(conversionResult.result).to.equal(true);
 
       const items = conversionResult.output[0].data.item;
-      const request = items[0].item ? items[0].item[0].request : items[0].request;
-      const query = request.url.query || [];
+      const request = items[0].item[0].request;
+      const query = request.url.query;
 
-      expect(query.some((p) => { return p.key === 'deprecated'; })).to.equal(false);
-      expect(query.some((p) => { return p.key === 'qp'; })).to.equal(true);
+      expect(query.length).to.be.equal(1);
+      expect(query[0].key).to.equal('qp');
+      expect(query[0].value).to.equal('');
       done();
     });
   });
