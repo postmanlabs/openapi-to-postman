@@ -69,7 +69,7 @@ describe('convertV2WithTypes should generate collection conforming to collection
 
   it('should validate parameters of the collection', function (done) {
     const openapi = fs.readFileSync(testSpec1, 'utf8'),
-      options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+      options = { schemaFaker: true, parametersResolution: 'schema' };
 
     Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
       expect(err).to.be.null;
@@ -112,6 +112,29 @@ describe('convertV2WithTypes should generate collection conforming to collection
       done();
     }
     );
+  });
+
+  it('should pick example value for request body parametersResolution=Example', function (done) {
+    const openapi = fs.readFileSync(testSpec1, 'utf8'),
+      options = { schemaFaker: true, parametersResolution: 'Example' };
+
+    Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.output).to.be.an('array').that.is.not.empty;
+
+      const firstFolder = conversionResult.output[0].data.item[0];
+      expect(firstFolder).to.have.property('name', 'pets');
+
+      const listAllPets = firstFolder.item[0];
+      expect(listAllPets).to.have.property('name', 'List all pets');
+      expect(listAllPets.request.method).to.equal('GET');
+
+      const createPet = firstFolder.item[1];
+      expect(createPet.request.body.mode).to.equal('raw');
+      expect(createPet.request.body.raw).to.equal('request body comes here');
+
+      done();
+    });
   });
 
   it('Should generate collection conforming to schema for and fail if not valid ' +
