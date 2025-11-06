@@ -69,7 +69,7 @@ describe('convertV2WithTypes should generate collection conforming to collection
 
   it('should validate parameters of the collection', function (done) {
     const openapi = fs.readFileSync(testSpec1, 'utf8'),
-      options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+      options = { schemaFaker: true, parametersResolution: 'schema' };
 
     Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
       expect(err).to.be.null;
@@ -90,7 +90,7 @@ describe('convertV2WithTypes should generate collection conforming to collection
       expect(createPet.request.method).to.equal('POST');
       expect(idDescription).to.equal('The id of the pet to retrieve');
       expect(createPet.request.body.mode).to.equal('raw');
-      expect(createPet.request.body.raw).to.include('request body comes here');
+      expect(createPet.request.body.raw).to.equal('');
 
       const queryParams = listAllPets.request.url.query;
       expect(queryParams).to.be.an('array').that.has.length(3);
@@ -112,6 +112,29 @@ describe('convertV2WithTypes should generate collection conforming to collection
       done();
     }
     );
+  });
+
+  it('should pick example value for request body parametersResolution=Example', function (done) {
+    const openapi = fs.readFileSync(testSpec1, 'utf8'),
+      options = { schemaFaker: true, parametersResolution: 'Example' };
+
+    Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.output).to.be.an('array').that.is.not.empty;
+
+      const firstFolder = conversionResult.output[0].data.item[0];
+      expect(firstFolder).to.have.property('name', 'pets');
+
+      const listAllPets = firstFolder.item[0];
+      expect(listAllPets).to.have.property('name', 'List all pets');
+      expect(listAllPets.request.method).to.equal('GET');
+
+      const createPet = firstFolder.item[1];
+      expect(createPet.request.body.mode).to.equal('raw');
+      expect(createPet.request.body.raw).to.equal('request body comes here');
+
+      done();
+    });
   });
 
   it('Should generate collection conforming to schema for and fail if not valid ' +
@@ -174,6 +197,194 @@ describe('convertV2WithTypes', function() {
       });
   });
 
+  it('should handle non existent type in parameter schema', function(done) {
+    const oas = {
+      openapi: '3.0.0',
+      info: { title: 'Form Explode Deprecated Test', version: '1.0.0' },
+      paths: {
+        '/pets': {
+          get: {
+            parameters: [
+              {
+                name: 'qp',
+                in: 'query',
+                schema: { deprecated: true }
+              }
+            ],
+            responses: { '200': { description: 'ok' } }
+          }
+        }
+      }
+    };
+
+    Converter.convertV2WithTypes({ type: 'json', data: oas }, {
+      parametersResolution: 'Example'
+    }, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      const items = conversionResult.output[0].data.item;
+      const request = items[0].item[0].request;
+      const query = request.url.query;
+
+      expect(query.length).to.be.equal(1);
+      expect(query[0].key).to.equal('qp');
+      expect(query[0].value).to.equal('');
+      done();
+    });
+  });
+
+  it('should handle schemas with unavailable types properly with parametersResolution=Example', function(done) {
+    const oas = {
+      openapi: '3.0.0',
+      info: { title: 'DeepObject Deprecated Test', version: '1.0.0' },
+      paths: {
+        '/pets': {
+          post: {
+            parameters: [
+              {
+                name: 'qp',
+                in: 'query',
+                style: 'deepObject',
+                explode: true,
+                schema: {
+                  type: 'object',
+                  deprecated: true,
+                  properties: {
+                    name: {
+                      description: 'Name of the pet'
+                    }
+                  }
+                }
+              }
+            ],
+            requestBody: {
+              content: {
+                'application/json': {
+                  schema: {
+                    deprecated: false,
+                    description: 'Help',
+                    // Type is not defined here
+                    properties: {
+                      name: { type: 'string' },
+                      style: {
+                        type: 'array',
+                        items: {
+                          anyOf: [
+                            { type: 'string' },
+                            { type: 'number' }
+                          ]
+                        }
+                      },
+                      age: {
+                        // type not defined here
+                        description: 'age'
+
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            responses: { '200': { description: 'ok' } }
+          }
+        }
+      }
+    };
+
+    Converter.convertV2WithTypes({ type: 'json', data: oas }, {
+      parametersResolution: 'Example'
+    }, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      const items = conversionResult.output[0].data.item;
+      const request = items[0].item[0].request;
+      const query = request.url.query || [];
+
+      expect(query.length).to.be.equal(1);
+      expect(query[0].key).to.equal('qp[name]');
+      expect(query[0].value).to.equal('');
+
+      expect(request.body.raw).to.be.equal('{\n  "name": "string",\n  "style": [\n    "string",\n    "string"\n  ],\n  "age": ""\n}');
+
+      done();
+    });
+  });
+
+  it('should handle schemas with unavailable types properly with parametersResolution=Schema', function(done) {
+    const oas = {
+      openapi: '3.0.0',
+      info: { title: 'DeepObject Deprecated Test', version: '1.0.0' },
+      paths: {
+        '/pets': {
+          post: {
+            parameters: [
+              {
+                name: 'qp',
+                in: 'query',
+                style: 'deepObject',
+                explode: true,
+                schema: {
+                  type: 'object',
+                  deprecated: true,
+                  properties: {
+                    name: {
+                      description: 'Name of the pet'
+                    }
+                  }
+                }
+              }
+            ],
+            requestBody: {
+              content: {
+                'application/json': {
+                  schema: {
+                    deprecated: false,
+                    description: 'Help',
+                    properties: {
+                      name: { type: 'string' },
+                      style: {
+                        type: 'array',
+                        items: {
+                          anyOf: [
+                            { type: 'string' },
+                            { type: 'number' }
+                          ]
+                        }
+                      },
+                      age: { description: 'age' }
+                    }
+                  }
+                }
+              }
+            },
+            responses: { '200': { description: 'ok' } }
+          }
+        }
+      }
+    };
+
+    Converter.convertV2WithTypes({ type: 'json', data: oas }, {
+      parametersResolution: 'Schema'
+    }, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      const items = conversionResult.output[0].data.item;
+      const request = items[0].item[0].request;
+      const query = request.url.query || [];
+
+      expect(query.length).to.be.equal(1);
+      expect(query[0].key).to.equal('qp[name]');
+      expect(query[0].value).to.equal('');
+
+      expect(request.body.raw).to.be.equal('{\n  "name": "<string>",\n  "style": [\n    "<string>",\n    "<string>"\n  ],\n  "age": ""\n}');
+
+      done();
+    });
+  });
+
   it('should resolve nested array and object schema types correctly in extractedTypes', function(done) {
     const example = {
         name: 'Buddy',
@@ -189,7 +400,7 @@ describe('convertV2WithTypes', function() {
         }
       },
       openapi = fs.readFileSync(readOnlyNestedSpec, 'utf8'),
-      options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+      options = { schemaFaker: true, parametersResolution: 'schema' };
 
     Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
       expect(err).to.be.null;
@@ -281,7 +492,7 @@ describe('convertV2WithTypes', function() {
         }
       },
       openapi = fs.readFileSync(testSpec1, 'utf8'),
-      options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+      options = { schemaFaker: true, parametersResolution: 'schema' };
 
     Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
       expect(err).to.be.null;
@@ -988,7 +1199,7 @@ describe('convertV2WithTypes', function() {
 
   it('types should contain title and description', function(done) {
     const openapi = fs.readFileSync(testSpec2, 'utf8'),
-      options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+      options = { schemaFaker: true, parametersResolution: 'schema' };
 
     Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
       expect(err).to.be.null;
