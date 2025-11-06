@@ -24823,18 +24823,13 @@ function extend() {
 
       if (!type && path[path.length - 1] !== 'properties' && path[path.length - 1] !== 'items') {
         // This is needed to handle the <Circular reference to schema> and <Error too many levels of nesting> case
+        // As those error values needs to be returned as is
         if (typeof _.get(schema, 'value') === 'string') {
           return schema;
         }
 
+        // We're not able to determine the type, return empty string
         return '';
-
-        // if (optionAPI('failOnInvalidTypes')) {
-        //   throw new ParseError('missing type for ' + utils.short(schema), path);
-        // }
-        // else {
-        //   return optionAPI('defaultInvalidTypeProduct');
-        // }
       }
 
       var copy = {};

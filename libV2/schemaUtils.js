@@ -753,12 +753,16 @@ let QUERYPARAM = 'query',
     }
 
     if (schema.hasOwnProperty('additionalProperties')) {
-      // This is needed to handle the case where additional properties is set as empty object.
-      // which is valid as per spec and means that additional properties are allowed
-      schema.additionalProperties = _.isBoolean(schema.additionalProperties) ||
-        _.isEmpty(schema.additionalProperties) ? Boolean(schema.additionalProperties) :
-        _resolveSchema(context, schema.additionalProperties, stack, resolveFor, _.cloneDeep(seenRef),
-          utils.addToJsonPath(currentPath, ['additionalProperties']));
+      // _.isEmpty check is needed to handle the case where additional properties is set as empty object.
+      // which is valid as per OAS and means that additional properties are allowed (i.e it is equivalent to true)
+      if (_.isBoolean(schema.additionalProperties) || _.isEmpty(schema.additionalProperties)) {
+        schema.additionalProperties = Boolean(schema.additionalProperties);
+      }
+      else {
+        schema.additionalProperties = _resolveSchema(context, schema.additionalProperties, stack, resolveFor,
+          _.cloneDeep(seenRef), utils.addToJsonPath(currentPath, ['additionalProperties']));
+      }
+
       schema.type = schema.type || SCHEMA_TYPES.object;
     }
 

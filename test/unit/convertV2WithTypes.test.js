@@ -319,7 +319,6 @@ describe('convertV2WithTypes', function() {
                   schema: {
                     deprecated: false,
                     description: 'Help',
-                    // type: 'object',
                     properties: {
                       name: { type: 'string' },
                       style: {
