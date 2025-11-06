@@ -276,7 +276,7 @@ describe('convertV2WithTypes', function() {
       expect(conversionResult.result).to.equal(true);
 
       const items = conversionResult.output[0].data.item;
-      const request = items[0].item ? items[0].item[0].request : items[0].request;
+      const request = items[0].item[0].request;
       const query = request.url.query || [];
 
       expect(query.length).to.be.equal(1);
@@ -349,7 +349,7 @@ describe('convertV2WithTypes', function() {
       expect(conversionResult.result).to.equal(true);
 
       const items = conversionResult.output[0].data.item;
-      const request = items[0].item ? items[0].item[0].request : items[0].request;
+      const request = items[0].item[0].request;
       const query = request.url.query || [];
 
       expect(query.length).to.be.equal(1);
