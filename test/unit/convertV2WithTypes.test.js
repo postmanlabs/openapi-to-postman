@@ -400,7 +400,7 @@ describe('convertV2WithTypes', function() {
         }
       },
       openapi = fs.readFileSync(readOnlyNestedSpec, 'utf8'),
-      options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+      options = { schemaFaker: true, parametersResolution: 'schema' };
 
     Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
       expect(err).to.be.null;
@@ -492,7 +492,7 @@ describe('convertV2WithTypes', function() {
         }
       },
       openapi = fs.readFileSync(testSpec1, 'utf8'),
-      options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+      options = { schemaFaker: true, parametersResolution: 'schema' };
 
     Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
       expect(err).to.be.null;
@@ -1199,7 +1199,7 @@ describe('convertV2WithTypes', function() {
 
   it('types should contain title and description', function(done) {
     const openapi = fs.readFileSync(testSpec2, 'utf8'),
-      options = { schemaFaker: true, exampleParametersResolution: 'schema' };
+      options = { schemaFaker: true, parametersResolution: 'schema' };
 
     Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
       expect(err).to.be.null;
