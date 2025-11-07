@@ -1531,4 +1531,57 @@ describe('convertV2WithTypes', function() {
       done();
     });
   });
+
+  it.only('should omit properties when object schema has no properties', function(done) {
+    const oas = {
+      openapi: '3.0.0',
+      info: { title: 'Empty Properties Test', version: '1.0.0' },
+      paths: {
+        '/empty': {
+          get: {
+            responses: {
+              '200': {
+                description: 'ok',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object'
+                    }
+                  }
+                }
+              }
+            }
+          },
+          post: {
+            requestBody: {
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object'
+                  }
+                }
+              }
+            },
+            responses: {
+              '200': { description: 'ok' }
+            }
+          }
+        }
+      }
+    };
+
+    Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      const body = conversionResult.extractedTypes['get/empty'].response['200'].body;
+      const parsed = JSON.parse(body);
+      expect(parsed).to.have.property('type', 'object');
+      expect(parsed).to.not.have.property('properties');
+
+      const reqBody = conversionResult.extractedTypes['post/empty'].request.body;
+      const parsedReq = JSON.parse(reqBody);
+      expect(parsedReq).to.have.property('type', 'object');
+      expect(parsedReq).to.not.have.property('properties');
+      done();
+    });
+  });
 });
