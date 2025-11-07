@@ -1532,7 +1532,7 @@ describe('convertV2WithTypes', function() {
     });
   });
 
-  it.only('should omit properties when object schema has no properties', function(done) {
+  it('should omit properties when object schema has no properties', function(done) {
     const oas = {
       openapi: '3.0.0',
       info: { title: 'Empty Properties Test', version: '1.0.0' },
