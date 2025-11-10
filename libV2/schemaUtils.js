@@ -890,6 +890,9 @@ let QUERYPARAM = 'query',
       if (schemaDetails.required && schemaDetails.required.length === 0) {
         schemaDetails.required = undefined;
       }
+      if (schemaDetails.properties && Object.keys(schemaDetails.properties).length === 0) {
+        schemaDetails.properties = undefined;
+      }
       return schemaDetails;
     }
     else if (resolvedSchema.type === 'array' && resolvedSchema.items) {
