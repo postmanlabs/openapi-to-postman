@@ -434,7 +434,7 @@ describe('convertV2WithTypes', function() {
               'body': '{\n  "type": "array",\n  "items": {\n    "type": "object",\n    "properties": {\n      "id": {\n        "type": "integer",\n        "format": "int64"\n      },\n      "name": {\n        "type": "string"\n      },\n      "tag": {\n        "type": "string"\n      }\n    },\n    "required": [\n      "id",\n      "name"\n    ]\n  }\n}',
               'headers': '[\n  {\n    "keyName": "x-next",\n    "properties": {\n      "type": "string",\n      "default": "<string>"\n    }\n  }\n]'
             },
-            '500': {
+            'undefined': {
               'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer",\n      "format": "int32"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }
@@ -450,7 +450,7 @@ describe('convertV2WithTypes', function() {
             '201': {
               'headers': '[]'
             },
-            '500': {
+            'undefined': {
               'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer",\n      "format": "int32"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }
@@ -467,7 +467,7 @@ describe('convertV2WithTypes', function() {
               'body': '{\n  "type": "array",\n  "items": {\n    "type": "object",\n    "properties": {\n      "id": {\n        "type": "integer",\n        "format": "int64"\n      },\n      "name": {\n        "type": "string"\n      },\n      "tag": {\n        "type": "string"\n      }\n    },\n    "required": [\n      "id",\n      "name"\n    ]\n  }\n}',
               'headers': '[]'
             },
-            '500': {
+            'undefined': {
               'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer",\n      "format": "int32"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }
@@ -484,7 +484,7 @@ describe('convertV2WithTypes', function() {
               'body': '{\n  "type": "array",\n  "items": {\n    "type": "object",\n    "properties": {\n      "id": {\n        "type": "integer",\n        "format": "int64"\n      },\n      "name": {\n        "type": "string"\n      },\n      "tag": {\n        "type": "string"\n      }\n    },\n    "required": [\n      "id",\n      "name"\n    ]\n  }\n}',
               'headers': '[]'
             },
-            '500': {
+            'undefined': {
               'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer",\n      "format": "int32"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
               'headers': '[]'
             }
@@ -1297,8 +1297,8 @@ describe('convertV2WithTypes', function() {
       expect(res404Body.allOf[0].properties.details).to.have.property('title', 'ErrorDetails');
       expect(res404Body.allOf[0].properties.details).to.have.property('description', 'Optional error details.');
 
-      // Response 500 body
-      const res500Body = JSON.parse(element.response['500'].body);
+      // Response empty status code body
+      const res500Body = JSON.parse(element.response[undefined].body);
       expect(res500Body).to.have.property('title', 'Error');
       expect(res500Body).to.have.property('description', 'Standard error envelope.');
       expect(res500Body.properties.code).to.have.property('title', 'ErrorCode');
