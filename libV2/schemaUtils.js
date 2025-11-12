@@ -2696,7 +2696,7 @@ let QUERYPARAM = 'query',
       code = code.replace(/X|x/g, '0');
       code = code === DEFAULT_RESPONSE_CODE_IN_OAS ? undefined : _.toSafeInteger(code);
 
-      Object.assign(responseTypes, { [code]: responseBodyHeaderObj });
+      Object.assign(responseTypes, { [code || DEFAULT_RESPONSE_CODE_IN_OAS]: responseBodyHeaderObj });
 
       _.forOwn(resolvedExamples, (resolvedExample = {}) => {
         let { body, contentHeader = [], bodyType, acceptHeader, name } = resolvedExample,
