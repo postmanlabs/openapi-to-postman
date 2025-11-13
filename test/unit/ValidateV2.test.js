@@ -103,7 +103,7 @@ function getFoldersByVersion(folder30Path, folder31Path) {
 
 describe('Validate with servers', function () {
 
-  it('Fix for GITHUB#496: Should identify url with fragment', function () {
+  it('Fix for GITHUB#496: Should identify url with fragment', function (done) {
     const openAPI = path.join(__dirname, VALID_OPENAPI_FOLDER_PATH + '/explicit_server_in_path.json'),
       openAPIData = fs.readFileSync(openAPI, 'utf8'),
       options = {
@@ -136,6 +136,8 @@ describe('Validate with servers', function () {
           expect(result.requests[requestId].endpoints[0]).to.not.be.undefined;
           expect(result.requests[requestId].endpoints[0].matched).to.be.true;
         });
+
+        done();
       });
     });
   });
