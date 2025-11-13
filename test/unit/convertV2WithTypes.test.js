@@ -153,6 +153,90 @@ describe('convertV2WithTypes should generate collection conforming to collection
   });
 });
 
+describe('convertV2WithTypes - example originalRequest path variables', function() {
+  it('should include populated path variable values in example originalRequest', function(done) {
+    const openapi = fs.readFileSync(testSpec1, 'utf8'),
+      options = { schemaFaker: true };
+
+    Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      const rootItems = conversionResult.output[0].data.item;
+
+      const findPetIdRequest = (nodes) => {
+        if (!Array.isArray(nodes)) { return null; }
+        for (let i = 0; i < nodes.length; i++) {
+          const node = nodes[i];
+          if (node && node.request) {
+            const vars = node.request.url && node.request.url.variable;
+            if (Array.isArray(vars) && vars.find((v) => { return v && v.key === 'petId'; }) &&
+              Array.isArray(node.response) && node.response.length > 0) {
+              return node;
+            }
+          }
+          if (node && Array.isArray(node.item)) {
+            const found = findPetIdRequest(node.item);
+            if (found) { return found; }
+          }
+        }
+        return null;
+      };
+
+      const item = findPetIdRequest(rootItems);
+      expect(item, 'No request item with petId path variable found').to.not.be.null;
+
+      const reqVars = item.request && item.request.url && item.request.url.variable || [];
+      expect(reqVars).to.be.an('array').that.is.not.empty;
+      const reqPetId = reqVars.find((v) => { return v && v.key === 'petId'; });
+      expect(reqPetId).to.be.an('object');
+      expect(reqPetId.value).to.equal('<string>');
+
+      const resp = item.response && item.response[0];
+      expect(resp, 'No response example found').to.be.an('object');
+      const exVars = resp.originalRequest && resp.originalRequest.url && resp.originalRequest.url.variable || [];
+      expect(exVars).to.be.an('array').that.is.not.empty;
+      const exPetId = exVars.find((v) => { return v && v.key === 'petId'; });
+      expect(exPetId).to.be.an('object');
+      expect(exPetId.value).to.equal('<string>');
+      done();
+    });
+  });
+});
+
+describe('utils.generatePmResponseObject - path param fallback', function() {
+  it('should use url.variables.members when originalRequest.params.pathParams is missing', function() {
+    const utilsV2 = require('../../libV2/utils'),
+      { generatePmResponseObject } = utilsV2;
+
+    const response = {
+      name: 'OK',
+      code: 200,
+      headers: [],
+      body: '{}',
+      // Simulate a user-authored example: only URL with :id and variable; no params.pathParams provided
+      originalRequest: {
+        method: 'GET',
+        url: {
+          raw: 'https://api.example.com/examples/:id',
+          protocol: 'https',
+          host: ['api', 'example', 'com'],
+          path: ['examples', ':id'],
+          variable: [{ key: 'id', value: '123' }],
+          query: []
+        },
+        header: []
+      }
+    };
+
+    const sdkResponse = generatePmResponseObject(response),
+      urlObj = sdkResponse && sdkResponse.originalRequest && sdkResponse.originalRequest.url,
+      renderedPath = urlObj && urlObj.getPath && urlObj.getPath(); // e.g. /examples/123
+
+    expect(renderedPath, 'rendered path should be available').to.be.a('string');
+    expect(renderedPath).to.equal('/examples/123');
+  });
+});
+
 
 describe('convertV2WithTypes', function() {
   it('should contain extracted types' + testSpec1, function () {

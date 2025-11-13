@@ -14,14 +14,18 @@ const _ = require('lodash'),
         url: requestItem.request.url
       },
       originalRequestQueryParams = _.get(response, 'originalRequest.params.queryParams',
-        _.get(response, 'originalRequest.url.query', []));
+        _.get(response, 'originalRequest.url.query', [])),
+      originalRequestPathParams = _.get(response, 'originalRequest.params.pathParams',
+        _.get(requestItem, 'request.url.variables.members', []));
 
     /**
      * Setting variable
      * overriding `originalRequest.url.variable` as the url definition expects
      * 2. Field variable to be array of objects which maps to `clonedItemURL.variables.members`
      */
-    originalRequest.url.variable = _.get(requestItem, 'request.url.variables.members', []);
+    // Preserve any existing originalRequest URL variables if provided; otherwise seed from the generated item
+    originalRequest.url.variable = _.get(response, 'originalRequest.url.variable',
+      _.get(requestItem, 'request.url.variables.members', []));
     originalRequest.url.query = [];
 
     // Setting headers
@@ -38,6 +42,8 @@ const _ = require('lodash'),
 
     // Assimilate original query params as SDK doesn't handle query params well.
     sdkResponse.originalRequest.url.query.assimilate(originalRequestQueryParams);
+    // Ensure path variables are also assimilated so values show up in example requests
+    sdkResponse.originalRequest.url.variables.assimilate(originalRequestPathParams);
 
     /**
      * Adding it here because sdk converts
