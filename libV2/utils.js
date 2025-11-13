@@ -23,9 +23,7 @@ const _ = require('lodash'),
      * overriding `originalRequest.url.variable` as the url definition expects
      * 2. Field variable to be array of objects which maps to `clonedItemURL.variables.members`
      */
-    // Preserve any existing originalRequest URL variables if provided; otherwise seed from the generated item
-    originalRequest.url.variable = _.get(response, 'originalRequest.url.variable',
-      _.get(requestItem, 'request.url.variables.members', []));
+    originalRequest.url.variable = _.get(requestItem, 'request.url.variables.members', []);
     originalRequest.url.query = [];
 
     // Setting headers

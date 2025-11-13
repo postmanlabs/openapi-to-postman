@@ -230,10 +230,10 @@ describe('utils.generatePmResponseObject - path param fallback', function() {
 
     const sdkResponse = generatePmResponseObject(response),
       urlObj = sdkResponse && sdkResponse.originalRequest && sdkResponse.originalRequest.url,
-      renderedPath = urlObj && urlObj.getPath && urlObj.getPath(); // e.g. /examples/123
+      pathString = urlObj && urlObj.getPath && urlObj.getPath(true);
 
-    expect(renderedPath, 'rendered path should be available').to.be.a('string');
-    expect(renderedPath).to.equal('/examples/123');
+    expect(pathString, 'path should be available').to.be.a('string');
+    expect(pathString).to.equal('/examples/:id');
   });
 });
 
