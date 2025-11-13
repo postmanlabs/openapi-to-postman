@@ -1585,6 +1585,144 @@ describe('convertV2WithTypes', function() {
     });
   });
 
+  it('should preserve the original order of required properties from schema', function(done) {
+    const oas = {
+      openapi: '3.0.0',
+      info: { title: 'Required Properties Order Test', version: '1.0.0' },
+      paths: {
+        '/users': {
+          post: {
+            requestBody: {
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string' },
+                      name: { type: 'string' },
+                      email: { type: 'string' },
+                      age: { type: 'integer' },
+                      address: { type: 'string' }
+                    },
+                    // Intentionally define required properties in a different order than properties
+                    required: ['email', 'name', 'id', 'address']
+                  }
+                }
+              }
+            },
+            responses: {
+              '201': {
+                description: 'User created',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        userId: { type: 'string' },
+                        username: { type: 'string' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        profile: { type: 'object' }
+                      },
+                      // Different order for response schema as well
+                      required: ['createdAt', 'userId', 'username']
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+      // Check request body required properties order
+      const requestBody = conversionResult.extractedTypes['post/users'].request.body;
+      const parsedRequestBody = JSON.parse(requestBody);
+
+      expect(parsedRequestBody).to.have.property('required');
+      expect(parsedRequestBody.required).to.deep.equal(['email', 'name', 'id', 'address']);
+
+      // Check response body required properties order
+      const responseBody = conversionResult.extractedTypes['post/users'].response['201'].body;
+      const parsedResponseBody = JSON.parse(responseBody);
+
+      expect(parsedResponseBody).to.have.property('required');
+      expect(parsedResponseBody.required).to.deep.equal(['createdAt', 'userId', 'username']);
+
+      done();
+    });
+  });
+
+  it('should handle schemas without required properties correctly', function(done) {
+    const oas = {
+      openapi: '3.0.0',
+      info: { title: 'No Required Properties Test', version: '1.0.0' },
+      paths: {
+        '/optional': {
+          post: {
+            requestBody: {
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'string' },
+                      age: { type: 'integer' }
+                    }
+                    // No required array defined
+                  }
+                }
+              }
+            },
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        result: { type: 'string' }
+                      },
+                      required: [] // Empty required array
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+      // Check request body (schema with no required array)
+      const requestBody = conversionResult.extractedTypes['post/optional'].request.body;
+      const parsedRequestBody = JSON.parse(requestBody);
+
+      // If no required array is defined in the original schema, it should default to empty array
+      expect(parsedRequestBody).to.not.have.property('required');
+
+      // Check response body (schema with empty required array)
+      const responseBody = conversionResult.extractedTypes['post/optional'].response['200'].body;
+      const parsedResponseBody = JSON.parse(responseBody);
+
+      expect(parsedResponseBody).to.have.property('required');
+      expect(parsedResponseBody.required).to.deep.equal([]);
+
+      done();
+    });
+  });
+
   describe('4xx and 5xx response code normalization', function() {
     it('should convert 4xx wildcard response code to 400 in collection while preserving type data', function(done) {
       const oas = {

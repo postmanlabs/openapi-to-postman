@@ -833,9 +833,8 @@ let QUERYPARAM = 'query',
           title: resolvedSchema.title,
           type: resolvedSchema.type,
           properties: {},
-          required: []
-        },
-        requiredProperties = new Set(resolvedSchema.required || []);
+          required: resolvedSchema.required || []
+        };
 
       for (let [propName, propValue] of Object.entries(resolvedSchema.properties)) {
         if (!propValue.type && !propValue.anyOf && !propValue.oneOf && !propValue.allOf) {
@@ -855,10 +854,6 @@ let QUERYPARAM = 'query',
           description: propValue.description,
           format: propValue.format
         };
-
-        if (requiredProperties.has(propName)) {
-          schemaDetails.required.push(propName);
-        }
 
         if (propValue.anyOf) {
           propertyDetails.anyOf = propValue.anyOf.map((schema) => {
@@ -888,7 +883,7 @@ let QUERYPARAM = 'query',
 
         schemaDetails.properties[propName] = propertyDetails;
       }
-      if (schemaDetails.required && schemaDetails.required.length === 0) {
+      if (!resolvedSchema.required && schemaDetails.required && schemaDetails.required.length === 0) {
         schemaDetails.required = undefined;
       }
       if (schemaDetails.properties && Object.keys(schemaDetails.properties).length === 0) {
