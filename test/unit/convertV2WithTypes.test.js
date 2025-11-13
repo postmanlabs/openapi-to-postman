@@ -1709,7 +1709,6 @@ describe('convertV2WithTypes', function() {
       const requestBody = conversionResult.extractedTypes['post/optional'].request.body;
       const parsedRequestBody = JSON.parse(requestBody);
 
-      // If no required array is defined in the original schema, it should default to empty array
       expect(parsedRequestBody).to.not.have.property('required');
 
       // Check response body (schema with empty required array)
