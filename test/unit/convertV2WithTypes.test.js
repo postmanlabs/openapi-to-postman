@@ -1584,4 +1584,568 @@ describe('convertV2WithTypes', function() {
       done();
     });
   });
+
+  describe('4xx and 5xx response code normalization', function() {
+    it('should convert 4xx wildcard response code to 400 in collection while preserving type data', function(done) {
+      const oas = {
+        openapi: '3.0.0',
+        info: { title: '4xx Wildcard Response Test', version: '1.0.0' },
+        paths: {
+          '/api/resource': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'Success',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string' },
+                          name: { type: 'string' }
+                        }
+                      }
+                    }
+                  }
+                },
+                '4xx': {
+                  description: 'Client Error',
+                  headers: {
+                    'X-Error-Code': {
+                      description: 'Error classification',
+                      schema: { type: 'string', enum: ['validation', 'authentication', 'authorization'] }
+                    }
+                  },
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          error: { type: 'string' },
+                          code: { type: 'integer', minimum: 400, maximum: 499 },
+                          details: {
+                            type: 'object',
+                            properties: {
+                              field: { type: 'string' },
+                              message: { type: 'string' }
+                            }
+                          }
+                        },
+                        required: ['error', 'code']
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+
+        // Verify collection responses are normalized to 400
+        const collection = conversionResult.output[0].data;
+        const request = collection.item[0].item[0].item[0];
+        const responses = request.response;
+
+        // Should have responses with codes 200 and 400 (normalized from 4xx)
+        const responseCodes = responses.map((r) => { return r.code; });
+        expect(responseCodes).to.include(200);
+        expect(responseCodes).to.include(400);
+        expect(responseCodes).to.not.include('4xx');
+
+        // Verify type data preservation in extractedTypes with original 4xx key
+        const extractedTypes = conversionResult.extractedTypes['get/api/resource'];
+        expect(extractedTypes).to.be.an('object');
+        expect(extractedTypes.response).to.have.property('200');
+        expect(extractedTypes.response).to.have.property('400');
+
+        // Verify 4xx response type data is preserved
+        const response4xx = JSON.parse(extractedTypes.response['400'].body);
+        expect(response4xx).to.have.property('type', 'object');
+        expect(response4xx.properties).to.have.property('error');
+        expect(response4xx.properties).to.have.property('code');
+        expect(response4xx.properties).to.have.property('details');
+        expect(response4xx.properties.code).to.have.property('minimum', 400);
+        expect(response4xx.properties.code).to.have.property('maximum', 499);
+        expect(response4xx.required).to.deep.equal(['error', 'code']);
+
+        // Verify 4xx response headers are preserved
+        const response4xxHeaders = JSON.parse(extractedTypes.response['400'].headers);
+        expect(response4xxHeaders).to.be.an('array').with.length(1);
+        expect(response4xxHeaders[0]).to.have.property('keyName', 'X-Error-Code');
+        expect(response4xxHeaders[0].properties).to.have.property('type', 'string');
+        expect(response4xxHeaders[0].properties).to.have.property('enum');
+        expect(response4xxHeaders[0].properties.enum).to.deep.equal(['validation', 'authentication', 'authorization']);
+
+        done();
+      });
+    });
+
+    it('should convert 5xx wildcard response code to 500 in collection while preserving type data', function(done) {
+      const oas = {
+        openapi: '3.0.0',
+        info: { title: '5xx Wildcard Response Test', version: '1.0.0' },
+        paths: {
+          '/api/server-test': {
+            post: {
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        data: { type: 'string' }
+                      }
+                    }
+                  }
+                }
+              },
+              responses: {
+                '201': {
+                  description: 'Created',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string' },
+                          status: { type: 'string' }
+                        }
+                      }
+                    }
+                  }
+                },
+                '5xx': {
+                  description: 'Server Error',
+                  headers: {
+                    'X-Request-ID': {
+                      description: 'Request tracking identifier',
+                      schema: { type: 'string', format: 'uuid' }
+                    },
+                    'Retry-After': {
+                      description: 'Seconds to wait before retrying',
+                      schema: { type: 'integer', minimum: 1, maximum: 3600 }
+                    }
+                  },
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          error: { type: 'string' },
+                          stackTrace: { type: 'string' },
+                          requestId: { type: 'string', format: 'uuid' },
+                          serverInfo: {
+                            type: 'object',
+                            properties: {
+                              version: { type: 'string' },
+                              environment: { type: 'string', enum: ['dev', 'staging', 'prod'] }
+                            }
+                          }
+                        },
+                        required: ['error', 'requestId']
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+
+        // Verify collection responses are normalized to 500
+        const collection = conversionResult.output[0].data;
+        const request = collection.item[0].item[0].item[0];
+        const responses = request.response;
+
+        // Should have responses with codes 201 and 500 (normalized from 5xx)
+        const responseCodes = responses.map((r) => { return r.code; });
+        expect(responseCodes).to.include(201);
+        expect(responseCodes).to.include(500);
+        expect(responseCodes).to.not.include('5xx');
+
+        // Verify type data preservation in extractedTypes with original 5xx key
+        const extractedTypes = conversionResult.extractedTypes['post/api/server-test'];
+        expect(extractedTypes).to.be.an('object');
+        expect(extractedTypes.response).to.have.property('201');
+        expect(extractedTypes.response).to.have.property('500');
+
+        // Verify 5xx response type data is preserved
+        const response5xx = JSON.parse(extractedTypes.response['500'].body);
+        expect(response5xx).to.have.property('type', 'object');
+        expect(response5xx.properties).to.have.property('error');
+        expect(response5xx.properties).to.have.property('stackTrace');
+        expect(response5xx.properties).to.have.property('requestId');
+        expect(response5xx.properties).to.have.property('serverInfo');
+        expect(response5xx.properties.requestId).to.have.property('format', 'uuid');
+        expect(response5xx.properties.serverInfo.properties).to.have.property('environment');
+        expect(response5xx.properties.serverInfo.properties.environment.enum).to.deep.equal(['dev', 'staging', 'prod']);
+        expect(response5xx.required).to.deep.equal(['error', 'requestId']);
+
+        // Verify 5xx response headers are preserved
+        const response5xxHeaders = JSON.parse(extractedTypes.response['500'].headers);
+        expect(response5xxHeaders).to.be.an('array').with.length(2);
+        const requestIdHeader = response5xxHeaders.find((h) => { return h.keyName === 'X-Request-ID'; });
+        expect(requestIdHeader).to.be.an('object');
+        expect(requestIdHeader.properties).to.have.property('type', 'string');
+        expect(requestIdHeader.properties).to.have.property('format', 'uuid');
+
+        const retryAfterHeader = response5xxHeaders.find((h) => { return h.keyName === 'Retry-After'; });
+        expect(retryAfterHeader).to.be.an('object');
+        expect(retryAfterHeader.properties).to.have.property('type', 'integer');
+        expect(retryAfterHeader.properties).to.have.property('minimum', 1);
+        expect(retryAfterHeader.properties).to.have.property('maximum', 3600);
+
+        done();
+      });
+    });
+
+    it('should handle mixed 4xx/5xx wildcard responses with headers and preserve all type data', function(done) {
+      const oas = {
+        openapi: '3.0.0',
+        info: { title: 'Mixed Wildcard Response Test', version: '1.0.0' },
+        paths: {
+          '/api/mixed-responses': {
+            put: {
+              parameters: [
+                {
+                  name: 'id',
+                  in: 'path',
+                  required: true,
+                  schema: { type: 'string' }
+                }
+              ],
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string' },
+                        value: { type: 'number' }
+                      }
+                    }
+                  }
+                }
+              },
+              responses: {
+                '200': {
+                  description: 'Updated successfully',
+                  headers: {
+                    'X-Updated-At': {
+                      description: 'Update timestamp',
+                      schema: { type: 'string', format: 'date-time' }
+                    }
+                  },
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          success: { type: 'boolean' },
+                          updatedId: { type: 'string' }
+                        }
+                      }
+                    }
+                  }
+                },
+                '4xx': {
+                  description: 'Client Error Response',
+                  headers: {
+                    'X-Rate-Limit-Remaining': {
+                      description: 'Requests remaining',
+                      schema: { type: 'integer', minimum: 0 }
+                    },
+                    'X-Error-Context': {
+                      description: 'Error context information',
+                      schema: { type: 'string' }
+                    }
+                  },
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          accessDenied: { type: 'boolean' },
+                          reason: { type: 'string', enum: ['insufficient_permissions', 'rate_limit_exceeded', 'validation_failed'] },
+                          conflictType: { type: 'string' },
+                          suggestions: {
+                            type: 'array',
+                            items: { type: 'string' }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                '5xx': {
+                  description: 'Server Error Response',
+                  headers: {
+                    'Retry-After': {
+                      description: 'Retry after seconds',
+                      schema: { type: 'integer', minimum: 1 }
+                    },
+                    'X-Correlation-ID': {
+                      description: 'Request correlation identifier',
+                      schema: { type: 'string', format: 'uuid' }
+                    }
+                  },
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          featureFlag: { type: 'string' },
+                          implementationStatus: { type: 'string', enum: ['planned', 'in_development', 'blocked'] },
+                          serverError: {
+                            type: 'object',
+                            properties: {
+                              code: { type: 'integer', minimum: 500, maximum: 599 },
+                              message: { type: 'string' },
+                              timestamp: { type: 'string', format: 'date-time' }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+
+        // Verify collection response normalization
+        const collection = conversionResult.output[0].data;
+        const request = collection.item[0].item[0].item[0];
+        const responses = request.response;
+        const responseCodes = responses.map((r) => { return r.code; });
+
+        expect(responseCodes).to.include(200);
+        expect(responseCodes).to.include(400); // Normalized from 4xx
+        expect(responseCodes).to.include(500); // Normalized from 5xx
+        expect(responseCodes).to.not.include('4xx');
+        expect(responseCodes).to.not.include('5xx');
+
+        // Verify all original response codes are preserved in extractedTypes
+        const extractedTypes = conversionResult.extractedTypes['put/api/mixed-responses'];
+        expect(extractedTypes.response).to.have.property('200');
+        expect(extractedTypes.response).to.have.property('400');
+        expect(extractedTypes.response).to.have.property('500');
+
+        // Verify 4xx response with headers and body
+        const response4xxHeaders = JSON.parse(extractedTypes.response['400'].headers);
+        expect(response4xxHeaders).to.be.an('array').with.length(2);
+
+        const rateLimitHeader = response4xxHeaders.find((h) => { return h.keyName === 'X-Rate-Limit-Remaining'; });
+        expect(rateLimitHeader).to.be.an('object');
+        expect(rateLimitHeader.properties).to.have.property('type', 'integer');
+        expect(rateLimitHeader.properties).to.have.property('minimum', 0);
+
+        const errorContextHeader = response4xxHeaders.find((h) => { return h.keyName === 'X-Error-Context'; });
+        expect(errorContextHeader).to.be.an('object');
+        expect(errorContextHeader.properties).to.have.property('type', 'string');
+
+        const response4xxBody = JSON.parse(extractedTypes.response['400'].body);
+        expect(response4xxBody.properties).to.have.property('accessDenied');
+        expect(response4xxBody.properties).to.have.property('reason');
+        expect(response4xxBody.properties).to.have.property('conflictType');
+        expect(response4xxBody.properties).to.have.property('suggestions');
+        expect(response4xxBody.properties.reason).to.have.property('enum');
+        expect(response4xxBody.properties.reason.enum).to.deep.equal(['insufficient_permissions', 'rate_limit_exceeded', 'validation_failed']);
+        expect(response4xxBody.properties.suggestions).to.have.property('type', 'array');
+        expect(response4xxBody.properties.suggestions.items).to.have.property('type', 'string');
+
+        // Verify 5xx response with headers and body
+        const response5xxHeaders = JSON.parse(extractedTypes.response['500'].headers);
+        expect(response5xxHeaders).to.be.an('array').with.length(2);
+
+        const retryAfterHeader = response5xxHeaders.find((h) => { return h.keyName === 'Retry-After'; });
+        expect(retryAfterHeader).to.be.an('object');
+        expect(retryAfterHeader.properties).to.have.property('type', 'integer');
+        expect(retryAfterHeader.properties).to.have.property('minimum', 1);
+
+        const correlationHeader = response5xxHeaders.find((h) => { return h.keyName === 'X-Correlation-ID'; });
+        expect(correlationHeader).to.be.an('object');
+        expect(correlationHeader.properties).to.have.property('type', 'string');
+        expect(correlationHeader.properties).to.have.property('format', 'uuid');
+
+        const response5xxBody = JSON.parse(extractedTypes.response['500'].body);
+        expect(response5xxBody.properties).to.have.property('featureFlag');
+        expect(response5xxBody.properties).to.have.property('implementationStatus');
+        expect(response5xxBody.properties).to.have.property('serverError');
+        expect(response5xxBody.properties.implementationStatus).to.have.property('enum');
+        expect(response5xxBody.properties.implementationStatus.enum).to.deep.equal(['planned', 'in_development', 'blocked']);
+        expect(response5xxBody.properties.serverError).to.have.property('type', 'object');
+        expect(response5xxBody.properties.serverError.properties).to.have.property('code');
+        expect(response5xxBody.properties.serverError.properties.code).to.have.property('minimum', 500);
+        expect(response5xxBody.properties.serverError.properties.code).to.have.property('maximum', 599);
+
+        done();
+      });
+    });
+
+    it('should handle responses with only 4xx/5xx wildcard codes and normalize appropriately', function(done) {
+      const oas = {
+        openapi: '3.0.0',
+        info: { title: 'Error Only Wildcard Response Test', version: '1.0.0' },
+        paths: {
+          '/api/error-only': {
+            delete: {
+              parameters: [
+                {
+                  name: 'id',
+                  in: 'path',
+                  required: true,
+                  schema: { type: 'string' }
+                }
+              ],
+              responses: {
+                '4xx': {
+                  description: 'Client Error',
+                  headers: {
+                    'X-Validation-Errors': {
+                      description: 'Number of validation errors',
+                      schema: { type: 'integer', minimum: 0 }
+                    }
+                  },
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          validationErrors: {
+                            type: 'array',
+                            items: {
+                              type: 'object',
+                              properties: {
+                                field: { type: 'string' },
+                                code: { type: 'string' },
+                                message: { type: 'string' }
+                              }
+                            }
+                          },
+                          deletedAt: { type: 'string', format: 'date-time' },
+                          reason: { type: 'string', enum: ['not_found', 'gone', 'validation_failed'] }
+                        }
+                      }
+                    }
+                  }
+                },
+                '5xx': {
+                  description: 'Server Error',
+                  headers: {
+                    'X-Error-ID': {
+                      description: 'Server error identifier',
+                      schema: { type: 'string', format: 'uuid' }
+                    }
+                  },
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          errorId: { type: 'string', format: 'uuid' },
+                          message: { type: 'string' },
+                          severity: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
+                          metadata: {
+                            type: 'object',
+                            properties: {
+                              timestamp: { type: 'string', format: 'date-time' },
+                              service: { type: 'string' },
+                              version: { type: 'string' }
+                            }
+                          }
+                        },
+                        required: ['errorId', 'message']
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+
+        // Verify collection response normalization - should have 400 and 500
+        const collection = conversionResult.output[0].data;
+        const request = collection.item[0].item[0].item[0];
+        const responses = request.response;
+        const responseCodes = responses.map((r) => { return r.code; });
+
+        expect(responseCodes).to.include(400); // Normalized from 4xx
+        expect(responseCodes).to.include(500); // Normalized from 5xx
+        expect(responseCodes).to.not.include('4xx');
+        expect(responseCodes).to.not.include('5xx');
+
+        // Verify all original response codes are preserved in extractedTypes
+        const extractedTypes = conversionResult.extractedTypes['delete/api/error-only'];
+        expect(extractedTypes.response).to.have.property('400');
+        expect(extractedTypes.response).to.have.property('500');
+
+        // Verify 4xx response type data
+        const response4xxHeaders = JSON.parse(extractedTypes.response['400'].headers);
+        expect(response4xxHeaders).to.be.an('array').with.length(1);
+        expect(response4xxHeaders[0]).to.have.property('keyName', 'X-Validation-Errors');
+        expect(response4xxHeaders[0].properties).to.have.property('type', 'integer');
+        expect(response4xxHeaders[0].properties).to.have.property('minimum', 0);
+
+        const response4xxBody = JSON.parse(extractedTypes.response['400'].body);
+        expect(response4xxBody.properties).to.have.property('validationErrors');
+        expect(response4xxBody.properties).to.have.property('deletedAt');
+        expect(response4xxBody.properties).to.have.property('reason');
+        expect(response4xxBody.properties.validationErrors).to.have.property('type', 'array');
+        expect(response4xxBody.properties.validationErrors.items).to.have.property('type', 'object');
+        expect(response4xxBody.properties.validationErrors.items.properties).to.have.property('field');
+        expect(response4xxBody.properties.validationErrors.items.properties).to.have.property('code');
+        expect(response4xxBody.properties.validationErrors.items.properties).to.have.property('message');
+        expect(response4xxBody.properties.deletedAt).to.have.property('format', 'date-time');
+        expect(response4xxBody.properties.reason).to.have.property('enum');
+        expect(response4xxBody.properties.reason.enum).to.deep.equal(['not_found', 'gone', 'validation_failed']);
+
+        // Verify 5xx response type data
+        const response5xxHeaders = JSON.parse(extractedTypes.response['500'].headers);
+        expect(response5xxHeaders).to.be.an('array').with.length(1);
+        expect(response5xxHeaders[0]).to.have.property('keyName', 'X-Error-ID');
+        expect(response5xxHeaders[0].properties).to.have.property('type', 'string');
+        expect(response5xxHeaders[0].properties).to.have.property('format', 'uuid');
+
+        const response5xxBody = JSON.parse(extractedTypes.response['500'].body);
+        expect(response5xxBody.properties).to.have.property('errorId');
+        expect(response5xxBody.properties).to.have.property('message');
+        expect(response5xxBody.properties).to.have.property('severity');
+        expect(response5xxBody.properties).to.have.property('metadata');
+        expect(response5xxBody.properties.errorId).to.have.property('format', 'uuid');
+        expect(response5xxBody.properties.severity).to.have.property('enum');
+        expect(response5xxBody.properties.severity.enum).to.deep.equal(['low', 'medium', 'high', 'critical']);
+        expect(response5xxBody.properties.metadata).to.have.property('type', 'object');
+        expect(response5xxBody.properties.metadata.properties).to.have.property('timestamp');
+        expect(response5xxBody.properties.metadata.properties).to.have.property('service');
+        expect(response5xxBody.properties.metadata.properties).to.have.property('version');
+        expect(response5xxBody.properties.metadata.properties.timestamp).to.have.property('format', 'date-time');
+        expect(response5xxBody.required).to.deep.equal(['errorId', 'message']);
+
+        done();
+      });
+    });
+  });
 });
