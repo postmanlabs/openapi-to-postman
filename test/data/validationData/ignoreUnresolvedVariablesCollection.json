@@ -96,7 +96,6 @@
                 }
               },
               "status": "Internal Server Error",
-              "code": 500,
               "header": [
                 {
                   "key": "Content-Type",

@@ -22,7 +22,7 @@ const _ = require('lodash'),
   ajvValidationError = require('../lib/ajValidation/ajvValidationError'),
   { validateSchema } = require('../lib/ajValidation/ajvValidation'),
   { formatDataPath, checkIsCorrectType, isKnownType,
-    getServersPathVars } = require('../lib/common/schemaUtilsCommon.js'),
+    getServersPathVars, DEFAULT_RESPONSE_CODE_IN_OAS } = require('../lib/common/schemaUtilsCommon.js'),
 
   { findMatchingRequestFromSchema, isPmVariable } = require('./requestMatchingUtils'),
 
@@ -2424,7 +2424,7 @@ function checkResponses (context, transaction, transactionPathPrefix, schemaPath
   // loop through all responses
   // for each response, find the appropriate response from schemaPath, and then validate response body and headers
   async.map(responses, (response, responseCallback) => {
-    let thisResponseCode = _.toString(response.code),
+    let thisResponseCode = _.toString(response.code) || DEFAULT_RESPONSE_CODE_IN_OAS,
       thisSchemaResponse = _.get(schemaPath, ['responses', thisResponseCode], _.get(schemaPath, 'responses.default')),
       responsePathPrefix = thisResponseCode;
 
@@ -2503,8 +2503,6 @@ function checkResponses (context, transaction, transactionPathPrefix, schemaPath
       missingResponses = [];
 
     _.each(_.get(schemaPath, 'responses'), (responseObj, responseCode) => {
-      responseCode = responseCode === 'default' ? '500' : responseCode;
-
       if (!_.includes(matchedResponses, responseCode)) {
         let mismatchObj = {
           property: 'RESPONSE',

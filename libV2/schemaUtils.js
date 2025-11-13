@@ -6,6 +6,7 @@ const schemaFaker = require('../assets/json-schema-faker'),
   mergeAllOf = require('json-schema-merge-allof'),
   xmlFaker = require('./xmlSchemaFaker.js'),
   URLENCODED = 'application/x-www-form-urlencoded',
+  { DEFAULT_RESPONSE_CODE_IN_OAS } = require('../lib/common/schemaUtilsCommon.js'),
   APP_JSON = 'application/json',
   APP_JS = 'application/javascript',
   TEXT_XML = 'text/xml',
@@ -2693,9 +2694,9 @@ let QUERYPARAM = 'query',
 
       // replace 'X' char in code with '0' | E.g. 5xx -> 500
       code = code.replace(/X|x/g, '0');
-      code = code === 'default' ? 500 : _.toSafeInteger(code);
+      code = code === DEFAULT_RESPONSE_CODE_IN_OAS ? undefined : _.toSafeInteger(code);
 
-      Object.assign(responseTypes, { [code]: responseBodyHeaderObj });
+      Object.assign(responseTypes, { [code || DEFAULT_RESPONSE_CODE_IN_OAS]: responseBodyHeaderObj });
 
       _.forOwn(resolvedExamples, (resolvedExample = {}) => {
         let { body, contentHeader = [], bodyType, acceptHeader, name } = resolvedExample,

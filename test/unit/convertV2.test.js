@@ -2723,13 +2723,13 @@ describe('The convert v2 Function', function() {
           expect(JSON.parse(item.response[1].body)).to.eql(okResExample);
 
           expect(item.response[2].name).to.eql('ok_example');
-          expect(item.response[2].code).to.eql(500);
+          expect(item.response[2].code).to.eql(undefined);
           expect(item.response[2]._postman_previewlanguage).to.eql('json');
           expect(JSON.parse(item.response[2].originalRequest.body.raw)).to.eql(okReqExample);
           expect(JSON.parse(item.response[2].body)).to.eql(failResExample);
 
           expect(item.response[3].name).to.eql('not_ok_example');
-          expect(item.response[3].code).to.eql(500);
+          expect(item.response[3].code).to.eql(undefined);
           expect(item.response[3]._postman_previewlanguage).to.eql('json');
           expect(JSON.parse(item.response[3].originalRequest.body.raw)).to.eql(failReqExample);
           expect(JSON.parse(item.response[3].body)).to.eql(failResExample);
