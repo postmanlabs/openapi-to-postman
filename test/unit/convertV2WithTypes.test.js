@@ -1709,12 +1709,19 @@ describe('convertV2WithTypes', function() {
       const requestBody = conversionResult.extractedTypes['post/optional'].request.body;
       const parsedRequestBody = JSON.parse(requestBody);
 
+      // Schema has properties object, so it should be preserved
+      expect(parsedRequestBody).to.have.property('properties');
+      expect(parsedRequestBody.properties).to.have.property('name');
+      expect(parsedRequestBody.properties).to.have.property('age');
+      // When no required array is defined in original schema, it should not be present in the output
       expect(parsedRequestBody).to.not.have.property('required');
 
       // Check response body (schema with empty required array)
       const responseBody = conversionResult.extractedTypes['post/optional'].response['200'].body;
       const parsedResponseBody = JSON.parse(responseBody);
 
+      expect(parsedResponseBody).to.have.property('properties');
+      expect(parsedResponseBody.properties).to.have.property('result');
       expect(parsedResponseBody).to.have.property('required');
       expect(parsedResponseBody.required).to.deep.equal([]);
 
