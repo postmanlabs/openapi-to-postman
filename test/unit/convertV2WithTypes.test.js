@@ -153,6 +153,32 @@ describe('convertV2WithTypes should generate collection conforming to collection
   });
 });
 
+describe('convertV2WithTypes - example originalRequest path variables', function() {
+  it('should include populated path variable values in example originalRequest', function(done) {
+    const openapi = fs.readFileSync(testSpec1, 'utf8'),
+      options = { parametersResolution: 'schema' };
+
+    Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      const item = conversionResult.output[0].data.item[1].item[0].item[0];
+
+      const requestPathVariables = item.request && item.request.url && item.request.url.variable || [];
+      expect(requestPathVariables).to.be.an('array').that.is.not.empty;
+      const requestPetIdVariable = requestPathVariables.find((v) => { return v && v.key === 'petId'; });
+      expect(requestPetIdVariable).to.be.an('object');
+      expect(requestPetIdVariable.value).to.equal('<string>');
+
+      const resp = item.response && item.response[0],
+        exampleRequestPathVariables = resp.originalRequest && resp.originalRequest.url && resp.originalRequest.url.variable || [];
+      expect(exampleRequestPathVariables).to.be.an('array').that.is.not.empty;
+      const examplePetIdVariable = exampleRequestPathVariables.find((v) => { return v && v.key === 'petId'; });
+      expect(examplePetIdVariable).to.be.an('object');
+      expect(examplePetIdVariable.value).to.equal('<string>');
+      done();
+    });
+  });
+});
 
 describe('convertV2WithTypes', function() {
   it('should contain extracted types' + testSpec1, function () {
@@ -1581,6 +1607,150 @@ describe('convertV2WithTypes', function() {
       const parsedReq = JSON.parse(reqBody);
       expect(parsedReq).to.have.property('type', 'object');
       expect(parsedReq).to.not.have.property('properties');
+      done();
+    });
+  });
+
+  it('should preserve the original order of required properties from schema', function(done) {
+    const oas = {
+      openapi: '3.0.0',
+      info: { title: 'Required Properties Order Test', version: '1.0.0' },
+      paths: {
+        '/users': {
+          post: {
+            requestBody: {
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string' },
+                      name: { type: 'string' },
+                      email: { type: 'string' },
+                      age: { type: 'integer' },
+                      address: { type: 'string' }
+                    },
+                    // Intentionally define required properties in a different order than properties
+                    required: ['email', 'name', 'id', 'address']
+                  }
+                }
+              }
+            },
+            responses: {
+              '201': {
+                description: 'User created',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        userId: { type: 'string' },
+                        username: { type: 'string' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        profile: { type: 'object' }
+                      },
+                      // Different order for response schema as well
+                      required: ['createdAt', 'userId', 'username']
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+      // Check request body required properties order
+      const requestBody = conversionResult.extractedTypes['post/users'].request.body;
+      const parsedRequestBody = JSON.parse(requestBody);
+
+      expect(parsedRequestBody).to.have.property('required');
+      expect(parsedRequestBody.required).to.deep.equal(['email', 'name', 'id', 'address']);
+
+      // Check response body required properties order
+      const responseBody = conversionResult.extractedTypes['post/users'].response['201'].body;
+      const parsedResponseBody = JSON.parse(responseBody);
+
+      expect(parsedResponseBody).to.have.property('required');
+      expect(parsedResponseBody.required).to.deep.equal(['createdAt', 'userId', 'username']);
+
+      done();
+    });
+  });
+
+  it('should handle schemas without required properties correctly', function(done) {
+    const oas = {
+      openapi: '3.0.0',
+      info: { title: 'No Required Properties Test', version: '1.0.0' },
+      paths: {
+        '/optional': {
+          post: {
+            requestBody: {
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'string' },
+                      age: { type: 'integer' }
+                    }
+                    // No required array defined
+                  }
+                }
+              }
+            },
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        result: { type: 'string' }
+                      },
+                      required: [] // Empty required array
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+      // Check request body (schema with no required array)
+      const requestBody = conversionResult.extractedTypes['post/optional'].request.body;
+      const parsedRequestBody = JSON.parse(requestBody);
+
+      // Schema has properties object, so it should be preserved
+      expect(parsedRequestBody).to.have.property('properties');
+      expect(parsedRequestBody.properties).to.have.property('name');
+      expect(parsedRequestBody.properties).to.have.property('age');
+      // When no required array is defined in original schema, it should not be present in the output
+      expect(parsedRequestBody).to.not.have.property('required');
+
+      // Check response body (schema with empty required array)
+      const responseBody = conversionResult.extractedTypes['post/optional'].response['200'].body;
+      const parsedResponseBody = JSON.parse(responseBody);
+
+      expect(parsedResponseBody).to.have.property('properties');
+      expect(parsedResponseBody.properties).to.have.property('result');
+      expect(parsedResponseBody).to.have.property('required');
+      expect(parsedResponseBody.required).to.deep.equal([]);
+
       done();
     });
   });
