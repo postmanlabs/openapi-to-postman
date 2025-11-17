@@ -153,6 +153,32 @@ describe('convertV2WithTypes should generate collection conforming to collection
   });
 });
 
+describe('convertV2WithTypes - example originalRequest path variables', function() {
+  it('should include populated path variable values in example originalRequest', function(done) {
+    const openapi = fs.readFileSync(testSpec1, 'utf8'),
+      options = { parametersResolution: 'schema' };
+
+    Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      const item = conversionResult.output[0].data.item[1].item[0].item[0];
+
+      const requestPathVariables = item.request && item.request.url && item.request.url.variable || [];
+      expect(requestPathVariables).to.be.an('array').that.is.not.empty;
+      const requestPetIdVariable = requestPathVariables.find((v) => { return v && v.key === 'petId'; });
+      expect(requestPetIdVariable).to.be.an('object');
+      expect(requestPetIdVariable.value).to.equal('<string>');
+
+      const resp = item.response && item.response[0],
+        exampleRequestPathVariables = resp.originalRequest && resp.originalRequest.url && resp.originalRequest.url.variable || [];
+      expect(exampleRequestPathVariables).to.be.an('array').that.is.not.empty;
+      const examplePetIdVariable = exampleRequestPathVariables.find((v) => { return v && v.key === 'petId'; });
+      expect(examplePetIdVariable).to.be.an('object');
+      expect(examplePetIdVariable.value).to.equal('<string>');
+      done();
+    });
+  });
+});
 
 describe('convertV2WithTypes', function() {
   it('should contain extracted types' + testSpec1, function () {
