@@ -14,7 +14,9 @@ const _ = require('lodash'),
         url: requestItem.request.url
       },
       originalRequestQueryParams = _.get(response, 'originalRequest.params.queryParams',
-        _.get(response, 'originalRequest.url.query', []));
+        _.get(response, 'originalRequest.url.query', [])),
+      originalRequestPathParams = _.get(response, 'originalRequest.params.pathParams',
+        _.get(requestItem, 'request.url.variables.members', []));
 
     /**
      * Setting variable
@@ -38,6 +40,7 @@ const _ = require('lodash'),
 
     // Assimilate original query params as SDK doesn't handle query params well.
     sdkResponse.originalRequest.url.query.assimilate(originalRequestQueryParams);
+    sdkResponse.originalRequest.url.variables.assimilate(originalRequestPathParams);
 
     /**
      * Adding it here because sdk converts
