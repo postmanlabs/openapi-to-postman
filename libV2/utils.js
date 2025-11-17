@@ -40,7 +40,6 @@ const _ = require('lodash'),
 
     // Assimilate original query params as SDK doesn't handle query params well.
     sdkResponse.originalRequest.url.query.assimilate(originalRequestQueryParams);
-    // Ensure path variables are also assimilated so values show up in example requests
     sdkResponse.originalRequest.url.variables.assimilate(originalRequestPathParams);
 
     /**

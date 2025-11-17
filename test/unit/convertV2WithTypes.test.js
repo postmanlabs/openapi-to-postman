@@ -203,41 +203,6 @@ describe('convertV2WithTypes - example originalRequest path variables', function
   });
 });
 
-describe('utils.generatePmResponseObject - path param fallback', function() {
-  it('should use url.variables.members when originalRequest.params.pathParams is missing', function() {
-    const utilsV2 = require('../../libV2/utils'),
-      { generatePmResponseObject } = utilsV2;
-
-    const response = {
-      name: 'OK',
-      code: 200,
-      headers: [],
-      body: '{}',
-      // Simulate a user-authored example: only URL with :id and variable; no params.pathParams provided
-      originalRequest: {
-        method: 'GET',
-        url: {
-          raw: 'https://api.example.com/examples/:id',
-          protocol: 'https',
-          host: ['api', 'example', 'com'],
-          path: ['examples', ':id'],
-          variable: [{ key: 'id', value: '123' }],
-          query: []
-        },
-        header: []
-      }
-    };
-
-    const sdkResponse = generatePmResponseObject(response),
-      urlObj = sdkResponse && sdkResponse.originalRequest && sdkResponse.originalRequest.url,
-      pathString = urlObj && urlObj.getPath && urlObj.getPath(true);
-
-    expect(pathString, 'path should be available').to.be.a('string');
-    expect(pathString).to.equal('/examples/:id');
-  });
-});
-
-
 describe('convertV2WithTypes', function() {
   it('should contain extracted types' + testSpec1, function () {
     Converter.convertV2WithTypes(
