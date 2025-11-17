@@ -691,33 +691,37 @@ let QUERYPARAM = 'query',
       let resolvedSchemaProps = {},
         { includeDeprecated } = context.computedOptions;
 
-      _.forOwn(schema.properties, (property, propertyName) => {
-        // Skip property resolution if it's not schema object
-        if (!_.isObject(property)) {
-          return;
-        }
+      // Only process properties if the schema has a properties field
+      if (schema.hasOwnProperty('properties')) {
+        _.forOwn(schema.properties, (property, propertyName) => {
+          // Skip property resolution if it's not schema object
+          if (!_.isObject(property)) {
+            return;
+          }
 
-        if (
-          property.format === 'decimal' ||
-          property.format === 'byte' ||
-          property.format === 'password' ||
-          property.format === 'unix-time'
-        ) {
-          delete property.format;
-        }
+          if (
+            property.format === 'decimal' ||
+            property.format === 'byte' ||
+            property.format === 'password' ||
+            property.format === 'unix-time'
+          ) {
+            delete property.format;
+          }
 
-        // Skip addition of deprecated properties based on provided options
-        if (!includeDeprecated && property.deprecated) {
-          return;
-        }
+          // Skip addition of deprecated properties based on provided options
+          if (!includeDeprecated && property.deprecated) {
+            return;
+          }
 
-        const currentPropPath = utils.addToJsonPath(currentPath, ['properties', propertyName]);
+          const currentPropPath = utils.addToJsonPath(currentPath, ['properties', propertyName]);
 
-        resolvedSchemaProps[propertyName] = _resolveSchema(context, property, stack, resolveFor,
-          _.cloneDeep(seenRef), currentPropPath);
-      });
+          resolvedSchemaProps[propertyName] = _resolveSchema(context, property, stack, resolveFor,
+            _.cloneDeep(seenRef), currentPropPath);
+        });
 
-      schema.properties = resolvedSchemaProps;
+        schema.properties = resolvedSchemaProps;
+      }
+      
       schema.type = schema.type || SCHEMA_TYPES.object;
     }
     // If schema is of type array
@@ -827,73 +831,70 @@ let QUERYPARAM = 'query',
       };
     }
 
-    if (resolvedSchema.type === 'object' && resolvedSchema.properties) {
+    if (resolvedSchema.type === 'object') {
       const schemaDetails = {
           description: resolvedSchema.description,
           title: resolvedSchema.title,
-          type: resolvedSchema.type,
-          properties: {},
-          required: []
-        },
-        requiredProperties = new Set(resolvedSchema.required || []);
-
-      for (let [propName, propValue] of Object.entries(resolvedSchema.properties)) {
-        if (!propValue.type && !propValue.anyOf && !propValue.oneOf && !propValue.allOf) {
-          continue;
-        }
-        const propertyDetails = {
-          type: propValue.type,
-          deprecated: propValue.deprecated,
-          enum: propValue.enum || undefined,
-          minLength: propValue.minLength,
-          maxLength: propValue.maxLength,
-          minimum: propValue.minimum,
-          maximum: propValue.maximum,
-          pattern: propValue.pattern,
-          example: propValue.example,
-          title: propValue.title,
-          description: propValue.description,
-          format: propValue.format
+          type: resolvedSchema.type
         };
 
-        if (requiredProperties.has(propName)) {
-          schemaDetails.required.push(propName);
-        }
+      // Only include properties if they exist in the original schema
+      if (resolvedSchema.hasOwnProperty('properties')) {
+        schemaDetails.properties = {};
 
-        if (propValue.anyOf) {
-          propertyDetails.anyOf = propValue.anyOf.map((schema) => {
-            return processSchema(schema);
-          });
-        }
-        else if (propValue.oneOf) {
-          propertyDetails.oneOf = propValue.oneOf.map((schema) => {
-            return processSchema(schema);
-          });
-        }
-        else if (propValue.allOf) {
-          propertyDetails.allOf = propValue.allOf.map((schema) => {
-            return processSchema(schema);
-          });
-        }
-        else if (propValue.properties) {
-          let processedProperties = processSchema(propValue);
-          propertyDetails.properties = processedProperties.properties;
-          if (processedProperties.required) {
-            propertyDetails.required = processedProperties.required;
+        for (let [propName, propValue] of Object.entries(resolvedSchema.properties)) {
+          if (!propValue.type && !propValue.anyOf && !propValue.oneOf && !propValue.allOf) {
+            continue;
           }
-        }
-        else if (propValue.type === 'array' && propValue.items) {
-          propertyDetails.items = processSchema(propValue.items);
-        }
+          const propertyDetails = {
+            type: propValue.type,
+            deprecated: propValue.deprecated,
+            enum: propValue.enum || undefined,
+            minLength: propValue.minLength,
+            maxLength: propValue.maxLength,
+            minimum: propValue.minimum,
+            maximum: propValue.maximum,
+            pattern: propValue.pattern,
+            example: propValue.example,
+            title: propValue.title,
+            description: propValue.description,
+            format: propValue.format
+          };
 
-        schemaDetails.properties[propName] = propertyDetails;
+          if (propValue.anyOf) {
+            propertyDetails.anyOf = propValue.anyOf.map((schema) => {
+              return processSchema(schema);
+            });
+          }
+          else if (propValue.oneOf) {
+            propertyDetails.oneOf = propValue.oneOf.map((schema) => {
+              return processSchema(schema);
+            });
+          }
+          else if (propValue.allOf) {
+            propertyDetails.allOf = propValue.allOf.map((schema) => {
+              return processSchema(schema);
+            });
+          }
+          else if (propValue.properties) {
+            let processedProperties = processSchema(propValue);
+            propertyDetails.properties = processedProperties.properties;
+            if (processedProperties.required) {
+              propertyDetails.required = processedProperties.required;
+            }
+          }
+          else if (propValue.type === 'array' && propValue.items) {
+            propertyDetails.items = processSchema(propValue.items);
+          }
+
+          schemaDetails.properties[propName] = propertyDetails;
+        }
       }
-      if (schemaDetails.required && schemaDetails.required.length === 0) {
-        schemaDetails.required = undefined;
+
+      if (resolvedSchema.required) {
+        schemaDetails.required = resolvedSchema.required;
       }
-      if (schemaDetails.properties && Object.keys(schemaDetails.properties).length === 0) {
-        schemaDetails.properties = undefined;
-      }
+
       return schemaDetails;
     }
     else if (resolvedSchema.type === 'array' && resolvedSchema.items) {
