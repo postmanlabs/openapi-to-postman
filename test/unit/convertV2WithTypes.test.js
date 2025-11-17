@@ -191,9 +191,8 @@ describe('convertV2WithTypes - example originalRequest path variables', function
       expect(reqPetId).to.be.an('object');
       expect(reqPetId.value).to.equal('<string>');
 
-      const resp = item.response && item.response[0];
-      expect(resp, 'No response example found').to.be.an('object');
-      const exVars = resp.originalRequest && resp.originalRequest.url && resp.originalRequest.url.variable || [];
+      const resp = item.response && item.response[0],
+        exVars = resp.originalRequest && resp.originalRequest.url && resp.originalRequest.url.variable || [];
       expect(exVars).to.be.an('array').that.is.not.empty;
       const exPetId = exVars.find((v) => { return v && v.key === 'petId'; });
       expect(exPetId).to.be.an('object');
