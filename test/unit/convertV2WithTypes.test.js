@@ -156,47 +156,25 @@ describe('convertV2WithTypes should generate collection conforming to collection
 describe('convertV2WithTypes - example originalRequest path variables', function() {
   it('should include populated path variable values in example originalRequest', function(done) {
     const openapi = fs.readFileSync(testSpec1, 'utf8'),
-      options = { schemaFaker: true };
+      options = { parametersResolution: 'schema' };
 
     Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
-      const rootItems = conversionResult.output[0].data.item;
+      const item = conversionResult.output[0].data.item[1].item[0].item[0];
 
-      const findPetIdRequest = (nodes) => {
-        if (!Array.isArray(nodes)) { return null; }
-        for (let i = 0; i < nodes.length; i++) {
-          const node = nodes[i];
-          if (node && node.request) {
-            const vars = node.request.url && node.request.url.variable;
-            if (Array.isArray(vars) && vars.find((v) => { return v && v.key === 'petId'; }) &&
-              Array.isArray(node.response) && node.response.length > 0) {
-              return node;
-            }
-          }
-          if (node && Array.isArray(node.item)) {
-            const found = findPetIdRequest(node.item);
-            if (found) { return found; }
-          }
-        }
-        return null;
-      };
-
-      const item = findPetIdRequest(rootItems);
-      expect(item, 'No request item with petId path variable found').to.not.be.null;
-
-      const reqVars = item.request && item.request.url && item.request.url.variable || [];
-      expect(reqVars).to.be.an('array').that.is.not.empty;
-      const reqPetId = reqVars.find((v) => { return v && v.key === 'petId'; });
-      expect(reqPetId).to.be.an('object');
-      expect(reqPetId.value).to.equal('<string>');
+      const requestPathVariables = item.request && item.request.url && item.request.url.variable || [];
+      expect(requestPathVariables).to.be.an('array').that.is.not.empty;
+      const requestPetIdVariable = requestPathVariables.find((v) => { return v && v.key === 'petId'; });
+      expect(requestPetIdVariable).to.be.an('object');
+      expect(requestPetIdVariable.value).to.equal('<string>');
 
       const resp = item.response && item.response[0],
-        exVars = resp.originalRequest && resp.originalRequest.url && resp.originalRequest.url.variable || [];
-      expect(exVars).to.be.an('array').that.is.not.empty;
-      const exPetId = exVars.find((v) => { return v && v.key === 'petId'; });
-      expect(exPetId).to.be.an('object');
-      expect(exPetId.value).to.equal('<string>');
+        exampleRequestPathVariables = resp.originalRequest && resp.originalRequest.url && resp.originalRequest.url.variable || [];
+      expect(exampleRequestPathVariables).to.be.an('array').that.is.not.empty;
+      const examplePetIdVariable = exampleRequestPathVariables.find((v) => { return v && v.key === 'petId'; });
+      expect(examplePetIdVariable).to.be.an('object');
+      expect(examplePetIdVariable.value).to.equal('<string>');
       done();
     });
   });
