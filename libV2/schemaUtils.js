@@ -900,6 +900,8 @@ let QUERYPARAM = 'query',
     else if (resolvedSchema.type === 'array' && resolvedSchema.items) {
       const arrayDetails = {
         type: resolvedSchema.type,
+        description: resolvedSchema.description,
+        title: resolvedSchema.title,
         items: processSchema(resolvedSchema.items)
       };
       if (resolvedSchema.minItems !== undefined) { arrayDetails.minItems = resolvedSchema.minItems; }
