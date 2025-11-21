@@ -1333,6 +1333,15 @@ describe('convertV2WithTypes', function() {
       expect(res500Body.properties.message).to.have.property('description', 'Human-readable error message.');
       expect(res500Body.properties.details).to.have.property('title', 'ErrorDetails');
       expect(res500Body.properties.details).to.have.property('description', 'Optional error details.');
+      // verify arrays preserve title and description
+      const inventoryElement = extractedTypes['get/inventory'];
+      expect(inventoryElement).to.be.an('object').that.includes.keys('response');
+      const inventoryResBody = JSON.parse(inventoryElement.response['200'].body);
+      expect(inventoryResBody).to.have.property('type', 'array');
+      expect(inventoryResBody).to.have.property('title', 'ArrayOfInventoryItem');
+      expect(inventoryResBody).to.have.property('description', 'A list of inventory items.');
+      expect(inventoryResBody.items).to.have.property('title', 'InventoryItem');
+      expect(inventoryResBody.items).to.have.property('description', 'An inventory item.');
       done();
     });
   });

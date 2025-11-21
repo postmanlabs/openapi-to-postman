@@ -104,6 +104,23 @@
             }
           }
         }
+      },
+      "/inventory": {
+        "get": {
+          "operationId": "listInventory",
+          "responses": {
+            "200": {
+              "description": "200 response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ArrayOfInventoryItem"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "components": {
@@ -227,6 +244,22 @@
             "description": "An empty string (disallowed here).",
             "type": "string",
             "maxLength": 0
+          }
+        },
+        "InventoryItem": {
+          "title": "InventoryItem",
+          "description": "An inventory item.",
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" }
+          }
+        },
+        "ArrayOfInventoryItem": {
+          "title": "ArrayOfInventoryItem",
+          "description": "A list of inventory items.",
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/InventoryItem"
           }
         },
         "TagList": {
