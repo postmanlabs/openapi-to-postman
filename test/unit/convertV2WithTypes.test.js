@@ -19,6 +19,10 @@ const expect = require('chai').expect,
   path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyNested.json'),
   referencedPathItemsSpec =
   path.join(__dirname, VALID_OPENAPI31X_PATH, '/yaml/referencedPathItems.yaml'),
+  nestedPathItemsSpec =
+  path.join(__dirname, VALID_OPENAPI31X_PATH, '/yaml/nestedPathItemRefs.yaml'),
+  pathItemsWithTagsSpec =
+  path.join(__dirname, VALID_OPENAPI31X_PATH, '/yaml/referencedPathItemsWithTags.yaml'),
   ajv = new Ajv({ allErrors: true, strict: false }),
   transformSchema = (schema) => {
     const properties = schema.properties,
@@ -2336,7 +2340,7 @@ describe('convertV2WithTypes', function() {
       const openapi = fs.readFileSync(referencedPathItemsSpec, 'utf8'),
         options = { schemaFaker: true, parametersResolution: 'schema', folderStrategy: 'paths' };
 
-      Converter.convertV2WithTypes({ type: 'string', data: openapi }, options, (err, conversionResult) => {
+      Converter.convertV2WithTypes({ type: 'json', data: openapi }, options, (err, conversionResult) => {
         expect(err).to.be.null;
         expect(conversionResult.result).to.equal(true);
         expect(conversionResult.output).to.be.an('array').that.is.not.empty;
@@ -2452,90 +2456,7 @@ describe('convertV2WithTypes', function() {
     });
 
     it('should correctly convert OpenAPI 3.1 specs with referenced path items using tags folding strategy', function(done) {
-      const openApiWithTags = {
-        openapi: '3.1.0',
-        info: {
-          title: 'Path Items with Tags Test',
-          version: '1.0.0'
-        },
-        tags: [
-          { name: 'Users', description: 'User management' },
-          { name: 'Products', description: 'Product management' }
-        ],
-        paths: {
-          '/users': {
-            $ref: '#/components/pathItems/UsersPath'
-          },
-          '/products': {
-            get: {
-              summary: 'Get products',
-              tags: ['Products'],
-              responses: {
-                '200': {
-                  description: 'Success',
-                  content: {
-                    'application/json': {
-                      schema: {
-                        type: 'array',
-                        items: { type: 'object' }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        components: {
-          pathItems: {
-            UsersPath: {
-              get: {
-                summary: 'Get all users',
-                tags: ['Users'],
-                responses: {
-                  '200': {
-                    description: 'Success',
-                    content: {
-                      'application/json': {
-                        schema: {
-                          type: 'array',
-                          items: { type: 'object' }
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              post: {
-                summary: 'Create user',
-                tags: ['Users'],
-                requestBody: {
-                  content: {
-                    'application/json': {
-                      schema: {
-                        type: 'object',
-                        properties: {
-                          name: { type: 'string' }
-                        }
-                      }
-                    }
-                  }
-                },
-                responses: {
-                  '201': {
-                    description: 'Created',
-                    content: {
-                      'application/json': {
-                        schema: { type: 'object' }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      };
+      const openApiWithTags = fs.readFileSync(pathItemsWithTagsSpec, 'utf8');
 
       Converter.convertV2WithTypes(
         { type: 'json', data: openApiWithTags },
@@ -2578,6 +2499,42 @@ describe('convertV2WithTypes', function() {
           done();
         }
       );
+    });
+
+    it('should correctly resolve OpenAPI 3.1 specs with nested path item references (multiple levels of $ref)', function(done) {
+      const openapi = fs.readFileSync(nestedPathItemsSpec, 'utf8');
+
+      Converter.convertV2WithTypes({ type: 'json', data: openapi }, { folderStrategy: 'paths' }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.be.true;
+        expect(conversionResult.output).to.be.an('array').that.is.not.empty;
+
+        const collection = conversionResult.output[0].data;
+        expect(collection.item).to.have.lengthOf(3); // /users, /products, /orders
+
+        // Verify /users path item (3 levels deep)
+        const usersFolder = collection.item.find((item) => {
+          return item.name === 'users';
+        });
+        expect(usersFolder, '/users folder should exist').to.exist;
+        expect(usersFolder.item).to.have.lengthOf(3); // GET, POST, DELETE
+
+        // Verify /products path item
+        const productsFolder = collection.item.find((item) => {
+          return item.name === 'products';
+        });
+        expect(productsFolder.item, '/products should have 2 operations').to.have.lengthOf(2); // GET, POST
+
+        // Verify /orders path item (inline, no ref) - should be a folder with one request
+        const ordersFolder = collection.item.find((item) => {
+          return item.name === 'orders';
+        });
+        expect(ordersFolder.item).to.have.lengthOf(1);
+        expect(ordersFolder.item[0].name).to.equal('Get orders');
+        expect(ordersFolder.item[0].request.method).to.equal('GET');
+
+        done();
+      });
     });
   });
 });

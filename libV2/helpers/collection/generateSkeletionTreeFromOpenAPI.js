@@ -1,5 +1,6 @@
 let _ = require('lodash'),
   Graph = require('graphlib').Graph,
+  { resolvePathItemRef } = require('../../utils'),
 
   PATH_WEBHOOK = 'path~webhook',
   ALLOWED_HTTP_METHODS = {
@@ -13,7 +14,6 @@ let _ = require('lodash'),
     options: true,
     trace: true
   },
-
 
   _generateTreeFromPathsV2 = function (openapi, { includeDeprecated }) {
     /**
@@ -52,15 +52,7 @@ let _ = require('lodash'),
         let methods = openapi.paths[completePath];
 
         // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
-        if (methods && methods.$ref && openapi.components && openapi.components.pathItems) {
-          const refPath = methods.$ref.replace(/^#\//, '').split('/');
-          if (refPath[0] === 'components' && refPath[1] === 'pathItems' && refPath[2]) {
-            const resolvedPathItem = openapi.components.pathItems[refPath[2]];
-            if (resolvedPathItem) {
-              methods = resolvedPathItem;
-            }
-          }
-        }
+        methods = resolvePathItemRef(openapi, methods);
 
         _.forEach(methods, function (data, method) {
           if (!ALLOWED_HTTP_METHODS[method]) {
@@ -112,15 +104,7 @@ let _ = require('lodash'),
             let methods = openapi.paths[completePath];
 
             // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
-            if (methods && methods.$ref && openapi.components && openapi.components.pathItems) {
-              const refPath = methods.$ref.replace(/^#\//, '').split('/');
-              if (refPath[0] === 'components' && refPath[1] === 'pathItems' && refPath[2]) {
-                const resolvedPathItem = openapi.components.pathItems[refPath[2]];
-                if (resolvedPathItem) {
-                  methods = resolvedPathItem;
-                }
-              }
-            }
+            methods = resolvePathItemRef(openapi, methods);
 
             _.forEach(methods, function (data, method) {
               if (!ALLOWED_HTTP_METHODS[method]) {
@@ -239,15 +223,7 @@ let _ = require('lodash'),
 
     _.forEach(openapi.paths, function (methods, path) {
       // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
-      if (methods && methods.$ref && openapi.components && openapi.components.pathItems) {
-        const refPath = methods.$ref.replace(/^#\//, '').split('/');
-        if (refPath[0] === 'components' && refPath[1] === 'pathItems' && refPath[2]) {
-          const resolvedPathItem = openapi.components.pathItems[refPath[2]];
-          if (resolvedPathItem) {
-            methods = resolvedPathItem;
-          }
-        }
-      }
+      methods = resolvePathItemRef(openapi, methods);
 
       _.forEach(methods, function (data, method) {
         if (!ALLOWED_HTTP_METHODS[method]) {
@@ -379,15 +355,7 @@ let _ = require('lodash'),
 
     _.forEach(openapi.paths, function (methods, path) {
       // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
-      if (methods && methods.$ref && openapi.components && openapi.components.pathItems) {
-        const refPath = methods.$ref.replace(/^#\//, '').split('/');
-        if (refPath[0] === 'components' && refPath[1] === 'pathItems' && refPath[2]) {
-          const resolvedPathItem = openapi.components.pathItems[refPath[2]];
-          if (resolvedPathItem) {
-            methods = resolvedPathItem;
-          }
-        }
-      }
+      methods = resolvePathItemRef(openapi, methods);
 
       _.forEach(methods, function (data, method) {
         if (!ALLOWED_HTTP_METHODS[method]) {

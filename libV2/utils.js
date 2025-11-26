@@ -5,6 +5,31 @@ const _ = require('lodash'),
 
   // This is the default collection name if one can't be inferred from the OpenAPI spec
   COLLECTION_NAME = 'Imported from OpenAPI',
+
+  /**
+   * Helper to get a property from a nested object using a path array
+   * Similar to _.get but works with property names containing dots
+   *
+   * @param {*} rootObject - the object from which you're trying to read a property
+   * @param {*} pathArray - each element in this array a property of the previous object
+   * @param {*} defValue - what to return if the required path is not found
+   * @returns {*} - required property value
+   */
+  _getEscaped = (rootObject, pathArray, defValue) => {
+    if (!(pathArray instanceof Array)) {
+      return null;
+    }
+
+    if (rootObject === undefined) {
+      return defValue;
+    }
+
+    if (_.isEmpty(pathArray)) {
+      return rootObject;
+    }
+
+    return _getEscaped(rootObject[pathArray.shift()], pathArray, defValue);
+  },
   generatePmResponseObject = (response) => {
     const requestItem = generateRequestItemObject({ // eslint-disable-line no-use-before-define
         request: response.originalRequest
@@ -242,6 +267,57 @@ module.exports = {
     return jsonPointer.parse(jsonPointer.unescape(jsonPath));
   },
 
+  /**
+   * Resolves a path item reference recursively, following nested $refs
+   * Used for OpenAPI 3.1x path items references
+   *
+   * @param {Object} openapi - The OpenAPI specification
+   * @param {Object} pathItem - The path item object that might contain a $ref
+   * @param {Object} seenRefs - Track seen references to detect circular refs (default: {})
+   * @returns {Object} - The resolved path item or the original if no $ref
+   */
+  resolvePathItemRef: function (openapi, pathItem, seenRefs = {}) {
+    if (!pathItem || !pathItem.$ref) {
+      return pathItem;
+    }
+
+    let currentRef = pathItem.$ref,
+      maxDepth = 30,
+      depth = 0;
+
+    while (currentRef && depth < maxDepth) {
+      if (seenRefs[currentRef]) {
+        console.error(`Circular reference detected in path items: ${currentRef}`);
+        return pathItem;
+      }
+
+      seenRefs[currentRef] = true;
+
+      let refPath = currentRef.replace(/^#\//, '').split('/'),
+        resolvedItem = _getEscaped(openapi, refPath, null);
+
+      if (!resolvedItem) {
+        console.warn(`Could not resolve path item reference: ${currentRef}`);
+        return pathItem;
+      }
+
+      if (resolvedItem.$ref) {
+        currentRef = resolvedItem.$ref;
+        depth++;
+      }
+      else {
+        return resolvedItem;
+      }
+    }
+
+    if (depth >= maxDepth) {
+      console.error(`Max depth (${maxDepth}) reached resolving path item reference: ${pathItem.$ref}`);
+    }
+
+    return pathItem;
+  },
+
+  _getEscaped,
   generatePmResponseObject,
   generateRequestItemObject
 };

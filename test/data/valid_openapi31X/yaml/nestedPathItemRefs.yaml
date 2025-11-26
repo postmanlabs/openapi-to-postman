@@ -1,0 +1,67 @@
+openapi: "3.1.0"
+info:
+  version: 1.0.0
+  title: Nested Path Item References Test
+  description: API with nested path item references to test recursive resolution
+
+paths:
+  /users:
+    $ref: "#/components/pathItems/UsersPathRef"  # Level 1 ref -> Level 2 ref -> actual path item
+  
+  /products:
+    $ref: "#/components/pathItems/ProductsPath"  # Direct ref to actual path item
+  
+  /orders:
+    get:
+      summary: Get orders
+      operationId: getOrders
+      responses:
+        '200':
+          description: OK
+
+components:
+  pathItems:
+    # This is a nested reference - points to another ref
+    UsersPathRef:
+      $ref: "#/components/pathItems/UsersPathLevel2"
+    
+    # This is the second level - points to the actual path item
+    UsersPathLevel2:
+      $ref: "#/components/pathItems/UsersPathActual"
+    
+    # This is the actual path item with operations
+    UsersPathActual:
+      get:
+        summary: List users
+        operationId: listUsers
+        responses:
+          '200':
+            description: A list of users
+      post:
+        summary: Create user
+        operationId: createUser
+        responses:
+          '201':
+            description: User created
+      delete:
+        summary: Delete user
+        operationId: deleteUser
+        responses:
+          '204':
+            description: User deleted
+    
+    # Direct path item (no nesting)
+    ProductsPath:
+      get:
+        summary: Get products
+        operationId: getProducts
+        responses:
+          '200':
+            description: A list of products
+      post:
+        summary: Create product
+        operationId: createProduct
+        responses:
+          '201':
+            description: Product created
+

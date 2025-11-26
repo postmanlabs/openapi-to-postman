@@ -15,7 +15,7 @@ const _ = require('lodash'),
   { validateTransaction, getMissingSchemaEndpoints } = require('./validationUtils');
 
 const { resolvePostmanRequest } = require('./schemaUtils');
-const { generateRequestItemObject, fixPathVariablesInUrl } = require('./utils');
+const { generateRequestItemObject, fixPathVariablesInUrl, resolvePathItemRef } = require('./utils');
 
 module.exports = {
   convertV2: function (context, cb) {
@@ -96,15 +96,7 @@ module.exports = {
             pathItem = context.openapi.paths[node.meta.path];
 
           // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
-          if (pathItem && pathItem.$ref && context.openapi.components && context.openapi.components.pathItems) {
-            const refPath = pathItem.$ref.replace(/^#\//, '').split('/');
-            if (refPath[0] === 'components' && refPath[1] === 'pathItems' && refPath[2]) {
-              const resolvedPathItem = context.openapi.components.pathItems[refPath[2]];
-              if (resolvedPathItem) {
-                pathItem = resolvedPathItem;
-              }
-            }
-          }
+          pathItem = resolvePathItemRef(context.openapi, pathItem);
 
           try {
             ({ request, collectionVariables, requestTypesObject } = resolvePostmanRequest(context,
@@ -182,15 +174,7 @@ module.exports = {
             webhookPathItem = context.openapi.webhooks[node.meta.path];
 
           // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
-          if (webhookPathItem && webhookPathItem.$ref && context.openapi.components && context.openapi.components.pathItems) {
-            const refPath = webhookPathItem.$ref.replace(/^#\//, '').split('/');
-            if (refPath[0] === 'components' && refPath[1] === 'pathItems' && refPath[2]) {
-              const resolvedPathItem = context.openapi.components.pathItems[refPath[2]];
-              if (resolvedPathItem) {
-                webhookPathItem = resolvedPathItem;
-              }
-            }
-          }
+          webhookPathItem = resolvePathItemRef(context.openapi, webhookPathItem);
 
           // TODO: Figure out a proper fix for this
           if (node.meta.method === 'parameters') {
