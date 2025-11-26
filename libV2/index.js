@@ -92,11 +92,23 @@ module.exports = {
           let request = {},
             collectionVariables = [],
             requestObject = {},
-            requestTypesObject = {};
+            requestTypesObject = {},
+            pathItem = context.openapi.paths[node.meta.path];
+
+          // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
+          if (pathItem && pathItem.$ref && context.openapi.components && context.openapi.components.pathItems) {
+            const refPath = pathItem.$ref.replace(/^#\//, '').split('/');
+            if (refPath[0] === 'components' && refPath[1] === 'pathItems' && refPath[2]) {
+              const resolvedPathItem = context.openapi.components.pathItems[refPath[2]];
+              if (resolvedPathItem) {
+                pathItem = resolvedPathItem;
+              }
+            }
+          }
 
           try {
             ({ request, collectionVariables, requestTypesObject } = resolvePostmanRequest(context,
-              context.openapi.paths[node.meta.path],
+              pathItem,
               node.meta.path,
               node.meta.method
             ));
@@ -166,7 +178,19 @@ module.exports = {
           // generate the request form the node
           let request = {},
             collectionVariables = [],
-            requestObject = {};
+            requestObject = {},
+            webhookPathItem = context.openapi.webhooks[node.meta.path];
+
+          // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
+          if (webhookPathItem && webhookPathItem.$ref && context.openapi.components && context.openapi.components.pathItems) {
+            const refPath = webhookPathItem.$ref.replace(/^#\//, '').split('/');
+            if (refPath[0] === 'components' && refPath[1] === 'pathItems' && refPath[2]) {
+              const resolvedPathItem = context.openapi.components.pathItems[refPath[2]];
+              if (resolvedPathItem) {
+                webhookPathItem = resolvedPathItem;
+              }
+            }
+          }
 
           // TODO: Figure out a proper fix for this
           if (node.meta.method === 'parameters') {
@@ -175,7 +199,7 @@ module.exports = {
 
           try {
             ({ request, collectionVariables } = resolvePostmanRequest(context,
-              context.openapi.webhooks[node.meta.path],
+              webhookPathItem,
               node.meta.path,
               node.meta.method
             ));

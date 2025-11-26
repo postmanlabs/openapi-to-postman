@@ -2721,6 +2721,17 @@ module.exports = {
     );
 
     _.forEach(schemaPaths, (schemaPathObj, schemaPath) => {
+      // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
+      // if (schemaPathObj && schemaPathObj.$ref && schema.components && schema.components.pathItems) {
+      //   const refPath = schemaPathObj.$ref.replace(/^#\//, '').split('/');
+      //   if (refPath[0] === 'components' && refPath[1] === 'pathItems' && refPath[2]) {
+      //     const resolvedPathItem = schema.components.pathItems[refPath[2]];
+      //     if (resolvedPathItem) {
+      //       schemaPathObj = resolvedPathItem;
+      //     }
+      //   }
+      // }
+
       _.forEach(_.keys(schemaPathObj), (pathKey) => {
         schemaJsonPath = `$.paths[${schemaPath}].${_.toLower(pathKey)}`;
         let operationItem = _.get(schemaPathObj, pathKey) || {},
