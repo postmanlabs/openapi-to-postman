@@ -14,8 +14,8 @@ const _ = require('lodash'),
   OpenApiErr = require('../lib/error'),
   { validateTransaction, getMissingSchemaEndpoints } = require('./validationUtils');
 
-const { resolvePostmanRequest } = require('./schemaUtils');
-const { generateRequestItemObject, fixPathVariablesInUrl, resolvePathItemRef } = require('./utils');
+const { resolvePostmanRequest, resolveRefFromSchema } = require('./schemaUtils');
+const { generateRequestItemObject, fixPathVariablesInUrl } = require('./utils');
 
 module.exports = {
   convertV2: function (context, cb) {
@@ -23,7 +23,7 @@ module.exports = {
      * Start generating the Bare bone tree that should exist for the schema
      */
 
-    let collectionTree = generateSkeletonTreeFromOpenAPI(context.openapi, context.computedOptions);
+    let collectionTree = generateSkeletonTreeFromOpenAPI(context, context.openapi, context.computedOptions);
 
     /**
      * Do post order traversal so we get the request nodes first and generate the request object
@@ -96,7 +96,9 @@ module.exports = {
             pathItem = context.openapi.paths[node.meta.path];
 
           // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
-          pathItem = resolvePathItemRef(context.openapi, pathItem);
+          if (pathItem && pathItem.$ref) {
+            pathItem = resolveRefFromSchema(context, pathItem.$ref);
+          }
 
           try {
             ({ request, collectionVariables, requestTypesObject } = resolvePostmanRequest(context,
@@ -174,7 +176,9 @@ module.exports = {
             webhookPathItem = context.openapi.webhooks[node.meta.path];
 
           // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
-          webhookPathItem = resolvePathItemRef(context.openapi, webhookPathItem);
+          if (webhookPathItem && webhookPathItem.$ref) {
+            webhookPathItem = resolveRefFromSchema(context, webhookPathItem.$ref);
+          }
 
           // TODO: Figure out a proper fix for this
           if (node.meta.method === 'parameters') {

@@ -1,6 +1,5 @@
 const generateAuthForCollectionFromOpenAPI = require('./helpers/collection/generateAuthForCollectionFromOpenAPI');
 const utils = require('./utils');
-const { _getEscaped } = utils;
 
 const schemaFaker = require('../assets/json-schema-faker'),
   _ = require('lodash'),
@@ -85,6 +84,30 @@ const schemaFaker = require('../assets/json-schema-faker'),
 
   PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable', 'properties'],
   crypto = require('crypto'),
+
+  /**
+   * @param {*} rootObject - the object from which you're trying to read a property
+   * @param {*} pathArray - each element in this array a property of the previous object
+   * @param {*} defValue - what to return if the required path is not found
+   * @returns {*} - required property value
+   * @description - this is similar to _.get(rootObject, pathArray.join('.')), but also works for cases where
+   * there's a . in the property name
+   */
+  _getEscaped = (rootObject, pathArray, defValue) => {
+    if (!(pathArray instanceof Array)) {
+      return null;
+    }
+
+    if (rootObject === undefined) {
+      return defValue;
+    }
+
+    if (_.isEmpty(pathArray)) {
+      return rootObject;
+    }
+
+    return _getEscaped(rootObject[pathArray.shift()], pathArray, defValue);
+  },
 
   getXmlVersionContent = (bodyContent) => {
     const regExp = new RegExp('([<\\?xml]+[\\s{1,}]+[version="\\d.\\d"]+[\\sencoding="]+.{1,15}"\\?>)');
@@ -280,6 +303,8 @@ let QUERYPARAM = 'query',
   resolveRefFromSchema = (context, $ref, stackDepth = 0, seenRef = {}) => {
     const { specComponents } = context,
       { stackLimit } = context.computedOptions;
+
+    context.schemaCache = context.schemaCache || {};
 
     if (stackDepth >= getRefStackLimit(stackLimit)) {
       return { value: ERR_TOO_MANY_LEVELS };
@@ -699,7 +724,7 @@ let QUERYPARAM = 'query',
 
         schema.properties = resolvedSchemaProps;
       }
-      
+
       schema.type = schema.type || SCHEMA_TYPES.object;
     }
     // If schema is of type array
@@ -811,10 +836,10 @@ let QUERYPARAM = 'query',
 
     if (resolvedSchema.type === 'object') {
       const schemaDetails = {
-          description: resolvedSchema.description,
-          title: resolvedSchema.title,
-          type: resolvedSchema.type
-        };
+        description: resolvedSchema.description,
+        title: resolvedSchema.title,
+        type: resolvedSchema.type
+      };
 
       // Only include properties if they exist in the original schema
       if (resolvedSchema.hasOwnProperty('properties')) {

@@ -1,6 +1,6 @@
 let _ = require('lodash'),
   Graph = require('graphlib').Graph,
-  { resolvePathItemRef } = require('../../utils'),
+  { resolveRefFromSchema } = require('../../schemaUtils'),
 
   PATH_WEBHOOK = 'path~webhook',
   ALLOWED_HTTP_METHODS = {
@@ -15,7 +15,7 @@ let _ = require('lodash'),
     trace: true
   },
 
-  _generateTreeFromPathsV2 = function (openapi, { includeDeprecated }) {
+  _generateTreeFromPathsV2 = function (context, openapi, { includeDeprecated }) {
     /**
      * We will create a unidirectional graph
      */
@@ -52,7 +52,9 @@ let _ = require('lodash'),
         let methods = openapi.paths[completePath];
 
         // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
-        methods = resolvePathItemRef(openapi, methods);
+        if (methods && methods.$ref) {
+          methods = resolveRefFromSchema(context, methods.$ref);
+        }
 
         _.forEach(methods, function (data, method) {
           if (!ALLOWED_HTTP_METHODS[method]) {
@@ -104,7 +106,9 @@ let _ = require('lodash'),
             let methods = openapi.paths[completePath];
 
             // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
-            methods = resolvePathItemRef(openapi, methods);
+            if (methods && methods.$ref) {
+              methods = resolveRefFromSchema(context, methods.$ref);
+            }
 
             _.forEach(methods, function (data, method) {
               if (!ALLOWED_HTTP_METHODS[method]) {
@@ -182,7 +186,7 @@ let _ = require('lodash'),
     return tree;
   },
 
-  _generateTreeFromTags = function (openapi, { includeDeprecated }) {
+  _generateTreeFromTags = function (context, openapi, { includeDeprecated }) {
     let tree = new Graph(),
 
       tagDescMap = _.reduce(openapi.tags, function (acc, data) {
@@ -223,7 +227,9 @@ let _ = require('lodash'),
 
     _.forEach(openapi.paths, function (methods, path) {
       // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
-      methods = resolvePathItemRef(openapi, methods);
+      if (methods && methods.$ref) {
+        methods = resolveRefFromSchema(context, methods.$ref);
+      }
 
       _.forEach(methods, function (data, method) {
         if (!ALLOWED_HTTP_METHODS[method]) {
@@ -293,12 +299,13 @@ let _ = require('lodash'),
 
   /**
    * Generates tree structure with nested folders based on tag order
+   * @param {Object} context - Global context object
    * @param {Object} openapi - OpenAPI specification
    * @param {Object} options - Generation options
    * @param {boolean} options.includeDeprecated - Whether to include deprecated operations
    * @returns {Object} - Graph tree with nested folder structure
    */
-  _generateTreeFromNestedTags = function (openapi, { includeDeprecated }) {
+  _generateTreeFromNestedTags = function (context, openapi, { includeDeprecated }) {
     let tree = new Graph(),
 
       tagDescMap = _.reduce(openapi.tags, function (acc, data) {
@@ -355,7 +362,9 @@ let _ = require('lodash'),
 
     _.forEach(openapi.paths, function (methods, path) {
       // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
-      methods = resolvePathItemRef(openapi, methods);
+      if (methods && methods.$ref) {
+        methods = resolveRefFromSchema(context, methods.$ref);
+      }
 
       _.forEach(methods, function (data, method) {
         if (!ALLOWED_HTTP_METHODS[method]) {
@@ -453,27 +462,29 @@ let _ = require('lodash'),
 /**
  * Used to generate a tree skeleton for the openapi which will be a collection
  *
+ * @param  {Object} context - Global context object
  * @param  {Object} openapi - openapi schema paths in question
  * @param  {String} stratergy='PATHS'
  *
  * @returns {Object} - tree format
  */
-module.exports = function (openapi, { folderStrategy, includeWebhooks, includeDeprecated, nestedFolderHierarchy }) {
+module.exports = function (context, openapi,
+  { folderStrategy, includeWebhooks, includeDeprecated, nestedFolderHierarchy }) {
   let skeletonTree;
 
   switch (folderStrategy) {
     case 'tags':
       if (nestedFolderHierarchy) {
-        skeletonTree = _generateTreeFromNestedTags(openapi, { includeDeprecated });
+        skeletonTree = _generateTreeFromNestedTags(context, openapi, { includeDeprecated });
       }
       else {
-        skeletonTree = _generateTreeFromTags(openapi, { includeDeprecated });
+        skeletonTree = _generateTreeFromTags(context, openapi, { includeDeprecated });
       }
 
       break;
 
     case 'paths':
-      skeletonTree = _generateTreeFromPathsV2(openapi, { includeDeprecated });
+      skeletonTree = _generateTreeFromPathsV2(context, openapi, { includeDeprecated });
       break;
 
     default:

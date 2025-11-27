@@ -2722,7 +2722,9 @@ module.exports = {
 
     _.forEach(schemaPaths, (schemaPathObj, schemaPath) => {
       // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
-      schemaPathObj = utils.resolvePathItemRef(schema, schemaPathObj);
+      if (schemaPathObj && schemaPathObj.$ref) {
+        schemaPathObj = resolveRefFromSchema(context, schemaPathObj.$ref);
+      }
 
       _.forEach(_.keys(schemaPathObj), (pathKey) => {
         schemaJsonPath = `$.paths[${schemaPath}].${_.toLower(pathKey)}`;
