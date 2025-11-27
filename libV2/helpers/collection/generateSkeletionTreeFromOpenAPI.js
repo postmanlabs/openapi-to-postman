@@ -421,7 +421,7 @@ let _ = require('lodash'),
     return tree;
   },
 
-  _generateWebhookEndpoints = function (openapi, tree, { includeDeprecated }) {
+  _generateWebhookEndpoints = function (context, openapi, tree, { includeDeprecated }) {
     if (!_.isEmpty(openapi.webhooks)) {
       tree.setNode(`${PATH_WEBHOOK}:folder`, {
         type: 'webhook~folder',
@@ -437,6 +437,11 @@ let _ = require('lodash'),
     }
 
     _.forEach(openapi.webhooks, function (methodData, path) {
+      // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
+      if (methodData && methodData.$ref) {
+        methodData = resolveRefFromSchema(context, methodData.$ref);
+      }
+
       _.forEach(methodData, function (data, method) {
         /**
          * include deprecated handling.
@@ -492,7 +497,7 @@ module.exports = function (context, openapi,
   }
 
   if (includeWebhooks) {
-    skeletonTree = _generateWebhookEndpoints(openapi, skeletonTree, { includeDeprecated });
+    skeletonTree = _generateWebhookEndpoints(context, openapi, skeletonTree, { includeDeprecated });
   }
 
   return skeletonTree;
