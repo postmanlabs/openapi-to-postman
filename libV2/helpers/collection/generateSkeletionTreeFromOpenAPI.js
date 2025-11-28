@@ -1,5 +1,6 @@
 let _ = require('lodash'),
   Graph = require('graphlib').Graph,
+  { resolveRefFromSchema } = require('../../schemaUtils'),
 
   PATH_WEBHOOK = 'path~webhook',
   ALLOWED_HTTP_METHODS = {
@@ -14,8 +15,7 @@ let _ = require('lodash'),
     trace: true
   },
 
-
-  _generateTreeFromPathsV2 = function (openapi, { includeDeprecated }) {
+  _generateTreeFromPathsV2 = function (context, openapi, { includeDeprecated }) {
     /**
      * We will create a unidirectional graph
      */
@@ -50,6 +50,10 @@ let _ = require('lodash'),
        */
       if (pathSplit.length === 1) {
         let methods = openapi.paths[completePath];
+
+        if (methods && methods.$ref) {
+          methods = resolveRefFromSchema(context, methods.$ref);
+        }
 
         _.forEach(methods, function (data, method) {
           if (!ALLOWED_HTTP_METHODS[method]) {
@@ -99,6 +103,10 @@ let _ = require('lodash'),
 
           if ((index + 1) === pathSplit.length) {
             let methods = openapi.paths[completePath];
+
+            if (methods && methods.$ref) {
+              methods = resolveRefFromSchema(context, methods.$ref);
+            }
 
             _.forEach(methods, function (data, method) {
               if (!ALLOWED_HTTP_METHODS[method]) {
@@ -176,7 +184,7 @@ let _ = require('lodash'),
     return tree;
   },
 
-  _generateTreeFromTags = function (openapi, { includeDeprecated }) {
+  _generateTreeFromTags = function (context, openapi, { includeDeprecated }) {
     let tree = new Graph(),
 
       tagDescMap = _.reduce(openapi.tags, function (acc, data) {
@@ -216,6 +224,10 @@ let _ = require('lodash'),
     });
 
     _.forEach(openapi.paths, function (methods, path) {
+      if (methods && methods.$ref) {
+        methods = resolveRefFromSchema(context, methods.$ref);
+      }
+
       _.forEach(methods, function (data, method) {
         if (!ALLOWED_HTTP_METHODS[method]) {
           return;
@@ -284,12 +296,13 @@ let _ = require('lodash'),
 
   /**
    * Generates tree structure with nested folders based on tag order
+   * @param {Object} context - Global context object
    * @param {Object} openapi - OpenAPI specification
    * @param {Object} options - Generation options
    * @param {boolean} options.includeDeprecated - Whether to include deprecated operations
    * @returns {Object} - Graph tree with nested folder structure
    */
-  _generateTreeFromNestedTags = function (openapi, { includeDeprecated }) {
+  _generateTreeFromNestedTags = function (context, openapi, { includeDeprecated }) {
     let tree = new Graph(),
 
       tagDescMap = _.reduce(openapi.tags, function (acc, data) {
@@ -345,6 +358,10 @@ let _ = require('lodash'),
     };
 
     _.forEach(openapi.paths, function (methods, path) {
+      if (methods && methods.$ref) {
+        methods = resolveRefFromSchema(context, methods.$ref);
+      }
+
       _.forEach(methods, function (data, method) {
         if (!ALLOWED_HTTP_METHODS[method]) {
           return;
@@ -400,7 +417,7 @@ let _ = require('lodash'),
     return tree;
   },
 
-  _generateWebhookEndpoints = function (openapi, tree, { includeDeprecated }) {
+  _generateWebhookEndpoints = function (context, openapi, tree, { includeDeprecated }) {
     if (!_.isEmpty(openapi.webhooks)) {
       tree.setNode(`${PATH_WEBHOOK}:folder`, {
         type: 'webhook~folder',
@@ -416,6 +433,10 @@ let _ = require('lodash'),
     }
 
     _.forEach(openapi.webhooks, function (methodData, path) {
+      if (methodData && methodData.$ref) {
+        methodData = resolveRefFromSchema(context, methodData.$ref);
+      }
+
       _.forEach(methodData, function (data, method) {
         /**
          * include deprecated handling.
@@ -441,27 +462,29 @@ let _ = require('lodash'),
 /**
  * Used to generate a tree skeleton for the openapi which will be a collection
  *
+ * @param  {Object} context - Global context object
  * @param  {Object} openapi - openapi schema paths in question
  * @param  {String} stratergy='PATHS'
  *
  * @returns {Object} - tree format
  */
-module.exports = function (openapi, { folderStrategy, includeWebhooks, includeDeprecated, nestedFolderHierarchy }) {
+module.exports = function (context, openapi,
+  { folderStrategy, includeWebhooks, includeDeprecated, nestedFolderHierarchy }) {
   let skeletonTree;
 
   switch (folderStrategy) {
     case 'tags':
       if (nestedFolderHierarchy) {
-        skeletonTree = _generateTreeFromNestedTags(openapi, { includeDeprecated });
+        skeletonTree = _generateTreeFromNestedTags(context, openapi, { includeDeprecated });
       }
       else {
-        skeletonTree = _generateTreeFromTags(openapi, { includeDeprecated });
+        skeletonTree = _generateTreeFromTags(context, openapi, { includeDeprecated });
       }
 
       break;
 
     case 'paths':
-      skeletonTree = _generateTreeFromPathsV2(openapi, { includeDeprecated });
+      skeletonTree = _generateTreeFromPathsV2(context, openapi, { includeDeprecated });
       break;
 
     default:
@@ -469,7 +492,7 @@ module.exports = function (openapi, { folderStrategy, includeWebhooks, includeDe
   }
 
   if (includeWebhooks) {
-    skeletonTree = _generateWebhookEndpoints(openapi, skeletonTree, { includeDeprecated });
+    skeletonTree = _generateWebhookEndpoints(context, openapi, skeletonTree, { includeDeprecated });
   }
 
   return skeletonTree;

@@ -1,0 +1,62 @@
+openapi: "3.1.0"
+info:
+  title: Path Items with Tags Test
+  version: 1.0.0
+tags:
+  - name: Users
+    description: User management
+  - name: Products
+    description: Product management
+paths:
+  /users:
+    $ref: "#/components/pathItems/UsersPath"
+  /products:
+    get:
+      summary: Get products
+      tags:
+        - Products
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+components:
+  pathItems:
+    UsersPath:
+      get:
+        summary: Get all users
+        tags:
+          - Users
+        responses:
+          '200':
+            description: Success
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    type: object
+      post:
+        summary: Create user
+        tags:
+          - Users
+        requestBody:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+        responses:
+          '201':
+            description: Created
+            content:
+              application/json:
+                schema:
+                  type: object
+
