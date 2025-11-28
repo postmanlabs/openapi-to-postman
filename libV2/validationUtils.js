@@ -2721,6 +2721,10 @@ module.exports = {
     );
 
     _.forEach(schemaPaths, (schemaPathObj, schemaPath) => {
+      if (schemaPathObj && schemaPathObj.$ref) {
+        schemaPathObj = resolveRefFromSchema(context, schemaPathObj.$ref);
+      }
+
       _.forEach(_.keys(schemaPathObj), (pathKey) => {
         schemaJsonPath = `$.paths[${schemaPath}].${_.toLower(pathKey)}`;
         let operationItem = _.get(schemaPathObj, pathKey) || {},

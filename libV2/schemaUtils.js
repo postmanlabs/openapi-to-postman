@@ -303,6 +303,8 @@ let QUERYPARAM = 'query',
     const { specComponents } = context,
       { stackLimit } = context.computedOptions;
 
+    context.schemaCache = context.schemaCache || {};
+
     if (stackDepth >= getRefStackLimit(stackLimit)) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
@@ -721,7 +723,7 @@ let QUERYPARAM = 'query',
 
         schema.properties = resolvedSchemaProps;
       }
-      
+
       schema.type = schema.type || SCHEMA_TYPES.object;
     }
     // If schema is of type array
@@ -833,10 +835,10 @@ let QUERYPARAM = 'query',
 
     if (resolvedSchema.type === 'object') {
       const schemaDetails = {
-          description: resolvedSchema.description,
-          title: resolvedSchema.title,
-          type: resolvedSchema.type
-        };
+        description: resolvedSchema.description,
+        title: resolvedSchema.title,
+        type: resolvedSchema.type
+      };
 
       // Only include properties if they exist in the original schema
       if (resolvedSchema.hasOwnProperty('properties')) {
