@@ -95,7 +95,6 @@ module.exports = {
             requestTypesObject = {},
             pathItem = context.openapi.paths[node.meta.path];
 
-          // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
           if (pathItem && pathItem.$ref) {
             pathItem = resolveRefFromSchema(context, pathItem.$ref);
           }
@@ -175,7 +174,6 @@ module.exports = {
             requestObject = {},
             webhookPathItem = context.openapi.webhooks[node.meta.path];
 
-          // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
           if (webhookPathItem && webhookPathItem.$ref) {
             webhookPathItem = resolveRefFromSchema(context, webhookPathItem.$ref);
           }

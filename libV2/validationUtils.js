@@ -2721,7 +2721,6 @@ module.exports = {
     );
 
     _.forEach(schemaPaths, (schemaPathObj, schemaPath) => {
-      // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
       if (schemaPathObj && schemaPathObj.$ref) {
         schemaPathObj = resolveRefFromSchema(context, schemaPathObj.$ref);
       }

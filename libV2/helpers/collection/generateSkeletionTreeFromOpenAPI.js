@@ -51,7 +51,6 @@ let _ = require('lodash'),
       if (pathSplit.length === 1) {
         let methods = openapi.paths[completePath];
 
-        // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
         if (methods && methods.$ref) {
           methods = resolveRefFromSchema(context, methods.$ref);
         }
@@ -105,7 +104,6 @@ let _ = require('lodash'),
           if ((index + 1) === pathSplit.length) {
             let methods = openapi.paths[completePath];
 
-            // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
             if (methods && methods.$ref) {
               methods = resolveRefFromSchema(context, methods.$ref);
             }
@@ -226,7 +224,6 @@ let _ = require('lodash'),
     });
 
     _.forEach(openapi.paths, function (methods, path) {
-      // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
       if (methods && methods.$ref) {
         methods = resolveRefFromSchema(context, methods.$ref);
       }
@@ -361,7 +358,6 @@ let _ = require('lodash'),
     };
 
     _.forEach(openapi.paths, function (methods, path) {
-      // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
       if (methods && methods.$ref) {
         methods = resolveRefFromSchema(context, methods.$ref);
       }
@@ -437,7 +433,6 @@ let _ = require('lodash'),
     }
 
     _.forEach(openapi.webhooks, function (methodData, path) {
-      // Resolve pathItem reference if it has a $ref property (OpenAPI 3.1 feature)
       if (methodData && methodData.$ref) {
         methodData = resolveRefFromSchema(context, methodData.$ref);
       }
