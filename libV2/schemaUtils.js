@@ -108,7 +108,6 @@ const schemaFaker = require('../assets/json-schema-faker'),
 
     return _getEscaped(rootObject[pathArray.shift()], pathArray, defValue);
   },
-
   getXmlVersionContent = (bodyContent) => {
     const regExp = new RegExp('([<\\?xml]+[\\s{1,}]+[version="\\d.\\d"]+[\\sencoding="]+.{1,15}"\\?>)');
     let xmlBody = bodyContent;
