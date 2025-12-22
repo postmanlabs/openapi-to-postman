@@ -10,12 +10,19 @@ const expect = require('chai').expect,
   fs = require('fs'),
   path = require('path'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
+  VALID_OPENAPI31X_PATH = '../data/valid_openapi31X',
   Ajv = require('ajv'),
   testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
   testSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/test1.json'),
   testSpec2 = path.join(__dirname, VALID_OPENAPI_PATH + '/test-title-description.json'),
   readOnlyNestedSpec =
   path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyNested.json'),
+  referencedPathItemsSpec =
+  path.join(__dirname, VALID_OPENAPI31X_PATH, '/yaml/referencedPathItems.yaml'),
+  nestedPathItemsSpec =
+  path.join(__dirname, VALID_OPENAPI31X_PATH, '/yaml/nestedPathItemRefs.yaml'),
+  pathItemsWithTagsSpec =
+  path.join(__dirname, VALID_OPENAPI31X_PATH, '/yaml/referencedPathItemsWithTags.yaml'),
   ajv = new Ajv({ allErrors: true, strict: false }),
   transformSchema = (schema) => {
     const properties = schema.properties,
@@ -2367,6 +2374,209 @@ describe('convertV2WithTypes', function() {
         expect(response5xxBody.properties.metadata.properties).to.have.property('version');
         expect(response5xxBody.properties.metadata.properties.timestamp).to.have.property('format', 'date-time');
         expect(response5xxBody.required).to.deep.equal(['errorId', 'message']);
+
+        done();
+      });
+    });
+  });
+
+  describe('OpenAPI 3.1 referenced path items support', function() {
+    it('should correctly convert OpenAPI 3.1 specs with referenced path items from components.pathItems', function(done) {
+      const openapi = fs.readFileSync(referencedPathItemsSpec, 'utf8'),
+        options = { schemaFaker: true, parametersResolution: 'schema', folderStrategy: 'paths' };
+
+      Converter.convertV2WithTypes({ type: 'json', data: openapi }, options, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+        expect(conversionResult.output).to.be.an('array').that.is.not.empty;
+
+        const collection = conversionResult.output[0].data;
+        expect(collection).to.have.property('info');
+        expect(collection.info).to.have.property('name', 'Referenced Path Items Test');
+        expect(collection).to.have.property('item');
+
+        // Should have 2 top-level folders: users and products
+        expect(collection.item).to.be.an('array').with.length(2);
+
+        // Find the users folder (referenced path item)
+        const usersFolder = collection.item.find((item) => { return item.name === 'users'; });
+        expect(usersFolder, 'Users folder should exist').to.not.be.undefined;
+        expect(usersFolder).to.have.property('item');
+
+        // Users folder should have 2 requests (GET and POST from referenced path item)
+        expect(usersFolder.item).to.be.an('array').with.length(2);
+
+        // Validate GET /users request
+        const getUsersRequest = usersFolder.item.find((item) => {
+          return item.request && item.request.method === 'GET';
+        });
+        expect(getUsersRequest, 'GET /users request should exist').to.not.be.undefined;
+        expect(getUsersRequest).to.have.property('name', 'Get all users');
+        expect(getUsersRequest.request).to.have.property('method', 'GET');
+        expect(getUsersRequest.request.url.path).to.deep.equal(['users']);
+
+        // Validate response for GET /users
+        expect(getUsersRequest.response).to.be.an('array').with.length.greaterThan(0);
+        const getUsersResponse = getUsersRequest.response[0];
+        expect(getUsersResponse).to.have.property('name', 'successful operation');
+        expect(getUsersResponse).to.have.property('code', 200);
+        expect(getUsersResponse.body).to.include('"id":');
+        expect(getUsersResponse.body).to.include('"name":');
+
+        // Validate POST /users request
+        const createUserRequest = usersFolder.item.find((item) => {
+          return item.request && item.request.method === 'POST';
+        });
+        expect(createUserRequest, 'POST /users request should exist').to.not.be.undefined;
+        expect(createUserRequest).to.have.property('name', 'Create a new user');
+        expect(createUserRequest.request).to.have.property('method', 'POST');
+        expect(createUserRequest.request.url.path).to.deep.equal(['users']);
+
+        // Validate request body for POST /users
+        expect(createUserRequest.request.body).to.have.property('mode', 'raw');
+        expect(createUserRequest.request.body.raw).to.be.a('string');
+        const parsedRequestBody = JSON.parse(createUserRequest.request.body.raw);
+        expect(parsedRequestBody).to.have.property('id');
+        expect(parsedRequestBody).to.have.property('name');
+
+        // Validate response for POST /users
+        expect(createUserRequest.response).to.be.an('array').with.length.greaterThan(0);
+        const createUserResponse = createUserRequest.response[0];
+        expect(createUserResponse).to.have.property('name', 'User created successfully');
+        expect(createUserResponse).to.have.property('code', 201);
+
+        // Find the products folder (inline path item - not referenced)
+        const productsFolder = collection.item.find((item) => { return item.name === 'products'; });
+        expect(productsFolder, 'Products folder should exist').to.not.be.undefined;
+        expect(productsFolder).to.have.property('item');
+
+        // Products folder should have 1 request (GET only)
+        expect(productsFolder.item).to.be.an('array').with.length(1);
+
+        // Validate GET /products request
+        const getProductsRequest = productsFolder.item[0];
+        expect(getProductsRequest).to.have.property('name', 'Get products');
+        expect(getProductsRequest.request).to.have.property('method', 'GET');
+        expect(getProductsRequest.request.url.path).to.deep.equal(['products']);
+
+        // Validate extractedTypes contains data for both paths
+        expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+        expect(conversionResult.extractedTypes).to.have.property('get/users');
+        expect(conversionResult.extractedTypes).to.have.property('post/users');
+        expect(conversionResult.extractedTypes).to.have.property('get/products');
+
+        // Validate GET /users extracted types
+        const getUsersTypes = conversionResult.extractedTypes['get/users'];
+        expect(getUsersTypes).to.have.property('response');
+        expect(getUsersTypes.response).to.have.property('200');
+        const getUsersResponseBody = JSON.parse(getUsersTypes.response['200'].body);
+        expect(getUsersResponseBody).to.have.property('type', 'array');
+        expect(getUsersResponseBody.items).to.have.property('type', 'object');
+        expect(getUsersResponseBody.items.properties).to.have.property('id');
+        expect(getUsersResponseBody.items.properties).to.have.property('name');
+        expect(getUsersResponseBody.items.properties).to.have.property('email');
+
+        // Validate POST /users extracted types
+        const createUserTypes = conversionResult.extractedTypes['post/users'];
+        expect(createUserTypes).to.have.property('request');
+        expect(createUserTypes.request).to.have.property('body');
+        const createUserRequestBody = JSON.parse(createUserTypes.request.body);
+        expect(createUserRequestBody).to.have.property('type', 'object');
+        expect(createUserRequestBody.properties).to.have.property('id');
+        expect(createUserRequestBody.properties).to.have.property('name');
+        expect(createUserRequestBody.required).to.deep.equal(['id', 'name']);
+
+        // Validate GET /products extracted types
+        const getProductsTypes = conversionResult.extractedTypes['get/products'];
+        expect(getProductsTypes).to.have.property('response');
+        expect(getProductsTypes.response).to.have.property('200');
+        const getProductsResponseBody = JSON.parse(getProductsTypes.response['200'].body);
+        expect(getProductsResponseBody).to.have.property('type', 'array');
+        expect(getProductsResponseBody.items.properties).to.have.property('id');
+        expect(getProductsResponseBody.items.properties).to.have.property('name');
+        expect(getProductsResponseBody.items.properties).to.have.property('price');
+
+        done();
+      });
+    });
+
+    it('should correctly convert OpenAPI 3.1 specs with referenced path items using tags folding strategy', function(done) {
+      const openApiWithTags = fs.readFileSync(pathItemsWithTagsSpec, 'utf8');
+
+      Converter.convertV2WithTypes(
+        { type: 'json', data: openApiWithTags },
+        { folderStrategy: 'tags' },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+
+          const collection = conversionResult.output[0].data;
+          expect(collection.item).to.be.an('array').with.length(2);
+
+          // Find Users tag folder
+          const usersTagFolder = collection.item.find((item) => { return item.name === 'Users'; });
+          expect(usersTagFolder, 'Users tag folder should exist').to.not.be.undefined;
+          expect(usersTagFolder.item).to.be.an('array').with.length(2);
+
+          // Verify GET and POST requests are in Users folder
+          const getUsersInTag = usersTagFolder.item.find((item) => {
+            return item.request && item.request.method === 'GET';
+          });
+          const createUserInTag = usersTagFolder.item.find((item) => {
+            return item.request && item.request.method === 'POST';
+          });
+
+          expect(getUsersInTag, 'GET /users should be in Users tag').to.not.be.undefined;
+          expect(getUsersInTag.name).to.equal('Get all users');
+          expect(createUserInTag, 'POST /users should be in Users tag').to.not.be.undefined;
+          expect(createUserInTag.name).to.equal('Create user');
+
+          // Find Products tag folder
+          const productsTagFolder = collection.item.find((item) => { return item.name === 'Products'; });
+          expect(productsTagFolder, 'Products tag folder should exist').to.not.be.undefined;
+          expect(productsTagFolder.item).to.be.an('array').with.length(1);
+
+          // Verify extractedTypes
+          expect(conversionResult.extractedTypes).to.have.property('get/users');
+          expect(conversionResult.extractedTypes).to.have.property('post/users');
+          expect(conversionResult.extractedTypes).to.have.property('get/products');
+
+          done();
+        }
+      );
+    });
+
+    it('should correctly resolve OpenAPI 3.1 specs with nested path item references (multiple levels of $ref)', function(done) {
+      const openapi = fs.readFileSync(nestedPathItemsSpec, 'utf8');
+
+      Converter.convertV2WithTypes({ type: 'json', data: openapi }, { folderStrategy: 'paths' }, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.be.true;
+        expect(conversionResult.output).to.be.an('array').that.is.not.empty;
+
+        const collection = conversionResult.output[0].data;
+        expect(collection.item).to.have.lengthOf(3); // /users, /products, /orders
+
+        // Verify /users path item (3 levels deep)
+        const usersFolder = collection.item.find((item) => {
+          return item.name === 'users';
+        });
+        expect(usersFolder, '/users folder should exist').to.exist;
+        expect(usersFolder.item).to.have.lengthOf(3); // GET, POST, DELETE
+
+        // Verify /products path item
+        const productsFolder = collection.item.find((item) => {
+          return item.name === 'products';
+        });
+        expect(productsFolder.item, '/products should have 2 operations').to.have.lengthOf(2); // GET, POST
+
+        // Verify /orders path item (inline, no ref) - should be a folder with one request
+        const ordersFolder = collection.item.find((item) => {
+          return item.name === 'orders';
+        });
+        expect(ordersFolder.item).to.have.lengthOf(1);
+        expect(ordersFolder.item[0].name).to.equal('Get orders');
+        expect(ordersFolder.item[0].request.method).to.equal('GET');
 
         done();
       });

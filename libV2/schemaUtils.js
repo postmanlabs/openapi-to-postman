@@ -303,6 +303,8 @@ let QUERYPARAM = 'query',
     const { specComponents } = context,
       { stackLimit } = context.computedOptions;
 
+    context.schemaCache = context.schemaCache || {};
+
     if (stackDepth >= getRefStackLimit(stackLimit)) {
       return { value: ERR_TOO_MANY_LEVELS };
     }

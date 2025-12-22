@@ -14,7 +14,7 @@ const _ = require('lodash'),
   OpenApiErr = require('../lib/error'),
   { validateTransaction, getMissingSchemaEndpoints } = require('./validationUtils');
 
-const { resolvePostmanRequest } = require('./schemaUtils');
+const { resolvePostmanRequest, resolveRefFromSchema } = require('./schemaUtils');
 const { generateRequestItemObject, fixPathVariablesInUrl } = require('./utils');
 
 module.exports = {
@@ -23,7 +23,7 @@ module.exports = {
      * Start generating the Bare bone tree that should exist for the schema
      */
 
-    let collectionTree = generateSkeletonTreeFromOpenAPI(context.openapi, context.computedOptions);
+    let collectionTree = generateSkeletonTreeFromOpenAPI(context, context.openapi, context.computedOptions);
 
     /**
      * Do post order traversal so we get the request nodes first and generate the request object
@@ -92,11 +92,16 @@ module.exports = {
           let request = {},
             collectionVariables = [],
             requestObject = {},
-            requestTypesObject = {};
+            requestTypesObject = {},
+            pathItem = context.openapi.paths[node.meta.path];
+
+          if (pathItem && pathItem.$ref) {
+            pathItem = resolveRefFromSchema(context, pathItem.$ref);
+          }
 
           try {
             ({ request, collectionVariables, requestTypesObject } = resolvePostmanRequest(context,
-              context.openapi.paths[node.meta.path],
+              pathItem,
               node.meta.path,
               node.meta.method
             ));
@@ -166,7 +171,12 @@ module.exports = {
           // generate the request form the node
           let request = {},
             collectionVariables = [],
-            requestObject = {};
+            requestObject = {},
+            webhookPathItem = context.openapi.webhooks[node.meta.path];
+
+          if (webhookPathItem && webhookPathItem.$ref) {
+            webhookPathItem = resolveRefFromSchema(context, webhookPathItem.$ref);
+          }
 
           // TODO: Figure out a proper fix for this
           if (node.meta.method === 'parameters') {
@@ -175,7 +185,7 @@ module.exports = {
 
           try {
             ({ request, collectionVariables } = resolvePostmanRequest(context,
-              context.openapi.webhooks[node.meta.path],
+              webhookPathItem,
               node.meta.path,
               node.meta.method
             ));
