@@ -528,6 +528,9 @@ let QUERYPARAM = 'query',
       if (schema.description !== undefined) {
         result.description = schema.description;
       }
+      if (schema.example !== undefined) {
+        result.example = schema.example;
+      }
       return result;
     }
 
@@ -619,6 +622,9 @@ let QUERYPARAM = 'query',
       }
       if (schema.description !== undefined) {
         result.description = schema.description;
+      }
+      if (schema.example !== undefined) {
+        result.example = schema.example;
       }
 
       return result;
@@ -721,7 +727,7 @@ let QUERYPARAM = 'query',
 
         schema.properties = resolvedSchemaProps;
       }
-      
+
       schema.type = schema.type || SCHEMA_TYPES.object;
     }
     // If schema is of type array
