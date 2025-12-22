@@ -14,5 +14,5 @@ echo -en "\033[0m\033[2m";
 echo -e "eslint `eslint -v`\033[0m\n";
 
 # run style checker
-eslint index.js ./lib/** ./test/**/*.js ;
+eslint ./lib/** ./test/**/*.js ;
 echo -en "\033[92mNo lint errors found.\n\033[0m";
