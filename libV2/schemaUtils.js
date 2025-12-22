@@ -805,6 +805,7 @@ let QUERYPARAM = 'query',
       return {
         title: resolvedSchema.title,
         description: resolvedSchema.description,
+        example: resolvedSchema.example,
         anyOf: resolvedSchema.anyOf.map((schema) => {
           return processSchema(schema);
         })
@@ -815,6 +816,7 @@ let QUERYPARAM = 'query',
       return {
         title: resolvedSchema.title,
         description: resolvedSchema.description,
+        example: resolvedSchema.example,
         oneOf: resolvedSchema.oneOf.map((schema) => {
           return processSchema(schema);
         })
@@ -825,6 +827,7 @@ let QUERYPARAM = 'query',
       return {
         title: resolvedSchema.title,
         description: resolvedSchema.description,
+        example: resolvedSchema.example,
         allOf: resolvedSchema.allOf.map((schema) => {
           return processSchema(schema);
         })
@@ -833,10 +836,11 @@ let QUERYPARAM = 'query',
 
     if (resolvedSchema.type === 'object') {
       const schemaDetails = {
-          description: resolvedSchema.description,
-          title: resolvedSchema.title,
-          type: resolvedSchema.type
-        };
+        description: resolvedSchema.description,
+        title: resolvedSchema.title,
+        type: resolvedSchema.type,
+        example: resolvedSchema.example
+      };
 
       // Only include properties if they exist in the original schema
       if (resolvedSchema.hasOwnProperty('properties')) {
@@ -902,6 +906,7 @@ let QUERYPARAM = 'query',
         type: resolvedSchema.type,
         description: resolvedSchema.description,
         title: resolvedSchema.title,
+        example: resolvedSchema.example,
         items: processSchema(resolvedSchema.items)
       };
       if (resolvedSchema.minItems !== undefined) { arrayDetails.minItems = resolvedSchema.minItems; }
@@ -911,7 +916,8 @@ let QUERYPARAM = 'query',
     return {
       type: resolvedSchema.type,
       description: resolvedSchema.description,
-      title: resolvedSchema.title
+      title: resolvedSchema.title,
+      example: resolvedSchema.example
     };
   },
 
