@@ -158,6 +158,7 @@
     "build": "tsc && chmod +x dist/cli.js",
     "build:watch": "tsc --watch",
     "prebuild": "rm -rf dist",
+    "prepare": "npm run build",
     "test": "npm run build && ./scripts/test.sh",
     "test-unit": "npm run build && nyc --reporter=text --reporter=json-summary  --report-dir=.coverage -x **/assets/** -x **/test/** -x **/dist/** ./node_modules/mocha/bin/mocha --timeout 90000 \"test/unit/**/**.test.js\"",
     "test-lint": "./scripts/test-lint.sh",
