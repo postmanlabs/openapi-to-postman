@@ -111,9 +111,10 @@
   "engines": {
     "node": ">=18"
   },
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
-    "openapi2postmanv2": "./bin/openapi2postmanv2.js"
+    "openapi2postmanv2": "./dist/cli.js"
   },
   "dependencies": {
     "ajv": "^8.11.0",
@@ -137,6 +138,10 @@
   "author": "Postman Labs <help@getpostman.com>",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@total-typescript/ts-reset": "0.5.1",
+    "@types/lodash": "^4.17.0",
+    "@types/node": "^20.0.0",
+    "@types/postman-collection": "^3.5.10",
     "chai": "4.3.6",
     "editorconfig": "0.15.3",
     "eslint": "5.16.0",
@@ -146,15 +151,20 @@
     "expect.js": "0.3.1",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "parse-gitignore": "0.5.1"
+    "parse-gitignore": "0.5.1",
+    "typescript": "5.5.3"
   },
   "scripts": {
-    "test": "./scripts/test.sh",
-    "test-unit": "nyc --reporter=text --reporter=json-summary  --report-dir=.coverage -x **/assets/** -x **/test/** ./node_modules/mocha/bin/mocha --timeout 90000 \"test/unit/**/**.test.js\"",
+    "build": "tsc && chmod +x dist/cli.js",
+    "build:watch": "tsc --watch",
+    "prebuild": "rm -rf dist",
+    "test": "npm run build && ./scripts/test.sh",
+    "test-unit": "npm run build && nyc --reporter=text --reporter=json-summary  --report-dir=.coverage -x **/assets/** -x **/test/** -x **/dist/** ./node_modules/mocha/bin/mocha --timeout 90000 \"test/unit/**/**.test.js\"",
     "test-lint": "./scripts/test-lint.sh",
-    "test-system": "./node_modules/mocha/bin/mocha -x **/assets/** -x **/test/** \"test/system/**.test.js\"",
-    "test-regression": "nyc --reporter=text --reporter=json-summary  --report-dir=.coverage ./node_modules/mocha/bin/mocha test/integration/integration.test.js test/unit/sanity.test.js",
+    "test-system": "npm run build && ./node_modules/mocha/bin/mocha -x **/assets/** -x **/test/** \"test/system/**.test.js\"",
+    "test-regression": "npm run build && nyc --reporter=text --reporter=json-summary  --report-dir=.coverage -x **/dist/** ./node_modules/mocha/bin/mocha test/integration/integration.test.js test/unit/sanity.test.js",
     "release": "./scripts/release.sh",
-    "coverage": "nyc report --reporter=html --reporter=text mocha"
+    "coverage": "nyc report --reporter=html --reporter=text mocha",
+    "prepublishOnly": "npm run build"
   }
 }

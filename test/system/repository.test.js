@@ -61,7 +61,7 @@ describe('project repository', function () {
     describe('binary definitions', function () {
       it('must exist', function () {
         expect(json.bin).be.ok();
-        expect(json.bin).to.eql({ 'openapi2postmanv2': './bin/openapi2postmanv2.js' });
+        expect(json.bin).to.eql({ 'openapi2postmanv2': './dist/cli.js' });
       });
 
       it('must have valid node shebang', function () {
@@ -110,7 +110,7 @@ describe('project repository', function () {
 
     describe('main entry script', function () {
       it('must point to a valid file', function (done) {
-        expect(json.main).to.equal('index.js');
+        expect(json.main).to.equal('dist/index.js');
         fs.stat(json.main, done);
       });
     });
@@ -162,8 +162,13 @@ describe('project repository', function () {
       });
     });
 
-    it('.gitignore coverage must be a subset of .npmignore coverage', function () {
-      expect(_.intersection(gitignore, npmignore)).to.eql(gitignore);
+    it('.gitignore coverage must be a subset of .npmignore coverage (except dist which is built for npm)', function () {
+      // Filter out 'dist' entries as they should be in gitignore but NOT in npmignore
+      // (dist is generated and should be published to npm but not committed to git)
+      var gitignoreWithoutDist = gitignore.filter(function (entry) {
+        return !entry.includes('dist');
+      });
+      expect(_.intersection(gitignoreWithoutDist, npmignore)).to.eql(gitignoreWithoutDist);
     });
   });
 
