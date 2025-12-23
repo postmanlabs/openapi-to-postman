@@ -1,5 +1,5 @@
 let expect = require('chai').expect,
-  Converter = require('../../dist/index.js'),
+  Converter = require('../../dist/src/index.js'),
   fs = require('fs'),
   path = require('path'),
   SWAGGER_MULTIFILE_FOLDER = '../data/toBundleExamples/swagger20',

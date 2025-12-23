@@ -106,7 +106,7 @@ function convert(
 const program = new Command();
 
 program
-  .version(require('../package.json').version, '-v, --version')
+  .version(require('../../package.json').version, '-v, --version')
   .option('-s, --spec <spec>', 'Convert given OPENAPI 3.0.0 spec to Postman Collection v2.0')
   .option('-o, --output <output>', 'Write the collection to an output file')
   .option('-t, --test', 'Test the OPENAPI converter')
@@ -158,7 +158,7 @@ if (definedOptions && Object.keys(definedOptions).length > 0) {
 }
 
 if (testFlag) {
-  const testSpecPath = path.resolve(__dirname, '..', 'examples', 'sample-swagger.yaml');
+  const testSpecPath = path.resolve(__dirname, '..', '..', 'examples', 'sample-swagger.yaml');
   const specData = fs.readFileSync(testSpecPath, 'utf8');
   convert(specData, options, outputFile, prettyPrintFlag, interfaceVersion);
 } else if (inputFile) {

@@ -1,7 +1,7 @@
 let fs = require('fs'),
   _ = require('lodash'),
   expect = require('chai').expect,
-  getOptions = require('../../dist/index').getOptions;
+  getOptions = require('../../dist/src/index').getOptions;
 
 const optionIds = [
     'collapseFolders',

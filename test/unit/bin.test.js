@@ -13,7 +13,7 @@ describe('openapi2postmanv2 ', function() {
   });
 
   it('should print to console', function(done) {
-    exec('./dist/cli.js -s test/data/valid_openapi/petstore.json', function(err, stdout) {
+    exec('./dist/src/cli.js -s test/data/valid_openapi/petstore.json', function(err, stdout) {
       expect(err).to.be.null;
       expect(stdout).to.include('Swagger Petstore');
       done();
@@ -21,7 +21,7 @@ describe('openapi2postmanv2 ', function() {
   });
 
   it('should print to file', function(done) {
-    exec('./dist/cli.js -s test/data/valid_openapi/petstore.json -o tempOutput.json', function(err) {
+    exec('./dist/src/cli.js -s test/data/valid_openapi/petstore.json -o tempOutput.json', function(err) {
       expect(err).to.be.null;
       fs.readFile(tempOutputFile, 'utf8', (err, data) => {
         collection = JSON.parse(data);
@@ -33,7 +33,7 @@ describe('openapi2postmanv2 ', function() {
   });
 
   it('should show appropriate messages for invalid input', function (done) {
-    exec('./dist/cli.js -s test/data/invalid_openapi/multiple-components.yaml',
+    exec('./dist/src/cli.js -s test/data/invalid_openapi/multiple-components.yaml',
       function(err, stdout, stderr) {
         expect(err).to.be.null;
         expect(stderr).to.include('duplicated mapping key');

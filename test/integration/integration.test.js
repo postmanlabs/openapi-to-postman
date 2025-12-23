@@ -1,5 +1,5 @@
 const expect = require('chai').expect,
-  Index = require('../../dist/index.js'),
+  Index = require('../../dist/src/index.js'),
   fs = require('fs'),
   path = require('path'),
   async = require('async'),

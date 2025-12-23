@@ -1,12 +1,12 @@
-const generateAuthForCollectionFromOpenAPI = require('./helpers/collection/generateAuthForCollectionFromOpenAPI');
-const utils = require('./utils');
+const generateAuthForCollectionFromOpenAPI = require('./helpers/collection/generateAuthForCollectionFromOpenAPI.js');
+const utils = require('./utils.js');
 
-const schemaFaker = require('../assets/json-schema-faker'),
+const schemaFaker = require('../../assets/json-schema-faker.js'),
   _ = require('lodash'),
   mergeAllOf = require('json-schema-merge-allof'),
-  xmlFaker = require('./xmlSchemaFaker.js'),
+  xmlFaker = require('../xmlSchemaFaker.js'),
   URLENCODED = 'application/x-www-form-urlencoded',
-  { DEFAULT_RESPONSE_CODE_IN_OAS } = require('../lib/common/schemaUtilsCommon.js'),
+  { DEFAULT_RESPONSE_CODE_IN_OAS } = require('../../lib/common/schemaUtilsCommon.js'),
   APP_JSON = 'application/json',
   APP_JS = 'application/javascript',
   TEXT_XML = 'text/xml',
@@ -881,6 +881,7 @@ let QUERYPARAM = 'query',
           else if (propValue.properties) {
             let processedProperties = processSchema(propValue);
             propertyDetails.properties = processedProperties.properties;
+            // eslint-disable-next-line max-depth
             if (processedProperties.required) {
               propertyDetails.required = processedProperties.required;
             }

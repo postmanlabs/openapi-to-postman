@@ -1,5 +1,5 @@
 var expect = require('chai').expect,
-  Converter = require('../../dist/index.js'),
+  Converter = require('../../dist/src/index.js'),
   fs = require('fs'),
   path = require('path'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',

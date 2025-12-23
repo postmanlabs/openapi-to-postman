@@ -1,18 +1,21 @@
 import type {
   ConverterInput,
   ConversionOptions,
-  ConversionResult,
   ConversionCallback,
+  ConversionResult,
   ValidationResult,
-  OptionDefinition
+  OptionDefinition,
+  SyncOptions,
+  SyncCollectionInput,
+  SyncResult
 } from './types';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { MODULE_VERSION, SchemaPack } = require('../lib/schemapack.js');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+import { Collection } from 'postman-collection';
+import { syncCollection as syncCollectionState } from '../libV2/SpecificationCollectionSyncing';
+
+const { MODULE_VERSION, SchemaPack } = require('../../lib/schemapack.js');
 const _ = require('lodash');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const UserError = require('../lib/common/UserError');
+const UserError = require('../../lib/common/UserError');
 
 const DEFAULT_INVALID_ERROR = 'Provided definition is invalid';
 
@@ -55,33 +58,6 @@ export function convertV2(
   }
 
   return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
-}
-
-/**
- * Converts an OpenAPI specification to a Postman Collection using the V2 interface.
- * Promise-based wrapper around convertV2.
- *
- * @param input - The OpenAPI specification input
- * @param options - Conversion options
- * @returns Promise that resolves with the conversion result
- */
-export function convertV2Async(
-  input: ConverterInput,
-  options: ConversionOptions = {}
-): Promise<ConversionResult> {
-  return new Promise((resolve, reject) => {
-    convertV2(input, options, (error, result) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      if (result) {
-        resolve(result);
-      } else {
-        reject(new Error('No result returned from conversion'));
-      }
-    });
-  });
 }
 
 /**
@@ -203,8 +179,99 @@ export async function bundle(
   return schema.bundle();
 }
 
-// Export the SchemaPack class for advanced usage
+/**
+ * Syncs a Postman collection with the latest OpenAPI specification.
+ *
+ * This method converts the specification to a collection using convertV2,
+ * then syncs the generated collection state with the existing collection,
+ * preserving user modifications where appropriate.
+ *
+ * @param input - The sync input containing spec and collection
+ * @param conversionOptions - Options for the OpenAPI to Collection conversion
+ * @param syncOptions - Options controlling what should be synced
+ * @param cb - Callback function with the synced collection result
+ */
+export function syncCollection(
+  input: SyncCollectionInput,
+  conversionOptions: ConversionOptions,
+  syncOptions: SyncOptions,
+  cb: (error: Error | null, result?: SyncResult) => void
+): void {
+  const { spec, collection } = input;
+
+  let currentCollection: Collection;
+  try {
+    const collectionData = typeof collection === 'string' ? JSON.parse(collection) : collection;
+    currentCollection = new Collection(collectionData);
+  } catch (parseError) {
+    return cb(null, {
+      result: false,
+      reason: `Failed to parse collection: ${parseError instanceof Error ? parseError.message : String(parseError)}`
+    });
+  }
+
+  convertV2(spec, conversionOptions, (err: Error | null, result?: ConversionResult) => {
+    if (err) {
+      return cb(err);
+    }
+
+    if (!result || !result.result) {
+      return cb(null, {
+        result: false,
+        reason: (result as { reason?: string })?.reason || 'Conversion failed'
+      });
+    }
+
+    try {
+      const latestCollectionData = result.output[0].data;
+      const latestCollection = new Collection(latestCollectionData);
+
+      const syncedCollection = syncCollectionState(
+        latestCollection,
+        currentCollection,
+        { syncExamples: syncOptions.syncExamples ?? true }
+      );
+
+      return cb(null, {
+        result: true,
+        output: {
+          type: 'collection',
+          data: (syncedCollection as Collection).toJSON()
+        }
+      });
+    } catch (syncError) {
+      return cb(null, {
+        result: false,
+        reason: `Failed to sync collections: ${syncError instanceof Error ? syncError.message : String(syncError)}`
+      });
+    }
+  });
+}
+
+/**
+ * Syncs a Postman collection with the latest OpenAPI specification (Promise-based).
+ *
+ * @param input - The sync input containing spec and collection
+ * @param conversionOptions - Options for the OpenAPI to Collection conversion
+ * @param syncOptions - Options controlling what should be synced
+ * @returns Promise with the synced collection result
+ */
+export function syncCollectionAsync(
+  input: SyncCollectionInput,
+  conversionOptions: ConversionOptions,
+  syncOptions: SyncOptions
+): Promise<SyncResult> {
+  return new Promise((resolve, reject) => {
+    syncCollection(input, conversionOptions, syncOptions, (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result!);
+      }
+    });
+  });
+}
+
 export { SchemaPack };
 
-// Export all types
 export * from './types';

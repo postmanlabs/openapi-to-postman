@@ -1,12 +1,12 @@
 const { MODULE_VERSION } = require('../../lib/schemapack.js');
 
 var expect = require('chai').expect,
-  Converter = require('../../dist/index.js'),
+  Converter = require('../../dist/src/index.js'),
   fs = require('fs'),
   path = require('path'),
   async = require('async'),
   _ = require('lodash'),
-  requestMatchingUtils = require('../../libV2/requestMatchingUtils'),
+  requestMatchingUtils = require('../../libV2/CollectionGeneration/requestMatchingUtils'),
   VALIDATION_DATA_FOLDER_PATH = '../data/validationData',
   VALIDATION_DATA_OPTIONS_FOLDER_31_PATH = '../data/31CollectionTransactions/validateOptions',
   VALIDATION_DATA_SCENARIOS_FOLDER_31_PATH = '../data/31CollectionTransactions/validate30Scenarios',

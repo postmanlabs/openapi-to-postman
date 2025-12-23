@@ -168,3 +168,39 @@ export interface OptionDefinition {
  * Module version
  */
 export type ModuleVersion = 'v1' | 'v2';
+
+/**
+ * Sync options for collection synchronization
+ */
+export interface SyncOptions {
+  /** Whether to sync examples from the specification */
+  syncExamples?: boolean;
+}
+
+/**
+ * Input for collection synchronization
+ */
+export interface SyncCollectionInput {
+  /** The OpenAPI specification input */
+  spec: ConverterInput;
+  /** The current Postman collection (as JSON object or string) */
+  collection: CollectionDefinition | string;
+}
+
+/**
+ * Result of collection synchronization
+ */
+export interface SyncCollectionResult {
+  result: true;
+  output: {
+    type: 'collection';
+    data: CollectionDefinition;
+  };
+}
+
+export interface SyncCollectionErrorResult {
+  result: false;
+  reason: string;
+}
+
+export type SyncResult = SyncCollectionResult | SyncCollectionErrorResult;

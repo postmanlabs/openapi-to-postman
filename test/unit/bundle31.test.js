@@ -1,5 +1,5 @@
 const expect = require('chai').expect,
-  Converter = require('../../dist/index.js'),
+  Converter = require('../../dist/src/index.js'),
   fs = require('fs'),
   path = require('path'),
   BUNDLES_FOLDER = '../data/toBundleExamples',
