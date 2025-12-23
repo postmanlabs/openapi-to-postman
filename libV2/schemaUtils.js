@@ -530,6 +530,9 @@ let QUERYPARAM = 'query',
       if (schema.description !== undefined) {
         result.description = schema.description;
       }
+      if (schema.example !== undefined) {
+        result.example = schema.example;
+      }
       return result;
     }
 
@@ -621,6 +624,9 @@ let QUERYPARAM = 'query',
       }
       if (schema.description !== undefined) {
         result.description = schema.description;
+      }
+      if (schema.example !== undefined) {
+        result.example = schema.example;
       }
 
       return result;
@@ -807,6 +813,7 @@ let QUERYPARAM = 'query',
       return {
         title: resolvedSchema.title,
         description: resolvedSchema.description,
+        example: resolvedSchema.example,
         anyOf: resolvedSchema.anyOf.map((schema) => {
           return processSchema(schema);
         })
@@ -817,6 +824,7 @@ let QUERYPARAM = 'query',
       return {
         title: resolvedSchema.title,
         description: resolvedSchema.description,
+        example: resolvedSchema.example,
         oneOf: resolvedSchema.oneOf.map((schema) => {
           return processSchema(schema);
         })
@@ -827,6 +835,7 @@ let QUERYPARAM = 'query',
       return {
         title: resolvedSchema.title,
         description: resolvedSchema.description,
+        example: resolvedSchema.example,
         allOf: resolvedSchema.allOf.map((schema) => {
           return processSchema(schema);
         })
@@ -837,7 +846,8 @@ let QUERYPARAM = 'query',
       const schemaDetails = {
         description: resolvedSchema.description,
         title: resolvedSchema.title,
-        type: resolvedSchema.type
+        type: resolvedSchema.type,
+        example: resolvedSchema.example
       };
 
       // Only include properties if they exist in the original schema
@@ -904,6 +914,7 @@ let QUERYPARAM = 'query',
         type: resolvedSchema.type,
         description: resolvedSchema.description,
         title: resolvedSchema.title,
+        example: resolvedSchema.example,
         items: processSchema(resolvedSchema.items)
       };
       if (resolvedSchema.minItems !== undefined) { arrayDetails.minItems = resolvedSchema.minItems; }
@@ -913,7 +924,8 @@ let QUERYPARAM = 'query',
     return {
       type: resolvedSchema.type,
       description: resolvedSchema.description,
-      title: resolvedSchema.title
+      title: resolvedSchema.title,
+      example: resolvedSchema.example
     };
   },
 

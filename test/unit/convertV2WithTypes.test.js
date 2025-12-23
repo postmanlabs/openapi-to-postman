@@ -551,17 +551,20 @@ describe('convertV2WithTypes', function() {
                 content: {
                   'application/json': {
                     schema: {
+                      example: { name: 'default example' },
                       anyOf: [
                         {
                           type: 'object',
+                          example: { name: 'John Doe' },
                           properties: {
-                            name: { type: 'string' }
+                            name: { type: 'string', example: 'Jane' }
                           }
                         },
                         {
                           type: 'object',
+                          example: { id: 123 },
                           properties: {
-                            id: { type: 'integer' }
+                            id: { type: 'integer', example: 456 }
                           }
                         }
                       ]
@@ -598,6 +601,15 @@ describe('convertV2WithTypes', function() {
         expect(parsedRequestBody.anyOf[1]).to.have.property('type', 'object');
         expect(parsedRequestBody.anyOf[1].properties).to.have.property('id');
 
+        expect(parsedRequestBody).to.have.property('example');
+        expect(parsedRequestBody.example).to.deep.equal({ name: 'default example' });
+        expect(parsedRequestBody.anyOf[0]).to.have.property('example');
+        expect(parsedRequestBody.anyOf[0].example).to.deep.equal({ name: 'John Doe' });
+        expect(parsedRequestBody.anyOf[0].properties.name).to.have.property('example', 'Jane');
+        expect(parsedRequestBody.anyOf[1]).to.have.property('example');
+        expect(parsedRequestBody.anyOf[1].example).to.deep.equal({ id: 123 });
+        expect(parsedRequestBody.anyOf[1].properties.id).to.have.property('example', 456);
+
         done();
       });
     });
@@ -615,13 +627,15 @@ describe('convertV2WithTypes', function() {
                   content: {
                     'application/json': {
                       schema: {
+                        example: 'default response',
                         oneOf: [
-                          { type: 'string' },
-                          { type: 'integer' },
+                          { type: 'string', example: 'success' },
+                          { type: 'integer', example: 200 },
                           {
                             type: 'object',
+                            example: { message: 'OK' },
                             properties: {
-                              message: { type: 'string' }
+                              message: { type: 'string', example: 'All good' }
                             }
                           }
                         ]
@@ -649,6 +663,13 @@ describe('convertV2WithTypes', function() {
         expect(parsedResponseBody.oneOf[2]).to.have.property('type', 'object');
         expect(parsedResponseBody.oneOf[2].properties).to.have.property('message');
 
+        expect(parsedResponseBody).to.have.property('example', 'default response');
+        expect(parsedResponseBody.oneOf[0]).to.have.property('example', 'success');
+        expect(parsedResponseBody.oneOf[1]).to.have.property('example', 200);
+        expect(parsedResponseBody.oneOf[2]).to.have.property('example');
+        expect(parsedResponseBody.oneOf[2].example).to.deep.equal({ message: 'OK' });
+        expect(parsedResponseBody.oneOf[2].properties.message).to.have.property('example', 'All good');
+
         done();
       });
     });
@@ -664,17 +685,20 @@ describe('convertV2WithTypes', function() {
                 content: {
                   'application/json': {
                     schema: {
+                      example: { baseField: 'base', extensionField: 100 },
                       allOf: [
                         {
                           type: 'object',
+                          example: { baseField: 'example base' },
                           properties: {
-                            baseField: { type: 'string' }
+                            baseField: { type: 'string', example: 'field example' }
                           }
                         },
                         {
                           type: 'object',
+                          example: { extensionField: 200 },
                           properties: {
-                            extensionField: { type: 'integer' }
+                            extensionField: { type: 'integer', example: 300 }
                           }
                         }
                       ]
@@ -688,17 +712,20 @@ describe('convertV2WithTypes', function() {
                   content: {
                     'application/json': {
                       schema: {
+                        example: { id: 'res123', timestamp: '2024-01-01' },
                         allOf: [
                           {
                             type: 'object',
+                            example: { id: '456' },
                             properties: {
-                              id: { type: 'string' }
+                              id: { type: 'string', example: '789' }
                             }
                           },
                           {
                             type: 'object',
+                            example: { timestamp: '2024-12-22T00:00:00Z' },
                             properties: {
-                              timestamp: { type: 'string', format: 'date-time' }
+                              timestamp: { type: 'string', format: 'date-time', example: '2025-01-01T00:00:00Z' }
                             }
                           }
                         ]
@@ -725,6 +752,15 @@ describe('convertV2WithTypes', function() {
         expect(parsedRequestBody.allOf[0].properties).to.have.property('baseField');
         expect(parsedRequestBody.allOf[1].properties).to.have.property('extensionField');
 
+        expect(parsedRequestBody).to.have.property('example');
+        expect(parsedRequestBody.example).to.deep.equal({ baseField: 'base', extensionField: 100 });
+        expect(parsedRequestBody.allOf[0]).to.have.property('example');
+        expect(parsedRequestBody.allOf[0].example).to.deep.equal({ baseField: 'example base' });
+        expect(parsedRequestBody.allOf[0].properties.baseField).to.have.property('example', 'field example');
+        expect(parsedRequestBody.allOf[1]).to.have.property('example');
+        expect(parsedRequestBody.allOf[1].example).to.deep.equal({ extensionField: 200 });
+        expect(parsedRequestBody.allOf[1].properties.extensionField).to.have.property('example', 300);
+
         // Check response body
         const responseBody = conversionResult.extractedTypes['post/test'].response['201'].body;
         const parsedResponseBody = JSON.parse(responseBody);
@@ -733,6 +769,15 @@ describe('convertV2WithTypes', function() {
         expect(parsedResponseBody.allOf).to.be.an('array').with.length(2);
         expect(parsedResponseBody.allOf[0].properties).to.have.property('id');
         expect(parsedResponseBody.allOf[1].properties).to.have.property('timestamp');
+
+        expect(parsedResponseBody).to.have.property('example');
+        expect(parsedResponseBody.example).to.deep.equal({ id: 'res123', timestamp: '2024-01-01' });
+        expect(parsedResponseBody.allOf[0]).to.have.property('example');
+        expect(parsedResponseBody.allOf[0].example).to.deep.equal({ id: '456' });
+        expect(parsedResponseBody.allOf[0].properties.id).to.have.property('example', '789');
+        expect(parsedResponseBody.allOf[1]).to.have.property('example');
+        expect(parsedResponseBody.allOf[1].example).to.deep.equal({ timestamp: '2024-12-22T00:00:00Z' });
+        expect(parsedResponseBody.allOf[1].properties.timestamp).to.have.property('example', '2025-01-01T00:00:00Z');
 
         done();
       });
@@ -2532,6 +2577,558 @@ describe('convertV2WithTypes', function() {
         expect(ordersFolder.item).to.have.lengthOf(1);
         expect(ordersFolder.item[0].name).to.equal('Get orders');
         expect(ordersFolder.item[0].request.method).to.equal('GET');
+
+        done();
+      });
+    });
+  });
+
+  describe('example field preservation', function() {
+    it('should preserve example fields in request and response bodies with different schema types', function(done) {
+      const oas = {
+        openapi: '3.0.0',
+        info: { title: 'Example Preservation Test', version: '1.0.0' },
+        paths: {
+          '/test': {
+            post: {
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      example: { name: 'John Doe', age: 30 },
+                      properties: {
+                        name: {
+                          type: 'string',
+                          example: 'Jane Smith'
+                        },
+                        age: {
+                          type: 'integer',
+                          example: 25
+                        },
+                        tags: {
+                          type: 'array',
+                          example: ['tag1', 'tag2'],
+                          items: {
+                            type: 'string',
+                            example: 'sample-tag'
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              responses: {
+                '200': {
+                  description: 'Success',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        example: { id: '123', status: 'created' },
+                        properties: {
+                          id: {
+                            type: 'string',
+                            example: 'abc123'
+                          },
+                          status: {
+                            type: 'string',
+                            example: 'active'
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+        // Check request body examples
+        const requestBody = JSON.parse(conversionResult.extractedTypes['post/test'].request.body);
+        expect(requestBody).to.have.property('example');
+        expect(requestBody.example).to.deep.equal({ name: 'John Doe', age: 30 });
+        expect(requestBody.properties.name).to.have.property('example', 'Jane Smith');
+        expect(requestBody.properties.age).to.have.property('example', 25);
+        expect(requestBody.properties.tags).to.have.property('example');
+        expect(requestBody.properties.tags.example).to.deep.equal(['tag1', 'tag2']);
+        expect(requestBody.properties.tags.items).to.have.property('example', 'sample-tag');
+
+        // Check response body examples
+        const responseBody = JSON.parse(conversionResult.extractedTypes['post/test'].response['200'].body);
+        expect(responseBody).to.have.property('example');
+        expect(responseBody.example).to.deep.equal({ id: '123', status: 'created' });
+        expect(responseBody.properties.id).to.have.property('example', 'abc123');
+        expect(responseBody.properties.status).to.have.property('example', 'active');
+
+        done();
+      });
+    });
+
+    it('should preserve example fields in composite schemas (anyOf, oneOf, allOf)', function(done) {
+      const oas = {
+        openapi: '3.0.0',
+        info: { title: 'Composite Example Test', version: '1.0.0' },
+        paths: {
+          '/composite': {
+            post: {
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      anyOf: [
+                        {
+                          type: 'object',
+                          example: { type: 'user', name: 'John' },
+                          properties: {
+                            name: { type: 'string' }
+                          }
+                        },
+                        {
+                          type: 'object',
+                          example: { type: 'admin', role: 'superadmin' },
+                          properties: {
+                            role: { type: 'string' }
+                          }
+                        }
+                      ],
+                      example: { type: 'guest' }
+                    }
+                  }
+                }
+              },
+              responses: {
+                '200': {
+                  description: 'Success',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        oneOf: [
+                          {
+                            type: 'string',
+                            example: 'success'
+                          },
+                          {
+                            type: 'object',
+                            example: { message: 'OK' },
+                            properties: {
+                              message: { type: 'string', example: 'Operation completed' }
+                            }
+                          }
+                        ],
+                        example: 'default response'
+                      }
+                    }
+                  }
+                },
+                '201': {
+                  description: 'Created',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        allOf: [
+                          {
+                            type: 'object',
+                            example: { id: '123' },
+                            properties: {
+                              id: { type: 'string', example: 'abc' }
+                            }
+                          },
+                          {
+                            type: 'object',
+                            example: { timestamp: '2024-01-01' },
+                            properties: {
+                              timestamp: { type: 'string', example: '2024-12-22T00:00:00Z' }
+                            }
+                          }
+                        ],
+                        example: { id: '999', timestamp: '2025-01-01' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+        // Check anyOf with examples
+        const requestBody = JSON.parse(conversionResult.extractedTypes['post/composite'].request.body);
+        expect(requestBody).to.have.property('example');
+        expect(requestBody.example).to.deep.equal({ type: 'guest' });
+        expect(requestBody.anyOf).to.be.an('array').with.length(2);
+        expect(requestBody.anyOf[0]).to.have.property('example');
+        expect(requestBody.anyOf[0].example).to.deep.equal({ type: 'user', name: 'John' });
+        expect(requestBody.anyOf[1]).to.have.property('example');
+        expect(requestBody.anyOf[1].example).to.deep.equal({ type: 'admin', role: 'superadmin' });
+
+        // Check oneOf with examples
+        const response200 = JSON.parse(conversionResult.extractedTypes['post/composite'].response['200'].body);
+        expect(response200).to.have.property('example', 'default response');
+        expect(response200.oneOf).to.be.an('array').with.length(2);
+        expect(response200.oneOf[0]).to.have.property('example', 'success');
+        expect(response200.oneOf[1]).to.have.property('example');
+        expect(response200.oneOf[1].example).to.deep.equal({ message: 'OK' });
+        expect(response200.oneOf[1].properties.message).to.have.property('example', 'Operation completed');
+
+        // Check allOf with examples
+        const response201 = JSON.parse(conversionResult.extractedTypes['post/composite'].response['201'].body);
+        expect(response201).to.have.property('example');
+        expect(response201.example).to.deep.equal({ id: '999', timestamp: '2025-01-01' });
+        expect(response201.allOf).to.be.an('array').with.length(2);
+        expect(response201.allOf[0]).to.have.property('example');
+        expect(response201.allOf[0].example).to.deep.equal({ id: '123' });
+        expect(response201.allOf[0].properties.id).to.have.property('example', 'abc');
+        expect(response201.allOf[1]).to.have.property('example');
+        expect(response201.allOf[1].example).to.deep.equal({ timestamp: '2024-01-01' });
+        expect(response201.allOf[1].properties.timestamp).to.have.property('example', '2024-12-22T00:00:00Z');
+
+        done();
+      });
+    });
+
+    it('should preserve example fields in query parameters, path parameters, and headers', function(done) {
+      const oas = {
+        openapi: '3.0.0',
+        info: { title: 'Parameter Example Test', version: '1.0.0' },
+        paths: {
+          '/users/{userId}': {
+            get: {
+              parameters: [
+                {
+                  name: 'userId',
+                  in: 'path',
+                  required: true,
+                  schema: {
+                    type: 'string',
+                    example: 'user-123'
+                  }
+                },
+                {
+                  name: 'filter',
+                  in: 'query',
+                  schema: {
+                    type: 'string',
+                    example: 'active'
+                  }
+                },
+                {
+                  name: 'limit',
+                  in: 'query',
+                  schema: {
+                    type: 'integer',
+                    example: 50
+                  }
+                },
+                {
+                  name: 'X-API-Key',
+                  in: 'header',
+                  schema: {
+                    type: 'string',
+                    example: 'api-key-abc123'
+                  }
+                },
+                {
+                  name: 'X-Request-ID',
+                  in: 'header',
+                  schema: {
+                    type: 'string',
+                    format: 'uuid',
+                    example: '550e8400-e29b-41d4-a716-446655440000'
+                  }
+                }
+              ],
+              responses: {
+                '200': {
+                  description: 'Success',
+                  headers: {
+                    'X-Rate-Limit': {
+                      description: 'Rate limit',
+                      schema: {
+                        type: 'integer',
+                        example: 1000
+                      }
+                    },
+                    'X-Session-Token': {
+                      description: 'Session token',
+                      schema: {
+                        type: 'string',
+                        example: 'session-xyz789'
+                      }
+                    }
+                  },
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+        const extractedTypes = conversionResult.extractedTypes['get/users/{userId}'];
+
+        // Check path parameter examples
+        const pathParams = JSON.parse(extractedTypes.request.pathParam);
+        expect(pathParams).to.be.an('array').with.length(1);
+        const userIdParam = pathParams.find((p) => { return p.keyName === 'userId'; });
+        expect(userIdParam).to.be.an('object');
+        expect(userIdParam.properties).to.have.property('example', 'user-123');
+
+        // Check query parameter examples
+        const queryParams = JSON.parse(extractedTypes.request.queryParam);
+        expect(queryParams).to.be.an('array').with.length(2);
+        const filterParam = queryParams.find((p) => { return p.keyName === 'filter'; });
+        expect(filterParam).to.be.an('object');
+        expect(filterParam.properties).to.have.property('example', 'active');
+
+        const limitParam = queryParams.find((p) => { return p.keyName === 'limit'; });
+        expect(limitParam).to.be.an('object');
+        expect(limitParam.properties).to.have.property('example', 50);
+
+        // Check request header examples
+        const headers = JSON.parse(extractedTypes.request.headers);
+        expect(headers).to.be.an('array').with.length(2);
+        const apiKeyHeader = headers.find((h) => { return h.keyName === 'X-API-Key'; });
+        expect(apiKeyHeader).to.be.an('object');
+        expect(apiKeyHeader.properties).to.have.property('example', 'api-key-abc123');
+
+        const requestIdHeader = headers.find((h) => { return h.keyName === 'X-Request-ID'; });
+        expect(requestIdHeader).to.be.an('object');
+        expect(requestIdHeader.properties).to.have.property('example', '550e8400-e29b-41d4-a716-446655440000');
+
+        // Check response header examples
+        const responseHeaders = JSON.parse(extractedTypes.response['200'].headers);
+        expect(responseHeaders).to.be.an('array').with.length(2);
+        const rateLimitHeader = responseHeaders.find((h) => { return h.keyName === 'X-Rate-Limit'; });
+        expect(rateLimitHeader).to.be.an('object');
+        expect(rateLimitHeader.properties).to.have.property('example', 1000);
+
+        const sessionTokenHeader = responseHeaders.find((h) => { return h.keyName === 'X-Session-Token'; });
+        expect(sessionTokenHeader).to.be.an('object');
+        expect(sessionTokenHeader.properties).to.have.property('example', 'session-xyz789');
+
+        done();
+      });
+    });
+
+    it('should preserve example fields in nested object and array schemas', function(done) {
+      const oas = {
+        openapi: '3.0.0',
+        info: { title: 'Nested Example Test', version: '1.0.0' },
+        paths: {
+          '/nested': {
+            post: {
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      example: { user: { name: 'John', addresses: [{ city: 'NYC' }] } },
+                      properties: {
+                        user: {
+                          type: 'object',
+                          example: { name: 'Jane', email: 'jane@example.com' },
+                          properties: {
+                            name: {
+                              type: 'string',
+                              example: 'Bob'
+                            },
+                            email: {
+                              type: 'string',
+                              example: 'bob@example.com'
+                            },
+                            addresses: {
+                              type: 'array',
+                              example: [{ city: 'SF', zip: '94105' }],
+                              items: {
+                                type: 'object',
+                                example: { city: 'LA', zip: '90001' },
+                                properties: {
+                                  city: {
+                                    type: 'string',
+                                    example: 'Boston'
+                                  },
+                                  zip: {
+                                    type: 'string',
+                                    example: '02101'
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              responses: {
+                '200': {
+                  description: 'Success',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'array',
+                        example: [{ id: '1' }, { id: '2' }],
+                        items: {
+                          type: 'object',
+                          example: { id: '3', name: 'Item 3' },
+                          properties: {
+                            id: { type: 'string', example: '999' },
+                            name: { type: 'string', example: 'Default Item' }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+        // Check nested object examples
+        const requestBody = JSON.parse(conversionResult.extractedTypes['post/nested'].request.body);
+        expect(requestBody).to.have.property('example');
+        expect(requestBody.example).to.deep.equal({ user: { name: 'John', addresses: [{ city: 'NYC' }] } });
+        expect(requestBody.properties.user).to.have.property('example');
+        expect(requestBody.properties.user.example).to.deep.equal({ name: 'Jane', email: 'jane@example.com' });
+        expect(requestBody.properties.user.properties.name).to.have.property('example', 'Bob');
+        expect(requestBody.properties.user.properties.email).to.have.property('example', 'bob@example.com');
+        expect(requestBody.properties.user.properties.addresses).to.have.property('example');
+        expect(requestBody.properties.user.properties.addresses.example).to.deep.equal([{ city: 'SF', zip: '94105' }]);
+        expect(requestBody.properties.user.properties.addresses.items).to.have.property('example');
+        expect(requestBody.properties.user.properties.addresses.items.example).to.deep.equal({ city: 'LA', zip: '90001' });
+        expect(requestBody.properties.user.properties.addresses.items.properties.city).to.have.property('example', 'Boston');
+        expect(requestBody.properties.user.properties.addresses.items.properties.zip).to.have.property('example', '02101');
+
+        // Check array with nested object examples
+        const responseBody = JSON.parse(conversionResult.extractedTypes['post/nested'].response['200'].body);
+        expect(responseBody).to.have.property('type', 'array');
+        expect(responseBody).to.have.property('example');
+        expect(responseBody.example).to.deep.equal([{ id: '1' }, { id: '2' }]);
+        expect(responseBody.items).to.have.property('example');
+        expect(responseBody.items.example).to.deep.equal({ id: '3', name: 'Item 3' });
+        expect(responseBody.items.properties.id).to.have.property('example', '999');
+        expect(responseBody.items.properties.name).to.have.property('example', 'Default Item');
+
+        done();
+      });
+    });
+
+    it('should preserve example fields in primitive type schemas', function(done) {
+      const oas = {
+        openapi: '3.0.0',
+        info: { title: 'Primitive Example Test', version: '1.0.0' },
+        paths: {
+          '/primitive': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'String response',
+                  content: {
+                    'text/plain': {
+                      schema: {
+                        type: 'string',
+                        example: 'Hello World'
+                      }
+                    }
+                  }
+                },
+                '201': {
+                  description: 'Integer response',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'integer',
+                        example: 42
+                      }
+                    }
+                  }
+                },
+                '202': {
+                  description: 'Boolean response',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'boolean',
+                        example: true
+                      }
+                    }
+                  }
+                },
+                '203': {
+                  description: 'Number response',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'number',
+                        example: 3.14159
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+        const extractedTypes = conversionResult.extractedTypes['get/primitive'];
+
+        // Check string example
+        const response200 = JSON.parse(extractedTypes.response['200'].body);
+        expect(response200).to.have.property('type', 'string');
+        expect(response200).to.have.property('example', 'Hello World');
+
+        // Check integer example
+        const response201 = JSON.parse(extractedTypes.response['201'].body);
+        expect(response201).to.have.property('type', 'integer');
+        expect(response201).to.have.property('example', 42);
+
+        // Check boolean example
+        const response202 = JSON.parse(extractedTypes.response['202'].body);
+        expect(response202).to.have.property('type', 'boolean');
+        expect(response202).to.have.property('example', true);
+
+        // Check number example
+        const response203 = JSON.parse(extractedTypes.response['203'].body);
+        expect(response203).to.have.property('type', 'number');
+        expect(response203).to.have.property('example', 3.14159);
 
         done();
       });
