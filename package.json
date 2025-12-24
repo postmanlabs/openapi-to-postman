@@ -111,10 +111,10 @@
   "engines": {
     "node": ">=18"
   },
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
-    "openapi2postmanv2": "./dist/src/cli.js"
+    "openapi2postmanv2": "./bin/openapi2postmanv2.js"
   },
   "dependencies": {
     "ajv": "^8.11.0",
@@ -156,7 +156,7 @@
     "typescript": "5.5.3"
   },
   "scripts": {
-    "build": "tsc && chmod +x dist/src/cli.js",
+    "build": "tsc",
     "build:watch": "tsc --watch",
     "prebuild": "rm -rf dist",
     "prepare": "npm run build",

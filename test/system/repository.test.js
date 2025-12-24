@@ -61,7 +61,7 @@ describe('project repository', function () {
     describe('binary definitions', function () {
       it('must exist', function () {
         expect(json.bin).be.ok();
-        expect(json.bin).to.eql({ 'openapi2postmanv2': './dist/src/cli.js' });
+        expect(json.bin).to.eql({ 'openapi2postmanv2': './bin/openapi2postmanv2.js' });
       });
 
       it('must have valid node shebang', function () {
@@ -110,7 +110,7 @@ describe('project repository', function () {
 
     describe('main entry script', function () {
       it('must point to a valid file', function (done) {
-        expect(json.main).to.equal('dist/src/index.js');
+        expect(json.main).to.equal('dist/index.js');
         fs.stat(json.main, done);
       });
     });

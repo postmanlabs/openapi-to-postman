@@ -21,6 +21,7 @@
     "noUnusedParameters": true
   },
   "include": [
+    "index.ts",
     "src/**/*.ts",
     "lib/**/*.ts",
     "libV2/**/*.ts"

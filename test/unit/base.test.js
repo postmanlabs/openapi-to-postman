@@ -1,5 +1,5 @@
 var expect = require('chai').expect,
-  Converter = require('../../dist/src/index.js'),
+  Converter = require('../../dist/index.js'),
   fs = require('fs'),
   path = require('path'),
   _ = require('lodash'),

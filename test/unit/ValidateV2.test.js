@@ -1,7 +1,7 @@
 const { MODULE_VERSION } = require('../../lib/schemapack.js');
 
 var expect = require('chai').expect,
-  Converter = require('../../dist/src/index.js'),
+  Converter = require('../../dist/index.js'),
   fs = require('fs'),
   path = require('path'),
   async = require('async'),
