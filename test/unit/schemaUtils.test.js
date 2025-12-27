@@ -273,6 +273,26 @@ describe('getExampleData function', function () {
 
     expect(result).to.equal('');
   });
+  it('should not collapse multiple examples to only the first one', function () {
+    const context = {
+      schemaCache: {},
+      computedOptions: {}
+    };
+
+    const examples = {
+      example1: { value: 'one' },
+      example2: { value: 'two' }
+    };
+
+    const result = getExampleData(context, examples);
+
+    // ❌ CURRENT BEHAVIOR: result === 'one'
+    // ✅ EXPECTED (future): result keeps all examples
+
+    expect(result).to.be.an('object');
+    expect(result).to.have.property('example1');
+    expect(result).to.have.property('example2');
+  });
 });
 
 describe('extractDeepObjectParams function', function () {
