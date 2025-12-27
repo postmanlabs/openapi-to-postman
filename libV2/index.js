@@ -1,9 +1,11 @@
 const _ = require('lodash'),
   { Collection } = require('postman-collection/lib/collection/collection'),
   GraphLib = require('graphlib'),
-  generateSkeletonTreeFromOpenAPI = require('./helpers/collection/generateSkeletionTreeFromOpenAPI'),
-  generateCollectionFromOpenAPI = require('./helpers/collection/generateCollectionFromOpenAPI'),
-  generateFolderFromOpenAPI = require('./helpers/folder/generateFolderForOpenAPI'),
+  generateSkeletonTreeFromOpenAPI =
+    require('./CollectionGeneration/helpers/collection/generateSkeletionTreeFromOpenAPI'),
+  generateCollectionFromOpenAPI =
+    require('./CollectionGeneration/helpers/collection/generateCollectionFromOpenAPI'),
+  generateFolderFromOpenAPI = require('./CollectionGeneration/helpers/folder/generateFolderForOpenAPI'),
 
   Ajv = require('ajv'),
   addFormats = require('ajv-formats'),
@@ -12,10 +14,10 @@ const _ = require('lodash'),
 
   // All V1 interfaces used
   OpenApiErr = require('../lib/error'),
-  { validateTransaction, getMissingSchemaEndpoints } = require('./validationUtils');
+  { validateTransaction, getMissingSchemaEndpoints } = require('./CollectionGeneration/validationUtils');
 
-const { resolvePostmanRequest, resolveRefFromSchema } = require('./schemaUtils');
-const { generateRequestItemObject, fixPathVariablesInUrl } = require('./utils');
+const { resolvePostmanRequest, resolveRefFromSchema } = require('./CollectionGeneration/schemaUtils');
+const { generateRequestItemObject, fixPathVariablesInUrl } = require('./CollectionGeneration/utils');
 
 module.exports = {
   convertV2: function (context, cb) {
