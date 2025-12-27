@@ -22,7 +22,7 @@
   },
   "include": [
     "index.ts",
-    "src/**/*.ts",
+    "types/**/*.ts",
     "lib/**/*.ts",
     "libV2/**/*.ts"
   ],
