@@ -133,10 +133,11 @@ module.exports = {
           analytics: result.analytics,
           extractedTypes: result.extractedTypes
         });
-      } catch (syncError) {
+      }
+      catch (syncError) {
         return cb(syncError instanceof Error ? syncError : new Error(String(syncError)));
       }
     }
     );
   }
-}
+};
