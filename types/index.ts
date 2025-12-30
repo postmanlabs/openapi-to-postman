@@ -1,46 +1,7 @@
-// Import types from @types/postman-collection
-import type { CollectionDefinition } from 'postman-collection';
-
-// Re-export only the types that are actually used
-export type { CollectionDefinition as PostmanCollectionDefinition };
-
-/**
- * Input types for the OpenAPI to Postman converter
- */
-export interface StringInput {
-  type: 'string';
-  data: string;
-}
-
-export interface JsonInput {
-  type: 'json';
-  data: object;
-}
-
-export interface FileInput {
-  type: 'file';
-  data: string; // file path
-}
-
-export interface FolderFileData {
-  fileName: string;
-  content?: string;
-}
-
-export interface FolderInput {
-  type: 'folder';
-  data: FolderFileData[];
-  origin?: 'browser' | 'node';
-  rootFiles?: FolderFileData[];
-  specificationVersion?: string;
-}
-
-export type ConverterInput = StringInput | JsonInput | FileInput | FolderInput;
-
 /**
  * Conversion options
  */
-export interface ConversionOptions {
+export interface Options {
   /** Determines how the requests inside the generated collection will be named */
   requestNameSource?: 'URL' | 'Fallback';
   /** Option for setting indentation character */
@@ -101,106 +62,126 @@ export interface ConversionOptions {
   preferredRequestBodyType?: 'x-www-form-urlencoded' | 'form-data' | 'raw' | 'first-listed';
 }
 
-/**
- * Conversion result types
- */
-export interface ConversionOutput {
-  type: 'collection';
-  data: CollectionDefinition;
+export type SpecInput =
+  | { type: 'string'; data: string }
+  | { type: 'json'; data: string | object }
+  | { type: 'file'; data: string };
+interface FileData {
+  fileName: string;
+  path?: string;
+  content?: string;
+}
+export interface FolderInput {
+  type: 'folder';
+  data: FileData[];
+  origin?: 'browser';
 }
 
-export interface ConversionSuccessResult {
+export interface MultiFileSpecInput {
+  type: 'multiFile';
+  data: FileData[];
+  origin?: 'browser';
+  specificationVersion?: string;
+  rootFiles?: { path: string }[];
+  bundleFormat?: 'JSON' | 'YAML';
+  remoteRefResolver?: (url: string) => Promise<string>;
+}
+
+export type ValidationResult =
+  | { result: true; specificationVersion?: string }
+  | { result: false; reason: string; error?: Error };
+
+interface ConversionResult {
   result: true;
-  output: ConversionOutput[];
+  output: { type: 'collection'; data: object }[];
   analytics?: {
     actualStack?: number;
     numberOfRequests?: number;
     assignedStack?: number;
     complexityScore?: number;
   };
-  extractedTypes?: Record<string, unknown>;
 }
 
-export interface ConversionErrorResult {
-  result: false;
-  reason: string;
-}
+export type ConversionCallback = (
+  err: { message: string; name?: string } | null,
+  result?: ConversionResult
+) => void;
 
-export type ConversionResult = ConversionSuccessResult | ConversionErrorResult;
-
-/**
- * Validation result types
- */
-export interface ValidationSuccessResult {
+interface MetadataResult {
   result: true;
-  specificationVersion?: string;
+  name: string;
+  output: { type: 'collection'; name: string }[];
 }
 
-export interface ValidationErrorResult {
-  result: false;
-  reason: string;
-}
+export type MetadataCallback = (
+  err: Error | null,
+  result?: MetadataResult | ValidationResult
+) => void;
 
-export type ValidationResult = ValidationSuccessResult | ValidationErrorResult;
+export type MergeAndValidateCallback = (
+  err: Error | null,
+  result?: ValidationResult
+) => void;
 
-/**
- * Callback type for async operations
- */
-export type ConversionCallback = (error: Error | null, result?: ConversionResult) => void;
-
-/**
- * Option definition for documentation
- */
 export interface OptionDefinition {
   name: string;
   id: string;
   type: 'boolean' | 'enum' | 'integer' | 'array';
-  default: unknown;
+  default: boolean | string | number | string[];
   availableOptions?: string[];
   description: string;
   external: boolean;
-  usage: string[];
-  supportedIn: string[];
-  supportedModuleVersion: string[];
+  usage: ('CONVERSION' | 'VALIDATION' | 'BUNDLE')[];
+  supportedIn: ('2.0' | '3.0' | '3.1')[];
+  supportedModuleVersion: ('v1' | 'v2')[];
+  disabled?: boolean;
 }
 
-/**
- * Module version
- */
-export type ModuleVersion = 'v1' | 'v2';
-
-/**
- * Sync options for collection synchronization
- */
-export interface SyncOptions {
-  /** Whether to sync examples from the specification */
-  syncExamples?: boolean;
+export interface OptionsCriteria {
+  version?: '2.0' | '3.0' | '3.1';
+  moduleVersion?: 'v1' | 'v2';
+  usage?: ('CONVERSION' | 'VALIDATION' | 'BUNDLE')[];
+  external?: boolean;
 }
 
-/**
- * Input for collection synchronization
- */
-export interface SyncCollectionInput {
-  /** The OpenAPI specification input */
-  spec: ConverterInput;
-  /** The current Postman collection (as JSON object or string) */
-  collection: CollectionDefinition | string;
+export type OptionsUseMode = Record<string, boolean | string | number | string[]>;
+
+interface SpecificationInfo {
+  type: 'OpenAPI';
+  version: string;
 }
 
-/**
- * Result of collection synchronization
- */
-export interface SyncCollectionResult {
+export interface RootFiles {
   result: true;
   output: {
-    type: 'collection';
-    data: CollectionDefinition;
+    type: 'rootFiles';
+    specification: SpecificationInfo;
+    data: { path: string }[];
   };
 }
 
-export interface SyncCollectionErrorResult {
-  result: false;
-  reason: string;
+export interface RelatedFiles {
+  result: true;
+  output: {
+    type: 'relatedFiles';
+    specification: SpecificationInfo;
+    data: {
+      rootFile: { path: string };
+      relatedFiles: { path: string }[];
+      missingRelatedFiles: { path: string | null }[];
+    }[];
+  };
 }
 
-export type SyncResult = SyncCollectionResult | SyncCollectionErrorResult;
+export interface BundledContent {
+  result: true;
+  output: {
+    type: 'bundledContent';
+    specification: SpecificationInfo;
+    data: {
+      rootFile: { path: string };
+      bundledContent: string | object;
+      referenceMap?: Record<string, string>;
+    }[];
+  };
+}
