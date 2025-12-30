@@ -111,7 +111,8 @@
   "engines": {
     "node": ">=18"
   },
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "openapi2postmanv2": "./bin/openapi2postmanv2.js"
   },
@@ -129,6 +130,7 @@
     "neotraverse": "0.6.15",
     "oas-resolver-browser": "2.5.6",
     "object-hash": "3.0.0",
+    "openapi-types": "^12.1.3",
     "path-browserify": "1.0.1",
     "postman-collection": "^5.0.0",
     "swagger2openapi": "7.0.8",
@@ -137,24 +139,39 @@
   "author": "Postman Labs <help@getpostman.com>",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@total-typescript/ts-reset": "0.5.1",
+    "@types/lodash": "^4.17.0",
+    "@types/node": "^20.0.0",
+    "@types/postman-collection": "^3.5.10",
+    "@typescript-eslint/eslint-plugin": "6.21.0",
+    "@typescript-eslint/parser": "6.21.0",
     "chai": "4.3.6",
     "editorconfig": "0.15.3",
-    "eslint": "5.16.0",
+    "eslint": "8.57.0",
+    "eslint-plugin-import": "2.29.1",
     "eslint-plugin-jsdoc": "3.8.0",
-    "eslint-plugin-mocha": "5.3.0",
+    "eslint-plugin-mocha": "10.5.0",
+    "eslint-plugin-prettier": "5.1.3",
     "eslint-plugin-security": "1.5.0",
     "expect.js": "0.3.1",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "parse-gitignore": "0.5.1"
+    "parse-gitignore": "0.5.1",
+    "typescript": "5.5.3"
   },
   "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "prebuild": "rm -rf dist",
+    "prepare": "npm run build",
+    "pretest": "npm run build",
     "test": "./scripts/test.sh",
-    "test-unit": "nyc --reporter=text --reporter=json-summary  --report-dir=.coverage -x **/assets/** -x **/test/** ./node_modules/mocha/bin/mocha --timeout 90000 \"test/unit/**/**.test.js\"",
+    "test-unit": "nyc --reporter=text --reporter=json-summary  --report-dir=.coverage -x **/assets/** -x **/test/** -x **/dist/** ./node_modules/mocha/bin/mocha --timeout 90000 \"test/unit/**/**.test.js\"",
     "test-lint": "./scripts/test-lint.sh",
     "test-system": "./node_modules/mocha/bin/mocha -x **/assets/** -x **/test/** \"test/system/**.test.js\"",
-    "test-regression": "nyc --reporter=text --reporter=json-summary  --report-dir=.coverage ./node_modules/mocha/bin/mocha test/integration/integration.test.js test/unit/sanity.test.js",
+    "test-regression": "nyc --reporter=text --reporter=json-summary  --report-dir=.coverage -x **/dist/** ./node_modules/mocha/bin/mocha test/integration/integration.test.js test/unit/sanity.test.js",
     "release": "./scripts/release.sh",
-    "coverage": "nyc report --reporter=html --reporter=text mocha"
+    "coverage": "nyc report --reporter=html --reporter=text mocha",
+    "prepublishOnly": "npm run build"
   }
 }

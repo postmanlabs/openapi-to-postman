@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 var _ = require('lodash'),
   program = require('commander'),
-  Converter = require('../index.js'),
+  Converter = require('../dist/index.js'),
   fs = require('fs'),
   path = require('path'),
   availableOptions = require('../lib/options').getOptions('use', { usage: ['CONVERSION'] }),
