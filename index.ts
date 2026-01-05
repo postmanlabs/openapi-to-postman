@@ -23,7 +23,7 @@ import type {
 const { MODULE_VERSION } = require('../lib/schemapack.js');
 const SchemaPack = require('../lib/schemapack.js').SchemaPack;
 const UserError = require('../lib/common/UserError');
-const { syncCollection: syncCollectionState } = require('../libV2/SpecificationCollectionSyncing');
+const { syncCollection: syncCollectionState } = require('./libV2/SpecificationCollectionSyncing');
 const { Collection } = require('postman-collection');
 
 const DEFAULT_INVALID_ERROR = 'Provided definition is invalid';
@@ -109,7 +109,6 @@ module.exports = {
       return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
     }
 
-    // Convert the spec to a collection with types
     return schema.convertV2((err: Error | null, result?: ConversionResult) => {
       if (err) {
         return cb(err);
@@ -135,9 +134,12 @@ module.exports = {
         });
       }
       catch (syncError) {
-        return cb(syncError instanceof Error ? syncError : new Error(String(syncError)));
+        return cb(syncError as Error);
       }
     }
     );
-  }
+  },
+
+  // new API
+  SchemaPack
 };
