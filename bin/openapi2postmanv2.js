@@ -11,6 +11,7 @@ var _ = require('lodash'),
   configFile,
   definedOptions,
   testFlag,
+  syncFile,
   swaggerInput,
   interfaceVersion,
   swaggerData;
@@ -61,7 +62,8 @@ program
   .option('-p, --pretty', 'Pretty print the JSON file')
   .option('-i, --interface-version <interfaceVersion>', 'Interface version of convert() to be used')
   .option('-c, --options-config <optionsConfig>', 'JSON file containing Converter options')
-  .option('-O, --options <options>', 'comma separated list of options', parseOptions);
+  .option('-O, --options <options>', 'comma separated list of options', parseOptions)
+  .option('--sync <collectionFile>', 'Sync spec changes with an existing Postman Collection file');
 
 program.on('--help', function() {
   /* eslint-disable */
@@ -77,6 +79,9 @@ program.on('--help', function() {
   console.log('                Read spec.yaml or spec.json and print the prettified output to the Console');
   console.log('                  ./openapi2postmanv2 -s spec.yaml -p');
   console.log(' ');
+  console.log('                Sync spec changes with an existing collection');
+  console.log('                  ./openapi2postmanv2 -s spec.yaml --sync collection.json -o synced.json');
+  console.log(' ');
   /* eslint-enable */
 });
 
@@ -89,6 +94,7 @@ prettyPrintFlag = program.pretty || false;
 interfaceVersion = program.interfaceVersion || 'v2';
 configFile = program.optionsConfig || false;
 definedOptions = (!(program.options instanceof Array) ? program.options : {});
+syncFile = program.sync || false;
 swaggerInput;
 swaggerData;
 
@@ -161,6 +167,58 @@ function convert(swaggerData) {
   });
 }
 
+/**
+ * Helper function for the CLI to sync spec changes with existing collection
+ * @param {String} specData - OAS specification data used for conversion input
+ * @param {String} collectionFile - path to existing collection file
+ * @returns {void}
+ */
+function syncCollection(specData, collectionFile) {
+  let options = {},
+    collectionData;
+
+  // apply options from config file if present
+  if (configFile) {
+    configFile = path.resolve(configFile);
+    console.log('Options Config file: ', configFile); // eslint-disable-line no-console
+    options = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+  }
+
+  // override options provided via cli
+  if (definedOptions && !_.isEmpty(definedOptions)) {
+    options = definedOptions;
+  }
+
+  try {
+    collectionFile = path.resolve(collectionFile);
+    console.log('Collection file: ', collectionFile); // eslint-disable-line no-console
+    collectionData = JSON.parse(fs.readFileSync(collectionFile, 'utf8'));
+  }
+  catch (e) {
+    console.error('Error reading collection file:', e.message); // eslint-disable-line no-console
+    process.exit(1);
+  }
+
+  Converter.syncCollection({
+    type: 'string',
+    data: specData
+  }, options, collectionData, null, (err, status) => {
+    if (err) {
+      return console.error(err);
+    }
+    if (!status.result) {
+      console.log(status.reason); // eslint-disable-line no-console
+      process.exit(0);
+    }
+    else {
+      // Write to output file if specified, otherwise write back to the original collection file
+      let file = outputFile ? path.resolve(outputFile) : collectionFile;
+      console.log('Writing synced collection to file: ', file); // eslint-disable-line no-console
+      writetoFile(prettyPrintFlag, file, status.output[0].data);
+    }
+  });
+}
+
 if (testFlag) {
   swaggerData = fs.readFileSync(path.resolve(__dirname, '..', 'examples', 'sample-swagger.yaml'), 'utf8');
   convert(swaggerData);
@@ -172,7 +230,13 @@ else if (inputFile) {
   // this will fix https://github.com/postmanlabs/openapi-to-postman/issues/4
   // inputFile should be read from the cwd, not the path of the executable
   swaggerData = fs.readFileSync(inputFile, 'utf8');
-  convert(swaggerData);
+
+  if (syncFile) {
+    syncCollection(swaggerData, syncFile);
+  }
+  else {
+    convert(swaggerData);
+  }
 }
 else {
   program.emit('--help');

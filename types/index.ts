@@ -91,7 +91,7 @@ export type ValidationResult =
   | { result: true; specificationVersion?: string }
   | { result: false; reason: string; error?: Error };
 
-interface ConversionResult {
+export interface ConversionResult {
   result: true;
   output: { type: 'collection'; data: object }[];
   analytics?: {
@@ -100,6 +100,7 @@ interface ConversionResult {
     assignedStack?: number;
     complexityScore?: number;
   };
+  extractedTypes?: Record<string, string>;
 }
 
 export type ConversionCallback = (
@@ -122,6 +123,10 @@ export type MergeAndValidateCallback = (
   err: Error | null,
   result?: ValidationResult
 ) => void;
+
+export interface SyncOptions {
+  syncExamples: boolean;
+}
 
 export interface OptionDefinition {
   name: string;
