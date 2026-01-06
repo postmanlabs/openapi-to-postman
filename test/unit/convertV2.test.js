@@ -2530,7 +2530,7 @@ describe('The convert v2 Function', function() {
     });
   });
 
-  describe('Should generate multiple examples when', function() {
+  describe('Should generate only first example when', function() {
     it('request body contains multiple examples but request body has single example', function(done) {
       var openapi = fs.readFileSync(multiExampleRequest, 'utf8');
       Converter.convertV2({ type: 'string', data: openapi }, { parametersResolution: 'Example' },
@@ -2550,7 +2550,8 @@ describe('The convert v2 Function', function() {
             height: 168,
             weight: 44
           });
-          expect(item.response).to.have.lengthOf(2);
+          // Should only generate 1 response (using first request example)
+          expect(item.response).to.have.lengthOf(1);
           expect(item.response[0].name).to.eql('valid-request');
           expect(item.response[0]._postman_previewlanguage).to.eql('json');
           expect(JSON.parse(item.response[0].body)).to.eql({ hello: 'world' });
@@ -2558,13 +2559,6 @@ describe('The convert v2 Function', function() {
             user: 1,
             height: 168,
             weight: 44
-          });
-
-          expect(item.response[1].name).to.eql('missing-required-parameter');
-          expect(item.response[1]._postman_previewlanguage).to.eql('json');
-          expect(JSON.parse(item.response[1].body)).to.eql({ hello: 'world' });
-          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql({
-            user: 1
           });
           done();
         });
@@ -2585,7 +2579,8 @@ describe('The convert v2 Function', function() {
           const item = conversionResult.output[0].data.item[0].item[0];
 
           expect(JSON.parse(item.request.body.raw)).to.eql({ hello: 'world' });
-          expect(item.response).to.have.lengthOf(2);
+          // Should only generate 1 response (using first response example)
+          expect(item.response).to.have.lengthOf(1);
           expect(item.response[0].name).to.eql('valid-request');
           expect(item.response[0]._postman_previewlanguage).to.eql('json');
           expect(JSON.parse(item.response[0].body)).to.eql({
@@ -2594,11 +2589,6 @@ describe('The convert v2 Function', function() {
             weight: 44
           });
           expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql({ hello: 'world' });
-
-          expect(item.response[1].name).to.eql('missing-required-parameter');
-          expect(item.response[1]._postman_previewlanguage).to.eql('json');
-          expect(JSON.parse(item.response[1].body)).to.eql({ user: 1 });
-          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql({ hello: 'world' });
           done();
         });
     });
@@ -2623,10 +2613,10 @@ describe('The convert v2 Function', function() {
             });
 
             /**
-             * Even though both req and res has 3 examples, only 2 example should be present
-             * as only 2 examples have matching keys
+             * Even though both req and res has 3 examples, only 1 example should be present
+             * as we only use the first example from each
              */
-            expect(item.response).to.have.lengthOf(2);
+            expect(item.response).to.have.lengthOf(1);
             expect(item.response[0].name).to.eql('Complete request');
             expect(item.response[0]._postman_previewlanguage).to.eql('json');
             expect(JSON.parse(item.response[0].body)).to.eql({
@@ -2636,13 +2626,6 @@ describe('The convert v2 Function', function() {
             });
             expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql({
               includedFields: ['user', 'height', 'weight']
-            });
-
-            expect(item.response[1].name).to.eql('Request with only required params');
-            expect(item.response[1]._postman_previewlanguage).to.eql('json');
-            expect(JSON.parse(item.response[1].body)).to.eql({ user: 1 });
-            expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql({
-              includedFields: ['user']
             });
             done();
           });
@@ -2666,7 +2649,8 @@ describe('The convert v2 Function', function() {
             expect(JSON.parse(item.request.body.raw)).to.eql({
               includedFields: ['user', 'height', 'weight']
             });
-            expect(item.response).to.have.lengthOf(2);
+            // Should only generate 1 response (using first examples from both request and response)
+            expect(item.response).to.have.lengthOf(1);
             expect(item.response[0].name).to.eql('Request with only required params');
             expect(item.response[0]._postman_previewlanguage).to.eql('json');
             expect(JSON.parse(item.response[0].body)).to.eql({
@@ -2674,17 +2658,6 @@ describe('The convert v2 Function', function() {
             });
             expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql({
               includedFields: ['user', 'height', 'weight']
-            });
-
-            expect(item.response[1].name).to.eql('Complete request');
-            expect(item.response[1]._postman_previewlanguage).to.eql('json');
-            expect(JSON.parse(item.response[1].body)).to.eql({
-              user: 1,
-              height: 168,
-              weight: 44
-            });
-            expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql({
-              includedFields: ['user']
             });
             done();
           });
@@ -2704,35 +2677,23 @@ describe('The convert v2 Function', function() {
 
           const item = conversionResult.output[0].data.item[0].item[0],
             okReqExample = { message: 'ok' },
-            failReqExample = { message: 'fail' },
             okResExample = { message: 'Found', code: 200123 },
             failResExample = { message: 'Not Found' };
 
           expect(JSON.parse(item.request.body.raw)).to.eql(okReqExample);
-          expect(item.response).to.have.lengthOf(4);
+          // Should only generate 2 responses (1 per response code, using first request example)
+          expect(item.response).to.have.lengthOf(2);
           expect(item.response[0].name).to.eql('ok_example');
           expect(item.response[0].code).to.eql(200);
           expect(item.response[0]._postman_previewlanguage).to.eql('json');
           expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql(okReqExample);
           expect(JSON.parse(item.response[0].body)).to.eql(okResExample);
 
-          expect(item.response[1].name).to.eql('not_ok_example');
-          expect(item.response[1].code).to.eql(200);
+          expect(item.response[1].name).to.eql('ok_example');
+          expect(item.response[1].code).to.eql(undefined);
           expect(item.response[1]._postman_previewlanguage).to.eql('json');
-          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql(failReqExample);
-          expect(JSON.parse(item.response[1].body)).to.eql(okResExample);
-
-          expect(item.response[2].name).to.eql('ok_example');
-          expect(item.response[2].code).to.eql(undefined);
-          expect(item.response[2]._postman_previewlanguage).to.eql('json');
-          expect(JSON.parse(item.response[2].originalRequest.body.raw)).to.eql(okReqExample);
-          expect(JSON.parse(item.response[2].body)).to.eql(failResExample);
-
-          expect(item.response[3].name).to.eql('not_ok_example');
-          expect(item.response[3].code).to.eql(undefined);
-          expect(item.response[3]._postman_previewlanguage).to.eql('json');
-          expect(JSON.parse(item.response[3].originalRequest.body.raw)).to.eql(failReqExample);
-          expect(JSON.parse(item.response[3].body)).to.eql(failResExample);
+          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql(okReqExample);
+          expect(JSON.parse(item.response[1].body)).to.eql(failResExample);
           done();
         });
     });
@@ -2751,11 +2712,11 @@ describe('The convert v2 Function', function() {
           expect(conversionResult.output[0].data.item[0].item.length).to.equal(1);
 
           const item = conversionResult.output[0].data.item[0].item[0],
-            reqBody1 = { includedFields: ['user', 'height', 'weight'] },
-            reqBody2 = { includedFields: ['eyeColor'] };
+            reqBody1 = { includedFields: ['user', 'height', 'weight'] };
 
           expect(JSON.parse(item.request.body.raw)).to.eql(reqBody1);
-          expect(item.response).to.have.lengthOf(4);
+          // Should only generate 3 responses (1 per response code, using first example from each)
+          expect(item.response).to.have.lengthOf(3);
           expect(item.response[0].name).to.eql('Request with only required params');
           expect(item.response[0].code).to.eql(200);
           expect(item.response[0]._postman_previewlanguage).to.eql('json');
@@ -2765,7 +2726,7 @@ describe('The convert v2 Function', function() {
           expect(item.response[1].name).to.eql('Request with only bad params');
           expect(item.response[1].code).to.eql(400);
           expect(item.response[1]._postman_previewlanguage).to.eql('json');
-          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql(reqBody2);
+          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql(reqBody1);
           expect(JSON.parse(item.response[1].body)).to.eql({ eyeColor: 'gray' });
 
           expect(item.response[2].name).to.eql('Failed request - Negative user');
@@ -2773,12 +2734,6 @@ describe('The convert v2 Function', function() {
           expect(item.response[2]._postman_previewlanguage).to.eql('json');
           expect(JSON.parse(item.response[2].originalRequest.body.raw)).to.eql(reqBody1);
           expect(JSON.parse(item.response[2].body)).to.eql({ user: -99 });
-
-          expect(item.response[3].name).to.eql('Failed request - All negatives');
-          expect(item.response[3].code).to.eql(500);
-          expect(item.response[3]._postman_previewlanguage).to.eql('json');
-          expect(JSON.parse(item.response[3].originalRequest.body.raw)).to.eql(reqBody2);
-          expect(JSON.parse(item.response[3].body)).to.eql({ user: -999, height: -168, weight: -44 });
           done();
         });
     });
@@ -2804,9 +2759,11 @@ describe('The convert v2 Function', function() {
               }
             };
 
+          // Should use first request example for all responses
           expect(JSON.parse(item.request.body.raw)).to.eql(defaultReqBody);
           expect(item.response).to.have.lengthOf(5);
 
+          // All responses should use the first request example (200)
           expect(item.response[0].name).to.eql('200');
           expect(item.response[0].code).to.eql(200);
           expect(item.response[0]._postman_previewlanguage).to.eql('json');
@@ -2816,9 +2773,7 @@ describe('The convert v2 Function', function() {
           expect(item.response[1].name).to.eql('400');
           expect(item.response[1].code).to.eql(400);
           expect(item.response[1]._postman_previewlanguage).to.eql('json');
-          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql({
-            userDetail: { roleId: null, department: 'Admin 1', email: '' }
-          });
+          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql(defaultReqBody);
           expect(JSON.parse(item.response[1].body)).to.eql({
             hasErrorMessage: true,
             errorMessage: 'Bad Request',
@@ -2828,25 +2783,19 @@ describe('The convert v2 Function', function() {
           expect(item.response[2].name).to.eql('404');
           expect(item.response[2].code).to.eql(404);
           expect(item.response[2]._postman_previewlanguage).to.eql('json');
-          expect(JSON.parse(item.response[2].originalRequest.body.raw)).to.eql({
-            userDetail: { roleId: 0, department: 'Admin 0', email: '123@gmail.com' }
-          });
+          expect(JSON.parse(item.response[2].originalRequest.body.raw)).to.eql(defaultReqBody);
           expect(JSON.parse(item.response[2].body)).to.eql({ message: 'AddUserDetailsCommand : User Role Not Found' });
 
           expect(item.response[3].name).to.eql('409');
           expect(item.response[3].code).to.eql(409);
           expect(item.response[3]._postman_previewlanguage).to.eql('json');
-          expect(JSON.parse(item.response[3].originalRequest.body.raw)).to.eql({
-            userDetail: { roleId: 1, department: 'Admin 1', email: '123@gmail.com' }
-          });
+          expect(JSON.parse(item.response[3].originalRequest.body.raw)).to.eql(defaultReqBody);
           expect(JSON.parse(item.response[3].body)).to.eql({ message: 'AddUserDetailsCommand : Duplicate' });
 
           expect(item.response[4].name).to.eql('500');
           expect(item.response[4].code).to.eql(500);
           expect(item.response[4]._postman_previewlanguage).to.eql('json');
-          expect(JSON.parse(item.response[4].originalRequest.body.raw)).to.eql({
-            userDetail: { roleId: 0, department: null, email: null }
-          });
+          expect(JSON.parse(item.response[4].originalRequest.body.raw)).to.eql(defaultReqBody);
           expect(JSON.parse(item.response[4].body)).to.eql({ message: 'AddUserDetailsCommand : System Error message' });
           done();
         });

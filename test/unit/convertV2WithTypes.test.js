@@ -2583,6 +2583,125 @@ describe('convertV2WithTypes', function() {
     });
   });
 
+  describe('multiple examples handling', function() {
+    it('should generate only one response per response code when multiple request and response examples are present', function(done) {
+      const oas = {
+        openapi: '3.0.0',
+        info: { title: 'Multiple Examples Test', version: '1.0.0' },
+        paths: {
+          '/spacecrafts': {
+            post: {
+              summary: 'Create spacecraft',
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string' },
+                        type: { type: 'string' }
+                      }
+                    },
+                    examples: {
+                      capsuleExample: {
+                        value: { name: 'Dragon', type: 'capsule' }
+                      },
+                      probeExample: {
+                        value: { name: 'Voyager', type: 'probe' }
+                      },
+                      satelliteExample: {
+                        value: { name: 'Hubble', type: 'satellite' }
+                      }
+                    }
+                  }
+                }
+              },
+              responses: {
+                '201': {
+                  description: 'Created',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string' },
+                          name: { type: 'string' }
+                        }
+                      },
+                      examples: {
+                        example1: {
+                          value: { id: '1', name: 'Dragon' }
+                        },
+                        example2: {
+                          value: { id: '2', name: 'Voyager' }
+                        },
+                        example3: {
+                          value: { id: '3', name: 'Hubble' }
+                        }
+                      }
+                    }
+                  }
+                },
+                '400': {
+                  description: 'Bad Request',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          error: { type: 'string' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+        expect(conversionResult.result).to.equal(true);
+
+        const collection = conversionResult.output[0].data;
+
+        // Find the POST request
+        const findRequest = (items) => {
+          for (let item of items) {
+            if (item.request) {
+              return item;
+            }
+            if (item.item) {
+              const found = findRequest(item.item);
+              if (found) { return found; }
+            }
+          }
+          return null;
+        };
+
+        const request = findRequest(collection.item);
+        expect(request, 'POST request should exist').to.not.be.null;
+
+        // CRITICAL: Should generate exactly 2 responses (one for 201, one for 400)
+        // NOT 6 responses (3 examples × 2 response codes) or 3 responses (3 examples for 201 code)
+        expect(request.response).to.be.an('array').with.length(2);
+
+        // Verify we have one response for each status code
+        const responseCodes = request.response.map((r) => { return r.code; });
+        expect(responseCodes).to.include(201);
+        expect(responseCodes).to.include(400);
+
+        // Verify no duplicate response codes
+        const uniqueCodes = [...new Set(responseCodes)];
+        expect(uniqueCodes.length).to.equal(2);
+
+        done();
+      });
+    });
+  });
+
   describe('example field preservation', function() {
     it('should preserve example fields in request and response bodies with different schema types', function(done) {
       const oas = {

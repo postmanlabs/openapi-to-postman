@@ -1758,11 +1758,11 @@ let QUERYPARAM = 'query',
 
     }
 
-    // Generate multiple examples when either request or response contains more than one example
+    // Generate examples when either request or response contains examples
     if (
       isExampleBody &&
       shouldGenerateFromExample &&
-      (_.size(examples) > 1 || _.size(requestBodyExamples) > 1)
+      (_.size(examples) > 0 || _.size(requestBodyExamples) > 0)
     ) {
       responseExamples = [{
         key: '_default',
@@ -1772,13 +1772,15 @@ let QUERYPARAM = 'query',
       }];
 
       if (!_.isEmpty(examples)) {
-        responseExamples = _.map(examples, (example, key) => {
-          return {
-            key,
-            value: example,
-            contentType: bodyType
-          };
-        });
+        // Only use the first example from the examples object
+        const firstExampleKey = Object.keys(examples)[0];
+        const firstExample = examples[firstExampleKey];
+
+        responseExamples = [{
+          key: firstExampleKey,
+          value: firstExample,
+          contentType: bodyType
+        }];
       }
 
       let matchedRequestBodyExamples = _.filter(requestBodyExamples, ['contentType', bodyType]);
@@ -1786,6 +1788,11 @@ let QUERYPARAM = 'query',
       // If content-types are not matching, match with any present content-types
       if (_.isEmpty(matchedRequestBodyExamples)) {
         matchedRequestBodyExamples = requestBodyExamples;
+      }
+
+      // Only use the first request body example if multiple exist
+      if (matchedRequestBodyExamples.length > 1) {
+        matchedRequestBodyExamples = [matchedRequestBodyExamples[0]];
       }
 
       const generatedBody = generateExamples(
@@ -2663,7 +2670,11 @@ let QUERYPARAM = 'query',
 
         _.forEach(requestContent, (content, contentType) => {
           if (_.has(content, 'examples')) {
-            _.forEach(content.examples, (example, name) => {
+            // Only use the first example from the examples object
+            const exampleKeys = Object.keys(content.examples);
+            if (exampleKeys.length > 0) {
+              const name = exampleKeys[0];
+              const example = content.examples[name];
               const exampleObj = example;
 
               if (isBodyTypeXML && exampleObj.value) {
@@ -2682,7 +2693,7 @@ let QUERYPARAM = 'query',
                 key: name,
                 value: example
               });
-            });
+            }
           }
         });
       }
@@ -2715,7 +2726,9 @@ let QUERYPARAM = 'query',
 
       Object.assign(responseTypes, { [code || DEFAULT_RESPONSE_CODE_IN_OAS]: responseBodyHeaderObj });
 
-      _.forOwn(resolvedExamples, (resolvedExample = {}) => {
+      // Only use the first example from resolvedExamples
+      const resolvedExample = resolvedExamples[0];
+      if (resolvedExample) {
         let { body, contentHeader = [], bodyType, acceptHeader, name } = resolvedExample,
           resolvedRequestBody = _.get(resolvedExample, 'request.body'),
           originalRequest,
@@ -2755,7 +2768,12 @@ let QUERYPARAM = 'query',
 
         // When example key is not available, key name will be `_default` naming should be done based on description
         if (_.get(resolvedExample, 'name') === '_default' || !(typeof name === 'string' && name.length)) {
-          name = _.get(responseSchema, 'description', `${code} response`);
+          name = _.get(responseSchema, 'description') || String(code);
+        }
+        // When the name matches a request example key and the response description is empty, use the response code
+        else if (resolvedExamples.length === 1 && _.some(requestBodyExamples, ['key', name]) &&
+                 !_.get(responseSchema, 'description')) {
+          name = String(code);
         }
 
         // set accept header value as first found response content's media type
@@ -2773,7 +2791,7 @@ let QUERYPARAM = 'query',
         };
 
         responses.push(response);
-      });
+      }
     });
     return {
       responses,
