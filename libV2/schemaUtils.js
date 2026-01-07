@@ -815,6 +815,7 @@ let QUERYPARAM = 'query',
         description: resolvedSchema.description,
         example: resolvedSchema.example,
         format: resolvedSchema.format,
+        additionalProperties: resolvedSchema.additionalProperties,
         anyOf: resolvedSchema.anyOf.map((schema) => {
           return processSchema(schema);
         })
@@ -827,6 +828,7 @@ let QUERYPARAM = 'query',
         description: resolvedSchema.description,
         example: resolvedSchema.example,
         format: resolvedSchema.format,
+        additionalProperties: resolvedSchema.additionalProperties,
         oneOf: resolvedSchema.oneOf.map((schema) => {
           return processSchema(schema);
         })
@@ -839,6 +841,7 @@ let QUERYPARAM = 'query',
         description: resolvedSchema.description,
         example: resolvedSchema.example,
         format: resolvedSchema.format,
+        additionalProperties: resolvedSchema.additionalProperties,
         allOf: resolvedSchema.allOf.map((schema) => {
           return processSchema(schema);
         })
@@ -853,6 +856,12 @@ let QUERYPARAM = 'query',
         example: resolvedSchema.example,
         format: resolvedSchema.format
       };
+
+      if (resolvedSchema.hasOwnProperty('additionalProperties')) {
+        schemaDetails.additionalProperties = _.isObject(resolvedSchema.additionalProperties) ?
+          processSchema(resolvedSchema.additionalProperties) :
+          resolvedSchema.additionalProperties;
+      }
 
       // Only include properties if they exist in the original schema
       if (resolvedSchema.hasOwnProperty('properties')) {
@@ -876,6 +885,12 @@ let QUERYPARAM = 'query',
             description: propValue.description,
             format: propValue.format
           };
+
+          if (propValue.hasOwnProperty('additionalProperties')) {
+            propertyDetails.additionalProperties = _.isObject(propValue.additionalProperties) ?
+              processSchema(propValue.additionalProperties) :
+              propValue.additionalProperties;
+          }
 
           if (propValue.anyOf) {
             propertyDetails.anyOf = propValue.anyOf.map((schema) => {
@@ -2200,6 +2215,7 @@ let QUERYPARAM = 'query',
       title: schema.title,
       type: resolvedType,
       format: schema.format,
+      additionalProperties: schema.additionalProperties,
       default: schema.default,
       required: param.required,
       deprecated: param.deprecated,
@@ -2551,6 +2567,7 @@ let QUERYPARAM = 'query',
           description: schema.description,
           title: schema.title,
           format: schema.format,
+          additionalProperties: schema.additionalProperties,
           default: schema.default,
           required: schema.required,
           deprecated: schema.deprecated,
