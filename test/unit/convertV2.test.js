@@ -2552,7 +2552,7 @@ describe('The convert v2 Function', function() {
           });
           // Should only generate 1 response (using first request example)
           expect(item.response).to.have.lengthOf(1);
-          expect(item.response[0].name).to.eql('valid-request');
+          expect(item.response[0].name).to.eql('None');
           expect(item.response[0]._postman_previewlanguage).to.eql('json');
           expect(JSON.parse(item.response[0].body)).to.eql({ hello: 'world' });
           expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql({
@@ -2683,13 +2683,13 @@ describe('The convert v2 Function', function() {
           expect(JSON.parse(item.request.body.raw)).to.eql(okReqExample);
           // Should only generate 2 responses (1 per response code, using first request example)
           expect(item.response).to.have.lengthOf(2);
-          expect(item.response[0].name).to.eql('ok_example');
+          expect(item.response[0].name).to.eql('Ok');
           expect(item.response[0].code).to.eql(200);
           expect(item.response[0]._postman_previewlanguage).to.eql('json');
           expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql(okReqExample);
           expect(JSON.parse(item.response[0].body)).to.eql(okResExample);
 
-          expect(item.response[1].name).to.eql('ok_example');
+          expect(item.response[1].name).to.eql('unexpected error');
           expect(item.response[1].code).to.eql(undefined);
           expect(item.response[1]._postman_previewlanguage).to.eql('json');
           expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql(okReqExample);
@@ -2770,7 +2770,6 @@ describe('The convert v2 Function', function() {
           expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql(defaultReqBody);
           expect(JSON.parse(item.response[0].body)).to.eql({ userId: 12 });
 
-          expect(item.response[1].name).to.eql('400');
           expect(item.response[1].code).to.eql(400);
           expect(item.response[1]._postman_previewlanguage).to.eql('json');
           expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql(defaultReqBody);

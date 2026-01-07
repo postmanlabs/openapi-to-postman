@@ -2667,33 +2667,23 @@ describe('convertV2WithTypes', function() {
 
         const collection = conversionResult.output[0].data;
 
-        // Find the POST request
-        const findRequest = (items) => {
-          for (let item of items) {
-            if (item.request) {
-              return item;
-            }
-            if (item.item) {
-              const found = findRequest(item.item);
-              if (found) { return found; }
-            }
-          }
-          return null;
-        };
-
-        const request = findRequest(collection.item);
-        expect(request, 'POST request should exist').to.not.be.null;
+        // Fixture has a single path with a single POST operation.
+        const request = collection.item[0].item[0];
+        expect(request, 'POST request should exist').to.exist;
+        expect(request.request.method).to.equal('POST');
 
         // CRITICAL: Should generate exactly 2 responses (one for 201, one for 400)
-        // NOT 6 responses (3 examples × 2 response codes) or 3 responses (3 examples for 201 code)
         expect(request.response).to.be.an('array').with.length(2);
 
-        // Verify we have one response for each status code
-        const responseCodes = request.response.map((r) => { return r.code; });
-        expect(responseCodes).to.include(201);
-        expect(responseCodes).to.include(400);
+        // Verify response code and names
+        const responsesSortedByCode = request.response.slice().sort((a, b) => { return a.code - b.code; });
+        expect(responsesSortedByCode[0].code).to.equal(201);
+        expect(responsesSortedByCode[0].name).to.equal('Created');
+        expect(responsesSortedByCode[1].code).to.equal(400);
+        expect(responsesSortedByCode[1].name).to.equal('Bad Request');
 
         // Verify no duplicate response codes
+        const responseCodes = request.response.map((r) => { return r.code; });
         const uniqueCodes = [...new Set(responseCodes)];
         expect(uniqueCodes.length).to.equal(2);
 

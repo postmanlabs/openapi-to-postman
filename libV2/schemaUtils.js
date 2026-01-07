@@ -2766,14 +2766,22 @@ let QUERYPARAM = 'query',
           originalRequest = _.assign({}, request, { headers: reqHeaders }, requestBodyObj);
         }
 
-        // When example key is not available, key name will be `_default` naming should be done based on description
+        const responseDescription = _.get(responseSchema, 'description'),
+          responseDescriptionTrimmed = _.isString(responseDescription) ? responseDescription.trim() : '',
+          codeName = String(_.isNil(code) ? DEFAULT_RESPONSE_CODE_IN_OAS : code);
+
+        // When example key is not available, key name will be `_default` naming should be done based on response
         if (_.get(resolvedExample, 'name') === '_default' || !(typeof name === 'string' && name.length)) {
-          name = _.get(responseSchema, 'description') || String(code);
+          name = responseDescriptionTrimmed || codeName;
         }
-        // When the name matches a request example key and the response description is empty, use the response code
-        else if (resolvedExamples.length === 1 && _.some(requestBodyExamples, ['key', name]) &&
-                 !_.get(responseSchema, 'description')) {
-          name = String(code);
+
+        /**
+         * When the generated name matches a request example key (common when response uses a single `example`
+         * but request has `examples`), prefer response description to avoid leaking the request example key
+         * into the response example name.
+         */
+        else if (resolvedExamples.length === 1 && _.some(requestBodyExamples, ['key', name])) {
+          name = responseDescriptionTrimmed || codeName;
         }
 
         // set accept header value as first found response content's media type
