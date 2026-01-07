@@ -814,6 +814,7 @@ let QUERYPARAM = 'query',
         title: resolvedSchema.title,
         description: resolvedSchema.description,
         example: resolvedSchema.example,
+        format: resolvedSchema.format,
         anyOf: resolvedSchema.anyOf.map((schema) => {
           return processSchema(schema);
         })
@@ -825,6 +826,7 @@ let QUERYPARAM = 'query',
         title: resolvedSchema.title,
         description: resolvedSchema.description,
         example: resolvedSchema.example,
+        format: resolvedSchema.format,
         oneOf: resolvedSchema.oneOf.map((schema) => {
           return processSchema(schema);
         })
@@ -836,6 +838,7 @@ let QUERYPARAM = 'query',
         title: resolvedSchema.title,
         description: resolvedSchema.description,
         example: resolvedSchema.example,
+        format: resolvedSchema.format,
         allOf: resolvedSchema.allOf.map((schema) => {
           return processSchema(schema);
         })
@@ -847,7 +850,8 @@ let QUERYPARAM = 'query',
         description: resolvedSchema.description,
         title: resolvedSchema.title,
         type: resolvedSchema.type,
-        example: resolvedSchema.example
+        example: resolvedSchema.example,
+        format: resolvedSchema.format
       };
 
       // Only include properties if they exist in the original schema
@@ -891,9 +895,7 @@ let QUERYPARAM = 'query',
           else if (propValue.properties) {
             let processedProperties = processSchema(propValue);
             propertyDetails.properties = processedProperties.properties;
-            if (processedProperties.required) {
-              propertyDetails.required = processedProperties.required;
-            }
+            processedProperties.required && (propertyDetails.required = processedProperties.required);
           }
           else if (propValue.type === 'array' && propValue.items) {
             propertyDetails.items = processSchema(propValue.items);
@@ -925,7 +927,8 @@ let QUERYPARAM = 'query',
       type: resolvedSchema.type,
       description: resolvedSchema.description,
       title: resolvedSchema.title,
-      example: resolvedSchema.example
+      example: resolvedSchema.example,
+      format: resolvedSchema.format
     };
   },
 
