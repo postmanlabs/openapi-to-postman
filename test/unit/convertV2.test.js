@@ -2581,7 +2581,7 @@ describe('The convert v2 Function', function() {
           expect(JSON.parse(item.request.body.raw)).to.eql({ hello: 'world' });
           // Should only generate 1 response (using first response example)
           expect(item.response).to.have.lengthOf(1);
-          expect(item.response[0].name).to.eql('valid-request');
+          expect(item.response[0].name).to.eql('None');
           expect(item.response[0]._postman_previewlanguage).to.eql('json');
           expect(JSON.parse(item.response[0].body)).to.eql({
             user: 1,
@@ -2617,7 +2617,7 @@ describe('The convert v2 Function', function() {
              * as we only use the first example from each
              */
             expect(item.response).to.have.lengthOf(1);
-            expect(item.response[0].name).to.eql('Complete request');
+            expect(item.response[0].name).to.eql('None');
             expect(item.response[0]._postman_previewlanguage).to.eql('json');
             expect(JSON.parse(item.response[0].body)).to.eql({
               user: 1,
@@ -2651,7 +2651,7 @@ describe('The convert v2 Function', function() {
             });
             // Should only generate 1 response (using first examples from both request and response)
             expect(item.response).to.have.lengthOf(1);
-            expect(item.response[0].name).to.eql('Request with only required params');
+            expect(item.response[0].name).to.eql('None');
             expect(item.response[0]._postman_previewlanguage).to.eql('json');
             expect(JSON.parse(item.response[0].body)).to.eql({
               user: 1
@@ -2717,19 +2717,19 @@ describe('The convert v2 Function', function() {
           expect(JSON.parse(item.request.body.raw)).to.eql(reqBody1);
           // Should only generate 3 responses (1 per response code, using first example from each)
           expect(item.response).to.have.lengthOf(3);
-          expect(item.response[0].name).to.eql('Request with only required params');
+          expect(item.response[0].name).to.eql('None');
           expect(item.response[0].code).to.eql(200);
           expect(item.response[0]._postman_previewlanguage).to.eql('json');
           expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql(reqBody1);
           expect(JSON.parse(item.response[0].body)).to.eql({ user: 1 });
 
-          expect(item.response[1].name).to.eql('Request with only bad params');
+          expect(item.response[1].name).to.eql('None');
           expect(item.response[1].code).to.eql(400);
           expect(item.response[1]._postman_previewlanguage).to.eql('json');
           expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql(reqBody1);
           expect(JSON.parse(item.response[1].body)).to.eql({ eyeColor: 'gray' });
 
-          expect(item.response[2].name).to.eql('Failed request - Negative user');
+          expect(item.response[2].name).to.eql('None');
           expect(item.response[2].code).to.eql(500);
           expect(item.response[2]._postman_previewlanguage).to.eql('json');
           expect(JSON.parse(item.response[2].originalRequest.body.raw)).to.eql(reqBody1);

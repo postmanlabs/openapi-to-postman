@@ -1465,6 +1465,16 @@ let QUERYPARAM = 'query',
         return _.toLower(example.key) === _.toLower(key);
       };
 
+    const getResponseExampleName = (responseExample) => {
+      if (!_.isObject(responseExample)) {
+        return undefined;
+      }
+      return _.get(responseExample, 'value.description') ||
+        _.get(responseExample, 'value.summary') ||
+        (responseExample.key !== '_default' && responseExample.key) ||
+        (_.isNil(responseExample.responseCode) ? undefined : String(responseExample.responseCode));
+    };
+
     let matchedKeys = _.intersectionBy(responseExampleKeys, requestBodyExampleKeys, _.toLower),
       isResponseCodeMatching = false;
 
@@ -1507,9 +1517,7 @@ let QUERYPARAM = 'query',
         pmExamples.push({
           request: getExampleData(context, { [requestExample.key]: requestExample.value }),
           response: responseExampleData,
-          name: _.get(responseExample, 'value.summary') ||
-            (responseExample.key !== '_default' && responseExample.key) ||
-            _.get(requestExample, 'value.summary') || requestExample.key || 'Example'
+          name: getResponseExampleName(responseExample) || 'Example'
         });
       });
 
@@ -1533,7 +1541,7 @@ let QUERYPARAM = 'query',
       if (_.isEmpty(requestBodyExamples)) {
         pmExamples.push({
           response: responseExampleData,
-          name: _.get(responseExample, 'value.summary') || responseExample.key
+          name: getResponseExampleName(responseExample) || 'Example'
         });
         return;
       }
@@ -1549,8 +1557,7 @@ let QUERYPARAM = 'query',
       pmExamples.push({
         request: getExampleData(context, { [requestExample.key]: requestExample.value }),
         response: responseExampleData,
-        name: _.get(responseExample, 'value.summary') || (responseExample.key !== '_default' && responseExample.key) ||
-          _.get(requestExample, 'value.summary') || requestExample.key || 'Example'
+        name: getResponseExampleName(responseExample) || 'Example'
       });
     });
 
@@ -1575,9 +1582,7 @@ let QUERYPARAM = 'query',
         pmExamples.push({
           request: getExampleData(context, { [requestBodyExamples[i].key]: requestBodyExamples[i].value }),
           response: responseExampleData,
-          name: _.get(requestBodyExamples[i], 'value.summary') ||
-            (requestBodyExamples[i].key !== '_default' && requestBodyExamples[i].key) ||
-            _.get(responseExample, 'value.summary') || 'Example'
+          name: getResponseExampleName(responseExample) || 'Example'
         });
       }
     }
@@ -2770,19 +2775,12 @@ let QUERYPARAM = 'query',
           responseDescriptionTrimmed = _.isString(responseDescription) ? responseDescription.trim() : '',
           codeName = String(_.isNil(code) ? DEFAULT_RESPONSE_CODE_IN_OAS : code);
 
-        // When example key is not available, key name will be `_default` naming should be done based on response
-        if (_.get(resolvedExample, 'name') === '_default' || !(typeof name === 'string' && name.length)) {
-          name = responseDescriptionTrimmed || codeName;
-        }
-
-        /**
-         * When the generated name matches a request example key (common when response uses a single `example`
-         * but request has `examples`), prefer response description to avoid leaking the request example key
-         * into the response example name.
-         */
-        else if (resolvedExamples.length === 1 && _.some(requestBodyExamples, ['key', name])) {
-          name = responseDescriptionTrimmed || codeName;
-        }
+        // response-name priority:
+        // 1) response-level description
+        // 2) example-level description/summary (already baked into `name` by generateExamples)
+        // 3) example key (already baked into `name` by generateExamples)
+        // 4) response code
+        name = responseDescriptionTrimmed || name || codeName;
 
         // set accept header value as first found response content's media type
         if (_.isEmpty(requestAcceptHeader)) {
