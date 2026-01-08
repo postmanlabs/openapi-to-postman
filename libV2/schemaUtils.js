@@ -895,7 +895,9 @@ let QUERYPARAM = 'query',
           else if (propValue.properties) {
             let processedProperties = processSchema(propValue);
             propertyDetails.properties = processedProperties.properties;
-            processedProperties.required && (propertyDetails.required = processedProperties.required);
+            if (processedProperties.required) {
+              propertyDetails.required = processedProperties.required;
+            }
           }
           else if (propValue.type === 'array' && propValue.items) {
             propertyDetails.items = processSchema(propValue.items);
