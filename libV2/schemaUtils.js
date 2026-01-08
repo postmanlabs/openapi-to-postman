@@ -1475,7 +1475,7 @@ let QUERYPARAM = 'query',
       return _.get(responseExample, 'value.description') ||
         _.get(responseExample, 'value.summary') ||
         (responseExample.key !== '_default' && responseExample.key) ||
-        (_.isNil(responseExample.responseCode) ? undefined : String(responseExample.responseCode));
+        (!_.isNil(responseExample.responseCode) ? String(responseExample.responseCode) : undefined);
     };
 
     let matchedKeys = _.intersectionBy(responseExampleKeys, requestBodyExampleKeys, _.toLower),
@@ -2776,7 +2776,7 @@ let QUERYPARAM = 'query',
 
         const responseDescription = _.get(responseSchema, 'description'),
           responseDescriptionTrimmed = _.isString(responseDescription) ? responseDescription.trim() : '',
-          codeName = String(_.isNil(code) ? DEFAULT_RESPONSE_CODE_IN_OAS : code);
+          codeName = String(!_.isNil(code) ? code : DEFAULT_RESPONSE_CODE_IN_OAS);
 
         // response-name priority:
         // 1) response-level description
