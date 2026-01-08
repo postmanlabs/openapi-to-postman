@@ -814,6 +814,7 @@ let QUERYPARAM = 'query',
         title: resolvedSchema.title,
         description: resolvedSchema.description,
         example: resolvedSchema.example,
+        format: resolvedSchema.format,
         anyOf: resolvedSchema.anyOf.map((schema) => {
           return processSchema(schema);
         })
@@ -825,6 +826,7 @@ let QUERYPARAM = 'query',
         title: resolvedSchema.title,
         description: resolvedSchema.description,
         example: resolvedSchema.example,
+        format: resolvedSchema.format,
         oneOf: resolvedSchema.oneOf.map((schema) => {
           return processSchema(schema);
         })
@@ -836,6 +838,7 @@ let QUERYPARAM = 'query',
         title: resolvedSchema.title,
         description: resolvedSchema.description,
         example: resolvedSchema.example,
+        format: resolvedSchema.format,
         allOf: resolvedSchema.allOf.map((schema) => {
           return processSchema(schema);
         })
@@ -847,7 +850,8 @@ let QUERYPARAM = 'query',
         description: resolvedSchema.description,
         title: resolvedSchema.title,
         type: resolvedSchema.type,
-        example: resolvedSchema.example
+        example: resolvedSchema.example,
+        format: resolvedSchema.format
       };
 
       // Only include properties if they exist in the original schema
@@ -925,7 +929,8 @@ let QUERYPARAM = 'query',
       type: resolvedSchema.type,
       description: resolvedSchema.description,
       title: resolvedSchema.title,
-      example: resolvedSchema.example
+      example: resolvedSchema.example,
+      format: resolvedSchema.format
     };
   },
 
@@ -1465,6 +1470,16 @@ let QUERYPARAM = 'query',
         return _.toLower(example.key) === _.toLower(key);
       };
 
+    const getResponseExampleName = (responseExample) => {
+      if (!_.isObject(responseExample)) {
+        return undefined;
+      }
+      return _.get(responseExample, 'value.description') ||
+        _.get(responseExample, 'value.summary') ||
+        (responseExample.key !== '_default' && responseExample.key) ||
+        (!_.isNil(responseExample.responseCode) ? String(responseExample.responseCode) : undefined);
+    };
+
     let matchedKeys = _.intersectionBy(responseExampleKeys, requestBodyExampleKeys, _.toLower),
       isResponseCodeMatching = false;
 
@@ -1507,9 +1522,7 @@ let QUERYPARAM = 'query',
         pmExamples.push({
           request: getExampleData(context, { [requestExample.key]: requestExample.value }),
           response: responseExampleData,
-          name: _.get(responseExample, 'value.summary') ||
-            (responseExample.key !== '_default' && responseExample.key) ||
-            _.get(requestExample, 'value.summary') || requestExample.key || 'Example'
+          name: getResponseExampleName(responseExample) || 'Example'
         });
       });
 
@@ -1533,7 +1546,7 @@ let QUERYPARAM = 'query',
       if (_.isEmpty(requestBodyExamples)) {
         pmExamples.push({
           response: responseExampleData,
-          name: _.get(responseExample, 'value.summary') || responseExample.key
+          name: getResponseExampleName(responseExample) || 'Example'
         });
         return;
       }
@@ -1549,8 +1562,7 @@ let QUERYPARAM = 'query',
       pmExamples.push({
         request: getExampleData(context, { [requestExample.key]: requestExample.value }),
         response: responseExampleData,
-        name: _.get(responseExample, 'value.summary') || (responseExample.key !== '_default' && responseExample.key) ||
-          _.get(requestExample, 'value.summary') || requestExample.key || 'Example'
+        name: getResponseExampleName(responseExample) || 'Example'
       });
     });
 
@@ -1575,9 +1587,7 @@ let QUERYPARAM = 'query',
         pmExamples.push({
           request: getExampleData(context, { [requestBodyExamples[i].key]: requestBodyExamples[i].value }),
           response: responseExampleData,
-          name: _.get(requestBodyExamples[i], 'value.summary') ||
-            (requestBodyExamples[i].key !== '_default' && requestBodyExamples[i].key) ||
-            _.get(responseExample, 'value.summary') || 'Example'
+          name: getResponseExampleName(responseExample) || 'Example'
         });
       }
     }
@@ -1758,11 +1768,11 @@ let QUERYPARAM = 'query',
 
     }
 
-    // Generate multiple examples when either request or response contains more than one example
+    // Generate examples when either request or response contains examples
     if (
       isExampleBody &&
       shouldGenerateFromExample &&
-      (_.size(examples) > 1 || _.size(requestBodyExamples) > 1)
+      (_.size(examples) > 0 || _.size(requestBodyExamples) > 0)
     ) {
       responseExamples = [{
         key: '_default',
@@ -1772,13 +1782,15 @@ let QUERYPARAM = 'query',
       }];
 
       if (!_.isEmpty(examples)) {
-        responseExamples = _.map(examples, (example, key) => {
-          return {
-            key,
-            value: example,
-            contentType: bodyType
-          };
-        });
+        // Only use the first example from the examples object
+        const firstExampleKey = Object.keys(examples)[0];
+        const firstExample = examples[firstExampleKey];
+
+        responseExamples = [{
+          key: firstExampleKey,
+          value: firstExample,
+          contentType: bodyType
+        }];
       }
 
       let matchedRequestBodyExamples = _.filter(requestBodyExamples, ['contentType', bodyType]);
@@ -1786,6 +1798,11 @@ let QUERYPARAM = 'query',
       // If content-types are not matching, match with any present content-types
       if (_.isEmpty(matchedRequestBodyExamples)) {
         matchedRequestBodyExamples = requestBodyExamples;
+      }
+
+      // Only use the first request body example if multiple exist
+      if (matchedRequestBodyExamples.length > 1) {
+        matchedRequestBodyExamples = [matchedRequestBodyExamples[0]];
       }
 
       const generatedBody = generateExamples(
@@ -2663,7 +2680,11 @@ let QUERYPARAM = 'query',
 
         _.forEach(requestContent, (content, contentType) => {
           if (_.has(content, 'examples')) {
-            _.forEach(content.examples, (example, name) => {
+            // Only use the first example from the examples object
+            const exampleKeys = Object.keys(content.examples);
+            if (exampleKeys.length > 0) {
+              const name = exampleKeys[0];
+              const example = content.examples[name];
               const exampleObj = example;
 
               if (isBodyTypeXML && exampleObj.value) {
@@ -2682,7 +2703,7 @@ let QUERYPARAM = 'query',
                 key: name,
                 value: example
               });
-            });
+            }
           }
         });
       }
@@ -2715,7 +2736,9 @@ let QUERYPARAM = 'query',
 
       Object.assign(responseTypes, { [code || DEFAULT_RESPONSE_CODE_IN_OAS]: responseBodyHeaderObj });
 
-      _.forOwn(resolvedExamples, (resolvedExample = {}) => {
+      // Only use the first example from resolvedExamples
+      const resolvedExample = resolvedExamples[0];
+      if (resolvedExample) {
         let { body, contentHeader = [], bodyType, acceptHeader, name } = resolvedExample,
           resolvedRequestBody = _.get(resolvedExample, 'request.body'),
           originalRequest,
@@ -2753,10 +2776,16 @@ let QUERYPARAM = 'query',
           originalRequest = _.assign({}, request, { headers: reqHeaders }, requestBodyObj);
         }
 
-        // When example key is not available, key name will be `_default` naming should be done based on description
-        if (_.get(resolvedExample, 'name') === '_default' || !(typeof name === 'string' && name.length)) {
-          name = _.get(responseSchema, 'description', `${code} response`);
-        }
+        const responseDescription = _.get(responseSchema, 'description'),
+          responseDescriptionTrimmed = _.isString(responseDescription) ? responseDescription.trim() : '',
+          codeName = String(!_.isNil(code) ? code : DEFAULT_RESPONSE_CODE_IN_OAS);
+
+        // response-name priority:
+        // 1) response-level description
+        // 2) example-level description/summary (already baked into `name` by generateExamples)
+        // 3) example key (already baked into `name` by generateExamples)
+        // 4) response code
+        name = responseDescriptionTrimmed || name || codeName;
 
         // set accept header value as first found response content's media type
         if (_.isEmpty(requestAcceptHeader)) {
@@ -2773,7 +2802,7 @@ let QUERYPARAM = 'query',
         };
 
         responses.push(response);
-      });
+      }
     });
     return {
       responses,
