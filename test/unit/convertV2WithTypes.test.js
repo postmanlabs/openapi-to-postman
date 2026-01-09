@@ -556,6 +556,7 @@ describe('convertV2WithTypes', function() {
                         {
                           type: 'object',
                           example: { name: 'John Doe' },
+                          additionalProperties: true,
                           properties: {
                             name: { type: 'string', format: 'email', example: 'Jane' }
                           }
@@ -563,6 +564,7 @@ describe('convertV2WithTypes', function() {
                         {
                           type: 'object',
                           example: { id: 123 },
+                          additionalProperties: true,
                           properties: {
                             id: { type: 'integer', format: 'int32', example: 456 }
                           }
@@ -605,10 +607,12 @@ describe('convertV2WithTypes', function() {
         expect(parsedRequestBody.example).to.deep.equal({ name: 'default example' });
         expect(parsedRequestBody.anyOf[0]).to.have.property('example');
         expect(parsedRequestBody.anyOf[0].example).to.deep.equal({ name: 'John Doe' });
+        expect(parsedRequestBody.anyOf[0]).to.have.property('additionalProperties', true);
         expect(parsedRequestBody.anyOf[0].properties.name).to.have.property('format', 'email');
         expect(parsedRequestBody.anyOf[0].properties.name).to.have.property('example', 'Jane');
         expect(parsedRequestBody.anyOf[1]).to.have.property('example');
         expect(parsedRequestBody.anyOf[1].example).to.deep.equal({ id: 123 });
+        expect(parsedRequestBody.anyOf[1]).to.have.property('additionalProperties', true);
         expect(parsedRequestBody.anyOf[1].properties.id).to.have.property('format', 'int32');
         expect(parsedRequestBody.anyOf[1].properties.id).to.have.property('example', 456);
 
@@ -636,6 +640,7 @@ describe('convertV2WithTypes', function() {
                           {
                             type: 'object',
                             example: { message: 'OK' },
+                            additionalProperties: true,
                             properties: {
                               message: { type: 'string', format: 'hostname', example: 'All good' }
                             }
@@ -672,6 +677,7 @@ describe('convertV2WithTypes', function() {
         expect(parsedResponseBody.oneOf[1]).to.have.property('format', 'int64');
         expect(parsedResponseBody.oneOf[2]).to.have.property('example');
         expect(parsedResponseBody.oneOf[2].example).to.deep.equal({ message: 'OK' });
+        expect(parsedResponseBody.oneOf[2]).to.have.property('additionalProperties', true);
         expect(parsedResponseBody.oneOf[2].properties.message).to.have.property('format', 'hostname');
         expect(parsedResponseBody.oneOf[2].properties.message).to.have.property('example', 'All good');
 
@@ -695,6 +701,7 @@ describe('convertV2WithTypes', function() {
                         {
                           type: 'object',
                           example: { baseField: 'example base' },
+                          additionalProperties: true,
                           properties: {
                             baseField: { type: 'string', format: 'uuid', example: 'field example' }
                           }
@@ -702,6 +709,7 @@ describe('convertV2WithTypes', function() {
                         {
                           type: 'object',
                           example: { extensionField: 200 },
+                          additionalProperties: true,
                           properties: {
                             extensionField: { type: 'integer', format: 'int32', example: 300 }
                           }
@@ -722,6 +730,7 @@ describe('convertV2WithTypes', function() {
                           {
                             type: 'object',
                             example: { id: '456' },
+                            additionalProperties: true,
                             properties: {
                               id: { type: 'string', format: 'uuid', example: '789' }
                             }
@@ -729,6 +738,7 @@ describe('convertV2WithTypes', function() {
                           {
                             type: 'object',
                             example: { timestamp: '2024-12-22T00:00:00Z' },
+                            additionalProperties: true,
                             properties: {
                               timestamp: { type: 'string', format: 'date-time', example: '2025-01-01T00:00:00Z' }
                             }
@@ -761,10 +771,12 @@ describe('convertV2WithTypes', function() {
         expect(parsedRequestBody.example).to.deep.equal({ baseField: 'base', extensionField: 100 });
         expect(parsedRequestBody.allOf[0]).to.have.property('example');
         expect(parsedRequestBody.allOf[0].example).to.deep.equal({ baseField: 'example base' });
+        expect(parsedRequestBody.allOf[0]).to.have.property('additionalProperties', true);
         expect(parsedRequestBody.allOf[0].properties.baseField).to.have.property('format', 'uuid');
         expect(parsedRequestBody.allOf[0].properties.baseField).to.have.property('example', 'field example');
         expect(parsedRequestBody.allOf[1]).to.have.property('example');
         expect(parsedRequestBody.allOf[1].example).to.deep.equal({ extensionField: 200 });
+        expect(parsedRequestBody.allOf[1]).to.have.property('additionalProperties', true);
         expect(parsedRequestBody.allOf[1].properties.extensionField).to.have.property('format', 'int32');
         expect(parsedRequestBody.allOf[1].properties.extensionField).to.have.property('example', 300);
 
@@ -781,10 +793,12 @@ describe('convertV2WithTypes', function() {
         expect(parsedResponseBody.example).to.deep.equal({ id: 'res123', timestamp: '2024-01-01' });
         expect(parsedResponseBody.allOf[0]).to.have.property('example');
         expect(parsedResponseBody.allOf[0].example).to.deep.equal({ id: '456' });
+        expect(parsedResponseBody.allOf[0]).to.have.property('additionalProperties', true);
         expect(parsedResponseBody.allOf[0].properties.id).to.have.property('format', 'uuid');
         expect(parsedResponseBody.allOf[0].properties.id).to.have.property('example', '789');
         expect(parsedResponseBody.allOf[1]).to.have.property('example');
         expect(parsedResponseBody.allOf[1].example).to.deep.equal({ timestamp: '2024-12-22T00:00:00Z' });
+        expect(parsedResponseBody.allOf[1]).to.have.property('additionalProperties', true);
         expect(parsedResponseBody.allOf[1].properties.timestamp).to.have.property('format', 'date-time');
         expect(parsedResponseBody.allOf[1].properties.timestamp).to.have.property('example', '2025-01-01T00:00:00Z');
 
@@ -1507,6 +1521,15 @@ describe('convertV2WithTypes', function() {
                 }
               },
               {
+                name: 'filters',
+                in: 'query',
+                schema: {
+                  type: 'object',
+                  additionalProperties: true,
+                  description: 'Arbitrary key-value filters'
+                }
+              },
+              {
                 name: 'singleTypeParam',
                 in: 'query',
                 schema: {
@@ -1537,6 +1560,13 @@ describe('convertV2WithTypes', function() {
                     description: 'Request identifier',
                     schema: {
                       type: ['string', 'number'] // Union type - should pick 'string' (first)
+                    }
+                  },
+                  'x-meta': {
+                    description: 'Additional metadata',
+                    schema: {
+                      type: 'object',
+                      additionalProperties: true
                     }
                   },
                   'x-single-type-header': {
@@ -1582,11 +1612,16 @@ describe('convertV2WithTypes', function() {
 
       // Check query parameters
       const queryParams = JSON.parse(requestTypes.request.queryParam);
-      expect(queryParams).to.be.an('array').with.length(3);
+      expect(queryParams).to.be.an('array').with.length(4);
 
       const formatParam = queryParams.find((p) => { return p.keyName === 'format'; });
       expect(formatParam).to.be.an('object');
       expect(formatParam.properties.type).to.equal('integer'); // First type from ['integer', 'string']
+
+      const filtersParam = queryParams.find((p) => { return p.keyName === 'filters'; });
+      expect(filtersParam).to.be.an('object');
+      expect(filtersParam.properties.type).to.equal('object');
+      expect(filtersParam.properties.additionalProperties).to.equal(true);
 
       const singleTypeParam = queryParams.find((p) => { return p.keyName === 'singleTypeParam'; });
       expect(singleTypeParam).to.be.an('object');
@@ -1610,7 +1645,7 @@ describe('convertV2WithTypes', function() {
 
       const firstResponseStatus = responseStatuses[0];
       const responseHeaders = JSON.parse(requestTypes.response[firstResponseStatus].headers);
-      expect(responseHeaders).to.be.an('array').with.length(3);
+      expect(responseHeaders).to.be.an('array').with.length(4);
 
       const rateLimitHeader = responseHeaders.find((h) => { return h.keyName === 'x-rate-limit'; });
       expect(rateLimitHeader).to.be.an('object');
@@ -1619,6 +1654,11 @@ describe('convertV2WithTypes', function() {
       const requestIdHeader = responseHeaders.find((h) => { return h.keyName === 'x-request-id'; });
       expect(requestIdHeader).to.be.an('object');
       expect(requestIdHeader.properties.type).to.equal('string'); // First type from ['string', 'number']
+
+      const metaHeader = responseHeaders.find((h) => { return h.keyName === 'x-meta'; });
+      expect(metaHeader).to.be.an('object');
+      expect(metaHeader.properties.type).to.equal('object');
+      expect(metaHeader.properties.additionalProperties).to.equal(true);
 
       const singleTypeHeader = responseHeaders.find((h) => { return h.keyName === 'x-single-type-header'; });
       expect(singleTypeHeader).to.be.an('object');
