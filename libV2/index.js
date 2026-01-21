@@ -14,7 +14,8 @@ const _ = require('lodash'),
 
   // All V1 interfaces used
   OpenApiErr = require('../lib/error'),
-  { validateTransaction, getMissingSchemaEndpoints } = require('./CollectionGeneration/validationUtils');
+  { validateTransaction, getMissingSchemaEndpoints } = require('./CollectionGeneration/validationUtils'),
+  { syncCollection: syncCollectionState } = require('../dist/libV2/SpecificationCollectionSyncing');
 
 const { resolvePostmanRequest, resolveRefFromSchema } = require('./CollectionGeneration/schemaUtils');
 const { generateRequestItemObject, fixPathVariablesInUrl } = require('./CollectionGeneration/utils');
@@ -324,6 +325,56 @@ module.exports = {
       };
 
       return callback(null, retVal);
+    });
+  },
+
+  /**
+   * Syncs a collection generated with changes from a specification
+   *
+   * @param {Object} context - Required context from related SchemaPack function
+   *   @param {Object} context.currentCollection - The existing collection JSON to sync with
+   *   @param {Object} context.syncOptions - Options for syncing
+   * @param {Function} cb - Callback function
+   * @returns {void}
+   */
+  syncCollection: function (context, cb) {
+    return this.convertV2(context, (err, result) => {
+      if (err) {
+        return cb(err);
+      }
+
+      if (!result || !result.output || !result.output[0]) {
+        return cb(new OpenApiErr('Failed to generate collection from specification'));
+      }
+
+      try {
+        const latestCollectionState = new Collection(result.output[0].data);
+        const currentCollectionState = new Collection(context.currentCollection);
+
+        // eslint-disable-next-line max-len
+        const syncedCollection = syncCollectionState(latestCollectionState, currentCollectionState, context.syncOptions);
+
+        if (context.enableTypeFetching) {
+          return cb(null, {
+            result: true,
+            output: [{
+              type: 'collection',
+              data: syncedCollection
+            }],
+            analytics: this.analytics || {},
+            extractedTypes: result.extractedTypes || {}
+          });
+        }
+
+        return cb(null, {
+          result: true,
+          output: [{ type: 'collection', data: syncedCollection }],
+          analytics: result.analytics || {}
+        });
+      }
+      catch (syncError) {
+        return cb(syncError);
+      }
     });
   }
 };

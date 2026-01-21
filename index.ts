@@ -7,7 +7,6 @@ import type {
   MultiFileSpecInput,
   Options,
   ValidationResult,
-  ConversionResult,
   ConversionCallback,
   MetadataCallback,
   MergeAndValidateCallback,
@@ -23,8 +22,6 @@ import type {
 const { MODULE_VERSION } = require('../lib/schemapack.js');
 const SchemaPack = require('../lib/schemapack.js').SchemaPack;
 const UserError = require('../lib/common/UserError');
-const { syncCollection: syncCollectionState } = require('./libV2/SpecificationCollectionSyncing');
-const { Collection } = require('postman-collection');
 
 const DEFAULT_INVALID_ERROR = 'Provided definition is invalid';
 
@@ -98,46 +95,18 @@ module.exports = {
   syncCollection: function (
     input: SpecInput,
     options: Options,
-    currentCollectionJSON: object,
+    currentCollection: object,
     syncOptions: SyncOptions | null,
     cb: ConversionCallback
   ): void {
     const enableTypeFetching = true;
     var schema = new SchemaPack(input, options, MODULE_VERSION.V2, enableTypeFetching);
 
-    if (!schema.validated) {
-      return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
+    if (schema.validated) {
+      return schema.syncCollection(currentCollection, syncOptions, cb);
     }
 
-    return schema.convertV2((err: Error | null, result?: ConversionResult) => {
-      if (err) {
-        return cb(err);
-      }
-
-      if (!result || !result.output || !result.output[0]) {
-        return cb(new UserError('Failed to generate collection from specification'));
-      }
-
-      try {
-        const latestCollection = new Collection(result.output[0].data);
-        const currentCollection = new Collection(currentCollectionJSON);
-
-        const syncedCollection = syncCollectionState(latestCollection, currentCollection, syncOptions);
-
-        const syncedCollectionJSON = syncedCollection.toJSON();
-
-        return cb(null, {
-          result: true,
-          output: [{ type: 'collection', data: syncedCollectionJSON }],
-          analytics: result.analytics,
-          extractedTypes: result.extractedTypes
-        });
-      }
-      catch (syncError) {
-        return cb(syncError as Error);
-      }
-    }
-    );
+    return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
   },
 
   // new API
