@@ -332,12 +332,12 @@ module.exports = {
    * Syncs a collection generated with changes from a specification
    *
    * @param {Object} context - Required context from related SchemaPack function
-   *   @param {Object} context.currentCollection - The existing collection JSON to sync with
-   *   @param {Object} context.syncOptions - Options for syncing
+   * @param {Object} currentCollection - The existing collection JSON to sync with
+   * @param {Object} syncOptions - Options for syncing
    * @param {Function} cb - Callback function
    * @returns {void}
    */
-  syncCollection: function (context, cb) {
+  syncCollection: function (context, currentCollection, syncOptions, cb) {
     return this.convertV2(context, (err, result) => {
       if (err) {
         return cb(err);
@@ -349,27 +349,15 @@ module.exports = {
 
       try {
         const latestCollectionState = new Collection(result.output[0].data);
-        const currentCollectionState = new Collection(context.currentCollection);
+        const currentCollectionState = new Collection(currentCollection);
 
-        // eslint-disable-next-line max-len
-        const syncedCollection = syncCollectionState(latestCollectionState, currentCollectionState, context.syncOptions);
-
-        if (context.enableTypeFetching) {
-          return cb(null, {
-            result: true,
-            output: [{
-              type: 'collection',
-              data: syncedCollection
-            }],
-            analytics: this.analytics || {},
-            extractedTypes: result.extractedTypes || {}
-          });
-        }
+        const syncedCollection = syncCollectionState(latestCollectionState, currentCollectionState, syncOptions);
 
         return cb(null, {
           result: true,
           output: [{ type: 'collection', data: syncedCollection }],
-          analytics: result.analytics || {}
+          analytics: result.analytics || {},
+          extractedTypes: result.extractedTypes || {}
         });
       }
       catch (syncError) {

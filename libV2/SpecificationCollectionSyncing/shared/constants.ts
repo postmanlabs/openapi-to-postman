@@ -27,7 +27,6 @@ export const AUTH_TYPES = {
 
 /**
  * Allowed authentication parameter keys by authentication type
- * TODO: Can be moved to spec-to-collection module
  */
 export const ALLOWED_AUTH_PARAM_KEYS_BY_TYPE: Record<string, Set<string>> = {
   [AUTH_TYPES.API_KEY]: new Set(['in', 'key']),

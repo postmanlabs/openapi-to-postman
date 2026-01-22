@@ -17,9 +17,6 @@ export function getRequestIdentifier(item: Item): string {
   return item.request.method + item.request.url.getPath(true);
 }
 
-
-// TODO: Move the below functions within collection-to-spec module
-
 /**
  * Recursively clones a fragment of the specification while removing any
  * vendor-extension keys (those starting with "x-") and the OpenAPI `default` key.
