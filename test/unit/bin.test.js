@@ -40,4 +40,40 @@ describe('openapi2postmanv2 ', function() {
         done();
       });
   });
+
+  it('should accept --sync-options flag with --sync', function(done) {
+    const tempSyncFile = 'tempSyncOutput.json';
+    exec('./bin/openapi2postmanv2.js -s examples/petstore.yaml --sync collection.json ' +
+      '--sync-options syncExamples=true -o ' + tempSyncFile, function(err, stdout) {
+      if (fs.existsSync(tempSyncFile)) {
+        fs.unlinkSync(tempSyncFile);
+      }
+      expect(err).to.be.null;
+      expect(stdout).to.include('Writing synced collection to file');
+      done();
+    });
+  });
+
+  it('should accept --sync-options-config flag with --sync', function(done) {
+    const tempSyncFile = 'tempSyncOutput2.json';
+    const tempSyncConfigFile = 'tempSyncConfig.json';
+
+    // Create a temporary sync options config file
+    fs.writeFileSync(tempSyncConfigFile, JSON.stringify({ syncExamples: true }, null, 2));
+
+    exec('./bin/openapi2postmanv2.js -s examples/petstore.yaml --sync collection.json ' +
+      '--sync-options-config ' + tempSyncConfigFile + ' -o ' + tempSyncFile, function(err, stdout) {
+      // Cleanup
+      if (fs.existsSync(tempSyncFile)) {
+        fs.unlinkSync(tempSyncFile);
+      }
+      if (fs.existsSync(tempSyncConfigFile)) {
+        fs.unlinkSync(tempSyncConfigFile);
+      }
+
+      expect(err).to.be.null;
+      expect(stdout).to.include('Writing synced collection to file');
+      done();
+    });
+  });
 });
