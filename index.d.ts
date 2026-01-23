@@ -1,5 +1,49 @@
 /**
- * Conversion options
+ * Shared type definitions for openapi-to-postmanv2
+ */
+
+// ============================================================================
+// Core Generic Types
+// ============================================================================
+
+/**
+ * Generic input type for specification data
+ */
+export interface Input {
+  type: 'string' | 'json' | 'file' | 'folder' | 'multiFile';
+  data: string | object | { fileName: string; path?: string; content?: string }[];
+  origin?: 'browser';
+  specificationVersion?: string;
+  rootFiles?: { path: string }[];
+  bundleFormat?: 'JSON' | 'YAML';
+  remoteRefResolver?: (url: string) => Promise<string>;
+}
+
+/**
+ * Generic result type for all operations
+ */
+export type Result<T = object> =
+  | ({ result: true } & T)
+  | { result: false; reason: string; error?: Error };
+
+/**
+ * Generic callback type for async operations
+ */
+export type Callback<T = object> = (
+  err: { message: string; name?: string } | null,
+  result?: Result<T>
+) => void;
+
+// ============================================================================
+// Options Types
+// ============================================================================
+
+export type SpecVersion = '2.0' | '3.0' | '3.1';
+export type ModuleVersion = 'v1' | 'v2';
+export type UsageType = 'CONVERSION' | 'VALIDATION' | 'BUNDLE' | 'SYNC';
+
+/**
+ * Conversion options for OpenAPI to Postman conversion
  */
 export interface Options {
 
@@ -37,7 +81,7 @@ export interface Options {
   schemaFaker?: boolean;
 
   /** Schema resolution nesting limit */
-  stackLimit?: number;
+  stackLimit?: integer;
 
   /** Include auth info in example requests */
   includeAuthInfoInExample?: boolean;
@@ -91,72 +135,18 @@ export interface Options {
   preferredRequestBodyType?: 'x-www-form-urlencoded' | 'form-data' | 'raw' | 'first-listed';
 }
 
-export type SpecInput =
-  | { type: 'string'; data: string }
-  | { type: 'json'; data: string | object }
-  | { type: 'file'; data: string };
-interface FileData {
-  fileName: string;
-  path?: string;
-  content?: string;
-}
-export interface FolderInput {
-  type: 'folder';
-  data: FileData[];
-  origin?: 'browser';
-}
-
-export interface MultiFileSpecInput {
-  type: 'multiFile';
-  data: FileData[];
-  origin?: 'browser';
-  specificationVersion?: string;
-  rootFiles?: { path: string }[];
-  bundleFormat?: 'JSON' | 'YAML';
-  remoteRefResolver?: (url: string) => Promise<string>;
-}
-
-export type ValidationResult =
-  | { result: true; specificationVersion?: string }
-  | { result: false; reason: string; error?: Error };
-
-export interface ConversionResult {
-  result: true;
-  output: { type: 'collection'; data: object }[];
-  analytics?: {
-    actualStack?: number;
-    numberOfRequests?: number;
-    assignedStack?: number;
-    complexityScore?: number;
-  };
-  extractedTypes?: Record<string, string>;
-}
-
-export type ConversionCallback = (
-  err: { message: string; name?: string } | null,
-  result?: ConversionResult
-) => void;
-
-interface MetadataResult {
-  result: true;
-  name: string;
-  output: { type: 'collection'; name: string }[];
-}
-
-export type MetadataCallback = (
-  err: Error | null,
-  result?: MetadataResult | ValidationResult
-) => void;
-
-export type MergeAndValidateCallback = (
-  err: Error | null,
-  result?: ValidationResult
-) => void;
-
+/**
+ * Sync options for collection synchronization
+ */
 export interface SyncOptions {
-  syncExamples: boolean;
+
+  /** Whether to sync response examples from the OpenAPI specification */
+  syncExamples?: boolean;
 }
 
+/**
+ * Option definition for documentation and configuration
+ */
 export interface OptionDefinition {
   name: string;
   id: string;
@@ -165,57 +155,18 @@ export interface OptionDefinition {
   availableOptions?: string[];
   description: string;
   external: boolean;
-  usage: ('CONVERSION' | 'VALIDATION' | 'BUNDLE')[];
-  supportedIn: ('2.0' | '3.0' | '3.1')[];
-  supportedModuleVersion: ('v1' | 'v2')[];
+  usage: UsageType[];
+  supportedIn: SpecVersion[];
+  supportedModuleVersion: ModuleVersion[];
   disabled?: boolean;
 }
 
+/**
+ * Criteria for filtering options
+ */
 export interface OptionsCriteria {
-  version?: '2.0' | '3.0' | '3.1';
-  moduleVersion?: 'v1' | 'v2';
-  usage?: ('CONVERSION' | 'VALIDATION' | 'BUNDLE')[];
+  version?: SpecVersion;
+  moduleVersion?: ModuleVersion;
+  usage?: UsageType[];
   external?: boolean;
-}
-
-export type OptionsUseMode = Record<string, boolean | string | number | string[]>;
-
-interface SpecificationInfo {
-  type: 'OpenAPI';
-  version: string;
-}
-
-export interface RootFiles {
-  result: true;
-  output: {
-    type: 'rootFiles';
-    specification: SpecificationInfo;
-    data: { path: string }[];
-  };
-}
-
-export interface RelatedFiles {
-  result: true;
-  output: {
-    type: 'relatedFiles';
-    specification: SpecificationInfo;
-    data: {
-      rootFile: { path: string };
-      relatedFiles: { path: string }[];
-      missingRelatedFiles: { path: string | null }[];
-    }[];
-  };
-}
-
-export interface BundledContent {
-  result: true;
-  output: {
-    type: 'bundledContent';
-    specification: SpecificationInfo;
-    data: {
-      rootFile: { path: string };
-      bundledContent: string | object;
-      referenceMap?: Record<string, string>;
-    }[];
-  };
 }

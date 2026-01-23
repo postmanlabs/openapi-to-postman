@@ -15,6 +15,7 @@
   "overrides": [
     {
       "files": ["*.ts"],
+      "excludedFiles": ["scripts/index.d.template.ts", "*.d.ts"],
       "parser": "@typescript-eslint/parser",
       "parserOptions": {
         "ecmaVersion": 2020,
@@ -23,11 +24,31 @@
       },
       "plugins": ["@typescript-eslint"],
       "rules": {
-        "no-unused-vars": "off",
+        "no-unused-vars": "error",
         "@typescript-eslint/no-unused-vars": "error",
         "no-use-before-define": "off",
         "require-jsdoc": "warn",
         "valid-jsdoc": "warn"
+      }
+    },
+    {
+      "files": ["*.d.ts", "scripts/index.d.template.ts"],
+      "parser": "@typescript-eslint/parser",
+      "parserOptions": {
+        "ecmaVersion": 2020,
+        "sourceType": "module"
+      },
+      "plugins": ["@typescript-eslint"],
+      "rules": {
+        "no-unused-vars": "off",
+        "@typescript-eslint/no-unused-vars": "off",
+        "no-use-before-define": "off",
+        "require-jsdoc": "off",
+        "valid-jsdoc": "off",
+        "max-len": "off",
+        "no-redeclare": "off",
+        "@typescript-eslint/no-redeclare": "off",
+        "no-dupe-class-members": "off"
       }
     }
   ],

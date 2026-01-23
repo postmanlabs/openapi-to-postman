@@ -2,22 +2,13 @@
 
 import _ from 'lodash';
 import type {
-  SpecInput,
-  FolderInput,
-  MultiFileSpecInput,
+  Input,
   Options,
-  ValidationResult,
-  ConversionCallback,
-  MetadataCallback,
-  MergeAndValidateCallback,
+  Result,
+  Callback,
   SyncOptions,
-  OptionsCriteria,
-  OptionDefinition,
-  OptionsUseMode,
-  RootFiles,
-  RelatedFiles,
-  BundledContent
-} from './types';
+  OptionsCriteria
+} from './index.d';
 
 const { MODULE_VERSION } = require('../lib/schemapack.js');
 const SchemaPack = require('../lib/schemapack.js').SchemaPack;
@@ -28,7 +19,7 @@ const DEFAULT_INVALID_ERROR = 'Provided definition is invalid';
 module.exports = {
   // Old API wrapping the new API
 
-  convert: function (input: SpecInput, options: Options, cb: ConversionCallback): void {
+  convert: function (input: Input, options: Options, cb: Callback): void {
     var schema = new SchemaPack(input, options);
 
     if (schema.validated) {
@@ -37,7 +28,7 @@ module.exports = {
     return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
   },
 
-  convertV2: function (input: SpecInput, options: Options, cb: ConversionCallback): void {
+  convertV2: function (input: Input, options: Options, cb: Callback): void {
     var schema = new SchemaPack(input, options, MODULE_VERSION.V2);
 
     if (schema.validated) {
@@ -47,7 +38,7 @@ module.exports = {
     return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
   },
 
-  convertV2WithTypes: function (input: SpecInput, options: Options, cb: ConversionCallback): void {
+  convertV2WithTypes: function (input: Input, options: Options, cb: Callback): void {
     const enableTypeFetching = true;
     var schema = new SchemaPack(input, options, MODULE_VERSION.V2, enableTypeFetching);
 
@@ -58,46 +49,50 @@ module.exports = {
     return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
   },
 
-  validate: function (input: SpecInput): ValidationResult {
+  validate: function (input: Input): Result {
     var schema = new SchemaPack(input);
     return schema.validationResult;
   },
 
-  getMetaData: function (input: SpecInput | FolderInput, cb: MetadataCallback): void {
+  getMetaData: function (input: Input, cb: Callback): void {
     var schema = new SchemaPack(input);
     schema.getMetaData(cb);
   },
 
-  mergeAndValidate: function (input: FolderInput, cb: MergeAndValidateCallback): void {
+  mergeAndValidate: function (input: Input, cb: Callback): void {
     var schema = new SchemaPack(input);
     schema.mergeAndValidate(cb);
   },
 
-  getOptions: function (mode?: string, criteria?: OptionsCriteria): OptionDefinition[] | OptionsUseMode {
+  getOptions: function (mode?: string, criteria?: OptionsCriteria) {
     return SchemaPack.getOptions(mode, criteria);
   },
 
-  detectRootFiles: async function (input: MultiFileSpecInput): Promise<RootFiles> {
+  getSyncOptions: function (mode?: string) {
+    return SchemaPack.getSyncOptions(mode);
+  },
+
+  detectRootFiles: async function (input: Input): Promise<Result> {
     var schema = new SchemaPack(input);
     return schema.detectRootFiles();
   },
 
-  detectRelatedFiles: async function (input: MultiFileSpecInput): Promise<RelatedFiles> {
+  detectRelatedFiles: async function (input: Input): Promise<Result> {
     var schema = new SchemaPack(input);
     return schema.detectRelatedFiles();
   },
 
-  bundle: async function (input: MultiFileSpecInput & { options?: Options }): Promise<BundledContent> {
+  bundle: async function (input: Input & { options?: Options }): Promise<Result> {
     var schema = new SchemaPack(input, input.options ?? {});
     return schema.bundle();
   },
 
   syncCollection: function (
-    input: SpecInput,
+    input: Input,
     options: Options,
     currentCollection: object,
     syncOptions: SyncOptions | null,
-    cb: ConversionCallback
+    cb: Callback
   ): void {
     const enableTypeFetching = true;
     var schema = new SchemaPack(input, options, MODULE_VERSION.V2, enableTypeFetching);
