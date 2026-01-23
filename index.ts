@@ -1,14 +1,7 @@
 'use strict';
 
 import _ from 'lodash';
-import type {
-  Input,
-  Options,
-  Result,
-  Callback,
-  SyncOptions,
-  OptionsCriteria
-} from './index.d';
+import type { Input, Options, Result, Callback, SyncOptions, OptionsCriteria } from './index.d';
 
 const { MODULE_VERSION } = require('../lib/schemapack.js');
 const SchemaPack = require('../lib/schemapack.js').SchemaPack;
