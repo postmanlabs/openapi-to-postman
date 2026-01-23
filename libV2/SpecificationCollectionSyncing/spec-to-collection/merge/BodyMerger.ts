@@ -35,12 +35,15 @@ function deepMergeBodyObjects(target: unknown, source: unknown): Record<string, 
       // Recursively merge if both values are objects
       if (_.isPlainObject(targetValue) && _.isPlainObject(sourceValue)) {
         result[key] = deepMergeBodyObjects(targetValue, sourceValue);
-      } else if (_.isPlainObject(targetValue) && !_.isEmpty(targetValue)) {
+      }
+      else if (_.isPlainObject(targetValue) && !_.isEmpty(targetValue)) {
         result[key] = targetValue;
-      } else {
+      }
+      else {
         result[key] = sourceValue;
       }
-    } else {
+    }
+    else {
       result[key] = targetObj[key];
     }
   });
@@ -74,7 +77,8 @@ export function mergeRequestAndResponseBodyRaw(
       merged = deepMergeBodyObjects(targetBody, sourceBody);
 
     return JSON.stringify(merged, null, SPACE_COUNT);
-  } catch (error) {
+  }
+  catch (error) {
     return targetBodyRaw;
   }
 }
@@ -102,7 +106,8 @@ export function mergeRequestBodyData(
       ...targetBody,
       raw: mergeRequestAndResponseBodyRaw(targetBody.raw, sourceBody.raw)
     };
-  } else if (targetBody.mode === 'raw') {
+  }
+  else if (targetBody.mode === 'raw') {
     return targetBody;
   }
 

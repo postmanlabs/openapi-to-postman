@@ -42,7 +42,8 @@ export function mergeRequestAndResponseHeaders(
         value: existingHeader.value,
         disabled: existingHeader.disabled
       });
-    } else {
+    }
+    else {
       mergedHeaders.push(targetHeader);
     }
   });

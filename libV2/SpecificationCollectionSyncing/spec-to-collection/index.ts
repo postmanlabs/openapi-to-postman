@@ -46,7 +46,8 @@ export function syncCollection(
 
       if (currentFolder) {
         syncCollection(item, currentFolder, mergedOptions);
-      } else {
+      }
+      else {
         currentCollectionState.items.add(item);
       }
 
@@ -81,13 +82,15 @@ export function syncCollection(
 
       if (!authToApply) {
         // No auth to apply, skip
-      } else if (currentRequest.request.auth && authToApply.params) {
+      }
+      else if (currentRequest.request.auth && authToApply.params) {
         const paramsArray = authToApply.params.all().map((v) => {
           return { key: v.key ?? '', value: v.value };
         });
 
         currentRequest.request.auth.use(authToApply.type, paramsArray);
-      } else {
+      }
+      else {
         currentRequest.request.authorizeUsing(authToApply.type, authToApply.params);
       }
 
@@ -103,11 +106,13 @@ export function syncCollection(
 
           currentResponses[response.code].update(mergedResponseData);
           currentResponses[response.code].name = response.name;
-        } else {
+        }
+        else {
           currentRequest.responses.add(response.toJSON());
         }
       });
-    } else {
+    }
+    else {
       currentCollectionState.items.add(item);
     }
   });
@@ -120,13 +125,15 @@ export function syncCollection(
 
   if (!collectionAuthToApply) {
     // No collection auth to apply, skip
-  } else if (currentCollectionState.auth && collectionAuthToApply.params) {
+  }
+  else if (currentCollectionState.auth && collectionAuthToApply.params) {
     const paramsArray = collectionAuthToApply.params.all().map((v) => {
       return { key: v.key ?? '', value: v.value };
     });
 
     currentCollectionState.auth.use(collectionAuthToApply.type, paramsArray);
-  } else {
+  }
+  else {
     currentCollectionState.authorizeRequestsUsing(collectionAuthToApply.type, collectionAuthToApply.params);
   }
 
@@ -137,7 +144,8 @@ export function syncCollection(
     if (latestCollectionBaseUrlVar) {
       if (currentCollectionBaseUrlVar) {
         currentCollectionBaseUrlVar.value = latestCollectionBaseUrlVar.value;
-      } else {
+      }
+      else {
         currentCollectionState.variables.add(
           new Variable({
             key: 'baseUrl',
