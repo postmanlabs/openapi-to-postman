@@ -1,7 +1,17 @@
 'use strict';
-
 import _ from 'lodash';
-import type { Input, Options, Result, Callback, SyncOptions, OptionsCriteria } from './index.d';
+import type {
+  SpecificationInput,
+  Options,
+  Result,
+  Callback,
+  SyncOptions,
+  OptionsCriteria,
+  OptionDefinition,
+  OptionsRecord
+} from './types';
+
+export type { Options, SyncOptions } from './types';
 
 const { MODULE_VERSION } = require('../lib/schemapack.js');
 const SchemaPack = require('../lib/schemapack.js').SchemaPack;
@@ -9,94 +19,162 @@ const UserError = require('../lib/common/UserError');
 
 const DEFAULT_INVALID_ERROR = 'Provided definition is invalid';
 
-module.exports = {
-  // Old API wrapping the new API
+/**
+ * Converts an OpenAPI specification to a Postman Collection (v1 API)
+ * @param {SpecificationInput} input - The OpenAPI specification input
+ * @param {Options} options - Conversion options
+ * @param {Callback} cb - Callback function with conversion result
+ * @returns {void}
+ */
+export function convert(input: SpecificationInput, options: Options, cb: Callback): void {
+  var schema = new SchemaPack(input, options);
 
-  convert: function (input: Input, options: Options, cb: Callback): void {
-    var schema = new SchemaPack(input, options);
+  if (schema.validated) {
+    return schema.convert(cb);
+  }
+  return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
+}
 
-    if (schema.validated) {
-      return schema.convert(cb);
-    }
-    return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
-  },
+/**
+ * Converts an OpenAPI specification to a Postman Collection (v2 API)
+ * @param {SpecificationInput} input - The OpenAPI specification input
+ * @param {Options} options - Conversion options
+ * @param {Callback} cb - Callback function with conversion result
+ * @returns {void}
+ */
+export function convertV2(input: SpecificationInput, options: Options, cb: Callback): void {
+  var schema = new SchemaPack(input, options, MODULE_VERSION.V2);
 
-  convertV2: function (input: Input, options: Options, cb: Callback): void {
-    var schema = new SchemaPack(input, options, MODULE_VERSION.V2);
+  if (schema.validated) {
+    return schema.convertV2(cb);
+  }
 
-    if (schema.validated) {
-      return schema.convertV2(cb);
-    }
+  return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
+}
 
-    return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
-  },
+/**
+ * Converts an OpenAPI specification to a Postman Collection (v2 API) with type fetching enabled
+ * @param {SpecificationInput} input - The OpenAPI specification input
+ * @param {Options} options - Conversion options
+ * @param {Callback} cb - Callback function with conversion result
+ * @returns {void}
+ */
+export function convertV2WithTypes(input: SpecificationInput, options: Options, cb: Callback): void {
+  const enableTypeFetching = true;
+  var schema = new SchemaPack(input, options, MODULE_VERSION.V2, enableTypeFetching);
 
-  convertV2WithTypes: function (input: Input, options: Options, cb: Callback): void {
-    const enableTypeFetching = true;
-    var schema = new SchemaPack(input, options, MODULE_VERSION.V2, enableTypeFetching);
+  if (schema.validated) {
+    return schema.convertV2(cb);
+  }
 
-    if (schema.validated) {
-      return schema.convertV2(cb);
-    }
+  return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
+}
 
-    return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
-  },
+/**
+ * Validates an OpenAPI specification
+ * @param {SpecificationInput} input - The OpenAPI specification input
+ * @returns {Result} Validation result
+ */
+export function validate(input: SpecificationInput): Result {
+  var schema = new SchemaPack(input);
+  return schema.validationResult;
+}
 
-  validate: function (input: Input): Result {
-    var schema = new SchemaPack(input);
-    return schema.validationResult;
-  },
+/**
+ * Retrieves metadata from an OpenAPI specification
+ * @param {SpecificationInput} input - The OpenAPI specification input
+ * @param {Callback} cb - Callback function with metadata result
+ * @returns {void}
+ */
+export function getMetaData(input: SpecificationInput, cb: Callback): void {
+  var schema = new SchemaPack(input);
+  schema.getMetaData(cb);
+}
 
-  getMetaData: function (input: Input, cb: Callback): void {
-    var schema = new SchemaPack(input);
-    schema.getMetaData(cb);
-  },
+/**
+ * Merges and validates an OpenAPI specification
+ * @param {SpecificationInput} input - The OpenAPI specification input
+ * @param {Callback} cb - Callback function with merge and validation result
+ * @returns {void}
+ */
+export function mergeAndValidate(input: SpecificationInput, cb: Callback): void {
+  var schema = new SchemaPack(input);
+  schema.mergeAndValidate(cb);
+}
 
-  mergeAndValidate: function (input: Input, cb: Callback): void {
-    var schema = new SchemaPack(input);
-    schema.mergeAndValidate(cb);
-  },
+/**
+ * Gets conversion options
+ * @param {string} mode - Mode for options ('document' or 'use')
+ * @param {OptionsCriteria} criteria - Criteria for filtering options
+ * @returns {OptionDefinition[] | OptionsRecord} Option definitions or option values
+ */
+export function getOptions(mode?: string, criteria?: OptionsCriteria): OptionDefinition[] | OptionsRecord {
+  return SchemaPack.getOptions(mode, criteria);
+}
 
-  getOptions: function (mode?: string, criteria?: OptionsCriteria) {
-    return SchemaPack.getOptions(mode, criteria);
-  },
+/**
+ * Gets sync options
+ * @param {string} mode - Mode for options ('document' or 'use')
+ * @returns {OptionDefinition[] | OptionsRecord} Option definitions or option values
+ */
+export function getSyncOptions(mode?: string): OptionDefinition[] | OptionsRecord {
+  return SchemaPack.getSyncOptions(mode);
+}
 
-  getSyncOptions: function (mode?: string) {
-    return SchemaPack.getSyncOptions(mode);
-  },
+/**
+ * Detects root files in a multi-file OpenAPI specification
+ * @param {SpecificationInput} input - The OpenAPI specification input
+ * @returns {Promise<Result>} Promise with detection result
+ */
+export async function detectRootFiles(input: SpecificationInput): Promise<Result> {
+  var schema = new SchemaPack(input);
+  return schema.detectRootFiles();
+}
 
-  detectRootFiles: async function (input: Input): Promise<Result> {
-    var schema = new SchemaPack(input);
-    return schema.detectRootFiles();
-  },
+/**
+ * Detects related files in a multi-file OpenAPI specification
+ * @param {SpecificationInput} input - The OpenAPI specification input
+ * @returns {Promise<Result>} Promise with detection result
+ */
+export async function detectRelatedFiles(input: SpecificationInput): Promise<Result> {
+  var schema = new SchemaPack(input);
+  return schema.detectRelatedFiles();
+}
 
-  detectRelatedFiles: async function (input: Input): Promise<Result> {
-    var schema = new SchemaPack(input);
-    return schema.detectRelatedFiles();
-  },
+/**
+ * Bundles a multi-file OpenAPI specification into a single file
+ * @param {SpecificationInput} input - The OpenAPI specification input with optional bundling options
+ * @returns {Promise<Result>} Promise with bundled specification
+ */
+export async function bundle(input: SpecificationInput & { options?: Options }): Promise<Result> {
+  var schema = new SchemaPack(input, input.options ?? {});
+  return schema.bundle();
+}
 
-  bundle: async function (input: Input & { options?: Options }): Promise<Result> {
-    var schema = new SchemaPack(input, input.options ?? {});
-    return schema.bundle();
-  },
+/**
+ * Syncs a Postman Collection with changes from an OpenAPI specification
+ * @param {SpecificationInput} input - The OpenAPI specification input
+ * @param {Options} options - Conversion options
+ * @param {object} currentCollection - The current Postman Collection to sync
+ * @param {SyncOptions | null} syncOptions - Sync options
+ * @param {Callback} cb - Callback function with sync result
+ * @returns {void}
+ */
+export function syncCollection(
+  input: SpecificationInput,
+  options: Options,
+  currentCollection: object,
+  syncOptions: SyncOptions | null,
+  cb: Callback
+): void {
+  const enableTypeFetching = true;
+  var schema = new SchemaPack(input, options, MODULE_VERSION.V2, enableTypeFetching);
 
-  syncCollection: function (
-    input: Input,
-    options: Options,
-    currentCollection: object,
-    syncOptions: SyncOptions | null,
-    cb: Callback
-  ): void {
-    const enableTypeFetching = true;
-    var schema = new SchemaPack(input, options, MODULE_VERSION.V2, enableTypeFetching);
+  if (schema.validated) {
+    return schema.syncCollection(currentCollection, syncOptions, cb);
+  }
 
-    if (schema.validated) {
-      return schema.syncCollection(currentCollection, syncOptions, cb);
-    }
+  return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
+}
 
-    return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
-  },
-
-  // new API
-  SchemaPack
-};
+export { SchemaPack };

@@ -1,15 +1,11 @@
 /**
  * Shared type definitions for openapi-to-postmanv2
  */
-
 // ============================================================================
-// Core Generic Types
+// Core Types
 // ============================================================================
 
-/**
- * Generic input type for specification data
- */
-export interface Input {
+export interface SpecificationInput {
   type: 'string' | 'json' | 'file' | 'folder' | 'multiFile';
   data: string | object | { fileName: string; path?: string; content?: string }[];
   origin?: 'browser';
@@ -19,16 +15,10 @@ export interface Input {
   remoteRefResolver?: (url: string) => Promise<string>;
 }
 
-/**
- * Generic result type for all operations
- */
 export type Result<T = object> =
   | ({ result: true } & T)
   | { result: false; reason: string; error?: Error };
 
-/**
- * Generic callback type for async operations
- */
 export type Callback<T = object> = (
   err: { message: string; name?: string } | null,
   result?: Result<T>
@@ -41,6 +31,9 @@ export type Callback<T = object> = (
 export type SpecVersion = '2.0' | '3.0' | '3.1';
 export type ModuleVersion = 'v1' | 'v2';
 export type UsageType = 'CONVERSION' | 'VALIDATION' | 'BUNDLE' | 'SYNC';
+
+export type OptionsRecord = Record<string, boolean | string | number | string[]>;
+
 
 /**
  * Conversion options for OpenAPI to Postman conversion
@@ -81,7 +74,7 @@ export interface Options {
   schemaFaker?: boolean;
 
   /** Schema resolution nesting limit */
-  stackLimit?: integer;
+  stackLimit?: number;
 
   /** Include auth info in example requests */
   includeAuthInfoInExample?: boolean;
@@ -144,9 +137,6 @@ export interface SyncOptions {
   syncExamples?: boolean;
 }
 
-/**
- * Option definition for documentation and configuration
- */
 export interface OptionDefinition {
   name: string;
   id: string;
@@ -161,12 +151,10 @@ export interface OptionDefinition {
   disabled?: boolean;
 }
 
-/**
- * Criteria for filtering options
- */
 export interface OptionsCriteria {
   version?: SpecVersion;
   moduleVersion?: ModuleVersion;
   usage?: UsageType[];
   external?: boolean;
 }
+

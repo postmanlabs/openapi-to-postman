@@ -160,8 +160,7 @@
     "typescript": "5.5.3"
   },
   "scripts": {
-    "build": "tsc && npm run postbuild",
-    "postbuild": "node -e \"require('fs').writeFileSync('dist/index.d.ts', require('fs').readFileSync('scripts/index.d.template.ts', 'utf8'))\"",
+    "build": "tsc",
     "build:watch": "tsc --watch",
     "prebuild": "rm -rf dist",
     "prepare": "npm run build",
