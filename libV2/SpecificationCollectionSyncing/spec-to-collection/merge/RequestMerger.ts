@@ -20,26 +20,27 @@ export function mergeRequestData(
   syncOptions: SyncOptions
 ): RequestDefinition {
   // Attach implicit headers from the source request to the target request if they are not present in the target request
-  // Required because the request body and implicit headers are not generated during collection to spec conversion for non json requests.
+  // Required because the request body and implicit headers are not generated
+  // during collection to spec conversion for non json requests.
   attachImplicitHeaders(sourceRequest.header, targetRequest.header);
 
   const shouldSyncExamples = syncOptions?.syncExamples;
 
   if (targetRequest.header) {
-    targetRequest.header = shouldSyncExamples
-      ? targetRequest.header
-      : mergeRequestAndResponseHeaders(targetRequest.header, sourceRequest?.header);
+    targetRequest.header = shouldSyncExamples ?
+      targetRequest.header :
+      mergeRequestAndResponseHeaders(targetRequest.header, sourceRequest?.header);
   }
 
   if (targetRequest.body) {
-    targetRequest.body = shouldSyncExamples
-      ? targetRequest.body
-      : mergeRequestBodyData(targetRequest.body, sourceRequest?.body);
+    targetRequest.body = shouldSyncExamples ?
+      targetRequest.body :
+      mergeRequestBodyData(targetRequest.body, sourceRequest?.body);
   }
 
-  targetRequest.url = shouldSyncExamples
-    ? targetRequest.url
-    : mergeRequestUrlData(targetRequest.url, sourceRequest.url);
+  targetRequest.url = shouldSyncExamples ?
+    targetRequest.url :
+    mergeRequestUrlData(targetRequest.url, sourceRequest.url);
 
   return targetRequest;
 }

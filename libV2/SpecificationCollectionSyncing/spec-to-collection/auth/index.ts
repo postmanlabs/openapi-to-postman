@@ -79,14 +79,16 @@ export function mergeAllowedAuthParams(
       if (param.type !== undefined) {
         existing.type = param.type;
       }
-    } else {
+    }
+    else {
       currentParamsArray.push({ key, value: param.value, type: param.type });
     }
   }
 
   if (latestType === AUTH_TYPES.API_KEY) {
     result.apikey = currentParamsArray;
-  } else if (latestType === AUTH_TYPES.OAUTH2) {
+  }
+  else if (latestType === AUTH_TYPES.OAUTH2) {
     result.oauth2 = currentParamsArray;
   }
 
@@ -129,7 +131,8 @@ export function mergeAuth(latestAuth: RequestAuthDefinition, currentAuth: Reques
  * @param {RequestAuthDefinition} mergedAuth - The merged authentication configuration
  * @param {RequestAuthDefinition} existingAuth - The existing authentication (may contain user secrets)
  *
- * @returns {{ type: string; params: VariableList | undefined } | null} Object with auth type and params, or null if no auth
+ * @returns {{ type: string; params: VariableList | undefined } | null}
+ * Object with auth type and params, or null if no auth
  */
 export function mergeAuthParams(
   mergedAuth: RequestAuthDefinition | undefined,

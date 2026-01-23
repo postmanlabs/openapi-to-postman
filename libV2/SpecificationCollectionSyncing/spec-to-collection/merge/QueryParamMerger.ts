@@ -43,7 +43,8 @@ export function mergeRequestQueryParams(
         value: existingParam.value,
         disabled: existingParam.disabled
       });
-    } else {
+    }
+    else {
       mergedQuery.push(targetParam);
     }
   });

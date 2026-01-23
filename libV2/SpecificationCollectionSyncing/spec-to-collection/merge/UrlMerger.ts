@@ -43,7 +43,8 @@ function mergeRequestUrlVariables(
         ...targetVariable,
         value: existingVariable.value
       });
-    } else {
+    }
+    else {
       mergedVariables.push(targetVariable);
     }
   });

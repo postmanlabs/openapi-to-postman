@@ -11,7 +11,8 @@ import { Item } from 'postman-collection';
  * @returns {string} The request identifier (method + path)
  */
 export function getRequestIdentifier(item: Item): string {
-  // @ts-expect-error - Suppress type-checking for .getPath() as its type validations are defined incorrectly and gives boolean assignment error
+  // @ts-expect-error - Suppress type-checking for .getPath() as its type validations are defined incorrectly
+  // and gives boolean assignment error
   // Correct usage can be found: https://www.postmanlabs.com/postman-collection/Url.html#getPath
   // Tracking the fix https://postmanlabs.atlassian.net/browse/AB-610
   return item.request.method + item.request.url.getPath(true);
@@ -24,7 +25,8 @@ export function getRequestIdentifier(item: Item): string {
  * do not cause `$ref` expansion or unnecessary diffs.
  *
  * @param {unknown} node - The fragment (object/array/primitive) from which keys should be stripped.
- * @returns {unknown} A deep clone of the fragment with all `x-*` and `default` keys removed. Primitive values are returned unchanged.
+ * @returns {unknown} A deep clone of the fragment with all `x-*` and `default` keys removed.
+ * Primitive values are returned unchanged.
  */
 export function stripVendorExtensions(node: unknown): unknown {
   if (!node || typeof node !== 'object') {
@@ -111,7 +113,8 @@ export function deepMergeWithVendorExtensions(latest: unknown, current: unknown)
   Object.keys(currentObj).forEach((key) => {
     if (key.startsWith('x-')) {
       result[key] = currentObj[key];
-    } else if (latestObj[key] && currentObj[key]) {
+    }
+    else if (latestObj[key] && currentObj[key]) {
       result[key] = deepMergeWithVendorExtensions(latestObj[key], currentObj[key]);
     }
   });
@@ -125,9 +128,11 @@ export function deepMergeWithVendorExtensions(latest: unknown, current: unknown)
 
   if (hasCurrentDefault && hasLatestDefault) {
     result.default = latestObj.default;
-  } else if (!hasCurrentDefault && hasLatestDefault) {
+  }
+  else if (!hasCurrentDefault && hasLatestDefault) {
     delete result.default;
-  } else if (hasCurrentDefault && !hasLatestDefault) {
+  }
+  else if (hasCurrentDefault && !hasLatestDefault) {
     result.default = currentObj.default;
   }
 

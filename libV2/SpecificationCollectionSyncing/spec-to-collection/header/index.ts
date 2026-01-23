@@ -11,7 +11,7 @@ export function attachImplicitHeaders(
 ) {
   const implicitHeaders = ['Accept', 'Content-Type'];
 
-  if (!currentHeaders || !latestHeaders) return;
+  if (!currentHeaders || !latestHeaders) { return; }
 
   currentHeaders.forEach((currentHeader) => {
     if (!currentHeader.key || !implicitHeaders.includes(currentHeader.key)) {

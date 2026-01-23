@@ -1,7 +1,10 @@
 const { Collection } = require('postman-collection/lib/collection/collection'),
   { expect } = require('chai'),
   { syncCollection } = require('../../../dist/libV2/SpecificationCollectionSyncing'),
-  { requestAdditionTest, requestBodyUpdateTest, requestQueryParamRemoveAndAddTest } = require('./fixtures/collectionSyncing.js'),
+  { requestAdditionTest,
+    requestBodyUpdateTest,
+    requestQueryParamRemoveAndAddTest
+  } = require('./fixtures/collectionSyncing.js'),
   getItemPosition = (item) => {
     let position = '';
 
