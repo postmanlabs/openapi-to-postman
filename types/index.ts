@@ -8,7 +8,7 @@
 export interface SpecificationInput {
   type: 'string' | 'json' | 'file' | 'folder' | 'multiFile';
   data: string | object | { fileName: string; path?: string; content?: string }[];
-  origin?: 'browser';
+  origin?: string;
   specificationVersion?: string;
   rootFiles?: { path: string }[];
   bundleFormat?: 'JSON' | 'YAML';
