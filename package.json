@@ -157,6 +157,7 @@
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "parse-gitignore": "0.5.1",
+    "postman-collection-transformer": "4.1.7",
     "typescript": "5.5.3"
   },
   "scripts": {

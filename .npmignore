@@ -56,3 +56,9 @@ examples/
 .nycrc
 .editorconfig
 .jsdoc-config.json
+
+# - Prevent TypeScript source files from being added
+/index.ts
+/types/
+/tsconfig.json
+/libV2/**/*.ts

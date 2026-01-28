@@ -162,9 +162,7 @@ describe('project repository', function () {
       });
     });
 
-    it('.gitignore coverage must be a subset of .npmignore coverage (except dist which is built for npm)', function () {
-      // Filter out 'dist' entries as they should be in gitignore but NOT in npmignore
-      // (dist is generated and should be published to npm but not committed to git)
+    it('.gitignore coverage must be a subset of .npmignore coverage', function () {
       var gitignoreWithoutDist = gitignore.filter(function (entry) {
         return !entry.includes('dist');
       });
