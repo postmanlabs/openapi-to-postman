@@ -15,9 +15,7 @@ export type {
   Options,
   SyncOptions,
   Result,
-  Callback,
-  SuccessResult,
-  FailureResult
+  Callback
 } from './types';
 
 const { MODULE_VERSION } = require('../lib/schemapack.js');

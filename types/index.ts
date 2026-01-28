@@ -19,25 +19,18 @@ export interface SpecificationInput {
 // Result Types
 // ============================================================================
 
-// Failure result type
-export interface FailureResult {
-  result: false;
-  reason: string;
-  error?: Error;
-}
-
-// Generic success result
-export interface SuccessResult {
-  result: true;
-  output?: { type: string; data: unknown }[] | { type: string; data: unknown[]; specification?: unknown };
-  analytics?: Record<string, unknown>;
-  extractedTypes?: Record<string, unknown>;
+export interface Result {
+  result: boolean;
+  // Success fields
+  output?: { type: string; data: object }[] | { type: string; data: object[]; specification?: object };
+  analytics?: Record<string, number>;
+  extractedTypes?: Record<string, object>;
   specificationVersion?: string;
   name?: string;
+  // Failure fields
+  reason?: string;
+  error?: Error;
 }
-
-// Base Result type
-export type Result = SuccessResult | FailureResult;
 
 export type Callback = (
   err: { message: string; name?: string } | null,
