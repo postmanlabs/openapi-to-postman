@@ -26,13 +26,14 @@ export interface FailureResult {
   error?: Error;
 }
 
-// Generic success result with output array
+// Generic success result
 export interface SuccessResult {
   result: true;
-  output: { type: string; data: unknown }[];
+  output?: { type: string; data: unknown }[] | { type: string; data: unknown[]; specification?: unknown };
   analytics?: Record<string, unknown>;
   extractedTypes?: Record<string, unknown>;
   specificationVersion?: string;
+  name?: string;
 }
 
 // Base Result type
