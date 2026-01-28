@@ -49,7 +49,7 @@ export interface BundleResult extends BaseResult {
   specificationVersion?: string;
 }
 
-export interface DetectFilesResult extends BaseResult {
+export interface FilesResult extends BaseResult {
   output?: {
     type: string;
     data: Array<{ path: string }>;
@@ -63,9 +63,10 @@ export interface DetectFilesResult extends BaseResult {
 export interface ValidationResult extends BaseResult {
   specificationVersion?: string;
 }
-export type Callback = (
+
+export type Callback<T extends BaseResult = CollectionResult> = (
   err: { message: string; name?: string } | null,
-  result?: CollectionResult
+  result?: T
 ) => void;
 
 // ============================================================================

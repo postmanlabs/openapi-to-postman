@@ -9,7 +9,7 @@ import type {
   OptionDefinition,
   OptionsRecord,
   BundleResult,
-  DetectFilesResult,
+  FilesResult,
   ValidationResult
 } from './types';
 
@@ -19,7 +19,7 @@ export type {
   Callback,
   CollectionResult,
   BundleResult,
-  DetectFilesResult,
+  FilesResult,
   ValidationResult
 } from './types';
 
@@ -134,9 +134,9 @@ export function getSyncOptions(mode?: string): OptionDefinition[] | OptionsRecor
 /**
  * Detects root files in a multi-file OpenAPI specification
  * @param {SpecificationInput} input - The OpenAPI specification input
- * @returns {Promise<DetectFilesResult>} Promise with detection result
+ * @returns {Promise<FilesResult>} Promise with detection result
  */
-export async function detectRootFiles(input: SpecificationInput): Promise<DetectFilesResult> {
+export async function detectRootFiles(input: SpecificationInput): Promise<FilesResult> {
   var schema = new SchemaPack(input);
   return schema.detectRootFiles();
 }
@@ -144,9 +144,9 @@ export async function detectRootFiles(input: SpecificationInput): Promise<Detect
 /**
  * Detects related files in a multi-file OpenAPI specification
  * @param {SpecificationInput} input - The OpenAPI specification input
- * @returns {Promise<DetectFilesResult>} Promise with detection result
+ * @returns {Promise<FilesResult>} Promise with detection result
  */
-export async function detectRelatedFiles(input: SpecificationInput): Promise<DetectFilesResult> {
+export async function detectRelatedFiles(input: SpecificationInput): Promise<FilesResult> {
   var schema = new SchemaPack(input);
   return schema.detectRelatedFiles();
 }
