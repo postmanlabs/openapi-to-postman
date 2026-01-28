@@ -15,7 +15,6 @@ import type {
 export type {
   Options,
   SyncOptions,
-  Result,
   Callback,
   CollectionResult,
   BundleResult,
