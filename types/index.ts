@@ -19,18 +19,30 @@ export interface SpecificationInput {
 // Result Types
 // ============================================================================
 
-export interface Result {
+// Base result fields
+interface BaseResult {
   result: boolean;
-  // Success fields
-  output?: { type: string; data: object }[] | { type: string; data: object[]; specification?: object };
-  analytics?: Record<string, number>;
-  extractedTypes?: Record<string, object>;
-  specificationVersion?: string;
-  name?: string;
-  // Failure fields
   reason?: string;
   error?: Error;
 }
+
+export interface CollectionResult extends BaseResult {
+  output?: { type: string; data: object; name?: string }[];
+  analytics?: Record<string, number>;
+  extractedTypes?: Record<string, object>;
+  name?: string;
+}
+
+export interface BundleResult extends BaseResult {
+  output?: { type: string; data: object[]; specification?: object };
+  specificationVersion?: string;
+}
+
+export interface ValidationResult extends BaseResult {
+  specificationVersion?: string;
+}
+
+export type Result = CollectionResult | BundleResult | ValidationResult;
 
 export type Callback = (
   err: { message: string; name?: string } | null,

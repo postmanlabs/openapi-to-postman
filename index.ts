@@ -3,19 +3,23 @@ import _ from 'lodash';
 import type {
   SpecificationInput,
   Options,
-  Result,
   Callback,
   SyncOptions,
   OptionsCriteria,
   OptionDefinition,
-  OptionsRecord
+  OptionsRecord,
+  BundleResult,
+  ValidationResult
 } from './types';
 
 export type {
   Options,
   SyncOptions,
   Result,
-  Callback
+  Callback,
+  CollectionResult,
+  BundleResult,
+  ValidationResult
 } from './types';
 
 const { MODULE_VERSION } = require('../lib/schemapack.js');
@@ -78,9 +82,9 @@ export function convertV2WithTypes(input: SpecificationInput, options: Options, 
 /**
  * Validates an OpenAPI specification
  * @param {SpecificationInput} input - The OpenAPI specification input
- * @returns {Result} Validation result
+ * @returns {ValidationResult} Validation result
  */
-export function validate(input: SpecificationInput): Result {
+export function validate(input: SpecificationInput): ValidationResult {
   var schema = new SchemaPack(input);
   return schema.validationResult;
 }
@@ -129,9 +133,9 @@ export function getSyncOptions(mode?: string): OptionDefinition[] | OptionsRecor
 /**
  * Detects root files in a multi-file OpenAPI specification
  * @param {SpecificationInput} input - The OpenAPI specification input
- * @returns {Promise<Result>} Promise with detection result
+ * @returns {Promise<BundleResult>} Promise with detection result
  */
-export async function detectRootFiles(input: SpecificationInput): Promise<Result> {
+export async function detectRootFiles(input: SpecificationInput): Promise<BundleResult> {
   var schema = new SchemaPack(input);
   return schema.detectRootFiles();
 }
@@ -139,9 +143,9 @@ export async function detectRootFiles(input: SpecificationInput): Promise<Result
 /**
  * Detects related files in a multi-file OpenAPI specification
  * @param {SpecificationInput} input - The OpenAPI specification input
- * @returns {Promise<Result>} Promise with detection result
+ * @returns {Promise<BundleResult>} Promise with detection result
  */
-export async function detectRelatedFiles(input: SpecificationInput): Promise<Result> {
+export async function detectRelatedFiles(input: SpecificationInput): Promise<BundleResult> {
   var schema = new SchemaPack(input);
   return schema.detectRelatedFiles();
 }
@@ -149,9 +153,9 @@ export async function detectRelatedFiles(input: SpecificationInput): Promise<Res
 /**
  * Bundles a multi-file OpenAPI specification into a single file
  * @param {SpecificationInput} input - The OpenAPI specification input with optional bundling options
- * @returns {Promise<Result>} Promise with bundled specification
+ * @returns {Promise<BundleResult>} Promise with bundled specification
  */
-export async function bundle(input: SpecificationInput & { options?: Options }): Promise<Result> {
+export async function bundle(input: SpecificationInput & { options?: Options }): Promise<BundleResult> {
   var schema = new SchemaPack(input, input.options ?? {});
   return schema.bundle();
 }
