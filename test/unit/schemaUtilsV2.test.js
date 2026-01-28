@@ -1,6 +1,6 @@
 const {
     resolveRequestBodyForPostmanRequest
-  } = require('../../libV2/schemaUtils.js'),
+  } = require('../../libV2/CollectionGeneration/schemaUtils.js'),
   concreteUtils = require('../../lib/30XUtils/schemaUtils30X'),
   expect = require('chai').expect,
 
