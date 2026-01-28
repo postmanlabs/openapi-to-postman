@@ -163,7 +163,6 @@
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "prebuild": "rm -rf dist",
     "prepare": "npm run build",
     "pretest": "npm run build",
     "test": "./scripts/test.sh",
