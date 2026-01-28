@@ -41,12 +41,9 @@ export interface BundleResult extends BaseResult {
 export interface ValidationResult extends BaseResult {
   specificationVersion?: string;
 }
-
-export type Result = CollectionResult | BundleResult | ValidationResult;
-
 export type Callback = (
   err: { message: string; name?: string } | null,
-  result?: Result
+  result?: CollectionResult
 ) => void;
 
 // ============================================================================
