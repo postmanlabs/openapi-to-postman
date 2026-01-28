@@ -188,3 +188,19 @@ export function syncCollection(
 }
 
 export { SchemaPack };
+
+export default {
+  convert,
+  convertV2,
+  convertV2WithTypes,
+  validate,
+  getMetaData,
+  mergeAndValidate,
+  getOptions,
+  getSyncOptions,
+  detectRootFiles,
+  detectRelatedFiles,
+  bundle,
+  syncCollection,
+  SchemaPack
+};
