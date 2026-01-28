@@ -38,7 +38,7 @@ export interface BundleResult extends BaseResult {
     type: string;
     data: Array<{
       rootFile: { path: string };
-      bundledContent: string | object;
+      bundledContent: string;
       referenceMap?: object;
     }>;
     specification?: {
