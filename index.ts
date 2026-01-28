@@ -11,7 +11,14 @@ import type {
   OptionsRecord
 } from './types';
 
-export type { Options, SyncOptions } from './types';
+export type {
+  Options,
+  SyncOptions,
+  Result,
+  Callback,
+  SuccessResult,
+  FailureResult
+} from './types';
 
 const { MODULE_VERSION } = require('../lib/schemapack.js');
 const SchemaPack = require('../lib/schemapack.js').SchemaPack;

@@ -15,13 +15,32 @@ export interface SpecificationInput {
   remoteRefResolver?: (url: string) => Promise<string>;
 }
 
-export type Result<T = object> =
-  | ({ result: true } & T)
-  | { result: false; reason: string; error?: Error };
+// ============================================================================
+// Result Types
+// ============================================================================
 
-export type Callback<T = object> = (
+// Failure result type
+export interface FailureResult {
+  result: false;
+  reason: string;
+  error?: Error;
+}
+
+// Generic success result with output array
+export interface SuccessResult {
+  result: true;
+  output: { type: string; data: unknown }[];
+  analytics?: Record<string, unknown>;
+  extractedTypes?: Record<string, unknown>;
+  specificationVersion?: string;
+}
+
+// Base Result type
+export type Result = SuccessResult | FailureResult;
+
+export type Callback = (
   err: { message: string; name?: string } | null,
-  result?: Result<T>
+  result?: Result
 ) => void;
 
 // ============================================================================
