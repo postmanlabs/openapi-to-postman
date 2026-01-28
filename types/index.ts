@@ -34,8 +34,30 @@ export interface CollectionResult extends BaseResult {
 }
 
 export interface BundleResult extends BaseResult {
-  output?: { type: string; data: object[]; specification?: object };
+  output?: {
+    type: string;
+    data: Array<{
+      rootFile: { path: string };
+      bundledContent: string | object;
+      referenceMap?: object;
+    }>;
+    specification?: {
+      type: string;
+      version: string;
+    };
+  };
   specificationVersion?: string;
+}
+
+export interface DetectFilesResult extends BaseResult {
+  output?: {
+    type: string;
+    data: Array<{ path: string }>;
+    specification?: {
+      type: string;
+      version: string;
+    };
+  };
 }
 
 export interface ValidationResult extends BaseResult {
