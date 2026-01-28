@@ -110,7 +110,7 @@ describe('project repository', function () {
 
     describe('main entry script', function () {
       it('must point to a valid file', function (done) {
-        expect(json.main).to.equal('index.js');
+        expect(json.main).to.equal('dist/index.js');
         fs.stat(json.main, done);
       });
     });
@@ -163,7 +163,10 @@ describe('project repository', function () {
     });
 
     it('.gitignore coverage must be a subset of .npmignore coverage', function () {
-      expect(_.intersection(gitignore, npmignore)).to.eql(gitignore);
+      var gitignoreWithoutDist = gitignore.filter(function (entry) {
+        return !entry.includes('dist');
+      });
+      expect(_.intersection(gitignoreWithoutDist, npmignore)).to.eql(gitignoreWithoutDist);
     });
   });
 
