@@ -53,7 +53,7 @@ let expect = require('chai').expect,
   schemaCircularRef = path.join(__dirname, BUNDLES_FOLDER + '/circular_reference'),
   schemaCircularRefInline = path.join(__dirname, BUNDLES_FOLDER + '/circular_reference_inline');
 
-describe.only('bundle files method - 3.0', function () {
+describe('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
     let contentRootFile = fs.readFileSync(schemaFromResponse + '/root.yaml', 'utf8'),
       user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
