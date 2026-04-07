@@ -53,7 +53,7 @@ let expect = require('chai').expect,
   schemaCircularRef = path.join(__dirname, BUNDLES_FOLDER + '/circular_reference'),
   schemaCircularRefInline = path.join(__dirname, BUNDLES_FOLDER + '/circular_reference_inline');
 
-describe('bundle files method - 3.0', function () {
+describe.only('bundle files method - 3.0', function () {
   it('Should return bundled file as json - schema_from_response', async function () {
     let contentRootFile = fs.readFileSync(schemaFromResponse + '/root.yaml', 'utf8'),
       user = fs.readFileSync(schemaFromResponse + '/schemas/user.yaml', 'utf8'),
@@ -2985,6 +2985,44 @@ describe('bundle files method - 3.0', function () {
     expect(res.output.specification.version).to.equal('3.0');
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
+
+  it('Should return bundled file as json with internal refs inside remote component - remote_url_refs',
+    async function () {
+      let contentRootFile = fs.readFileSync(remoteURLRefExamples + '/root_4.json', 'utf8'),
+        sampleComponents = fs.readFileSync(remoteURLRefExamples + '/schemas/sampleComponents.json', 'utf8'),
+
+        remoteRefResolver = async (refURL) => {
+          if (refURL.includes('components.pstmn.io')) {
+            return JSON.parse(sampleComponents);
+          }
+        },
+        expected = fs.readFileSync(remoteURLRefExamples + '/expected_4.json', 'utf8'),
+        input = {
+          type: 'multiFile',
+          specificationVersion: '3.0',
+          rootFiles: [
+            {
+              path: 'root.json'
+            }
+          ],
+          data: [
+            {
+              path: 'root.json',
+              content: contentRootFile
+            }
+          ],
+          options: {},
+          bundleFormat: 'JSON',
+          remoteRefResolver
+        };
+
+      const res = await Converter.bundle(input);
+
+      expect(res).to.not.be.empty;
+      expect(res.result).to.be.true;
+      expect(res.output.specification.version).to.equal('3.0');
+      expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
+    });
 });
 
 describe('getReferences method when node does not have any reference', function() {
