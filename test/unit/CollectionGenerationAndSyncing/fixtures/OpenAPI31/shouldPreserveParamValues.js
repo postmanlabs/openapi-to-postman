@@ -677,7 +677,7 @@ module.exports = {
                       },
                       status: 'OK',
                       code: 200,
-                      _postman_previewlanguage: 'Text',
+                      _postman_previewlanguage: 'json',
                       header: [
                         {
                           key: 'Content-Type',
@@ -770,7 +770,7 @@ module.exports = {
                       },
                       status: 'Not Found',
                       code: 404,
-                      _postman_previewlanguage: 'Text',
+                      _postman_previewlanguage: 'json',
                       header: [
                         {
                           key: 'Content-Type',
@@ -846,7 +846,7 @@ module.exports = {
                       },
                       status: 'Internal Server Error',
                       code: 500,
-                      _postman_previewlanguage: 'Text',
+                      _postman_previewlanguage: 'json',
                       header: [
                         {
                           key: 'Content-Type',
