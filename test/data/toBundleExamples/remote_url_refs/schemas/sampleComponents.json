@@ -1,0 +1,38 @@
+{
+  "components": {
+    "schemas": {
+      "sampleUser": {
+        "description": "A sample user response",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email"
+        ]
+      }
+    },
+    "responses": {
+      "sampleError": {
+        "description": "A sample error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/sampleUser"
+            }
+          }
+        }
+      }
+    }
+  }
+}
