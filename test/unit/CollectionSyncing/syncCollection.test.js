@@ -93,6 +93,24 @@ describe('syncCollection', function () {
     expect(syncedRequest.toJSON()).to.be.eql(oldRequest);
   });
 
+  it('should preserve _postman_previewlanguage as a flat property in synced responses', function () {
+    const collectionToBeSynced = new Collection(requestBodyUpdateTest.collToBeSynced),
+      collectionToBeMerged = new Collection(requestBodyUpdateTest.collectionToBeMerged),
+      syncedCollection = syncCollection(
+        collectionToBeSynced,
+        collectionToBeMerged
+      ),
+      syncedRequest = syncedCollection.oneDeep(requestBodyUpdateTest.updatedRequestIdInBaseCollection);
+
+    syncedRequest.responses.each((response) => {
+      const responseJson = response.toJSON();
+
+      // _postman_previewlanguage must be a flat property (not nested under '_')
+      expect(responseJson._postman_previewlanguage).to.equal('json');
+      expect(responseJson).to.not.have.property('_');
+    });
+  });
+
   it('should update auth in the collection and request body correctly', function () {
     const base = {
         info: { name: 'Auth Coll', schema: 'https://schema.postman.com/json/collection/v2.1.0/collection.json' },

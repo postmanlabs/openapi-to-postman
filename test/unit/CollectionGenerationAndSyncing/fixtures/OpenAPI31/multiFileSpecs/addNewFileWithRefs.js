@@ -371,7 +371,7 @@ module.exports = {
                   },
                   status: 'Internal Server Error',
                   code: 500,
-                  _postman_previewlanguage: 'Text',
+                  _postman_previewlanguage: 'json',
                   _postman_previewtype: 'html',
                   header: [
                     {
@@ -490,7 +490,7 @@ module.exports = {
                   },
                   status: 'Internal Server Error',
                   code: 500,
-                  _postman_previewlanguage: 'Text',
+                  _postman_previewlanguage: 'json',
                   _postman_previewtype: 'html',
                   header: [
                     {

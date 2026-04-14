@@ -401,7 +401,7 @@ module.exports = {
               },
               status: 'OK',
               code: 200,
-              _postman_previewlanguage: 'Text',
+              _postman_previewlanguage: 'text',
               header: [],
               cookie: []
             }

@@ -105,10 +105,31 @@ export function syncCollection(
           const mergedResponseData = mergeResponseData(response, currentResponses[response.code], mergedOptions);
 
           currentResponses[response.code].update(mergedResponseData);
+
+          // SDK converts _postman_previewlanguage to { _: { postman_previewlanguage: '' } }
+          // during response construction.
+          const previewLanguage = (response as any)._postman_previewlanguage ??
+            (response as any)._?.postman_previewlanguage;
+          (currentResponses[response.code] as any)._postman_previewlanguage = previewLanguage;
+          if ((currentResponses[response.code] as any)._?.postman_previewlanguage !== undefined) {
+            delete (currentResponses[response.code] as any)._.postman_previewlanguage;
+          }
+
           currentResponses[response.code].name = response.name;
         }
         else {
           currentRequest.responses.add(response.toJSON());
+
+          // SDK converts _postman_previewlanguage during Response construction
+          const addedResponse = currentRequest.responses.one(response.id);
+          if (addedResponse) {
+            const addedPreviewLanguage = (response as any)._postman_previewlanguage ??
+              (response as any)._?.postman_previewlanguage;
+            (addedResponse as any)._postman_previewlanguage = addedPreviewLanguage;
+            if ((addedResponse as any)._?.postman_previewlanguage !== undefined) {
+              delete (addedResponse as any)._.postman_previewlanguage;
+            }
+          }
         }
       });
     }
