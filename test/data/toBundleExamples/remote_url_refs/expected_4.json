@@ -1,0 +1,63 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Sample API",
+    "description": "Buy or rent spacecrafts"
+  },
+  "paths": {
+    "/spacecrafts": {
+      "get": {
+        "summary": "Read a spacecraft",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/https_components.pstmn.io_postman_Default_response2_1.0.y-_components_responses_sampleError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key"
+      }
+    },
+    "responses": {
+      "https_components.pstmn.io_postman_Default_response2_1.0.y-_components_responses_sampleError": {
+        "description": "A sample error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "description": "A sample user response",
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "email"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKey": []
+    }
+  ]
+}
