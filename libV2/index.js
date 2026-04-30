@@ -1,9 +1,11 @@
 const _ = require('lodash'),
   { Collection } = require('postman-collection/lib/collection/collection'),
   GraphLib = require('graphlib'),
-  generateSkeletonTreeFromOpenAPI = require('./helpers/collection/generateSkeletionTreeFromOpenAPI'),
-  generateCollectionFromOpenAPI = require('./helpers/collection/generateCollectionFromOpenAPI'),
-  generateFolderFromOpenAPI = require('./helpers/folder/generateFolderForOpenAPI'),
+  generateSkeletonTreeFromOpenAPI =
+    require('./CollectionGeneration/helpers/collection/generateSkeletionTreeFromOpenAPI'),
+  generateCollectionFromOpenAPI =
+    require('./CollectionGeneration/helpers/collection/generateCollectionFromOpenAPI'),
+  generateFolderFromOpenAPI = require('./CollectionGeneration/helpers/folder/generateFolderForOpenAPI'),
 
   Ajv = require('ajv'),
   addFormats = require('ajv-formats'),
@@ -12,10 +14,11 @@ const _ = require('lodash'),
 
   // All V1 interfaces used
   OpenApiErr = require('../lib/error'),
-  { validateTransaction, getMissingSchemaEndpoints } = require('./validationUtils');
+  { validateTransaction, getMissingSchemaEndpoints } = require('./CollectionGeneration/validationUtils'),
+  { syncCollection: syncCollectionState } = require('../dist/libV2/SpecificationCollectionSyncing');
 
-const { resolvePostmanRequest, resolveRefFromSchema } = require('./schemaUtils');
-const { generateRequestItemObject, fixPathVariablesInUrl } = require('./utils');
+const { resolvePostmanRequest, resolveRefFromSchema } = require('./CollectionGeneration/schemaUtils');
+const { generateRequestItemObject, fixPathVariablesInUrl } = require('./CollectionGeneration/utils');
 
 module.exports = {
   convertV2: function (context, cb) {
@@ -322,6 +325,44 @@ module.exports = {
       };
 
       return callback(null, retVal);
+    });
+  },
+
+  /**
+   * Syncs a collection generated with changes from a specification
+   *
+   * @param {Object} context - Required context from related SchemaPack function
+   * @param {Object} currentCollection - The existing collection JSON to sync with
+   * @param {Object} syncOptions - Options for syncing
+   * @param {Function} cb - Callback function
+   * @returns {void}
+   */
+  syncCollection: function (context, currentCollection, syncOptions, cb) {
+    return this.convertV2(context, (err, result) => {
+      if (err) {
+        return cb(err);
+      }
+
+      if (!result || !result.output || !result.output[0]) {
+        return cb(new OpenApiErr('Failed to generate collection from specification'));
+      }
+
+      try {
+        const latestCollectionState = new Collection(result.output[0].data);
+        const currentCollectionState = new Collection(currentCollection);
+
+        const syncedCollection = syncCollectionState(latestCollectionState, currentCollectionState, syncOptions);
+
+        return cb(null, {
+          result: true,
+          output: [{ type: 'collection', data: syncedCollection }],
+          analytics: result.analytics || {},
+          extractedTypes: result.extractedTypes || {}
+        });
+      }
+      catch (syncError) {
+        return cb(syncError);
+      }
     });
   }
 };

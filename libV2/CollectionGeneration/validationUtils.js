@@ -8,23 +8,23 @@ const _ = require('lodash'),
   { Variable } = require('postman-collection/lib/collection/variable'),
   async = require('async'),
   crypto = require('crypto'),
-  schemaFaker = require('../assets/json-schema-faker.js'),
-  xmlFaker = require('./xmlSchemaFaker.js'),
-  utils = require('./utils'),
+  schemaFaker = require('../../assets/json-schema-faker.js'),
+  xmlFaker = require('../xmlSchemaFaker.js'),
+  utils = require('./utils.js'),
   {
     resolveSchema,
     resolveRefFromSchema,
     resolvePostmanRequest,
     resolveResponseForPostmanRequest
-  } = require('./schemaUtils'),
-  concreteUtils = require('../lib/30XUtils/schemaUtils30X'),
+  } = require('./schemaUtils.js'),
+  concreteUtils = require('../../lib/30XUtils/schemaUtils30X.js'),
 
-  ajvValidationError = require('../lib/ajValidation/ajvValidationError'),
-  { validateSchema } = require('../lib/ajValidation/ajvValidation'),
+  ajvValidationError = require('../../lib/ajValidation/ajvValidationError.js'),
+  { validateSchema } = require('../../lib/ajValidation/ajvValidation.js'),
   { formatDataPath, checkIsCorrectType, isKnownType,
-    getServersPathVars, DEFAULT_RESPONSE_CODE_IN_OAS } = require('../lib/common/schemaUtilsCommon.js'),
+    getServersPathVars, DEFAULT_RESPONSE_CODE_IN_OAS } = require('../../lib/common/schemaUtilsCommon.js'),
 
-  { findMatchingRequestFromSchema, isPmVariable } = require('./requestMatchingUtils'),
+  { findMatchingRequestFromSchema, isPmVariable } = require('./requestMatchingUtils.js'),
 
   // common global constants
   SCHEMA_FORMATS = {

@@ -6,7 +6,7 @@
 
 
 const expect = require('chai').expect,
-  Converter = require('../../index.js'),
+  Converter = require('../../dist/index.js'),
   fs = require('fs'),
   path = require('path'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',

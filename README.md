@@ -17,12 +17,14 @@
 2. [Command Line Interface](#command-line-interface)
     1. [Options](#options)
     2. [Usage](#usage)
+    3. [Syncing Collections](#syncing-collections)
 3. [Using the converter as a NodeJS module](#using-the-converter-as-a-nodejs-module)
     1. [Convert Function](#convert)
-    2. [Options](#options)
-    3. [ConversionResult](#conversionresult)
-    4. [Sample usage](#sample-usage)
-    5. [Validate function](#validate-function)
+    2. [Sync Collection Function](#sync-collection)
+    3. [Options](#options)
+    4. [ConversionResult](#conversionresult)
+    5. [Sample usage](#sample-usage)
+    6. [Validate function](#validate-function)
 4. [Conversion Schema](#conversion-schema)
 
 ---
@@ -83,6 +85,15 @@ The converter can be used as a CLI tool as well. The following [command line opt
 - `-h`, `--help`
   Specifies all the options along with a few usage examples on the terminal
 
+- `--sync <collectionFile>`
+  Sync spec changes with an existing Postman Collection file
+
+- `--sync-options <syncOptions>`
+  Comma-separated list of sync options (e.g., `syncExamples=true`)
+
+- `--sync-options-config <syncOptionsConfig>`
+  JSON file containing sync options
+
 
 ###  Usage
 
@@ -106,6 +117,37 @@ $ openapi2postmanv2 -s spec.yaml -o collection.json -p -O folderStrategy=Tags,re
 $ openapi2postmanv2 --test
 ```
 
+### Syncing Collections
+
+The sync functionality allows you to update an existing Postman collection with changes from your OpenAPI specification.
+
+#### Basic Sync
+
+```terminal
+$ openapi2postmanv2 -s spec.yaml --sync collection.json -o synced-collection.json
+```
+
+#### Sync with Options
+
+```terminal
+$ openapi2postmanv2 -s spec.yaml --sync collection.json --sync-options syncExamples=true -o synced-collection.json
+```
+
+#### Sync with Config File
+
+```terminal
+$ openapi2postmanv2 -s spec.yaml --sync collection.json --sync-options-config sync-options.json -o synced-collection.json
+```
+
+**sync-options.json:**
+```json
+{
+  "syncExamples": true
+}
+```
+
+For a complete list of sync options and their usage, see [SYNC_OPTIONS.md](/SYNC_OPTIONS.md)
+
 
 <h2 id="using-the-converter-as-a-nodejs-module">🛠 Using the converter as a NodeJS module</h2>
 
@@ -119,7 +161,7 @@ The converter provides the following functions:
 
 ### Convert
 
-The convert function takes in your OpenAPI 3.0, 3.1 and Swagger 2.0 specification ( YAML / JSON ) and converts it to a Postman collection.
+The convert function takes in your OpenAPI 3.0, 3.1 and Swagger 2.0 specification (YAML / JSON) and converts it to a Postman collection.
 
 Signature: `convert (data, options, callback);`
 
@@ -163,6 +205,71 @@ function (err, result) {
 }
 ```
 
+### Sync Collection
+
+The syncCollection function syncs changes from an OpenAPI specification with an existing Postman collection.
+
+Signature: `syncCollection (data, options, collection, syncOptions, callback);`
+
+**data:**
+
+```javascript
+{ type: 'file', data: 'filepath' }
+OR
+{ type: 'string', data: '<entire OpenAPI string - JSON or YAML>' }
+OR
+{ type: 'json', data: OpenAPI-JS-object }
+```
+
+**options:**
+```javascript
+{
+  parametersResolution: 'Example',
+  folderStrategy: 'Tags'
+}
+/*
+Regular conversion options. Check the options section below for possible values.
+*/
+```
+
+**collection:**
+```javascript
+// Existing Postman collection object (JSON)
+const collection = {
+  info: { name: 'My API', schema: '...' },
+  item: [...]
+}
+```
+
+**syncOptions:**
+```javascript
+{
+  syncExamples: true
+}
+/*
+Sync-specific options that control the merge behavior.
+All sync options are optional. Check SYNC_OPTIONS.md for details.
+*/
+```
+Note: All possible values of sync options can be found here: [SYNC_OPTIONS.md](/SYNC_OPTIONS.md)
+
+**callback:**
+```javascript
+function (err, result) {
+  /*
+  result = {
+    result: true,
+    output: [
+      {
+        type: 'collection',
+        data: {..synced collection object..}
+      }
+    ]
+  }
+  */
+}
+```
+
 ### Options
 
 Check out complete list of options and their usage at [OPTIONS.md](/OPTIONS.md)
@@ -178,6 +285,9 @@ Check out complete list of options and their usage at [OPTIONS.md](/OPTIONS.md)
 
 
 ### Sample Usage
+
+#### Converting a specification
+
 ```javascript
 const fs = require('fs'),
   Converter = require('openapi-to-postmanv2'),
@@ -190,6 +300,34 @@ Converter.convert({ type: 'string', data: openapiData },
     }
     else {
       console.log('The collection object is: ', conversionResult.output[0].data);
+    }
+  }
+);
+```
+
+#### Syncing a specification with an existing collection
+
+```javascript
+const fs = require('fs'),
+  Converter = require('openapi-to-postmanv2'),
+  openapiData = fs.readFileSync('sample-spec.yaml', {encoding: 'UTF8'}),
+  existingCollection = JSON.parse(fs.readFileSync('collection.json', {encoding: 'UTF8'}));
+
+const syncOptions = {
+  syncExamples: true
+};
+
+Converter.syncCollection(
+  { type: 'string', data: openapiData },
+  {}, // conversion options
+  existingCollection,
+  syncOptions,
+  (err, syncResult) => {
+    if (!syncResult.result) {
+      console.log('Could not sync', syncResult.reason);
+    }
+    else {
+      console.log('The collection object is: ', syncResult.output[0].data);
     }
   }
 );
