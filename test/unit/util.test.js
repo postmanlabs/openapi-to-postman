@@ -2821,6 +2821,13 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
 
       pathVars = SchemaUtils.findPathVariablesFromPath('/send-sms.{{format}}');
       expect(pathVars).to.equal(null);
+
+      pathVars = SchemaUtils.findPathVariablesFromPath('/tasks/{{id}}:cancel');
+      expect(pathVars[0]).to.equal('/{{id}}');
+
+      pathVars = SchemaUtils.findPathVariablesFromPath('/users/{{userId}}:archive/items/{{itemId}}');
+      expect(pathVars[0]).to.equal('/{{userId}}');
+      expect(pathVars[1]).to.equal('/{{itemId}}');
       done();
     });
   });
