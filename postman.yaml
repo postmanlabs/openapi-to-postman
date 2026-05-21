@@ -1,0 +1,19 @@
+---
+# postman.yaml
+# Library that publishes one or more npm packages. Filed under PLAT-1265.
+#
+# Sources used to populate this file:
+#  - description: GitHub repo description
+#  - npmPackages: package-to-repo verification at HIGH confidence (commit 2fba6bf
+#    in postman-eng/cloud9-claude, audit dated 2026-05-21)
+name: "openapi-to-postman"
+friendlyName: "Openapi To Postman"
+description: "Plugin for converting OpenAPI 3.0 specs to the Postman Collection (v2) format"
+type: "LIB"
+owner: "TODO(PLAT-1265): assign owner — npm publisher is automated bot, no CODEOWNERS in repo"
+dataClass: "Public"
+containsCustomerData: false
+requiredInSelfHosted: false
+npmPackages:
+- name: "@postman/openapi-to-postmanv2"
+  path: "package.json"
