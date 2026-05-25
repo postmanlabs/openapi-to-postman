@@ -1,0 +1,81 @@
+{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "OAS 3.2 feature sampler",
+    "summary": "Exercises 3.2-only constructs that should be tolerated by the converter",
+    "version": "1.0.0",
+    "license": {
+      "name": "Apache-2.0",
+      "identifier": "Apache-2.0"
+    }
+  },
+  "tags": [
+    { "name": "billing", "kind": "audience" },
+    { "name": "invoices", "parent": "billing", "kind": "nav" }
+  ],
+  "paths": {
+    "/invoices": {
+      "get": {
+        "summary": "List invoices",
+        "operationId": "listInvoices",
+        "tags": ["invoices"],
+        "responses": {
+          "200": {
+            "summary": "Invoice list response",
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/InvoiceList" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/invoices/{invoiceId}": {
+      "$ref": "#/components/pathItems/InvoiceItem"
+    }
+  },
+  "components": {
+    "pathItems": {
+      "InvoiceItem": {
+        "get": {
+          "summary": "Fetch a single invoice",
+          "operationId": "getInvoice",
+          "parameters": [
+            {
+              "name": "invoiceId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Invoice",
+              "content": {
+                "application/json": {
+                  "schema": { "$ref": "#/components/schemas/Invoice" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Invoice": {
+        "type": "object",
+        "required": ["id", "amount"],
+        "properties": {
+          "id": { "type": "string" },
+          "amount": { "type": ["number", "null"] }
+        }
+      },
+      "InvoiceList": {
+        "type": "array",
+        "items": { "$ref": "#/components/schemas/Invoice" }
+      }
+    }
+  }
+}
