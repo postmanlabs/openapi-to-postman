@@ -1,0 +1,17 @@
+{
+  "openapi": "3.2.0",
+  "info": {
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/user": {
+      "get": {
+        "summary": "Returns details about a particular user",
+        "operationId": "listUser",
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    }
+  }
+}

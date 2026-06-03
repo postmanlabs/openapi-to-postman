@@ -1,0 +1,17 @@
+{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "OAS 3.2 sample"
+  },
+  "paths": {
+    "/user": {
+      "get": {
+        "summary": "Returns details about a particular user",
+        "operationId": "listUser",
+        "responses": {
+          "200": { "description": "ok" }
+        }
+      }
+    }
+  }
+}
