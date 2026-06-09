@@ -2530,7 +2530,7 @@ describe('The convert v2 Function', function() {
     });
   });
 
-  describe('Should generate only first example when', function() {
+  describe('Should pair examples by matching key (and fall back to first example otherwise) when', function() {
     it('request body contains multiple examples but request body has single example', function(done) {
       var openapi = fs.readFileSync(multiExampleRequest, 'utf8');
       Converter.convertV2({ type: 'string', data: openapi }, { parametersResolution: 'Example' },
@@ -2613,11 +2613,18 @@ describe('The convert v2 Function', function() {
             });
 
             /**
-             * Even though both req and res has 3 examples, only 1 example should be present
-             * as we only use the first example from each
+             * Request and response each have 3 examples. Two keys match across both
+             * (valid-request, missing-required-parameter) so two saved responses are generated,
+             * one per matched key. The non-matching keys (extra-value / extra-value-2) are ignored.
              */
-            expect(item.response).to.have.lengthOf(1);
+            expect(item.response).to.have.lengthOf(2);
+
+            // Saved-response name stays tied to the response-level description (here 'None') so it
+            // round-trips to the OAS response description on collection -> spec sync. Pairing is
+            // carried by the example key, not the name.
+            // First matched key: valid-request
             expect(item.response[0].name).to.eql('None');
+            expect(item.response[0].code).to.eql(200);
             expect(item.response[0]._postman_previewlanguage).to.eql('json');
             expect(JSON.parse(item.response[0].body)).to.eql({
               user: 1,
@@ -2627,11 +2634,22 @@ describe('The convert v2 Function', function() {
             expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql({
               includedFields: ['user', 'height', 'weight']
             });
+
+            // Second matched key: missing-required-parameter
+            expect(item.response[1].name).to.eql('None');
+            expect(item.response[1].code).to.eql(200);
+            expect(item.response[1]._postman_previewlanguage).to.eql('json');
+            expect(JSON.parse(item.response[1].body)).to.eql({
+              user: 1
+            });
+            expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql({
+              includedFields: ['user']
+            });
             done();
           });
       });
 
-    it('both request and response body contains multiple examples in mentioned order when no matching keys',
+    it('both request and response body contain multiple examples but no matching keys (falls back to first of each)',
       function(done) {
         var openapi = fs.readFileSync(multiExampleRequestResponse, 'utf8');
         Converter.convertV2({ type: 'string', data: openapi }, { parametersResolution: 'Example' },
@@ -2723,10 +2741,12 @@ describe('The convert v2 Function', function() {
           expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql(reqBody1);
           expect(JSON.parse(item.response[0].body)).to.eql({ user: 1 });
 
+          // Code 400 response example key (missing-required-parameter) matches the request
+          // example of the same key, so its originalRequest pairs to that request example.
           expect(item.response[1].name).to.eql('None');
           expect(item.response[1].code).to.eql(400);
           expect(item.response[1]._postman_previewlanguage).to.eql('json');
-          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql(reqBody1);
+          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql({ includedFields: ['eyeColor'] });
           expect(JSON.parse(item.response[1].body)).to.eql({ eyeColor: 'gray' });
 
           expect(item.response[2].name).to.eql('None');
@@ -2738,7 +2758,8 @@ describe('The convert v2 Function', function() {
         });
     });
 
-    it('request body and responses contain examples with matching keys as response codes', function(done) {
+    it('request body and responses contain examples with keys matching response codes ' +
+      '(out of scope, falls back to first of each)', function(done) {
       const openapi = fs.readFileSync(multiExampleResponseCodeMatching, 'utf8');
       Converter.convertV2({ type: 'string', data: openapi }, { parametersResolution: 'Example' },
         (err, conversionResult) => {
@@ -2799,6 +2820,60 @@ describe('The convert v2 Function', function() {
           done();
         });
     });
+
+    it('falls back to first request and first response example when no request/response keys match',
+      function(done) {
+        const noMatchSpec = {
+          openapi: '3.0.0',
+          info: { title: 'No match', version: '1.0.0' },
+          paths: {
+            '/v1': {
+              post: {
+                requestBody: {
+                  content: {
+                    'application/json': {
+                      schema: { type: 'object', properties: { name: { type: 'string' } } },
+                      examples: {
+                        'req-a': { value: { name: 'first-req' } },
+                        'req-b': { value: { name: 'second-req' } }
+                      }
+                    }
+                  }
+                },
+                responses: {
+                  200: {
+                    description: 'None',
+                    content: {
+                      'application/json': {
+                        schema: { type: 'object', properties: { id: { type: 'integer' } } },
+                        examples: {
+                          'res-x': { value: { id: 1 } },
+                          'res-y': { value: { id: 2 } }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        };
+
+        Converter.convertV2({ type: 'json', data: noMatchSpec }, { parametersResolution: 'Example' },
+          (err, conversionResult) => {
+            expect(err).to.be.null;
+            expect(conversionResult.result).to.equal(true);
+
+            const item = conversionResult.output[0].data.item[0].item[0];
+
+            // No keys match -> single saved response using the first request and first response example.
+            expect(item.response).to.have.lengthOf(1);
+            expect(JSON.parse(item.request.body.raw)).to.eql({ name: 'first-req' });
+            expect(JSON.parse(item.response[0].body)).to.eql({ id: 1 });
+            expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql({ name: 'first-req' });
+            done();
+          });
+      });
   });
 
   it('[Github #11884] Should not contain duplicate variables created from requests path', function (done) {
