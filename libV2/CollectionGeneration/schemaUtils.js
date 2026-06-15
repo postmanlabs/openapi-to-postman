@@ -133,6 +133,12 @@ schemaFaker.option({
 });
 
 let QUERYPARAM = 'query',
+  // OAS 3.2 introduces `in: 'querystring'` as a Parameter Object location
+  // describing the ENTIRE query string with one Schema Object. We expand
+  // those parameters into per-property `in: 'query'` synthetic parameters
+  // before the standard query-param pipeline runs.
+  // See https://spec.openapis.org/oas/v3.2.0.html (Parameter Object).
+  QUERYSTRING_PARAM = 'querystring',
   CONVERSION = 'conversion',
   TYPES_GENERATION = 'typesGeneration',
   HEADER = 'header',
@@ -2216,8 +2222,71 @@ let QUERYPARAM = 'query',
     };
   },
 
+  /**
+   * Expands an OAS 3.2 `in: 'querystring'` Parameter Object into synthetic
+   * per-property Parameter Objects (`in: 'query'`), so the rest of the
+   * query-param pipeline can treat them like ordinary 3.0/3.1 query
+   * parameters. The querystring parameter describes the ENTIRE query string
+   * as a single Schema Object; each top-level property of that schema
+   * becomes one Postman query row.
+   *
+   * Returns an array (possibly empty) of expanded query params. Returns the
+   * original parameter back unchanged when it isn't a querystring parameter
+   * or when its schema isn't expandable (no `properties`).
+   *
+   * See https://spec.openapis.org/oas/v3.2.0.html (Parameter Object,
+   * `in: querystring` value).
+   */
+  expandQuerystringParameter = (context, param) => {
+    if (!_.isObject(param) || param.in !== QUERYSTRING_PARAM) {
+      return [param];
+    }
+
+    let schema = param.schema;
+    if (_.isObject(schema) && (_.has(schema, '$ref') || _.has(schema, 'anyOf') ||
+        _.has(schema, 'oneOf') || _.has(schema, 'allOf'))) {
+      schema = resolveSchema(context, schema);
+    }
+
+    const properties = _.get(schema, 'properties');
+    if (!_.isObject(properties) || _.isEmpty(properties)) {
+      // Without a `properties` object on the schema, there's nothing to
+      // enumerate. Drop the parameter rather than emit a single Postman row
+      // representing the whole query string -- there's no useful name/value
+      // shape we can construct for it.
+      return [];
+    }
+
+    const requiredList = Array.isArray(_.get(schema, 'required')) ? schema.required : [];
+    return _.map(properties, (propSchema, propName) => {
+      return {
+        name: propName,
+        in: QUERYPARAM,
+        // OAS Parameter `description` overrides the inner schema's description;
+        // we mirror that behaviour by preferring the property-level description
+        // already on the inner schema (the querystring parameter itself usually
+        // doesn't have a description for individual properties).
+        description: _.isObject(propSchema) ? propSchema.description : undefined,
+        required: requiredList.indexOf(propName) !== -1,
+        deprecated: _.isObject(propSchema) ? Boolean(propSchema.deprecated) : false,
+        schema: propSchema,
+        // No styling/explode info on a querystring schema property -- fall
+        // back to OAS 3 defaults (style: 'form', explode: true) so the
+        // existing serialiser produces the expected key=value layout.
+        style: undefined,
+        explode: undefined
+      };
+    });
+  },
+
   resolveQueryParamsForPostmanRequest = (context, operationItem, method) => {
-    const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
+    const rawParams = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
+      // Expand OAS 3.2 `in: 'querystring'` parameters into per-property
+      // synthetic `in: 'query'` parameters so the rest of the pipeline
+      // doesn't need to know about querystring.
+      params = _.flatMap(rawParams, (param) => {
+        return expandQuerystringParameter(context, param);
+      }),
       pmParams = [],
       queryParamTypes = [],
       { includeDeprecated } = context.computedOptions;
