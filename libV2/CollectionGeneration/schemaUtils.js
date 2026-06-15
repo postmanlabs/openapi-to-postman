@@ -2546,6 +2546,44 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * Frames a single faked response body as one chunk of an OAS 3.2 streaming
+   * response. Currently handles `text/event-stream` (Server-Sent Events) by
+   * wrapping the body in an `event: message\ndata: <json>\n\n` envelope
+   * (one-line `data:` payload, since the SSE spec requires `data:` lines
+   * not to contain bare newlines). For any other media type the original
+   * raw body is returned unchanged so non-SSE streaming types (e.g.
+   * `application/jsonl`, `application/json-seq`) still render their faked
+   * single-frame body, just without explicit framing.
+   *
+   * See https://spec.openapis.org/oas/v3.2.0.html (Media Type Object,
+   * `itemSchema` field) and https://html.spec.whatwg.org/multipage/server-sent-events.html
+   * for SSE framing rules.
+   *
+   * @param {String} bodyType - The Media Type (Content-Type) of the response
+   * @param {*} responseBodyData - Faked body before stringification (object/string)
+   * @param {String} responseRawModeData - Stringified faked body
+   * @returns {String} Streaming-framed body
+   */
+  wrapStreamingItemBody = (bodyType, responseBodyData, responseRawModeData) => {
+    if (bodyType !== 'text/event-stream') {
+      return responseRawModeData;
+    }
+
+    // SSE `data:` payloads must not contain bare newlines, so re-stringify
+    // the object on a single line. If the body is already a non-object
+    // (e.g. a primitive string) just use it as-is.
+    let dataLine = responseRawModeData;
+    if (_.isObject(responseBodyData)) {
+      dataLine = JSON.stringify(responseBodyData);
+    }
+    else if (typeof dataLine === 'string') {
+      dataLine = dataLine.replace(/\r?\n/g, ' ');
+    }
+
+    return 'event: message\ndata: ' + dataLine + '\n\n';
+  },
+
+  /**
    * Resolve the responses from definition which will be converted to request examples.
    * This includes both request and response body of corresponding example.
    *
@@ -2584,6 +2622,26 @@ let QUERYPARAM = 'query',
     bodyType = getRawBodyType(responseContent);
     headerFamily = getHeaderFamily(bodyType);
 
+    // OAS 3.2: Media Type Object may declare `itemSchema` (the shape of one
+    // frame in a streaming sequence) instead of `schema` (the shape of the
+    // entire body). For collection-generation faking purposes there's no
+    // meaningful "entire stream" body to emit, so we treat the itemSchema as
+    // a single-item schema for the purposes of producing one example frame.
+    // The streaming-format wrapping (e.g. SSE `event:`/`data:` framing) is
+    // applied after the body is generated, below.
+    // See https://spec.openapis.org/oas/v3.2.0.html (Media Type Object,
+    // `itemSchema` field).
+    const mediaTypeObject = responseContent[bodyType];
+    let usingItemSchema = false;
+    if (
+      _.isObject(mediaTypeObject) &&
+      !_.has(mediaTypeObject, 'schema') &&
+      _.isObject(mediaTypeObject.itemSchema)
+    ) {
+      mediaTypeObject.schema = mediaTypeObject.itemSchema;
+      usingItemSchema = true;
+    }
+
     resolvedResponseBodyResult = resolveBodyData(
       context, responseContent[bodyType], bodyType, true, code, requestBodyExamples);
     allBodyData = resolvedResponseBodyResult.generatedBody;
@@ -2604,9 +2662,16 @@ let QUERYPARAM = 'query',
             bodyData.toString() :
             JSON.stringify(bodyData, null, indentCharacter);
         },
-        requestRawModeData = getRawModeData(requestBodyData),
-        responseRawModeData = getRawModeData(responseBodyData),
-        responseMediaTypes = _.keys(responseContent);
+        requestRawModeData = getRawModeData(requestBodyData);
+      let responseRawModeData = getRawModeData(responseBodyData);
+      const responseMediaTypes = _.keys(responseContent);
+
+      // OAS 3.2 streaming wrap: when the response body was faked from
+      // `itemSchema`, frame it according to the media type so the example
+      // body looks like an actual stream chunk a client would receive.
+      if (usingItemSchema && responseRawModeData) {
+        responseRawModeData = wrapStreamingItemBody(bodyType, responseBodyData, responseRawModeData);
+      }
 
       if (responseMediaTypes.length > 0) {
         acceptHeader = [{
