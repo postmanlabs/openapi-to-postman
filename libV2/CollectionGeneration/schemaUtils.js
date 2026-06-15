@@ -2777,16 +2777,21 @@ let QUERYPARAM = 'query',
           originalRequest = _.assign({}, request, { headers: reqHeaders }, requestBodyObj);
         }
 
-        const responseDescription = _.get(responseSchema, 'description'),
+        const responseSummary = _.get(responseSchema, 'summary'),
+          responseSummaryTrimmed = _.isString(responseSummary) ? responseSummary.trim() : '',
+          responseDescription = _.get(responseSchema, 'description'),
           responseDescriptionTrimmed = _.isString(responseDescription) ? responseDescription.trim() : '',
           codeName = String(!_.isNil(code) ? code : DEFAULT_RESPONSE_CODE_IN_OAS);
 
         // response-name priority:
-        // 1) response-level description
-        // 2) example-level description/summary (already baked into `name` by generateExamples)
-        // 3) example key (already baked into `name` by generateExamples)
-        // 4) response code
-        name = responseDescriptionTrimmed || name || codeName;
+        // 1) response-level summary  (OAS 3.2: short label, see
+        //    https://spec.openapis.org/oas/v3.2.0.html Response Object)
+        // 2) response-level description
+        // 3) example-level description/summary (already baked into `name`
+        //    by generateExamples)
+        // 4) example key (already baked into `name` by generateExamples)
+        // 5) response code
+        name = responseSummaryTrimmed || responseDescriptionTrimmed || name || codeName;
 
         // set accept header value as first found response content's media type
         if (_.isEmpty(requestAcceptHeader)) {
