@@ -20,6 +20,47 @@ let _ = require('lodash'),
     query: true
   },
 
+  /**
+   * Folds OAS 3.2's `additionalOperations` map (custom HTTP methods like
+   * PURGE/LINK/UNLINK) into the Path Item Object as if they were standard
+   * operations: each `additionalOperations[METHOD]` entry is copied to
+   * `pathItem[methodLowercased]` so the rest of the converter can iterate
+   * operations uniformly. Keys that already exist on the Path Item (or that
+   * collide with another additionalOperations entry of the same lowercased
+   * name) are left untouched. The lowercased method name is also registered
+   * on `ALLOWED_HTTP_METHODS` as a side effect so the standard tree-walkers
+   * pick the operation up.
+   *
+   * See https://spec.openapis.org/oas/v3.2.0.html (Path Item Object,
+   * `additionalOperations` field).
+   *
+   * @param {Object} pathItem - The resolved Path Item Object
+   * @returns {Object} The same path item (mutated when applicable)
+   */
+  applyAdditionalOperations = function (pathItem) {
+    if (!_.isObject(pathItem) || !_.isObject(pathItem.additionalOperations)) {
+      return pathItem;
+    }
+
+    _.forEach(pathItem.additionalOperations, function (operation, method) {
+      if (typeof method !== 'string' || method.length === 0) {
+        return;
+      }
+
+      const methodLower = method.toLowerCase();
+      // Don't clobber a standard operation (or another already-applied custom
+      // operation) on the same path item.
+      if (_.has(pathItem, methodLower)) {
+        return;
+      }
+
+      pathItem[methodLower] = operation;
+      ALLOWED_HTTP_METHODS[methodLower] = true;
+    });
+
+    return pathItem;
+  },
+
   _generateTreeFromPathsV2 = function (context, openapi, { includeDeprecated }) {
     /**
      * We will create a unidirectional graph
@@ -59,6 +100,8 @@ let _ = require('lodash'),
         if (methods && methods.$ref) {
           methods = resolveRefFromSchema(context, methods.$ref);
         }
+
+        applyAdditionalOperations(methods);
 
         _.forEach(methods, function (data, method) {
           if (!ALLOWED_HTTP_METHODS[method]) {
@@ -112,6 +155,8 @@ let _ = require('lodash'),
             if (methods && methods.$ref) {
               methods = resolveRefFromSchema(context, methods.$ref);
             }
+
+            applyAdditionalOperations(methods);
 
             _.forEach(methods, function (data, method) {
               if (!ALLOWED_HTTP_METHODS[method]) {
@@ -232,6 +277,8 @@ let _ = require('lodash'),
       if (methods && methods.$ref) {
         methods = resolveRefFromSchema(context, methods.$ref);
       }
+
+      applyAdditionalOperations(methods);
 
       _.forEach(methods, function (data, method) {
         if (!ALLOWED_HTTP_METHODS[method]) {
@@ -366,6 +413,8 @@ let _ = require('lodash'),
       if (methods && methods.$ref) {
         methods = resolveRefFromSchema(context, methods.$ref);
       }
+
+      applyAdditionalOperations(methods);
 
       _.forEach(methods, function (data, method) {
         if (!ALLOWED_HTTP_METHODS[method]) {
