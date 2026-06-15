@@ -12,7 +12,12 @@ let _ = require('lodash'),
     delete: true,
     connect: true,
     options: true,
-    trace: true
+    trace: true,
+    // OAS 3.2 introduces the `query` HTTP method as an idempotent, body-bearing,
+    // GET-like operation for complex search endpoints. The Postman SDK supports
+    // arbitrary HTTP methods, so we list it alongside the standard set.
+    // See https://spec.openapis.org/oas/v3.2.0.html (Path Item Object).
+    query: true
   },
 
   _generateTreeFromPathsV2 = function (context, openapi, { includeDeprecated }) {
