@@ -297,6 +297,33 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * Looks up a $ref directly in `context.specComponents` without going
+   * through the schema cache. Used by OAS 3.2 features that need to read
+   * raw spec metadata (e.g. `discriminator.defaultMapping`) which can be
+   * stripped from cached resolutions during composite-schema flattening.
+   * Returns `undefined` when the path can't be resolved -- callers must
+   * tolerate that.
+   *
+   * @param {Object} context - Global context object
+   * @param {String} $ref - Ref that is to be resolved
+   * @returns {Object|undefined} The raw schema fragment from the spec
+   */
+  lookupSchemaInSpecComponents = (context, $ref) => {
+    const { specComponents } = context;
+    if (typeof $ref !== 'string' || !_.isObject(specComponents)) {
+      return undefined;
+    }
+    const splitRef = $ref.split('/');
+    if (splitRef.length < 4) {
+      return undefined;
+    }
+    const decoded = splitRef.slice(1).map((elem) => {
+      return decodeURIComponent(elem.replace(/~1/g, '/').replace(/~0/g, '~'));
+    });
+    return _getEscaped(specComponents, decoded);
+  },
+
+  /**
    * Resolve a given ref from the schema
    * @param {Object} context - Global context object
    * @param {Object} $ref - Ref that is to be resolved
@@ -615,6 +642,19 @@ let QUERYPARAM = 'query',
       });
 
       if (resolveFor === CONVERSION) {
+        // OAS 3.2 introduces `discriminator.defaultMapping` -- a $ref-style
+        // pointer to the schema that should be used as the fallback when no
+        // explicit discriminator mapping matches. For collection generation
+        // there's no concrete discriminator value to dispatch on, so the
+        // declared "unknown / catch-all" branch is the most representative
+        // shape to fake. Prefer it when present.
+        // See https://spec.openapis.org/oas/v3.2.0.html (Discriminator
+        // Object, `defaultMapping` field).
+        const defaultMappingRef = _.get(schema, 'discriminator.defaultMapping');
+        if (typeof defaultMappingRef === 'string' && defaultMappingRef.length > 0) {
+          return _resolveSchema(context, { $ref: defaultMappingRef }, stack, resolveFor,
+            _.cloneDeep(seenRef), currentPath);
+        }
         return _resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef), currentPath);
       }
 
@@ -652,6 +692,34 @@ let QUERYPARAM = 'query',
       }
 
       seenRef[schemaRef] = true;
+
+      // OAS 3.2: if the referenced schema is a discriminated polymorphic
+      // schema with a `defaultMapping` fallback, redirect to that fallback
+      // before consulting the cache. The cache may otherwise return a
+      // schema that's already been collapsed for `typesGeneration`
+      // (oneOf array preserved without `discriminator`), masking the
+      // 3.2 fallback intent during a subsequent CONVERSION resolution.
+      // We have to peek at the *original* spec rather than the cached
+      // resolution because the cached schema may have been stripped of
+      // its `discriminator` field by a prior TYPES_GENERATION pass.
+      // See https://spec.openapis.org/oas/v3.2.0.html (Discriminator
+      // Object, `defaultMapping` field).
+      if (resolveFor === CONVERSION) {
+        const rawSchema = lookupSchemaInSpecComponents(context, schemaRef),
+          defaultMappingRef = _.get(rawSchema, 'discriminator.defaultMapping'),
+          isCompositeWithDiscriminator = _.isObject(rawSchema) &&
+            (Array.isArray(rawSchema.oneOf) || Array.isArray(rawSchema.anyOf));
+
+        if (
+          isCompositeWithDiscriminator &&
+          typeof defaultMappingRef === 'string' &&
+          defaultMappingRef.length > 0 &&
+          defaultMappingRef !== schemaRef
+        ) {
+          return _resolveSchema(context, { $ref: defaultMappingRef }, stack, resolveFor,
+            _.cloneDeep(seenRef), currentPath);
+        }
+      }
 
       if (context.schemaCache[schemaRef]) {
         // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
