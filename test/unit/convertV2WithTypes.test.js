@@ -456,7 +456,9 @@ describe('convertV2WithTypes', function() {
 
   it('should resolve extractedTypes into correct schema structure', function(done) {
     const expectedExtractedTypes = {
-        'get/pets': {
+        // `GET /pets` overrides the server URL with `http://petstore3.swagger.io/{v3}`, so its
+        // resolved request path (and therefore its type-data key) carries the `:v3` server segment.
+        'get/:v3/pets': {
           'request': {
             'headers': '[\n  {\n    "keyName": "variable",\n    "properties": {\n      "type": "array"\n    }\n  }\n]',
             'pathParam': '[]',
@@ -537,6 +539,57 @@ describe('convertV2WithTypes', function() {
       done();
     }
     );
+  });
+
+  it('should key extractedTypes by the resolved request path when an operation overrides the server URL with path segments', function(done) {
+    // An operation-level server URL with path segments (e.g. `/eslsvc/api/v3`) gets resolved
+    // directly into the request URL, while a top-level server is surfaced via the `{{baseUrl}}`
+    // host. The extracted-type identifier must mirror the request's resolved path (Url#getPath) in
+    // both cases so consumers can map the types back to the generated requests.
+    const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Operation level servers', version: '1.0.0' },
+        servers: [{ url: 'https://top.example.com/v1' }],
+        paths: {
+          '/profile-preferences': {
+            get: {
+              servers: [{ url: 'https://apiintqa.hmhs.com/eslsvc/api/v3' }],
+              responses: {
+                200: {
+                  description: 'ok',
+                  content: { 'application/json': { schema: { type: 'object', properties: { a: { type: 'string' } } } } }
+                }
+              }
+            }
+          },
+          '/pets': {
+            get: {
+              responses: {
+                200: {
+                  description: 'ok',
+                  content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'integer' } } } } }
+                }
+              }
+            }
+          }
+        }
+      },
+      options = { folderStrategy: 'Paths', schemaFaker: true };
+
+    Converter.convertV2WithTypes({ type: 'json', data: openapi }, options, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+      const typeKeys = Object.keys(conversionResult.extractedTypes);
+
+      // Operation-level server path segments are part of the key (matches the request's getPath).
+      expect(typeKeys).to.include('get/eslsvc/api/v3/profile-preferences');
+      // Top-level server stays behind {{baseUrl}}, so its key is just the spec path.
+      expect(typeKeys).to.include('get/pets');
+      expect(typeKeys).to.not.include('get/profile-preferences');
+
+      done();
+    });
   });
 
   describe('composite schema support (anyOf, oneOf, allOf)', function() {
