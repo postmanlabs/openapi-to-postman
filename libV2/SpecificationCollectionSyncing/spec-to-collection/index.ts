@@ -96,13 +96,27 @@ export function syncCollection(
 
       const currentResponses: Record<number, Response> = {};
 
+      // Index existing responses by status code, keeping the FIRST occurrence per code so the
+      // request example maps to the first saved response of a code; the rest are left untouched.
       currentRequest.responses.each((response) => {
-        currentResponses[response.code] = response;
+        if (!currentResponses[response.code]) {
+          currentResponses[response.code] = response;
+        }
       });
+
+      // The spec has a single request example (the live body) that maps to the first saved response.
+      // Subsequent responses preserve their existing request body (see mergeResponseData) so a
+      // request change in the spec only updates the first response, not every response's originalRequest.
+      let isFirstSyncedResponse = true;
 
       item.responses.each((response) => {
         if (currentResponses[response.code]) {
-          const mergedResponseData = mergeResponseData(response, currentResponses[response.code], mergedOptions);
+          const mergedResponseData = mergeResponseData(
+            response,
+            currentResponses[response.code],
+            mergedOptions,
+            !isFirstSyncedResponse
+          );
 
           currentResponses[response.code].update(mergedResponseData);
 
@@ -131,6 +145,8 @@ export function syncCollection(
             }
           }
         }
+
+        isFirstSyncedResponse = false;
       });
     }
     else {
