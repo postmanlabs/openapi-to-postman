@@ -1482,8 +1482,7 @@ let QUERYPARAM = 'query',
 
     // pair strictly by matching example key names between request and response
     // examples. falls back to first-only if no matching keys are found.
-    const matchedKeys = _.intersectionBy(responseExampleKeys, requestBodyExampleKeys, _.toLower),
-      isResponseCodeMatching = false;
+    const matchedKeys = _.intersectionBy(responseExampleKeys, requestBodyExampleKeys, _.toLower);
 
     // Do keys matching first and ignore any leftover req/res body for which matching is not found
     if (matchedKeys.length) {
@@ -1492,11 +1491,6 @@ let QUERYPARAM = 'query',
             return exampleKeyComparator(example, key);
           }),
           responseExample = _.find(responseExamples, (example) => {
-            // If there is a response code key-matching, then only match with keys based on response code
-            if (isResponseCodeMatching) {
-              return example.responseCode === key;
-            }
-
             return exampleKeyComparator(example, key);
           });
 
