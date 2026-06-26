@@ -39,9 +39,10 @@ export function mergeResponseData(
      * editing the request in the spec doesn't overwrite every response's originalRequest on sync-back.
      * Only applies when example syncing is enabled (the multi-example flow).
      */
-    if (preserveOriginalRequestBody && shouldSyncExamples && sourceRes.originalRequest.body !== undefined) {
-      targetRes.originalRequest.body = sourceRes.originalRequest.body;
-    }
+if (preserveOriginalRequestBody && shouldSyncExamples) {
+  if (sourceRes.originalRequest.body === undefined) { delete targetRes.originalRequest.body; }
+  else { targetRes.originalRequest.body = sourceRes.originalRequest.body; }
+}
   }
   // Attach implicit headers from the source response to the target response
   // if they are not present in the target response
