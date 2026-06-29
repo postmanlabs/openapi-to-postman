@@ -1,5 +1,6 @@
 const generateAuthForCollectionFromOpenAPI = require('./helpers/collection/generateAuthForCollectionFromOpenAPI.js');
 const utils = require('./utils.js');
+const { Url } = require('postman-collection/lib/collection/url');
 
 const schemaFaker = require('../../assets/json-schema-faker.js'),
   _ = require('lodash'),
@@ -231,7 +232,7 @@ let QUERYPARAM = 'query',
       collectionVariables = [];
 
     if (!serverObj) {
-      return { collectionVariables, pathVariables, baseUrl };
+      return { collectionVariables, pathVariables, baseUrl, serverObj };
     }
 
     baseUrl = sanitizeUrl(serverObj.url);
@@ -244,7 +245,7 @@ let QUERYPARAM = 'query',
 
     ({ collectionVariables, pathVariables } = filterCollectionAndPathVariables(baseUrl, serverVariables));
 
-    return { collectionVariables, pathVariables, baseUrl };
+    return { collectionVariables, pathVariables, baseUrl, serverObj };
   },
 
   /**
@@ -2822,7 +2823,9 @@ module.exports = {
         responseTypes
       } = resolveResponseForPostmanRequest(context, operationItem[method], request);
 
-    requestIdentifier = method + path;
+    const overridesServer = Boolean(baseUrlData.serverObj);
+
+    requestIdentifier = overridesServer ? method + new Url(url).getPath(true) : method + path;
     Object.assign(requestTypesObject,
       { [requestIdentifier]: { request: requestTypes, response: responseTypes } });
 
