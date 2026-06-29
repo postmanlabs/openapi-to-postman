@@ -679,6 +679,108 @@ describe('convertV2WithTypes', function() {
       });
     });
 
+    it('should pair request/response examples by matching key and still extract types ' +
+      '(multiExampleMatchingRequestResponse)', function(done) {
+      const openapi = fs.readFileSync(
+        path.join(__dirname, VALID_OPENAPI_PATH, '/multiExampleMatchingRequestResponse.yaml'), 'utf8');
+
+      Converter.convertV2WithTypes({ type: 'string', data: openapi }, { parametersResolution: 'Example' },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+
+          const item = conversionResult.output[0].data.item[0].item[0];
+
+          // Two keys match across request and response examples (valid-request,
+          // missing-required-parameter) -> two paired saved responses. Non-matching keys
+          // (extra-value / extra-value-2) are ignored.
+          expect(item.response).to.have.lengthOf(2);
+
+          // Saved-response name stays tied to the response description ('None') for deterministic
+          // collection -> spec sync; pairing is carried by the example key, not the name.
+          expect(item.response[0].name).to.eql('None');
+          expect(JSON.parse(item.response[0].body)).to.eql({ user: 1, height: 168, weight: 44 });
+          expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql({
+            includedFields: ['user', 'height', 'weight']
+          });
+
+          expect(item.response[1].name).to.eql('None');
+          expect(JSON.parse(item.response[1].body)).to.eql({ user: 1 });
+          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql({
+            includedFields: ['user']
+          });
+
+          // Types are still extracted (keyed per status code, shared across that code's examples).
+          expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+
+          const responseTypes = conversionResult.extractedTypes['post/v1'].response['200'];
+
+          expect(responseTypes).to.have.property('body');
+          expect(JSON.parse(responseTypes.body)).to.be.an('object');
+
+          done();
+        });
+    });
+
+    it('should fall back to first request and response example and still extract types ' +
+      'when no request/response keys match', function(done) {
+      const noMatchSpec = {
+        openapi: '3.0.0',
+        info: { title: 'No match', version: '1.0.0' },
+        paths: {
+          '/v1': {
+            post: {
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: { type: 'object', properties: { name: { type: 'string' } } },
+                    examples: {
+                      'req-a': { value: { name: 'first-req' } },
+                      'req-b': { value: { name: 'second-req' } }
+                    }
+                  }
+                }
+              },
+              responses: {
+                200: {
+                  description: 'None',
+                  content: {
+                    'application/json': {
+                      schema: { type: 'object', properties: { id: { type: 'integer' } } },
+                      examples: {
+                        'res-x': { value: { id: 1 } },
+                        'res-y': { value: { id: 2 } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2WithTypes({ type: 'json', data: noMatchSpec }, { parametersResolution: 'Example' },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+
+          const item = conversionResult.output[0].data.item[0].item[0];
+
+          // No keys match -> single saved response using the first request and first response example.
+          expect(item.response).to.have.lengthOf(1);
+          expect(JSON.parse(item.request.body.raw)).to.eql({ name: 'first-req' });
+          expect(JSON.parse(item.response[0].body)).to.eql({ id: 1 });
+          expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql({ name: 'first-req' });
+
+          // Type data is still extracted for the status code.
+          expect(conversionResult.extractedTypes).to.be.an('object').that.is.not.empty;
+          expect(conversionResult.extractedTypes['post/v1'].response['200']).to.have.property('body');
+
+          done();
+        });
+    });
+
     it('should extract allOf schemas in request and response bodies', function(done) {
       const openApiWithAllOf = {
         openapi: '3.0.0',

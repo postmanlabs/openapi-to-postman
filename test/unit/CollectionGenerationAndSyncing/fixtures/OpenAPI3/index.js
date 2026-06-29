@@ -27,6 +27,9 @@ module.exports = {
     require('./shouldAttachImplicitHeadersIfNotPresentInLatestCollection'),
   shouldSyncExamplesWhenSyncExamplesIsTrue: require('./shouldSyncExamplesWhenSyncExamplesIsTrue'),
   shouldNotSyncExamplesWhenSyncExamplesIsFalse: require('./shouldNotSyncExamplesWhenSyncExamplesIsFalse'),
+  shouldSyncRequestToFirstResponseOnly: require('./shouldSyncRequestToFirstResponseOnly'),
+  shouldPreserveOtherSameCodeResponsesOnRequestSync: require('./shouldPreserveOtherSameCodeResponsesOnRequestSync'),
+  shouldPairSameCodeExamplesPositionallyOnSync: require('./shouldPairSameCodeExamplesPositionallyOnSync'),
   // Multi-file specification test cases
   multiFileSpecs: require('./multiFileSpecs')
 };
