@@ -142,9 +142,17 @@ $ openapi2postmanv2 -s spec.yaml --sync collection.json --sync-options-config sy
 **sync-options.json:**
 ```json
 {
-  "syncExamples": true
+  "syncExamples": true,
+  "deleteOrphanedRequests": false
 }
 ```
+
+#### Available Sync Options
+
+| id | type | default | description |
+|---|---|---|---|
+| `syncExamples` | boolean | `false` | Whether to sync response examples from the OpenAPI specification to the collection. When enabled, response examples in the spec are synced with existing collection responses. |
+| `deleteOrphanedRequests` | boolean | `false` | Whether to delete requests and folders that exist in the collection but no longer exist in the OpenAPI specification. When disabled (default), such orphans are preserved to avoid unintentional data loss. |
 
 For a complete list of sync options and their usage, see [SYNC_OPTIONS.md](/SYNC_OPTIONS.md)
 
@@ -314,7 +322,8 @@ const fs = require('fs'),
   existingCollection = JSON.parse(fs.readFileSync('collection.json', {encoding: 'UTF8'}));
 
 const syncOptions = {
-  syncExamples: true
+  syncExamples: true,
+  deleteOrphanedRequests: false
 };
 
 Converter.syncCollection(
