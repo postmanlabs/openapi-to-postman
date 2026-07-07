@@ -12,7 +12,53 @@ let _ = require('lodash'),
     delete: true,
     connect: true,
     options: true,
-    trace: true
+    trace: true,
+    // OAS 3.2 introduces the `query` HTTP method as an idempotent, body-bearing,
+    // GET-like operation for complex search endpoints. The Postman SDK supports
+    // arbitrary HTTP methods, so we list it alongside the standard set.
+    // See https://spec.openapis.org/oas/v3.2.0.html (Path Item Object).
+    query: true
+  },
+
+  /**
+   * Folds OAS 3.2's `additionalOperations` map (custom HTTP methods like
+   * PURGE/LINK/UNLINK) into the Path Item Object as if they were standard
+   * operations: each `additionalOperations[METHOD]` entry is copied to
+   * `pathItem[methodLowercased]` so the rest of the converter can iterate
+   * operations uniformly. Keys that already exist on the Path Item (or that
+   * collide with another additionalOperations entry of the same lowercased
+   * name) are left untouched. The lowercased method name is also registered
+   * on `ALLOWED_HTTP_METHODS` as a side effect so the standard tree-walkers
+   * pick the operation up.
+   *
+   * See https://spec.openapis.org/oas/v3.2.0.html (Path Item Object,
+   * `additionalOperations` field).
+   *
+   * @param {Object} pathItem - The resolved Path Item Object
+   * @returns {Object} The same path item (mutated when applicable)
+   */
+  applyAdditionalOperations = function (pathItem) {
+    if (!_.isObject(pathItem) || !_.isObject(pathItem.additionalOperations)) {
+      return pathItem;
+    }
+
+    _.forEach(pathItem.additionalOperations, function (operation, method) {
+      if (typeof method !== 'string' || method.length === 0) {
+        return;
+      }
+
+      const methodLower = method.toLowerCase();
+      // Don't clobber a standard operation (or another already-applied custom
+      // operation) on the same path item.
+      if (_.has(pathItem, methodLower)) {
+        return;
+      }
+
+      pathItem[methodLower] = operation;
+      ALLOWED_HTTP_METHODS[methodLower] = true;
+    });
+
+    return pathItem;
   },
 
   _generateTreeFromPathsV2 = function (context, openapi, { includeDeprecated }) {
@@ -54,6 +100,8 @@ let _ = require('lodash'),
         if (methods && methods.$ref) {
           methods = resolveRefFromSchema(context, methods.$ref);
         }
+
+        applyAdditionalOperations(methods);
 
         _.forEach(methods, function (data, method) {
           if (!ALLOWED_HTTP_METHODS[method]) {
@@ -107,6 +155,8 @@ let _ = require('lodash'),
             if (methods && methods.$ref) {
               methods = resolveRefFromSchema(context, methods.$ref);
             }
+
+            applyAdditionalOperations(methods);
 
             _.forEach(methods, function (data, method) {
               if (!ALLOWED_HTTP_METHODS[method]) {
@@ -184,12 +234,58 @@ let _ = require('lodash'),
     return tree;
   },
 
+  /**
+   * Resolves OAS 3.2 hierarchical tags by walking each tag's `parent`
+   * chain back to the root and returning [rootTag, ..., leafTag]. Cycles
+   * and dangling parents are guarded against -- if a parent reference
+   * cannot be resolved or a cycle is detected, the chain stops at the
+   * deepest valid ancestor and returns from there. Returns the tag's
+   * own name in a single-element array when no parent is declared (the
+   * common 3.0/3.1 case).
+   *
+   * See https://spec.openapis.org/oas/v3.2.0.html (Tag Object,
+   * `parent` field).
+   *
+   * @param {string} tagName - The leaf tag's name
+   * @param {Object} tagsByName - Map of tag name to Tag Object
+   * @returns {Array<string>} Ordered ancestor chain (root first, leaf last)
+   */
+  resolveTagParentChain = function (tagName, tagsByName) {
+    const chain = [],
+      seen = new Set();
+    let cursor = tagName;
+
+    while (typeof cursor === 'string' && cursor.length > 0) {
+      if (seen.has(cursor)) {
+        break;
+      }
+      seen.add(cursor);
+      chain.unshift(cursor);
+
+      const parentName = _.get(tagsByName, [cursor, 'parent']);
+      if (typeof parentName !== 'string' || parentName.length === 0 || !_.has(tagsByName, parentName)) {
+        break;
+      }
+      cursor = parentName;
+    }
+
+    return chain;
+  },
+
   _generateTreeFromTags = function (context, openapi, { includeDeprecated }) {
     let tree = new Graph(),
 
-      tagDescMap = _.reduce(openapi.tags, function (acc, data) {
-        acc[data.name] = data.description;
+      tagsByName = _.reduce(openapi.tags, function (acc, data) {
+        if (data && typeof data.name === 'string') {
+          acc[data.name] = data;
+        }
+        return acc;
+      }, {}),
 
+      tagDescMap = _.reduce(openapi.tags, function (acc, data) {
+        if (data && typeof data.name === 'string') {
+          acc[data.name] = data.description;
+        }
         return acc;
       }, {});
 
@@ -200,33 +296,50 @@ let _ = require('lodash'),
     });
 
     /**
+     * Builds a chain of nested folder nodes for the given tag (resolving
+     * its `parent` ancestry), wires them up, and returns the deepest
+     * folder's node id so a request can attach to it.
+     */
+    const ensureTagFolderChain = function (tagName) {
+      const chain = resolveTagParentChain(tagName, tagsByName);
+      let parentNodeId = 'root:collection',
+        nodeId = `path:${tagName}`;
+
+      for (let index = 0; index < chain.length; index++) {
+        const ancestorName = chain[index];
+        nodeId = `path:${chain.slice(0, index + 1).join(':')}`;
+
+        if (!tree.hasNode(nodeId)) {
+          tree.setNode(nodeId, {
+            type: 'folder',
+            meta: {
+              path: '',
+              name: ancestorName,
+              description: tagDescMap[ancestorName] || ''
+            },
+            data: {}
+          });
+          tree.setEdge(parentNodeId, nodeId);
+        }
+        parentNodeId = nodeId;
+      }
+
+      return nodeId;
+    };
+
+    /**
      * Create folders for all the tags present.
      */
     _.forEach(tagDescMap, function (desc, tag) {
-      if (tree.hasNode(`path:${tag}`)) {
-        return;
-      }
-
-      /**
-       * Generate a folder node and attach to root of collection.
-       */
-      tree.setNode(`path:${tag}`, {
-        type: 'folder',
-        meta: {
-          path: '',
-          name: tag,
-          description: tagDescMap[tag]
-        },
-        data: {}
-      });
-
-      tree.setEdge('root:collection', `path:${tag}`);
+      ensureTagFolderChain(tag);
     });
 
     _.forEach(openapi.paths, function (methods, path) {
       if (methods && methods.$ref) {
         methods = resolveRefFromSchema(context, methods.$ref);
       }
+
+      applyAdditionalOperations(methods);
 
       _.forEach(methods, function (data, method) {
         if (!ALLOWED_HTTP_METHODS[method]) {
@@ -247,7 +360,14 @@ let _ = require('lodash'),
          */
         if (data.tags && data.tags.length > 0) {
           _.forEach(data.tags, function (tag) {
-            tree.setNode(`path:${tag}:${path}:${method}`, {
+            // OAS 3.2: walk the tag's `parent` chain so the request lands
+            // in the deepest descendant folder of the hierarchy. For 3.0/3.1
+            // (no `parent` field) this returns just `path:${tag}`, matching
+            // the previous flat layout exactly.
+            const tagFolderNodeId = ensureTagFolderChain(tag),
+              requestNodeId = `${tagFolderNodeId}:${path}:${method}`;
+
+            tree.setNode(requestNodeId, {
               type: 'request',
               data: {},
               meta: {
@@ -257,22 +377,7 @@ let _ = require('lodash'),
               }
             });
 
-            // safeguard just in case there is no folder created for this tag.
-            if (!tree.hasNode(`path:${tag}`)) {
-              tree.setNode(`path:${tag}`, {
-                type: 'folder',
-                meta: {
-                  path: path,
-                  name: tag,
-                  description: tagDescMap[tag]
-                },
-                data: {}
-              });
-
-              tree.setEdge('root:collection', `path:${tag}`);
-            }
-
-            tree.setEdge(`path:${tag}`, `path:${tag}:${path}:${method}`);
+            tree.setEdge(tagFolderNodeId, requestNodeId);
           });
         }
 
@@ -361,6 +466,8 @@ let _ = require('lodash'),
       if (methods && methods.$ref) {
         methods = resolveRefFromSchema(context, methods.$ref);
       }
+
+      applyAdditionalOperations(methods);
 
       _.forEach(methods, function (data, method) {
         if (!ALLOWED_HTTP_METHODS[method]) {

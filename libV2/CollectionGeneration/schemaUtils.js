@@ -134,6 +134,12 @@ schemaFaker.option({
 });
 
 let QUERYPARAM = 'query',
+  // OAS 3.2 introduces `in: 'querystring'` as a Parameter Object location
+  // describing the ENTIRE query string with one Schema Object. We expand
+  // those parameters into per-property `in: 'query'` synthetic parameters
+  // before the standard query-param pipeline runs.
+  // See https://spec.openapis.org/oas/v3.2.0.html (Parameter Object).
+  QUERYSTRING_PARAM = 'querystring',
   CONVERSION = 'conversion',
   TYPES_GENERATION = 'typesGeneration',
   HEADER = 'header',
@@ -289,6 +295,33 @@ let QUERYPARAM = 'query',
     _.forOwn(writeOnlyPropCache, (value, key) => {
       context.writeOnlyPropCache[utils.mergeJsonPath(currentPath, key)] = true;
     });
+  },
+
+  /**
+   * Looks up a $ref directly in `context.specComponents` without going
+   * through the schema cache. Used by OAS 3.2 features that need to read
+   * raw spec metadata (e.g. `discriminator.defaultMapping`) which can be
+   * stripped from cached resolutions during composite-schema flattening.
+   * Returns `undefined` when the path can't be resolved -- callers must
+   * tolerate that.
+   *
+   * @param {Object} context - Global context object
+   * @param {String} $ref - Ref that is to be resolved
+   * @returns {Object|undefined} The raw schema fragment from the spec
+   */
+  lookupSchemaInSpecComponents = (context, $ref) => {
+    const { specComponents } = context;
+    if (typeof $ref !== 'string' || !_.isObject(specComponents)) {
+      return undefined;
+    }
+    const splitRef = $ref.split('/');
+    if (splitRef.length < 4) {
+      return undefined;
+    }
+    const decoded = splitRef.slice(1).map((elem) => {
+      return decodeURIComponent(elem.replace(/~1/g, '/').replace(/~0/g, '~'));
+    });
+    return _getEscaped(specComponents, decoded);
   },
 
   /**
@@ -610,6 +643,19 @@ let QUERYPARAM = 'query',
       });
 
       if (resolveFor === CONVERSION) {
+        // OAS 3.2 introduces `discriminator.defaultMapping` -- a $ref-style
+        // pointer to the schema that should be used as the fallback when no
+        // explicit discriminator mapping matches. For collection generation
+        // there's no concrete discriminator value to dispatch on, so the
+        // declared "unknown / catch-all" branch is the most representative
+        // shape to fake. Prefer it when present.
+        // See https://spec.openapis.org/oas/v3.2.0.html (Discriminator
+        // Object, `defaultMapping` field).
+        const defaultMappingRef = _.get(schema, 'discriminator.defaultMapping');
+        if (typeof defaultMappingRef === 'string' && defaultMappingRef.length > 0) {
+          return _resolveSchema(context, { $ref: defaultMappingRef }, stack, resolveFor,
+            _.cloneDeep(seenRef), currentPath);
+        }
         return _resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef), currentPath);
       }
 
@@ -647,6 +693,34 @@ let QUERYPARAM = 'query',
       }
 
       seenRef[schemaRef] = true;
+
+      // OAS 3.2: if the referenced schema is a discriminated polymorphic
+      // schema with a `defaultMapping` fallback, redirect to that fallback
+      // before consulting the cache. The cache may otherwise return a
+      // schema that's already been collapsed for `typesGeneration`
+      // (oneOf array preserved without `discriminator`), masking the
+      // 3.2 fallback intent during a subsequent CONVERSION resolution.
+      // We have to peek at the *original* spec rather than the cached
+      // resolution because the cached schema may have been stripped of
+      // its `discriminator` field by a prior TYPES_GENERATION pass.
+      // See https://spec.openapis.org/oas/v3.2.0.html (Discriminator
+      // Object, `defaultMapping` field).
+      if (resolveFor === CONVERSION) {
+        const rawSchema = lookupSchemaInSpecComponents(context, schemaRef),
+          defaultMappingRef = _.get(rawSchema, 'discriminator.defaultMapping'),
+          isCompositeWithDiscriminator = _.isObject(rawSchema) &&
+            (Array.isArray(rawSchema.oneOf) || Array.isArray(rawSchema.anyOf));
+
+        if (
+          isCompositeWithDiscriminator &&
+          typeof defaultMappingRef === 'string' &&
+          defaultMappingRef.length > 0 &&
+          defaultMappingRef !== schemaRef
+        ) {
+          return _resolveSchema(context, { $ref: defaultMappingRef }, stack, resolveFor,
+            _.cloneDeep(seenRef), currentPath);
+        }
+      }
 
       if (context.schemaCache[schemaRef]) {
         // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
@@ -2165,8 +2239,71 @@ let QUERYPARAM = 'query',
     };
   },
 
+  /**
+   * Expands an OAS 3.2 `in: 'querystring'` Parameter Object into synthetic
+   * per-property Parameter Objects (`in: 'query'`), so the rest of the
+   * query-param pipeline can treat them like ordinary 3.0/3.1 query
+   * parameters. The querystring parameter describes the ENTIRE query string
+   * as a single Schema Object; each top-level property of that schema
+   * becomes one Postman query row.
+   *
+   * Returns an array (possibly empty) of expanded query params. Returns the
+   * original parameter back unchanged when it isn't a querystring parameter
+   * or when its schema isn't expandable (no `properties`).
+   *
+   * See https://spec.openapis.org/oas/v3.2.0.html (Parameter Object,
+   * `in: querystring` value).
+   */
+  expandQuerystringParameter = (context, param) => {
+    if (!_.isObject(param) || param.in !== QUERYSTRING_PARAM) {
+      return [param];
+    }
+
+    let schema = param.schema;
+    if (_.isObject(schema) && (_.has(schema, '$ref') || _.has(schema, 'anyOf') ||
+        _.has(schema, 'oneOf') || _.has(schema, 'allOf'))) {
+      schema = resolveSchema(context, schema);
+    }
+
+    const properties = _.get(schema, 'properties');
+    if (!_.isObject(properties) || _.isEmpty(properties)) {
+      // Without a `properties` object on the schema, there's nothing to
+      // enumerate. Drop the parameter rather than emit a single Postman row
+      // representing the whole query string -- there's no useful name/value
+      // shape we can construct for it.
+      return [];
+    }
+
+    const requiredList = Array.isArray(_.get(schema, 'required')) ? schema.required : [];
+    return _.map(properties, (propSchema, propName) => {
+      return {
+        name: propName,
+        in: QUERYPARAM,
+        // OAS Parameter `description` overrides the inner schema's description;
+        // we mirror that behaviour by preferring the property-level description
+        // already on the inner schema (the querystring parameter itself usually
+        // doesn't have a description for individual properties).
+        description: _.isObject(propSchema) ? propSchema.description : undefined,
+        required: requiredList.indexOf(propName) !== -1,
+        deprecated: _.isObject(propSchema) ? Boolean(propSchema.deprecated) : false,
+        schema: propSchema,
+        // No styling/explode info on a querystring schema property -- fall
+        // back to OAS 3 defaults (style: 'form', explode: true) so the
+        // existing serialiser produces the expected key=value layout.
+        style: undefined,
+        explode: undefined
+      };
+    });
+  },
+
   resolveQueryParamsForPostmanRequest = (context, operationItem, method) => {
-    const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
+    const rawParams = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
+      // Expand OAS 3.2 `in: 'querystring'` parameters into per-property
+      // synthetic `in: 'query'` parameters so the rest of the pipeline
+      // doesn't need to know about querystring.
+      params = _.flatMap(rawParams, (param) => {
+        return expandQuerystringParameter(context, param);
+      }),
       pmParams = [],
       queryParamTypes = [],
       { includeDeprecated } = context.computedOptions;
@@ -2358,6 +2495,44 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * Frames a single faked response body as one chunk of an OAS 3.2 streaming
+   * response. Currently handles `text/event-stream` (Server-Sent Events) by
+   * wrapping the body in an `event: message\ndata: <json>\n\n` envelope
+   * (one-line `data:` payload, since the SSE spec requires `data:` lines
+   * not to contain bare newlines). For any other media type the original
+   * raw body is returned unchanged so non-SSE streaming types (e.g.
+   * `application/jsonl`, `application/json-seq`) still render their faked
+   * single-frame body, just without explicit framing.
+   *
+   * See https://spec.openapis.org/oas/v3.2.0.html (Media Type Object,
+   * `itemSchema` field) and https://html.spec.whatwg.org/multipage/server-sent-events.html
+   * for SSE framing rules.
+   *
+   * @param {String} bodyType - The Media Type (Content-Type) of the response
+   * @param {*} responseBodyData - Faked body before stringification (object/string)
+   * @param {String} responseRawModeData - Stringified faked body
+   * @returns {String} Streaming-framed body
+   */
+  wrapStreamingItemBody = (bodyType, responseBodyData, responseRawModeData) => {
+    if (bodyType !== 'text/event-stream') {
+      return responseRawModeData;
+    }
+
+    // SSE `data:` payloads must not contain bare newlines, so re-stringify
+    // the object on a single line. If the body is already a non-object
+    // (e.g. a primitive string) just use it as-is.
+    let dataLine = responseRawModeData;
+    if (_.isObject(responseBodyData)) {
+      dataLine = JSON.stringify(responseBodyData);
+    }
+    else if (typeof dataLine === 'string') {
+      dataLine = dataLine.replace(/\r?\n/g, ' ');
+    }
+
+    return 'event: message\ndata: ' + dataLine + '\n\n';
+  },
+
+  /**
    * Resolve the responses from definition which will be converted to request examples.
    * This includes both request and response body of corresponding example.
    *
@@ -2396,6 +2571,26 @@ let QUERYPARAM = 'query',
     bodyType = getRawBodyType(responseContent);
     headerFamily = getHeaderFamily(bodyType);
 
+    // OAS 3.2: Media Type Object may declare `itemSchema` (the shape of one
+    // frame in a streaming sequence) instead of `schema` (the shape of the
+    // entire body). For collection-generation faking purposes there's no
+    // meaningful "entire stream" body to emit, so we treat the itemSchema as
+    // a single-item schema for the purposes of producing one example frame.
+    // The streaming-format wrapping (e.g. SSE `event:`/`data:` framing) is
+    // applied after the body is generated, below.
+    // See https://spec.openapis.org/oas/v3.2.0.html (Media Type Object,
+    // `itemSchema` field).
+    const mediaTypeObject = responseContent[bodyType];
+    let usingItemSchema = false;
+    if (
+      _.isObject(mediaTypeObject) &&
+      !_.has(mediaTypeObject, 'schema') &&
+      _.isObject(mediaTypeObject.itemSchema)
+    ) {
+      mediaTypeObject.schema = mediaTypeObject.itemSchema;
+      usingItemSchema = true;
+    }
+
     resolvedResponseBodyResult = resolveBodyData(
       context, responseContent[bodyType], bodyType, true, code, requestBodyExamples);
     allBodyData = resolvedResponseBodyResult.generatedBody;
@@ -2416,9 +2611,16 @@ let QUERYPARAM = 'query',
             bodyData.toString() :
             JSON.stringify(bodyData, null, indentCharacter);
         },
-        requestRawModeData = getRawModeData(requestBodyData),
-        responseRawModeData = getRawModeData(responseBodyData),
-        responseMediaTypes = _.keys(responseContent);
+        requestRawModeData = getRawModeData(requestBodyData);
+      let responseRawModeData = getRawModeData(responseBodyData);
+      const responseMediaTypes = _.keys(responseContent);
+
+      // OAS 3.2 streaming wrap: when the response body was faked from
+      // `itemSchema`, frame it according to the media type so the example
+      // body looks like an actual stream chunk a client would receive.
+      if (usingItemSchema && responseRawModeData) {
+        responseRawModeData = wrapStreamingItemBody(bodyType, responseBodyData, responseRawModeData);
+      }
 
       if (responseMediaTypes.length > 0) {
         acceptHeader = [{
@@ -2729,18 +2931,21 @@ let QUERYPARAM = 'query',
           originalRequest = _.assign({}, request, { headers: reqHeaders }, requestBodyObj);
         }
 
-        const responseDescription = _.get(responseSchema, 'description'),
+        const responseSummary = _.get(responseSchema, 'summary'),
+          responseSummaryTrimmed = _.isString(responseSummary) ? responseSummary.trim() : '',
+          responseDescription = _.get(responseSchema, 'description'),
           responseDescriptionTrimmed = _.isString(responseDescription) ? responseDescription.trim() : '',
           codeName = String(!_.isNil(code) ? code : DEFAULT_RESPONSE_CODE_IN_OAS);
 
-        // response-name priority (unchanged from legacy, including for matching-key multi-example):
-        // 1) response-level description
-        // 2) example-level description/summary/key (baked into `name` by generateExamples)
-        // 3) response code
-        // The saved-response name maps back to the OAS response `description` during
-        // collection -> spec sync, so it MUST stay tied to the response description to keep
-        // two-way sync deterministic. Per-example identity is carried by the example key, not the name.
-        name = responseDescriptionTrimmed || name || codeName;
+        // response-name priority:
+        // 1) response-level summary  (OAS 3.2: short label, see
+        //    https://spec.openapis.org/oas/v3.2.0.html Response Object)
+        // 2) response-level description
+        // 3) example-level description/summary (already baked into `name`
+        //    by generateExamples)
+        // 4) example key (already baked into `name` by generateExamples)
+        // 5) response code
+        name = responseSummaryTrimmed || responseDescriptionTrimmed || name || codeName;
 
         // set accept header value as first found response content's media type
         if (_.isEmpty(requestAcceptHeader)) {
