@@ -30,6 +30,7 @@ module.exports = {
   shouldSyncRequestToFirstResponseOnly: require('./shouldSyncRequestToFirstResponseOnly'),
   shouldPreserveOtherSameCodeResponsesOnRequestSync: require('./shouldPreserveOtherSameCodeResponsesOnRequestSync'),
   shouldPairSameCodeExamplesPositionallyOnSync: require('./shouldPairSameCodeExamplesPositionallyOnSync'),
+  shouldDeleteOrphanRequestsWhenEnabled: require('./shouldDeleteOrphanRequestsWhenEnabled'),
   // Multi-file specification test cases
   multiFileSpecs: require('./multiFileSpecs')
 };

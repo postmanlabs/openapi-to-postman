@@ -43,5 +43,6 @@ export const ALLOWED_AUTH_PARAM_KEYS_BY_TYPE: Record<string, Set<string>> = {
 };
 
 export const DEFAULT_SYNC_OPTIONS: SyncOptions = {
-  syncExamples: false
+  syncExamples: false,
+  deleteOrphanedRequests: false
 };

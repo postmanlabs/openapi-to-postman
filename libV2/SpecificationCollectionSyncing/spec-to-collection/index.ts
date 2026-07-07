@@ -164,6 +164,19 @@ export function syncCollection(
     }
   });
 
+  // When opted in, remove orphans: requests and folders that exist in the collection but no longer
+  // exist in the latest spec-derived state. Matched folders are pruned recursively above via the
+  // sync loop (mergedOptions is propagated), so here we only drop unmatched items at this level.
+  if (mergedOptions.deleteOrphanedRequests) {
+    currentCollectionState.items.remove((item: Item | ItemGroup<Item>) => {
+      if (item instanceof ItemGroup) {
+        return !findFolderItemByName(latestCollectionState, item.name);
+      }
+
+      return !findRequestItemByPathAndMethod(latestCollectionState, getRequestIdentifier(item));
+    }, currentCollectionState);
+  }
+
   currentCollectionState.description = latestCollectionState.description;
 
   const existingCollectionAuth = _.cloneDeep(currentCollectionState?.auth?.toJSON()) ?? {},
