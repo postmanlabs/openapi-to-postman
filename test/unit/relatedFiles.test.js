@@ -52,6 +52,21 @@ describe('getAdjacentAndMissing function', function () {
     expect(missingNodes[0].path).to.equal('/common/Error.yaml');
 
   });
+
+  it('should filter out duplicate adjacent files when referenced with different local pointers', function () {
+    const inputNode = {
+      fileName: '/main.yaml',
+      content: 'openapi: 3.0.0\npaths:\n  /pets:\n    post:\n      requestBody:\n        content:\n          application/json:\n            schema:\n              $ref: "./Pet.yaml#/components/schemas/NewPet"\n      responses:\n        200:\n          description: success\n          content:\n            application/json:\n              schema:\n                $ref: "./Pet.yaml#/components/schemas/Pet"'
+    },
+    inputData = [{
+      fileName: '/Pet.yaml',
+      content: 'openapi: 3.0.0\ncomponents:\n  schemas:\n    Pet:\n      type: object\n    NewPet:\n      type: object'
+    }],
+    { graphAdj, missingNodes } = getAdjacentAndMissing(inputNode, inputData, inputNode);
+    expect(graphAdj.length).to.equal(1);
+    expect(graphAdj[0].fileName).to.equal('/Pet.yaml');
+    expect(missingNodes.length).to.equal(0);
+  });
 });
 
 describe('getRelatedFiles function ', function () {
