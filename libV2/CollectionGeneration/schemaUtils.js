@@ -1,5 +1,6 @@
 const generateAuthForCollectionFromOpenAPI = require('./helpers/collection/generateAuthForCollectionFromOpenAPI.js');
 const utils = require('./utils.js');
+const { Url } = require('postman-collection/lib/collection/url');
 
 const schemaFaker = require('../../assets/json-schema-faker.js'),
   _ = require('lodash'),
@@ -237,7 +238,7 @@ let QUERYPARAM = 'query',
       collectionVariables = [];
 
     if (!serverObj) {
-      return { collectionVariables, pathVariables, baseUrl };
+      return { collectionVariables, pathVariables, baseUrl, serverObj };
     }
 
     baseUrl = sanitizeUrl(serverObj.url);
@@ -250,7 +251,7 @@ let QUERYPARAM = 'query',
 
     ({ collectionVariables, pathVariables } = filterCollectionAndPathVariables(baseUrl, serverVariables));
 
-    return { collectionVariables, pathVariables, baseUrl };
+    return { collectionVariables, pathVariables, baseUrl, serverObj };
   },
 
   /**
@@ -1540,7 +1541,6 @@ let QUERYPARAM = 'query',
     const pmExamples = [],
       responseExampleKeys = _.map(responseExamples, 'key'),
       requestBodyExampleKeys = _.map(requestBodyExamples, 'key'),
-      usedRequestExamples = _.fill(Array(requestBodyExamples.length), false),
       exampleKeyComparator = (example, key) => {
         return _.toLower(example.key) === _.toLower(key);
       };
@@ -1555,16 +1555,9 @@ let QUERYPARAM = 'query',
         (!_.isNil(responseExample.responseCode) ? String(responseExample.responseCode) : undefined);
     };
 
-    let matchedKeys = _.intersectionBy(responseExampleKeys, requestBodyExampleKeys, _.toLower),
-      isResponseCodeMatching = false;
-
-    // Only match in case of default response example matching with any request body example
-    if (!matchedKeys.length && responseExamples.length === 1 && responseExamples[0].key === '_default') {
-      const responseCodes = _.map(responseExamples, 'responseCode');
-
-      matchedKeys = _.intersectionBy(responseCodes, requestBodyExampleKeys, _.toLower);
-      isResponseCodeMatching = matchedKeys.length > 0;
-    }
+    // pair strictly by matching example key names between request and response
+    // examples. falls back to first-only if no matching keys are found.
+    const matchedKeys = _.intersectionBy(responseExampleKeys, requestBodyExampleKeys, _.toLower);
 
     // Do keys matching first and ignore any leftover req/res body for which matching is not found
     if (matchedKeys.length) {
@@ -1573,11 +1566,6 @@ let QUERYPARAM = 'query',
             return exampleKeyComparator(example, key);
           }),
           responseExample = _.find(responseExamples, (example) => {
-            // If there is a response code key-matching, then only match with keys based on response code
-            if (isResponseCodeMatching) {
-              return example.responseCode === key;
-            }
-
             return exampleKeyComparator(example, key);
           });
 
@@ -1604,67 +1592,33 @@ let QUERYPARAM = 'query',
       return pmExamples;
     }
 
-    // No key matching between req and res were found, so perform positional matching now
-    _.forEach(responseExamples, (responseExample, index) => {
+    // No matching keys were found between request and response examples.
+    // MVP scope (matching-key pairing only): fall back to the legacy behavior of using the
+    // first request example and the first response example. No positional matching is done.
+    const firstResponseExample = _.find(responseExamples, _.isObject);
 
-      if (!_.isObject(responseExample)) {
-        return;
-      }
-
-      let responseExampleData = getExampleData(context, { [responseExample.key]: responseExample.value }),
-        requestExample;
+    if (firstResponseExample) {
+      let firstResponseExampleData = getExampleData(context,
+        { [firstResponseExample.key]: firstResponseExample.value });
 
       if (isXMLExample) {
-        responseExampleData = getXMLExampleData(context, responseExampleData, responseBodySchema);
+        firstResponseExampleData = getXMLExampleData(context, firstResponseExampleData, responseBodySchema);
       }
 
-      if (_.isEmpty(requestBodyExamples)) {
-        pmExamples.push({
-          response: responseExampleData,
-          name: getResponseExampleName(responseExample) || 'Example'
-        });
-        return;
+      const firstExample = {
+        response: firstResponseExampleData,
+        name: getResponseExampleName(firstResponseExample) || 'Example'
+      };
+
+      const firstRequestExample = _.head(requestBodyExamples);
+
+      // Only attach a request body if the operation actually defines request examples
+      if (firstRequestExample) {
+        firstExample.request = getExampleData(context,
+          { [firstRequestExample.key]: firstRequestExample.value });
       }
 
-      if (requestBodyExamples[index] && !usedRequestExamples[index]) {
-        requestExample = requestBodyExamples[index];
-        usedRequestExamples[index] = true;
-      }
-      else {
-        requestExample = requestBodyExamples[0];
-      }
-
-      pmExamples.push({
-        request: getExampleData(context, { [requestExample.key]: requestExample.value }),
-        response: responseExampleData,
-        name: getResponseExampleName(responseExample) || 'Example'
-      });
-    });
-
-    let responseExample,
-      responseExampleData;
-
-    // Add any left over request body examples with first response body as matching
-    for (let i = 0; i < requestBodyExamples.length; i++) {
-
-      if (!usedRequestExamples[i] || pmExamples.length === 0) {
-        if (!responseExample) {
-          responseExample = _.head(responseExamples);
-
-          if (responseExample) {
-            responseExampleData = getExampleData(context, { [responseExample.key]: responseExample.value });
-          }
-
-          if (isXMLExample) {
-            responseExampleData = getXMLExampleData(context, responseExampleData, responseBodySchema);
-          }
-        }
-        pmExamples.push({
-          request: getExampleData(context, { [requestBodyExamples[i].key]: requestBodyExamples[i].value }),
-          response: responseExampleData,
-          name: getResponseExampleName(responseExample) || 'Example'
-        });
-      }
+      pmExamples.push(firstExample);
     }
 
     return pmExamples;
@@ -1857,15 +1811,15 @@ let QUERYPARAM = 'query',
       }];
 
       if (!_.isEmpty(examples)) {
-        // Only use the first example from the examples object
-        const firstExampleKey = Object.keys(examples)[0];
-        const firstExample = examples[firstExampleKey];
-
-        responseExamples = [{
-          key: firstExampleKey,
-          value: firstExample,
-          contentType: bodyType
-        }];
+        // Pass every named response example through; generateExamples decides how they
+        // pair with request examples (matching-key pairing, else first-only fallback).
+        responseExamples = _.map(Object.keys(examples), (exampleKey) => {
+          return {
+            key: exampleKey,
+            value: examples[exampleKey],
+            contentType: bodyType
+          };
+        });
       }
 
       let matchedRequestBodyExamples = _.filter(requestBodyExamples, ['contentType', bodyType]);
@@ -1873,11 +1827,6 @@ let QUERYPARAM = 'query',
       // If content-types are not matching, match with any present content-types
       if (_.isEmpty(matchedRequestBodyExamples)) {
         matchedRequestBodyExamples = requestBodyExamples;
-      }
-
-      // Only use the first request body example if multiple exist
-      if (matchedRequestBodyExamples.length > 1) {
-        matchedRequestBodyExamples = [matchedRequestBodyExamples[0]];
       }
 
       const generatedBody = generateExamples(
@@ -2883,10 +2832,9 @@ let QUERYPARAM = 'query',
 
         _.forEach(requestContent, (content, contentType) => {
           if (_.has(content, 'examples')) {
-            // Only use the first example from the examples object
-            const exampleKeys = Object.keys(content.examples);
-            if (exampleKeys.length > 0) {
-              const name = exampleKeys[0];
+            // Collect every request example so it can be paired with a response example
+            // by matching key (generateExamples). Non-matching ones fall back to first-only.
+            _.forEach(Object.keys(content.examples), (name) => {
               const example = content.examples[name];
               const exampleObj = example;
 
@@ -2906,7 +2854,7 @@ let QUERYPARAM = 'query',
                 key: name,
                 value: example
               });
-            }
+            });
           }
         });
       }
@@ -2939,9 +2887,13 @@ let QUERYPARAM = 'query',
 
       Object.assign(responseTypes, { [code || DEFAULT_RESPONSE_CODE_IN_OAS]: responseBodyHeaderObj });
 
-      // Only use the first example from resolvedExamples
-      const resolvedExample = resolvedExamples[0];
-      if (resolvedExample) {
+      // Emit one saved response per resolved example. With matching-key pairing there may be
+      // multiple examples for a single status code; without a match there is exactly one.
+      _.forEach(resolvedExamples, (resolvedExample) => {
+        if (!resolvedExample) {
+          return;
+        }
+
         let { body, contentHeader = [], bodyType, acceptHeader, name } = resolvedExample,
           resolvedRequestBody = _.get(resolvedExample, 'request.body'),
           originalRequest,
@@ -3010,7 +2962,7 @@ let QUERYPARAM = 'query',
         };
 
         responses.push(response);
-      }
+      });
     });
     return {
       responses,
@@ -3076,7 +3028,9 @@ module.exports = {
         responseTypes
       } = resolveResponseForPostmanRequest(context, operationItem[method], request);
 
-    requestIdentifier = method + path;
+    const overridesServer = Boolean(baseUrlData.serverObj);
+
+    requestIdentifier = overridesServer ? method + new Url(url).getPath(true) : method + path;
     Object.assign(requestTypesObject,
       { [requestIdentifier]: { request: requestTypes, response: responseTypes } });
 

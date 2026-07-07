@@ -94,28 +94,52 @@ export function syncCollection(
         currentRequest.request.authorizeUsing(authToApply.type, authToApply.params);
       }
 
-      const currentResponses: Record<number, Response> = {};
+      const currentResponsesByCode: Record<number, Response[]> = {};
 
+      // Index existing responses by status code into a per-code queue, preserving order, so multiple
+      // saved responses sharing a status code each get their own slot instead of collapsing into one.
       currentRequest.responses.each((response) => {
-        currentResponses[response.code] = response;
+        if (!currentResponsesByCode[response.code]) {
+          currentResponsesByCode[response.code] = [];
+        }
+
+        currentResponsesByCode[response.code].push(response);
       });
 
-      item.responses.each((response) => {
-        if (currentResponses[response.code]) {
-          const mergedResponseData = mergeResponseData(response, currentResponses[response.code], mergedOptions);
+      // The spec carries a single request example (the live body). It is applied to the originalRequest
+      // of only the first response processed overall (isFirstSyncedResponse); every subsequent response
+      // preserves its existing originalRequest body (see mergeResponseData), so a request change in the
+      // spec updates just that first response rather than every response's originalRequest.
+      let isFirstSyncedResponse = true;
 
-          currentResponses[response.code].update(mergedResponseData);
+      item.responses.each((response) => {
+        // Pair each incoming response with the next unconsumed existing response of the same code.
+        // This is positional pairing used as a fallback: Postman saved responses don't carry a stable
+        // identity back from the spec example (same-code responses can even share a name), so we can't
+        // reliably key the match. Order is the best deterministic mapping for the generate -> edit -> sync
+        // round-trip. Extra incoming examples are added; surplus existing responses are left untouched.
+        const matchingResponse = currentResponsesByCode[response.code]?.shift();
+
+        if (matchingResponse) {
+          const mergedResponseData = mergeResponseData(
+            response,
+            matchingResponse,
+            mergedOptions,
+            !isFirstSyncedResponse
+          );
+
+          matchingResponse.update(mergedResponseData);
 
           // SDK converts _postman_previewlanguage to { _: { postman_previewlanguage: '' } }
           // during response construction.
           const previewLanguage = (response as any)._postman_previewlanguage ??
             (response as any)._?.postman_previewlanguage;
-          (currentResponses[response.code] as any)._postman_previewlanguage = previewLanguage;
-          if ((currentResponses[response.code] as any)._?.postman_previewlanguage !== undefined) {
-            delete (currentResponses[response.code] as any)._.postman_previewlanguage;
+          (matchingResponse as any)._postman_previewlanguage = previewLanguage;
+          if ((matchingResponse as any)._?.postman_previewlanguage !== undefined) {
+            delete (matchingResponse as any)._.postman_previewlanguage;
           }
 
-          currentResponses[response.code].name = response.name;
+          matchingResponse.name = response.name;
         }
         else {
           currentRequest.responses.add(response.toJSON());
@@ -131,6 +155,8 @@ export function syncCollection(
             }
           }
         }
+
+        isFirstSyncedResponse = false;
       });
     }
     else {
