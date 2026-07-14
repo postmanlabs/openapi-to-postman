@@ -106,10 +106,11 @@ export function syncCollection(
         currentResponsesByCode[response.code].push(response);
       });
 
-      // The spec carries a single request example (the live body). It is applied to the originalRequest
-      // of only the first response processed overall (isFirstSyncedResponse); every subsequent response
-      // preserves its existing originalRequest body (see mergeResponseData), so a request change in the
-      // spec updates just that first response rather than every response's originalRequest.
+      // The spec carries a single live request (body + primary parameter values). It is applied to the
+      // originalRequest of only the first response processed overall (isFirstSyncedResponse); every
+      // subsequent response preserves its existing originalRequest request-side data — body, url
+      // (query/path) and headers (see mergeResponseData) — so a request/parameter change in the spec
+      // updates just that first response rather than every response's originalRequest.
       let isFirstSyncedResponse = true;
 
       item.responses.each((response) => {
