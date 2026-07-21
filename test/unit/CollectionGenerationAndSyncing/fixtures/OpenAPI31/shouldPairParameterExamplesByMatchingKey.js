@@ -1,12 +1,12 @@
-// A query parameter whose plural `examples` keys (admin, user, …) match the response example keys
-// produces one saved response per matched key, each carrying the paired parameter value in its
-// originalRequest url query. This fixture asserts the multi-example parameter pairing round-trips
-// AND that a spec-side edit propagates on sync: the final spec adds a third matched example (guest),
-// and the collection must gain a third paired saved response without churning the existing two.
+// OpenAPI 3.1 mirror: a query parameter whose plural `examples` keys (admin, user, …) match the
+// response example keys produces one saved response per matched key, each carrying the paired
+// parameter value in its originalRequest url query. The final spec adds a third matched example
+// (guest), and the collection must gain a third paired saved response on sync without churning the
+// existing two.
 
 module.exports = {
   name: 'should pair response examples with matching query parameter examples and sync an added example',
-  specificationType: 'OPENAPI:3.0',
+  specificationType: 'OPENAPI:3.1',
   generationOptions: {
     parametersResolution: 'Example',
     requestParametersResolution: 'Example'
@@ -17,7 +17,7 @@ module.exports = {
   shouldAssertGenerationAndSyncing: true,
   initialState: {
     spec: {
-      openapi: '3.0.0',
+      openapi: '3.1.0',
       info: { title: 'Param Multi-Example API', version: '1.0.0' },
       servers: [{ url: 'https://api.example.com' }],
       paths: {
@@ -124,7 +124,7 @@ module.exports = {
   },
   finalState: {
     spec: {
-      openapi: '3.0.0',
+      openapi: '3.1.0',
       info: { title: 'Param Multi-Example API', version: '1.0.0' },
       servers: [{ url: 'https://api.example.com' }],
       paths: {

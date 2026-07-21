@@ -10,9 +10,12 @@ import { attachImplicitHeaders } from '../header';
 /**
  * Preserve an existing saved response's header PARAMETER values while keeping any
  * implicit/generated headers (e.g. Content-Type, Accept) produced from the spec. Used when
- * preserving a non-first response's originalRequest on multi-example sync: source (existing)
- * values win for shared keys, generated target-only headers are retained, and header params that
- * only exist on the source are appended.
+ * preserving a non-first response's originalRequest on multi-example sync: for a shared key the
+ * spec-generated header metadata (name casing, description, schema-derived flags) is kept and only
+ * the existing header's `value`/`disabled` are copied over; generated target-only headers are
+ * retained, and header params that only exist on the source are appended.
+ *
+ * Header keys are matched case-insensitively (HTTP header names are case-insensitive).
  * @param {HeaderDefinition[] | undefined} targetHeaders - Spec-generated headers (base)
  * @param {HeaderDefinition[] | undefined} sourceHeaders - Existing saved response headers to preserve
  * @returns {HeaderDefinition[] | undefined} Merged header list
@@ -26,25 +29,31 @@ function preserveHeaderParams(
   }
 
   const result: HeaderDefinition[] = Array.isArray(targetHeaders) ? [...targetHeaders] : [],
-    indexByKey = new Map<string, number>();
+    indexByLowerKey = new Map<string, number>();
 
   result.forEach((header, index) => {
-    if (header?.key !== undefined) {
-      indexByKey.set(header.key, index);
+    if (typeof header?.key === 'string') {
+      indexByLowerKey.set(header.key.toLowerCase(), index);
     }
   });
 
-  sourceHeaders.forEach((header) => {
-    if (header?.key === undefined) {
+  sourceHeaders.forEach((sourceHeader) => {
+    if (typeof sourceHeader?.key !== 'string') {
       return;
     }
 
-    if (indexByKey.has(header.key)) {
-      result[indexByKey.get(header.key) as number] = header;
+    const lowerKey = sourceHeader.key.toLowerCase();
+
+    if (indexByLowerKey.has(lowerKey)) {
+      // Keep the spec-generated header (name casing + metadata); copy only the existing header's
+      // value/disabled state onto it.
+      const index = indexByLowerKey.get(lowerKey) as number;
+
+      result[index] = { ...result[index], value: sourceHeader.value, disabled: sourceHeader.disabled };
     }
     else {
-      indexByKey.set(header.key, result.length);
-      result.push(header);
+      indexByLowerKey.set(lowerKey, result.length);
+      result.push(sourceHeader);
     }
   });
 

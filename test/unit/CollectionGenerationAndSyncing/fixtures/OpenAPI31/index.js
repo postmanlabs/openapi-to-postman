@@ -19,11 +19,13 @@ module.exports = {
   shouldHandlePostmanVariablesInUrl: require('./shouldHandlePostmanVariablesInUrl'),
   generateCollectionWithTypes: require('./shouldGenerateCollectionWithType'),
   shouldPreserveParamValues: require('./shouldPreserveParamValues'),
-  shouldPreserveAttributeValuesWhenSchemaBecomesEmptyObject: require('./shouldPreserveAttributeValuesWhenSchemaBecomesEmptyObject'),
+  shouldPreserveAttributeValuesWhenSchemaBecomesEmptyObject:
+    require('./shouldPreserveAttributeValuesWhenSchemaBecomesEmptyObject'),
   shouldUpdateValueWhenSchemaHasProperties: require('./shouldUpdateValueWhenSchemaHasProperties'),
   handle4xxand5xxAndDefaultResponseCode: require('./handle4xxand5xxAndDefaultResponseCode'),
   shouldSyncExamplesWhenSyncExamplesIsTrue: require('./shouldSyncExamplesWhenSyncExamplesIsTrue'),
   shouldNotSyncExamplesWhenSyncExamplesIsFalse: require('./shouldNotSyncExamplesWhenSyncExamplesIsFalse'),
+  shouldPairParameterExamplesByMatchingKey: require('./shouldPairParameterExamplesByMatchingKey'),
   // Multi-file specification test cases
   multiFileSpecs: require('./multiFileSpecs')
 };
