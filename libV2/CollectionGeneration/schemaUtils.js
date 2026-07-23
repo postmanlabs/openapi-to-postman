@@ -1138,7 +1138,7 @@ let QUERYPARAM = 'query',
    * @returns {*} Value of the parameter
    */
   resolveValueOfParameter = (context, param,
-    { schemaFormat = SCHEMA_FORMATS.DEFAULT, isResponseSchema = false } = {}
+    { schemaFormat = SCHEMA_FORMATS.DEFAULT, isResponseSchema = false, exampleKey } = {}
   ) => {
     if (!param || !param.hasOwnProperty('schema')) {
       return '';
@@ -1157,8 +1157,25 @@ let QUERYPARAM = 'query',
       /**
        * Here it could be example or examples (plural)
        * For examples, we'll pick the first example
+       *
+       * When an `exampleKey` is supplied (multi-example matching-key pairing), we resolve the
+       * parameter value with the same fallback precedence used for request bodies:
+       *   1. param.examples[exampleKey] (case-insensitive)
+       *   2. else param.example (singular)
+       *   3. else param.examples[firstKey] (first by key order)
+       *   4. else schema-derived default (handled by the faker below)
        */
       let example;
+
+      if (exampleKey !== undefined && _.isObject(param.examples)) {
+        const matchedKey = _.findKey(param.examples, (exampleValue, key) => {
+          return _.toLower(key) === _.toLower(exampleKey);
+        });
+
+        if (matchedKey !== undefined) {
+          return getExampleData(context, { [matchedKey]: param.examples[matchedKey] });
+        }
+      }
 
       if (param.example !== undefined) {
         example = param.example;
@@ -1461,12 +1478,17 @@ let QUERYPARAM = 'query',
    * @param {Object} requestBodyExamples - Examples defined in the request body
    * @param {Object} responseBodySchema - Schema of the response body
    * @param {Boolean} isXMLExample - Whether the example is XML example
+   * @param {Array<String>} parameterExampleKeys - Parameter example keys (set P) for matching-key pairing
    * @returns {Array} Examples for corresponding operation
    */
-  generateExamples = (context, responseExamples, requestBodyExamples, responseBodySchema, isXMLExample) => {
+  generateExamples = (context, responseExamples, requestBodyExamples, responseBodySchema, isXMLExample,
+    parameterExampleKeys = []) => {
     const pmExamples = [],
       responseExampleKeys = _.map(responseExamples, 'key'),
       requestBodyExampleKeys = _.map(requestBodyExamples, 'key'),
+      // The request side is the union of request body example keys (B) and parameter example
+      // keys (P). Matching ANY request-side component key anchors a saved-response pair.
+      requestSideExampleKeys = _.concat(requestBodyExampleKeys, parameterExampleKeys),
       exampleKeyComparator = (example, key) => {
         return _.toLower(example.key) === _.toLower(key);
       };
@@ -1481,9 +1503,10 @@ let QUERYPARAM = 'query',
         (!_.isNil(responseExample.responseCode) ? String(responseExample.responseCode) : undefined);
     };
 
-    // pair strictly by matching example key names between request and response
-    // examples. falls back to first-only if no matching keys are found.
-    const matchedKeys = _.intersectionBy(responseExampleKeys, requestBodyExampleKeys, _.toLower);
+    // pair strictly by matching example key names between the response examples (R) and the
+    // union of request body (B) and parameter (P) example keys. falls back to first-only if no
+    // matching keys are found. matchedKeys are returned in R's key order.
+    const matchedKeys = _.intersectionBy(responseExampleKeys, requestSideExampleKeys, _.toLower);
 
     // Do keys matching first and ignore any leftover req/res body for which matching is not found
     if (matchedKeys.length) {
@@ -1502,6 +1525,13 @@ let QUERYPARAM = 'query',
           requestExample = _.head(matchedRequestExamples);
         }
 
+        // The matched key may belong to a parameter only (not the request body). In that case the
+        // body falls back to its first example (matching-key precedence), or is omitted entirely
+        // when the operation defines no request body examples at all.
+        if (!requestExample) {
+          requestExample = _.head(requestBodyExamples);
+        }
+
         responseExampleData = getExampleData(context, { [responseExample.key]: responseExample.value });
 
         if (isXMLExample) {
@@ -1509,9 +1539,14 @@ let QUERYPARAM = 'query',
         }
 
         pmExamples.push({
-          request: getExampleData(context, { [requestExample.key]: requestExample.value }),
+          request: requestExample ?
+            getExampleData(context, { [requestExample.key]: requestExample.value }) :
+            undefined,
           response: responseExampleData,
-          name: getResponseExampleName(responseExample) || 'Example'
+          name: getResponseExampleName(responseExample) || 'Example',
+          // carries the OAS example key so callers can resolve per-key parameter values for the
+          // saved response's originalRequest (query/path/header).
+          exampleKey: responseExample.key
         });
       });
 
@@ -1559,10 +1594,11 @@ let QUERYPARAM = 'query',
    * @param {Boolean} isExampleBody - Whether the body is example body
    * @param {String} responseCode - Response code
    * @param {Object} requestBodyExamples - Examples defined in the request body
+   * @param {Array<String>} parameterExampleKeys - Parameter example keys (set P) for matching-key pairing
    * @returns {Array} Request / Response body data
    */
   resolveBodyData = (context, requestBodySchema, bodyType, isExampleBody = false,
-    responseCode = null, requestBodyExamples = {}
+    responseCode = null, requestBodyExamples = {}, parameterExampleKeys = []
   ) => {
     let { parametersResolution, indentCharacter } = context.computedOptions,
       headerFamily = getHeaderFamily(bodyType),
@@ -1756,7 +1792,8 @@ let QUERYPARAM = 'query',
       }
 
       const generatedBody = generateExamples(
-        context, responseExamples, matchedRequestBodyExamples, requestBodySchema, isBodyTypeXML);
+        context, responseExamples, matchedRequestBodyExamples, requestBodySchema, isBodyTypeXML,
+        parameterExampleKeys);
 
       return {
         generatedBody,
@@ -2165,7 +2202,7 @@ let QUERYPARAM = 'query',
     };
   },
 
-  resolveQueryParamsForPostmanRequest = (context, operationItem, method) => {
+  resolveQueryParamsForPostmanRequest = (context, operationItem, method, { exampleKey } = {}) => {
     const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
       pmParams = [],
       queryParamTypes = [],
@@ -2194,7 +2231,7 @@ let QUERYPARAM = 'query',
 
       let queryParamTypeInfo = {},
         properties = {},
-        paramValue = resolveValueOfParameter(context, param);
+        paramValue = resolveValueOfParameter(context, param, { exampleKey });
 
       if (param && param.name && param.schema && param.schema.type) {
         properties = createProperties(param);
@@ -2219,7 +2256,7 @@ let QUERYPARAM = 'query',
     return { queryParamTypes, queryParams: pmParams };
   },
 
-  resolvePathParamsForPostmanRequest = (context, operationItem, method) => {
+  resolvePathParamsForPostmanRequest = (context, operationItem, method, { exampleKey } = {}) => {
     const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
       pmParams = [],
       pathParamTypes = [];
@@ -2248,7 +2285,7 @@ let QUERYPARAM = 'query',
 
       let pathParamTypeInfo = {},
         properties = {},
-        paramValue = resolveValueOfParameter(context, param);
+        paramValue = resolveValueOfParameter(context, param, { exampleKey });
 
       if (param && param.name && param.schema && param.schema.type) {
         properties = createProperties(param);
@@ -2300,7 +2337,7 @@ let QUERYPARAM = 'query',
     return reqName;
   },
 
-  resolveHeadersForPostmanRequest = (context, operationItem, method) => {
+  resolveHeadersForPostmanRequest = (context, operationItem, method, { exampleKey } = {}) => {
     const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
       pmParams = [],
       headerTypes = [],
@@ -2333,7 +2370,7 @@ let QUERYPARAM = 'query',
 
       let headerTypeInfo = {},
         properties = {},
-        paramValue = resolveValueOfParameter(context, param);
+        paramValue = resolveValueOfParameter(context, param, { exampleKey });
 
       if (param && param.name && param.schema && param.schema.type) {
         properties = createProperties(param);
@@ -2358,6 +2395,44 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * Collects the union of plural `examples` keys defined across an operation's query, path and
+   * header parameters (set P in the matching-key model). These keys participate in the
+   * response<->request example pairing: M = R ∩ (B ∪ P).
+   *
+   * Only the parameter-level plural `examples` map contributes keys; a singular `example` (or a
+   * JSON-schema `examples` array) has no stable key and is only used as a fallback value.
+   *
+   * @param {Object} context - Global context object
+   * @param {Object} operationItem - Path item object (contains path-level and method-level params)
+   * @param {String} method - HTTP method
+   * @returns {Array<String>} - Ordered, de-duplicated list of parameter example keys
+   */
+  getParameterExampleKeys = (context, operationItem, method) => {
+    const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
+      keys = [];
+
+    _.forEach(params, (param) => {
+      if (!_.isObject(param)) {
+        return;
+      }
+
+      if (_.has(param, '$ref')) {
+        param = resolveSchema(context, param);
+      }
+
+      if (param.in !== QUERYPARAM && param.in !== PATHPARAM && param.in !== HEADER) {
+        return;
+      }
+
+      if (_.isObject(param.examples)) {
+        keys.push(...Object.keys(param.examples));
+      }
+    });
+
+    return _.uniq(keys);
+  },
+
+  /**
    * Resolve the responses from definition which will be converted to request examples.
    * This includes both request and response body of corresponding example.
    *
@@ -2365,9 +2440,11 @@ let QUERYPARAM = 'query',
    * @param {Object} responseBody - Response body schema
    * @param {Object} requestBodyExamples - Examples defined in the request body of corresponding operation
    * @param {String} code - Response code
+   * @param {Array<String>} parameterExampleKeys - Parameter example keys (set P) for matching-key pairing
    * @returns {Array} - Postman examples
    */
-  resolveResponseBody = (context, responseBody = {}, requestBodyExamples = {}, code = null) => {
+  resolveResponseBody = (context, responseBody = {}, requestBodyExamples = {}, code = null,
+    parameterExampleKeys = []) => {
     let responseContent,
       bodyType,
       allBodyData,
@@ -2397,14 +2474,15 @@ let QUERYPARAM = 'query',
     headerFamily = getHeaderFamily(bodyType);
 
     resolvedResponseBodyResult = resolveBodyData(
-      context, responseContent[bodyType], bodyType, true, code, requestBodyExamples);
+      context, responseContent[bodyType], bodyType, true, code, requestBodyExamples, parameterExampleKeys);
     allBodyData = resolvedResponseBodyResult.generatedBody;
     resolvedResponseBodyTypes = resolvedResponseBodyResult.resolvedSchemaType;
 
     return _.map(allBodyData, (bodyData) => {
       let requestBodyData = bodyData.request,
         responseBodyData = bodyData.response,
-        exampleName = bodyData.name;
+        exampleName = bodyData.name,
+        exampleKey = bodyData.exampleKey;
 
       if ((bodyType === TEXT_XML || bodyType === APP_XML || headerFamily === HEADER_TYPE.XML)) {
         responseBodyData && (responseBodyData = getXmlVersionContent(responseBodyData));
@@ -2437,6 +2515,7 @@ let QUERYPARAM = 'query',
           value: bodyType
         }],
         name: exampleName,
+        exampleKey,
         bodyType,
         acceptHeader,
         resolvedResponseBodyTypes: resolvedResponseBodyTypes
@@ -2603,10 +2682,12 @@ let QUERYPARAM = 'query',
     return responseAuthHelper;
   },
 
-  resolveResponseForPostmanRequest = (context, operationItem, request) => {
+  resolveResponseForPostmanRequest = (context, operationItem, request, paramExamples = {}) => {
     let responses = [],
       requestBodyExamples = [],
       requestAcceptHeader,
+      parameterExampleKeys = _.get(paramExamples, 'keys', []),
+      resolveParamsForExampleKey = _.get(paramExamples, 'resolveForKey'),
       requestBody = operationItem.requestBody,
       requestContent,
       rawBodyType,
@@ -2663,7 +2744,8 @@ let QUERYPARAM = 'query',
           resolveSchema(context, responseObj, { isResponseSchema: true }) : responseObj,
         { includeAuthInfoInExample } = context.computedOptions,
         auth = request.auth,
-        resolvedExamples = resolveResponseBody(context, responseSchema, requestBodyExamples, code) || {},
+        resolvedExamples = resolveResponseBody(context, responseSchema, requestBodyExamples, code,
+          parameterExampleKeys) || {},
         { resolvedHeaderTypes, headers } = resolveResponseHeaders(context, responseSchema.headers),
         responseBodyHeaderObj;
 
@@ -2692,14 +2774,23 @@ let QUERYPARAM = 'query',
           return;
         }
 
-        let { body, contentHeader = [], bodyType, acceptHeader, name } = resolvedExample,
+        let { body, contentHeader = [], bodyType, acceptHeader, name, exampleKey } = resolvedExample,
           resolvedRequestBody = _.get(resolvedExample, 'request.body'),
           originalRequest,
           response,
           responseAuthHelper,
           requestBodyObj = {},
-          reqHeaders = _.clone(request.headers) || [],
-          reqQueryParams = _.clone(_.get(request, 'params.queryParams', []));
+          // Base request-side params/headers for this saved response. When the response example is
+          // paired by a matching key, resolve each parameter (query/path/header) for that key via
+          // the fallback precedence so the saved response's originalRequest reflects the paired
+          // parameter values. Parameters without a matching key fall back to their first
+          // example / schema default, so they contribute a single deterministic value.
+          keyedParams = (exampleKey && _.isFunction(resolveParamsForExampleKey)) ?
+            resolveParamsForExampleKey(exampleKey) : undefined,
+          baseHeaders = keyedParams ? keyedParams.headers : request.headers,
+          basePathParams = keyedParams ? keyedParams.pathParams : _.get(request, 'params.pathParams', []),
+          reqHeaders = _.clone(baseHeaders) || [],
+          reqQueryParams = _.clone(keyedParams ? keyedParams.queryParams : _.get(request, 'params.queryParams', []));
 
         // add Accept header in example's original request headers
         _.isArray(acceptHeader) && (reqHeaders.push(...acceptHeader));
@@ -2719,15 +2810,12 @@ let QUERYPARAM = 'query',
 
           reqHeaders.push(...responseAuthHelper.header);
           reqQueryParams.push(...responseAuthHelper.query);
+        }
 
-          originalRequest = _.assign({}, request, {
-            headers: reqHeaders,
-            params: _.assign({}, request.params, { queryParams: reqQueryParams })
-          }, requestBodyObj);
-        }
-        else {
-          originalRequest = _.assign({}, request, { headers: reqHeaders }, requestBodyObj);
-        }
+        originalRequest = _.assign({}, request, {
+          headers: reqHeaders,
+          params: _.assign({}, request.params, { queryParams: reqQueryParams, pathParams: basePathParams })
+        }, requestBodyObj);
 
         const responseDescription = _.get(responseSchema, 'description'),
           responseDescriptionTrimmed = _.isString(responseDescription) ? responseDescription.trim() : '',
@@ -2794,7 +2882,35 @@ module.exports = {
     pathVariables.push(...baseUrlData.pathVariables);
     collectionVariables.push(...baseUrlData.collectionVariables);
 
+    // url at this point is still the path portion (pre base-url). Capture it so per-example
+    // parameter resolution can filter path variables against the same url as the base request.
+    const preBaseUrl = url;
+
     url = _.get(baseUrlData, 'baseUrl', '') + url;
+
+    // Parameter example keys (set P) and a per-key resolver used for matching-key multi-example
+    // pairing. The resolver mirrors the base query/path/header resolution above but resolves each
+    // parameter's value for a specific example key (fallback: examples[key] -> example ->
+    // examples[firstKey] -> schema default).
+    const parameterExampleKeys = getParameterExampleKeys(context, operationItem, method),
+      resolveParamsForExampleKey = (exampleKey) => {
+        const keyedQueryParams = resolveQueryParamsForPostmanRequest(
+            context, operationItem, method, { exampleKey }).queryParams,
+          keyedHeaders = resolveHeadersForPostmanRequest(
+            context, operationItem, method, { exampleKey }).headers,
+          keyedPathParams = resolvePathParamsForPostmanRequest(
+            context, operationItem, method, { exampleKey }).pathParams,
+          { pathVariables: keyedPathVariables } = filterCollectionAndPathVariables(preBaseUrl, keyedPathParams);
+
+        keyedHeaders.push(..._.get(requestBody, 'headers', []));
+        keyedPathVariables.push(...baseUrlData.pathVariables);
+
+        return {
+          queryParams: keyedQueryParams,
+          headers: keyedHeaders,
+          pathParams: keyedPathVariables
+        };
+      };
 
     request = {
       description: operationItem[method].description,
@@ -2821,7 +2937,10 @@ module.exports = {
         responses,
         acceptHeader,
         responseTypes
-      } = resolveResponseForPostmanRequest(context, operationItem[method], request);
+      } = resolveResponseForPostmanRequest(context, operationItem[method], request, {
+        keys: parameterExampleKeys,
+        resolveForKey: resolveParamsForExampleKey
+      });
 
     const overridesServer = Boolean(baseUrlData.serverObj);
 
