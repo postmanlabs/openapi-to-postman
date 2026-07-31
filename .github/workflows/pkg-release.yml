@@ -1,0 +1,30 @@
+# This filename is associated with the respective NPM package's trusted publish config.
+# If required, update both together.
+
+name: Package Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (e.g. v1.2.3 or v1.2.3-rc.1)'
+        required: true
+        type: string
+
+# required for OIDC-based NPM publish
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  call-npm-release:
+    uses: postmanlabs/gh-security-scan-workflow/.github/workflows/security-npm-publish.yml@main
+    with:
+      tag: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+      node_version: '20'
+    secrets:
+      POSTMAN_NPM_TOKEN: ${{ secrets.POSTMAN_NPM_TOKEN }}
