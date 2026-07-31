@@ -1,30 +1,42 @@
-# This filename is associated with the respective NPM package's trusted publish config.
-# If required, update both together.
-
 name: Package Release
 
 on:
   push:
     tags:
       - 'v*.*.*'
-
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to publish (e.g. v1.2.3 or v1.2.3-rc.1)'
+        description: 'Tag to publish (e.g. v1.2.3)'
         required: true
         type: string
 
-# required for OIDC-based NPM publish
+# OIDC trusted publishing — no NPM token needed
 permissions:
   contents: read
   id-token: write
 
 jobs:
-  call-npm-release:
-    uses: postmanlabs/gh-security-scan-workflow/.github/workflows/security-npm-publish.yml@main
-    with:
-      tag: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
-      node_version: '20'
-    secrets:
-      POSTMAN_NPM_TOKEN: ${{ secrets.POSTMAN_NPM_TOKEN }}
+  npm-publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (the tag being released)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm for OIDC trusted publishing (needs npm >= 11.5.1)
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Publish to npm
+        run: npm publish   # authenticates via OIDC; provenance added automatically
