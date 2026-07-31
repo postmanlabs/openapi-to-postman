@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [v6.3.2] - 2026-07-31
+
+### Fixed
+
+- Upgraded lodash and js-yaml to patch security advisories (SECINV-136)
+
 ## [v6.3.1] - 2026-07-23
 
 ## [v6.3.0] - 2026-07-07
