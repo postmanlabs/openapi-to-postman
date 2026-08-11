@@ -19,6 +19,7 @@ module.exports = {
   shouldHandlePostmanVariablesInUrl: require('./shouldHandlePostmanVariablesInUrl'),
   generateCollectionWithTypes: require('./shouldGenerateCollectionWithType'),
   shouldPreserveParamValues: require('./shouldPreserveParamValues'),
+  shouldPreservePostmanVariablesInBody: require('./shouldPreservePostmanVariablesInBody'),
   shouldPreserveAttributeValuesWhenSchemaBecomesEmptyObject:
     require('./shouldPreserveAttributeValuesWhenSchemaBecomesEmptyObject'),
   shouldUpdateValueWhenSchemaHasProperties: require('./shouldUpdateValueWhenSchemaHasProperties'),
