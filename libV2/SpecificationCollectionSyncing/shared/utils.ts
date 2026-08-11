@@ -139,3 +139,89 @@ export function deepMergeWithVendorExtensions(latest: unknown, current: unknown)
   return result;
 }
 
+/**
+ * Sentinel (Unicode Private Use Area character) used to temporarily quote bare Postman variables so a
+ * body containing them parses as valid JSON, and to locate/unwrap them again after merging. U+E000 is
+ * not escaped by `JSON.stringify` and is extremely unlikely to appear in a real request/response body.
+ */
+const PM_VARIABLE_SENTINEL = '\uE000';
+
+/**
+ * Matches a sentinel-wrapped Postman variable in serialized JSON, e.g. `"\uE000{{customer_id}}\uE000"`.
+ * Non-greedy so adjacent wrapped variables are each restored independently.
+ */
+const PM_VARIABLE_SENTINEL_PATTERN = new RegExp(`"${PM_VARIABLE_SENTINEL}([\\s\\S]*?)${PM_VARIABLE_SENTINEL}"`, 'g');
+
+/**
+ * Wraps bare (unquoted) Postman variables — e.g. the `{{customer_id}}` in `{ "id": {{customer_id}} }`
+ * — in a sentinel-marked string so the body becomes valid JSON and can be parsed and merged. Variables
+ * that already sit inside a JSON string (e.g. `"Bearer {{token}}"`) are left untouched because they are
+ * already valid JSON. A JSON-string scanner is used (instead of a regex) so that `{{...}}` occurrences
+ * inside string literals are correctly ignored, including strings containing escaped quotes. For example,
+ * in `{ "note": "value is \"{{x}}\"", "id": {{x}} }` only the second (bare) `{{x}}` is wrapped; the first
+ * one is left untouched because it sits inside a string whose escaped quotes do not end the string early.
+ * @param {string} raw - Raw body which may contain bare Postman variables
+ * @returns {string} A JSON-parseable body with bare variables sentinel-wrapped
+ */
+export function protectBarePostmanVariables(raw: string): string {
+  let result = '',
+    inString = false;
+
+  for (let index = 0; index < raw.length; index++) {
+    const char = raw[index];
+
+    if (inString) {
+      result += char;
+
+      if (char === '\\') {
+        // Copy the escaped character verbatim so an escaped quote (\") doesn't prematurely end the string.
+        index += 1;
+
+        if (index < raw.length) {
+          result += raw[index];
+        }
+      }
+      else if (char === '"') {
+        inString = false;
+      }
+
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      result += char;
+
+      continue;
+    }
+
+    // A bare Postman variable begins with `{{` while outside of any string literal.
+    if (char === '{' && raw[index + 1] === '{') {
+      const end = raw.indexOf('}}', index + 2);
+
+      if (end !== -1) {
+        const token = raw.slice(index, end + 2);
+
+        result += `"${PM_VARIABLE_SENTINEL}${token}${PM_VARIABLE_SENTINEL}"`;
+        index = end + 1;
+
+        continue;
+      }
+    }
+
+    result += char;
+  }
+
+  return result;
+}
+
+/**
+ * Restores bare Postman variables that were sentinel-wrapped by {@link protectBarePostmanVariables},
+ * turning `"\uE000{{customer_id}}\uE000"` in the serialized JSON back into a bare `{{customer_id}}`.
+ * @param {string} raw - Serialized JSON possibly containing sentinel-wrapped variables
+ * @returns {string} Body with bare variables restored to their original unquoted form
+ */
+export function restoreBarePostmanVariables(raw: string): string {
+  return raw.replace(PM_VARIABLE_SENTINEL_PATTERN, '$1');
+}
+
