@@ -1994,6 +1994,17 @@ let QUERYPARAM = 'query',
     return bodyType;
   },
 
+  /**
+   * Checks whether a resolved schema object describes binary content
+   * i.e. it is of type `string` with format `binary`
+   *
+   * @param {*} schema - the schema to inspect (may be undefined)
+   * @returns {Boolean} true if the schema is a string/binary schema
+   */
+  isBinarySchema = (schema) => {
+    return _.isObject(schema) && schema.type === 'string' && schema.format === 'binary';
+  },
+
   resolveRawModeRequestBodyForPostmanRequest = (context, requestContent) => {
     let bodyType = getRawBodyType(requestContent),
       bodyData,
@@ -2006,7 +2017,13 @@ let QUERYPARAM = 'query',
 
     headerFamily = getHeaderFamily(bodyType);
 
-    if (concreteUtils.isBinaryContentType(bodyType, requestContent)) {
+    if (concreteUtils.isBinaryContentType(bodyType, requestContent) ||
+      // a schema referenced via $ref can also resolve to a binary type
+      // e.g. content: { 'text/csv': { schema: { $ref: '#/components/schemas/BinaryFile' } } }
+      isBinarySchema(_.has(requestContent, [bodyType, 'schema', '$ref']) ?
+        resolveSchema(context, requestContent[bodyType].schema, {}) :
+        _.get(requestContent, [bodyType, 'schema']))
+    ) {
       dataToBeReturned = {
         mode: 'file'
       };

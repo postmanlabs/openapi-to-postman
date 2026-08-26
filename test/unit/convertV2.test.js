@@ -121,7 +121,8 @@ const expect = require('chai').expect,
     path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyOneOf.json'),
   readOnlyNestedSpec =
     path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyNested.json'),
-  issue795 = path.join(__dirname, VALID_OPENAPI_PATH, '/form-binary-file.json');
+  issue795 = path.join(__dirname, VALID_OPENAPI_PATH, '/form-binary-file.json'),
+  issue776 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#776_binary_ref.json');
 
 
 describe('The convert v2 Function', function() {
@@ -3244,6 +3245,19 @@ describe('The convert v2 Function', function() {
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
       expect(formData.type).to.equal('file');
+      done();
+    });
+  });
+
+  it('[Github #776] Should convert request body with format binary referenced through $ref to file mode', function (done) {
+    var openapi = fs.readFileSync(issue776, 'utf8'),
+      reqBody;
+    Converter.convertV2({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+      reqBody = conversionResult.output[0].data.item[0].item[0].request.body;
+      expect(reqBody.mode).to.equal('file');
       done();
     });
   });
