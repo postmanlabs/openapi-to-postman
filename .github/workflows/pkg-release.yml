@@ -20,6 +20,7 @@ jobs:
   npm-publish:
     name: Publish to npm
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout (the tag being released)
         uses: actions/checkout@v4
