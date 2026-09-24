@@ -115,6 +115,9 @@ export interface Options {
   /** Enable nested folder hierarchy using tags */
   nestedFolderHierarchy?: boolean;
 
+  /** Add a contract test (status-code + response-schema assertions) to each generated request */
+  generateContractTests?: boolean;
+
   /** Whether or not schemas should be faked */
   schemaFaker?: boolean;
 

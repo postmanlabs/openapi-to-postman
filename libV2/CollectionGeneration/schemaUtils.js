@@ -1,5 +1,6 @@
 const generateAuthForCollectionFromOpenAPI = require('./helpers/collection/generateAuthForCollectionFromOpenAPI.js');
 const utils = require('./utils.js');
+const { buildContractTestEvent } = require('./contractTests.js');
 const { Url } = require('postman-collection/lib/collection/url');
 
 const schemaFaker = require('../../assets/json-schema-faker.js'),
@@ -2953,13 +2954,18 @@ module.exports = {
       request.headers = _.concat(request.headers, acceptHeader);
     }
 
+    // When opted in, attach a contract-test event (status-code + response-schema assertions) to the
+    // generated item. `resolveSchema` is injected to keep contractTests.js free of a circular require.
+    const contractTestEvent = context.computedOptions.generateContractTests ?
+      buildContractTestEvent(context, operationItem, method, { resolveSchema }) : [];
+
     return {
-      request: {
+      request: Object.assign({
         name: requestName,
         request: Object.assign({}, request, {
           responses
         })
-      },
+      }, _.isEmpty(contractTestEvent) ? {} : { event: contractTestEvent }),
       collectionVariables,
       requestTypesObject
     };
