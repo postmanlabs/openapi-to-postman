@@ -43,6 +43,27 @@ const _ = require('lodash'),
   },
 
   /**
+   * Recursively removes `default` keywords from a resolved schema. `default` is annotation-only in JSON
+   * Schema (it never affects validation), and the converter's example-resolution pass can inject
+   * placeholder defaults (e.g. "<string>") onto shared schema objects. Stripping them keeps the embedded
+   * validation schema clean without changing what it validates.
+   *
+   * @param {*} node - a schema (sub)tree
+   * @returns {*} the same node, mutated in place
+   */
+  stripDefaults = (node) => {
+    if (_.isArray(node)) {
+      node.forEach(stripDefaults);
+    }
+    else if (_.isObject(node)) {
+      delete node.default;
+      _.forEach(node, stripDefaults);
+    }
+
+    return node;
+  },
+
+  /**
    * Builds the `pm.test` script body (as an `exec` string array) for a single operation's contract
    * test. The generated script asserts (a) the response status code is one declared in the spec and
    * (b) the response body validates against the declared response schema for that status.
@@ -137,8 +158,10 @@ const _ = require('lodash'),
 
       if (bodySchema) {
         try {
-          schemasByStatus[statusKey] = resolveSchema(context, bodySchema,
+          const resolved = resolveSchema(context, bodySchema,
             { isResponseSchema: true, resolveFor: RESOLVE_FOR_VALIDATION });
+
+          schemasByStatus[statusKey] = stripDefaults(_.cloneDeep(resolved));
         }
         catch (e) {
           // Skip an unresolvable body schema; the status-code assertion is still emitted.
