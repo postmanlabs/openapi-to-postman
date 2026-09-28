@@ -19,6 +19,7 @@ module.exports = {
   shouldHandlePostmanVariablesInUrl: require('./shouldHandlePostmanVariablesInUrl'),
   generateCollectionWithTypes: require('./shouldGenerateCollectionWithType'),
   shouldPreserveParamValues: require('./shouldPreserveParamValues'),
+  shouldPreservePostmanVariablesInBody: require('./shouldPreservePostmanVariablesInBody'),
   shouldPreserveAttributeValuesWhenSchemaBecomesEmptyObject:
     require('./shouldPreserveAttributeValuesWhenSchemaBecomesEmptyObject'),
   shouldUpdateValueWhenSchemaHasProperties: require('./shouldUpdateValueWhenSchemaHasProperties'),
@@ -30,6 +31,8 @@ module.exports = {
   shouldSyncRequestToFirstResponseOnly: require('./shouldSyncRequestToFirstResponseOnly'),
   shouldPreserveOtherSameCodeResponsesOnRequestSync: require('./shouldPreserveOtherSameCodeResponsesOnRequestSync'),
   shouldPairSameCodeExamplesPositionallyOnSync: require('./shouldPairSameCodeExamplesPositionallyOnSync'),
+  shouldPairParameterExamplesByMatchingKey: require('./shouldPairParameterExamplesByMatchingKey'),
+  shouldDeleteOrphanRequestsWhenEnabled: require('./shouldDeleteOrphanRequestsWhenEnabled'),
   // Multi-file specification test cases
   multiFileSpecs: require('./multiFileSpecs')
 };

@@ -84,4 +84,10 @@ export interface AuthMergeResult {
 
 export type SyncOptions = {
   syncExamples: boolean;
+  /**
+   * When true, requests (and folders) that exist in the collection but no longer exist in the
+   * specification are removed during spec -> collection syncing.
+   * When false (default), such orphans are preserved to avoid unintentional data loss.
+   */
+  deleteOrphanedRequests?: boolean;
 };

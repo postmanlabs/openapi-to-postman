@@ -180,6 +180,12 @@ export interface SyncOptions {
 
   /** Whether to sync response examples from the OpenAPI specification */
   syncExamples?: boolean;
+
+  /**
+   * Whether to delete requests and folders that exist in the collection but no longer exist in the
+   * OpenAPI specification. Defaults to false, which preserves such orphans.
+   */
+  deleteOrphanedRequests?: boolean;
 }
 
 export interface OptionDefinition {

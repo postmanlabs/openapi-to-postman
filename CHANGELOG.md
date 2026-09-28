@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [v6.3.3] - 2026-08-11
+
+## [v6.3.2] - 2026-07-31
+
+### Fixed
+
+-   Upgraded lodash and js-yaml to patch security advisories (SECINV-136)
+
+## [v6.3.1] - 2026-07-23
+
+## [v6.3.0] - 2026-07-07
+
 ## [v6.2.0] - 2026-06-29
 
 ## [v6.1.0] - 2026-06-09
@@ -695,7 +707,13 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.2.0...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.3.3...HEAD
+
+[v6.3.3]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.3.2...v6.3.3
+
+[v6.3.1]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.3.0...v6.3.1
+
+[v6.3.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.2.0...v6.3.0
 
 [v6.2.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.1.0...v6.2.0
 

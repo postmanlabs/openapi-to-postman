@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { RequestBodyDefinition } from 'postman-collection';
 
-import { SPACE_COUNT } from '../../shared';
+import { protectBarePostmanVariables, restoreBarePostmanVariables, SPACE_COUNT } from '../../shared';
 
 /**
  * Deep merges two objects, preserving values from current when keys exist in both.
@@ -72,11 +72,14 @@ export function mergeRequestAndResponseBodyRaw(
   }
 
   try {
-    const targetBody = JSON.parse(targetBodyRaw),
-      sourceBody = JSON.parse(sourceBodyRaw),
+    // Bare (unquoted) Postman variables such as `{ "customer_id": {{customer_id}} }` are not valid
+    // JSON. Wrap them so both bodies parse, deep-merge (existing/source values win), then unwrap so the
+    // preserved variables keep their original bare form. Variables already inside strings are untouched.
+    const targetBody = JSON.parse(protectBarePostmanVariables(targetBodyRaw)),
+      sourceBody = JSON.parse(protectBarePostmanVariables(sourceBodyRaw)),
       merged = deepMergeBodyObjects(targetBody, sourceBody);
 
-    return JSON.stringify(merged, null, SPACE_COUNT);
+    return restoreBarePostmanVariables(JSON.stringify(merged, null, SPACE_COUNT));
   }
   catch (error) {
     return targetBodyRaw;

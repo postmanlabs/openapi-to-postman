@@ -2874,6 +2874,240 @@ describe('The convert v2 Function', function() {
             done();
           });
       });
+
+    // Helper: descend the first child at each level to reach the first request item in the collection.
+    const getFirstRequestItem = (conversionResult) => {
+      let item = conversionResult.output[0].data.item[0];
+      while (item && item.item) { item = item.item[0]; }
+      return item;
+    };
+
+    // Helper: map a saved response's original-request query params to `key=value` strings.
+    const originalRequestQuery = (savedResponse) => {
+      return _.map(_.get(savedResponse, 'originalRequest.url.query', []), (q) => { return q.key + '=' + q.value; });
+    };
+
+    // Helper: map a saved response's original-request headers to `key=value` strings.
+    const originalRequestHeaders = (savedResponse) => {
+      return _.map(_.get(savedResponse, 'originalRequest.header', []), (h) => { return h.key + '=' + h.value; });
+    };
+
+    it('response examples pair with matching QUERY + HEADER parameter examples (no request body)', function (done) {
+      // Headline case: GET /users?role=admin|user. Parameter example keys (role, X-Trace) match the
+      // response example keys, so two saved responses are generated, each carrying the paired
+      // query/header value in its originalRequest. M = R ∩ (B ∪ P) = {admin, user}, B = ∅.
+      const spec = {
+        openapi: '3.0.0',
+        info: { title: 'param examples', version: '1.0.0' },
+        paths: {
+          '/users': {
+            get: {
+              parameters: [
+                {
+                  name: 'role', in: 'query', schema: { type: 'string' },
+                  examples: { admin: { value: 'admin' }, user: { value: 'user' } }
+                },
+                {
+                  name: 'X-Trace', in: 'header', schema: { type: 'string' },
+                  examples: { admin: { value: 'trace-admin' }, user: { value: 'trace-user' } }
+                }
+              ],
+              responses: {
+                200: {
+                  description: 'OK',
+                  content: {
+                    'application/json': {
+                      examples: {
+                        admin: { value: { role: 'admin', users: ['a1', 'a2'] } },
+                        user: { value: { role: 'user', users: ['u1'] } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: spec }, { parametersResolution: 'Example' },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+
+          const item = getFirstRequestItem(conversionResult);
+
+          expect(item.response).to.have.lengthOf(2);
+
+          // First matched key: admin
+          expect(originalRequestQuery(item.response[0])).to.eql(['role=admin']);
+          expect(originalRequestHeaders(item.response[0])).to.include('X-Trace=trace-admin');
+          expect(JSON.parse(item.response[0].body)).to.eql({ role: 'admin', users: ['a1', 'a2'] });
+
+          // Second matched key: user
+          expect(originalRequestQuery(item.response[1])).to.eql(['role=user']);
+          expect(originalRequestHeaders(item.response[1])).to.include('X-Trace=trace-user');
+          expect(JSON.parse(item.response[1].body)).to.eql({ role: 'user', users: ['u1'] });
+          done();
+        });
+    });
+
+    it('response examples pair with matching PATH parameter examples', function (done) {
+      // Path parameter example keys match response example keys -> the saved response's
+      // originalRequest url path variable carries the paired value per example.
+      const spec = {
+        openapi: '3.0.0',
+        info: { title: 'path param examples', version: '1.0.0' },
+        paths: {
+          '/users/{status}': {
+            get: {
+              parameters: [
+                {
+                  name: 'status', in: 'path', required: true, schema: { type: 'string' },
+                  examples: { active: { value: 'active' }, banned: { value: 'banned' } }
+                }
+              ],
+              responses: {
+                200: {
+                  description: 'OK',
+                  content: {
+                    'application/json': {
+                      examples: {
+                        active: { value: { status: 'active' } },
+                        banned: { value: { status: 'banned' } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: spec }, { parametersResolution: 'Example' },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+
+          const item = getFirstRequestItem(conversionResult),
+            pathVar = (savedResponse) => {
+              return _.map(_.get(savedResponse, 'originalRequest.url.variable', []), (v) => {
+                return v.key + '=' + v.value;
+              });
+            };
+
+          expect(item.response).to.have.lengthOf(2);
+          expect(pathVar(item.response[0])).to.include('status=active');
+          expect(JSON.parse(item.response[0].body)).to.eql({ status: 'active' });
+          expect(pathVar(item.response[1])).to.include('status=banned');
+          expect(JSON.parse(item.response[1].body)).to.eql({ status: 'banned' });
+          done();
+        });
+    });
+
+    it('a matched key present only in a parameter falls back to the first request body example', function (done) {
+      // The response + query param share keys (admin, user) but the request body has a single,
+      // non-matching example ('default'). The body falls back to its first example for every pair.
+      const spec = {
+        openapi: '3.0.0',
+        info: { title: 'body fallback', version: '1.0.0' },
+        paths: {
+          '/x': {
+            post: {
+              parameters: [
+                {
+                  name: 'role', in: 'query', schema: { type: 'string' },
+                  examples: { admin: { value: 'admin' }, user: { value: 'user' } }
+                }
+              ],
+              requestBody: { content: { 'application/json': { examples: { default: { value: { a: 1 } } } } } },
+              responses: {
+                200: {
+                  description: 'OK',
+                  content: {
+                    'application/json': {
+                      examples: { admin: { value: { r: 'admin' } }, user: { value: { r: 'user' } } }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: spec }, { parametersResolution: 'Example' },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+
+          const item = getFirstRequestItem(conversionResult);
+
+          expect(item.response).to.have.lengthOf(2);
+          expect(originalRequestQuery(item.response[0])).to.eql(['role=admin']);
+          expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql({ a: 1 });
+          expect(originalRequestQuery(item.response[1])).to.eql(['role=user']);
+          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql({ a: 1 });
+          done();
+        });
+    });
+
+    it('a parameter whose plural keys do not match contributes its first example to every pair', function (done) {
+      // role (+ body + response) match by key (admin, user); the unmatched plural param 'sort'
+      // (asc, desc) contributes its first example (asc) to EVERY saved response without fragmenting
+      // the pairing (still exactly 2 saved responses).
+      const spec = {
+        openapi: '3.0.0',
+        info: { title: 'plural unmatched param', version: '1.0.0' },
+        paths: {
+          '/y': {
+            post: {
+              parameters: [
+                {
+                  name: 'role', in: 'query', schema: { type: 'string' },
+                  examples: { admin: { value: 'admin' }, user: { value: 'user' } }
+                },
+                {
+                  name: 'sort', in: 'query', schema: { type: 'string' },
+                  examples: { asc: { value: 'asc' }, desc: { value: 'desc' } }
+                }
+              ],
+              requestBody: {
+                content: {
+                  'application/json': { examples: { admin: { value: { a: 'A' } }, user: { value: { a: 'U' } } } }
+                }
+              },
+              responses: {
+                200: {
+                  description: 'OK',
+                  content: {
+                    'application/json': {
+                      examples: { admin: { value: { r: 'admin' } }, user: { value: { r: 'user' } } }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: spec }, { parametersResolution: 'Example' },
+        (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.equal(true);
+
+          const item = getFirstRequestItem(conversionResult);
+
+          expect(item.response).to.have.lengthOf(2);
+          expect(originalRequestQuery(item.response[0])).to.eql(['role=admin', 'sort=asc']);
+          expect(JSON.parse(item.response[0].originalRequest.body.raw)).to.eql({ a: 'A' });
+          expect(originalRequestQuery(item.response[1])).to.eql(['role=user', 'sort=asc']);
+          expect(JSON.parse(item.response[1].originalRequest.body.raw)).to.eql({ a: 'U' });
+          done();
+        });
+    });
   });
 
   it('[Github #11884] Should not contain duplicate variables created from requests path', function (done) {
