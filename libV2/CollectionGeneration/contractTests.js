@@ -43,21 +43,133 @@ const _ = require('lodash'),
   },
 
   /**
-   * Recursively removes `default` keywords from a resolved schema. `default` is annotation-only in JSON
-   * Schema (it never affects validation), and the converter's example-resolution pass can inject
-   * placeholder defaults (e.g. "<string>") onto shared schema objects. Stripping them keeps the embedded
-   * validation schema clean without changing what it validates.
+   * JSON Schema draft-07 standard `format` values. The Postman/Newman runtime validates the embedded
+   * schema with Ajv 6 (default `unknownFormats: true`), which THROWS at compile time on any other
+   * `format` — so OpenAPI's non-standard formats (`int64`, `byte`, `binary`, `password`, ...) must be
+   * dropped. Keeping only these standard formats preserves meaningful validation without the throw, and
+   * is validator-agnostic (also fine under a future Ajv 7/8).
+   */
+  STANDARD_JSON_SCHEMA_FORMATS = new Set([
+    'date-time', 'date', 'time', 'duration', 'email', 'idn-email', 'hostname', 'idn-hostname',
+    'ipv4', 'ipv6', 'uri', 'uri-reference', 'iri', 'iri-reference', 'uri-template', 'json-pointer',
+    'relative-json-pointer', 'regex', 'uuid'
+  ]),
+
+  /**
+   * OpenAPI-only keywords that are NOT part of JSON Schema. They are meaningless to (and silently
+   * ignored by) the runtime validator, so strip them to keep the embedded schema clean. NOTE: `examples`
+   * (plural) is deliberately NOT here — it IS a valid JSON Schema annotation (draft-06+). `default` is
+   * also stripped (annotation-only; the converter can inject `"<string>"` placeholders).
+   */
+  OPENAPI_ONLY_KEYWORDS = ['default', 'discriminator', 'xml', 'externalDocs', 'example', 'deprecated'],
+
+  /**
+   * Rewrites an OpenAPI `nullable: true` node into standard JSON Schema nullability (in place). Assumes
+   * `nullable` has already been read; callers delete the keyword separately.
+   *
+   * @param {Object} node - a schema object that was marked `nullable: true`
+   * @returns {void}
+   */
+  applyNullable = (node) => {
+    if (typeof node.type === 'string') {
+      if (node.type !== 'null') {
+        node.type = [node.type, 'null'];
+      }
+    }
+    else if (_.isArray(node.type)) {
+      if (!node.type.includes('null')) {
+        node.type.push('null');
+      }
+    }
+    else {
+      // No `type` to extend (e.g. a bare composite / enum). Wrap the whole node in an anyOf that also
+      // permits null. Move the node's own keys into an inner copy, then replace them with the wrapper.
+      const inner = {};
+
+      Object.keys(node).forEach((key) => {
+        inner[key] = node[key];
+        delete node[key];
+      });
+
+      node.anyOf = [inner, { type: 'null' }];
+    }
+  },
+
+  /**
+   * Recursively rewrites a resolved OpenAPI schema into portable JSON Schema so the embedded contract
+   * assertion validates correctly under the Postman sandbox's Ajv 6 (and any other validator):
+   *   - `nullable: true` -> standard nullability (`type: [.., 'null']` or an `anyOf` with `{type:'null'}`)
+   *   - OpenAPI-only annotation keywords removed (see OPENAPI_ONLY_KEYWORDS)
+   *   - non-standard `format` values dropped (see STANDARD_JSON_SCHEMA_FORMATS)
+   *
+   * Recurses ONLY into real schema positions (never a blind key walk) so that user schemas with a
+   * property literally named `example`/`format`/`default` are not corrupted. Mutates in place.
    *
    * @param {*} node - a schema (sub)tree
    * @returns {*} the same node, mutated in place
    */
-  stripDefaults = (node) => {
+  sanitizeContractSchema = (node) => {
     if (_.isArray(node)) {
-      node.forEach(stripDefaults);
+      node.forEach(sanitizeContractSchema);
+
+      return node;
     }
-    else if (_.isObject(node)) {
-      delete node.default;
-      _.forEach(node, stripDefaults);
+
+    if (!_.isObject(node)) {
+      return node;
+    }
+
+    const isNullable = node.nullable === true;
+
+    OPENAPI_ONLY_KEYWORDS.forEach((keyword) => {
+      delete node[keyword];
+    });
+
+    delete node.nullable;
+
+    if (typeof node.format === 'string' && !STANDARD_JSON_SCHEMA_FORMATS.has(node.format)) {
+      delete node.format;
+    }
+
+    // Recurse into schema-bearing positions only.
+    if (_.isObject(node.properties)) {
+      Object.keys(node.properties).forEach((key) => {
+        return sanitizeContractSchema(node.properties[key]);
+      });
+    }
+
+    if (_.isObject(node.patternProperties)) {
+      Object.keys(node.patternProperties).forEach((key) => {
+        return sanitizeContractSchema(node.patternProperties[key]);
+      });
+    }
+
+    if (_.isObject(node.additionalProperties)) {
+      sanitizeContractSchema(node.additionalProperties);
+    }
+
+    // `items` / `additionalItems` may be a single schema or an array of schemas.
+    if (_.isObject(node.items)) {
+      sanitizeContractSchema(node.items);
+    }
+
+    if (_.isObject(node.additionalItems)) {
+      sanitizeContractSchema(node.additionalItems);
+    }
+
+    ['allOf', 'anyOf', 'oneOf'].forEach((keyword) => {
+      if (_.isArray(node[keyword])) {
+        node[keyword].forEach(sanitizeContractSchema);
+      }
+    });
+
+    if (_.isObject(node.not)) {
+      sanitizeContractSchema(node.not);
+    }
+
+    // Apply nullability last, after children are sanitized (the wrap case restructures this node).
+    if (isNullable) {
+      applyNullable(node);
     }
 
     return node;
@@ -161,7 +273,7 @@ const _ = require('lodash'),
           const resolved = resolveSchema(context, bodySchema,
             { isResponseSchema: true, resolveFor: RESOLVE_FOR_VALIDATION });
 
-          schemasByStatus[statusKey] = stripDefaults(_.cloneDeep(resolved));
+          schemasByStatus[statusKey] = sanitizeContractSchema(_.cloneDeep(resolved));
         }
         catch (e) {
           // Skip an unresolvable body schema; the status-code assertion is still emitted.
