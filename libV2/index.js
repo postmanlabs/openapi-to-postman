@@ -17,11 +17,15 @@ const _ = require('lodash'),
   { validateTransaction, getMissingSchemaEndpoints } = require('./CollectionGeneration/validationUtils'),
   { syncCollection: syncCollectionState } = require('../dist/libV2/SpecificationCollectionSyncing');
 
-const { resolvePostmanRequest, resolveRefFromSchema } = require('./CollectionGeneration/schemaUtils');
+const { resolvePostmanRequest, resolveRefFromSchema, recordConversionIssue, CONVERSION_ISSUE_TYPES } =
+  require('./CollectionGeneration/schemaUtils');
 const { generateRequestItemObject, fixPathVariablesInUrl } = require('./CollectionGeneration/utils');
 
 module.exports = {
   convertV2: function (context, cb) {
+    // Reset per-conversion issue accumulation (a SchemaPack can be converted more than once).
+    context.conversionIssues = [];
+
     /**
      * Start generating the Bare bone tree that should exist for the schema
      */
@@ -102,6 +106,8 @@ module.exports = {
             pathItem = resolveRefFromSchema(context, pathItem.$ref);
           }
 
+          context.currentOperation = { path: node.meta.path, method: node.meta.method };
+
           try {
             ({ request, collectionVariables, requestTypesObject } = resolvePostmanRequest(context,
               pathItem,
@@ -114,8 +120,19 @@ module.exports = {
 
           }
           catch (error) {
-            console.error(error);
+            /**
+             * The request could not be generated, so it is dropped from the collection. Record it
+             * so the caller is told which requests are missing instead of silently receiving a
+             * collection with fewer requests than the specification describes.
+             */
+            recordConversionIssue(context, {
+              type: CONVERSION_ISSUE_TYPES.REQUEST_GENERATION_FAILED,
+              reason: _.get(error, 'message', String(error))
+            });
             break;
+          }
+          finally {
+            context.currentOperation = undefined;
           }
 
           collection.variable.push(...collectionVariables);
@@ -186,6 +203,8 @@ module.exports = {
             break;
           }
 
+          context.currentOperation = { webhook: node.meta.path, method: node.meta.method };
+
           try {
             ({ request, collectionVariables } = resolvePostmanRequest(context,
               webhookPathItem,
@@ -196,8 +215,15 @@ module.exports = {
             requestObject = generateRequestItemObject(request);
           }
           catch (error) {
-            console.error(error);
+            // Same silent-drop hazard as the `request` case above - see the comment there.
+            recordConversionIssue(context, {
+              type: CONVERSION_ISSUE_TYPES.REQUEST_GENERATION_FAILED,
+              reason: _.get(error, 'message', String(error))
+            });
             break;
+          }
+          finally {
+            context.currentOperation = undefined;
           }
 
           collection.variable.push(...collectionVariables);
@@ -233,25 +259,31 @@ module.exports = {
     if (!_.isEmpty(collection.variable)) {
       collection.variable = _.uniqBy(collection.variable, 'key');
     }
-    if (context.enableTypeFetching) {
-      return cb(null, {
-        result: true,
-        output: [{
-          type: 'collection',
-          data: collection
-        }],
-        analytics: this.analytics || {},
-        extractedTypes: extractedTypesObject || {}
-      });
-    }
-    return cb(null, {
+
+    const result = {
       result: true,
       output: [{
         type: 'collection',
         data: collection
       }],
       analytics: this.analytics || {}
-    });
+    };
+
+    if (context.enableTypeFetching) {
+      result.extractedTypes = extractedTypesObject || {};
+    }
+
+    /**
+     * Requests that could not be generated, and bodies that breached the size ceiling, are not
+     * fatal - the rest of the collection is still usable - but they must not be silent either.
+     * The key is only added when something actually went wrong, so a clean conversion returns
+     * exactly the shape it always has.
+     */
+    if (!_.isEmpty(context.conversionIssues)) {
+      result.conversionIssues = context.conversionIssues;
+    }
+
+    return cb(null, result);
   },
 
   /**

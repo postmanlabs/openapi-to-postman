@@ -26,11 +26,51 @@ interface BaseResult {
   error?: Error;
 }
 
+export interface ConversionIssue {
+
+  /** What went wrong: a dropped request, or a body that breached the size ceiling */
+  type: 'REQUEST_GENERATION_FAILED' | 'BODY_TOO_LARGE';
+
+  /** Human readable explanation */
+  reason: string;
+
+  /** Path of the operation the issue belongs to */
+  path?: string;
+
+  /** Webhook name, when the issue belongs to a webhook rather than a path */
+  webhook?: string;
+
+  /** HTTP method of the operation */
+  method?: string;
+
+  /** Which part of the operation was affected */
+  in?: 'request' | 'response' | 'response~request';
+
+  /** Response code, for response bodies */
+  responseCode?: string;
+
+  /** Media type of the affected body */
+  contentType?: string;
+
+  /** Length the generated body would have had, for BODY_TOO_LARGE */
+  generatedBodyLength?: number;
+
+  /** Ceiling that was breached, for BODY_TOO_LARGE */
+  maxBodyLength?: number;
+}
+
 export interface CollectionResult extends BaseResult {
   output?: { type: string; data: object; name?: string }[];
   analytics?: Record<string, number>;
   extractedTypes?: Record<string, object>;
   name?: string;
+
+  /**
+   * Non-fatal problems encountered while generating the collection: requests that could not be
+   * generated and were left out, and bodies that were truncated for exceeding the size ceiling.
+   * Absent when the conversion had no such problems.
+   */
+  conversionIssues?: ConversionIssue[];
 }
 
 export interface BundleResult extends BaseResult {
@@ -94,7 +134,11 @@ export interface Options {
   /** Importing will collapse all folders that have only one child element (V1 only) */
   collapseFolders?: boolean;
 
-  /** Optimizes conversion for large specification (V1 only) */
+  /**
+   * Optimizes conversion for large specifications. When enabled (the default), the spec is
+   * analysed and, if it is found complex, schema resolution depth and generated body size are
+   * bounded so conversion terminates. Disabling it removes those bounds.
+   */
   optimizeConversion?: boolean;
 
   /** Request parameter generation based on schema or example (V1 only) */
