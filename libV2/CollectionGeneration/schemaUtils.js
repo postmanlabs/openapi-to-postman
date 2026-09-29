@@ -83,6 +83,55 @@ const schemaFaker = require('../../assets/json-schema-faker.js'),
   // Maximum size of schema till whch we generate 2 elements per array (50 KB)
   SCHEMA_SIZE_OPTIMIZATION_THRESHOLD = 50 * 1024,
 
+  // Global json-schema-faker array cap applied when no tighter budget is in force.
+  DEFAULT_ARRAY_MAX_ITEMS = 20,
+
+  /**
+   * Array fan-out tiers, most generous first.
+   *
+   * `defaultMinItems`/`defaultMaxItems` only apply to arrays that do NOT declare their own
+   * `minItems`/`maxItems`; the `maxItems` faker option is what actually caps an array that
+   * declares a larger `maxItems` of its own (e.g. `maxItems: 200`).
+   */
+  ARRAY_FAN_OUT_TIERS = [
+    { defaultMinItems: 2, defaultMaxItems: 2, maxItems: DEFAULT_ARRAY_MAX_ITEMS },
+    { defaultMinItems: 1, defaultMaxItems: 1, maxItems: DEFAULT_ARRAY_MAX_ITEMS },
+    { defaultMinItems: 1, defaultMaxItems: 1, maxItems: 5 },
+    { defaultMinItems: 1, defaultMaxItems: 1, maxItems: 2 },
+    { defaultMinItems: 1, defaultMaxItems: 1, maxItems: 1 }
+  ],
+
+  // Hard cap on how deep the (memoised) body size projection walks a resolved schema.
+  BODY_SIZE_PROJECTION_DEPTH_LIMIT = 512,
+
+  /**
+   * Hard ceiling on the length of a single generated request/response body, in characters.
+   *
+   * V8 cannot represent a string longer than `MAX_STRING_LENGTH` (536,870,888 on 64-bit), so
+   * `JSON.stringify` throws `RangeError: Invalid string length` past that point. We stay well
+   * below it: a body this large is unusable in a collection anyway.
+   */
+  MAX_GENERATED_BODY_LENGTH = 100 * 1024 * 1024,
+
+  /**
+   * Bodies above this projected length are serialised compactly (no indentation) because
+   * indentation can multiply the serialised length several times over. Bodies at or below it
+   * take the historical indented path, so ordinary specs are byte-for-byte unchanged.
+   */
+  COMPACT_SERIALIZATION_THRESHOLD = 8 * 1024 * 1024,
+
+  // Placeholder used in place of a body that breached MAX_GENERATED_BODY_LENGTH.
+  ERR_BODY_TOO_LARGE = '<Error: The generated body was too large to be included in the collection>',
+
+  // Upper bound on how many conversion issues we accumulate, so a pathological spec
+  // cannot turn the issue list itself into a memory problem.
+  MAX_CONVERSION_ISSUES = 1000,
+
+  CONVERSION_ISSUE_TYPES = {
+    REQUEST_GENERATION_FAILED: 'REQUEST_GENERATION_FAILED',
+    BODY_TOO_LARGE: 'BODY_TOO_LARGE'
+  },
+
   PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable', 'properties'],
   crypto = require('crypto'),
 
@@ -126,7 +175,7 @@ schemaFaker.option({
   optionalsProbability: 1.0, // always add optional fields
   maxLength: 256,
   minItems: 1, // for arrays
-  maxItems: 20, // limit on maximum number of items faked for (type: arrray)
+  maxItems: DEFAULT_ARRAY_MAX_ITEMS, // limit on maximum number of items faked for (type: arrray)
   useDefaultValue: true,
   ignoreMissingRefs: true,
   avoidExampleItemsLength: true, // option to avoid validating type array schema example's minItems and maxItems props.
@@ -249,16 +298,390 @@ let QUERYPARAM = 'query',
   },
 
   /**
-   * Provides ref stack limit for current instance
-   * @param {*} stackLimit - Defined stackLimit in options
+   * Provides ref stack limit for current instance.
+   *
+   * Resolution order:
+   *  1. `refStackLimit` - the limit the spec-complexity governor decided on. It is only present
+   *     when `optimizeConversion` is on AND the spec was actually found to be complex, and it
+   *     wins for the same reason it wins in V1: an unbounded expansion of a spec this size does
+   *     not terminate inside a sane memory budget.
+   *  2. An explicitly supplied `stackLimit`. Without this the user-facing option is inert for
+   *     every value <= REF_STACK_LIMIT, which is what it historically was.
+   *  3. `REF_STACK_LIMIT` as a floor, so the default (10) keeps behaving as it always has.
+   *
+   * @param {Object} options - Computed options for the current conversion
    *
    * @returns {Number} Returns the stackLimit to be used
    */
-  getRefStackLimit = (stackLimit) => {
+  getRefStackLimit = (options) => {
+    const { stackLimit, stackLimitProvided, refStackLimit } = options || {};
+
+    if (typeof refStackLimit === 'number' && refStackLimit > 0) {
+      return refStackLimit;
+    }
+
+    if (stackLimitProvided && typeof stackLimit === 'number' && stackLimit > 0) {
+      return stackLimit;
+    }
+
     if (typeof stackLimit === 'number' && stackLimit > REF_STACK_LIMIT) {
       return stackLimit;
     }
+
     return REF_STACK_LIMIT;
+  },
+
+  /**
+   * Records a non-fatal conversion issue on the shared context so that it can be surfaced
+   * in the conversion result instead of being silently swallowed.
+   *
+   * @param {Object} context - Global context object
+   * @param {Object} issue - Issue descriptor ({ type, reason, ... })
+   * @returns {void}
+   */
+  recordConversionIssue = (context, issue) => {
+    if (!_.isObject(context)) {
+      return;
+    }
+
+    if (!_.isArray(context.conversionIssues)) {
+      context.conversionIssues = [];
+    }
+
+    if (context.conversionIssues.length >= MAX_CONVERSION_ISSUES) {
+      return;
+    }
+
+    context.conversionIssues.push(Object.assign({}, context.currentOperation, issue));
+  },
+
+  /**
+   * Computes the exact length `JSON.stringify(value)` (no indentation) would produce, bailing out
+   * as soon as the running total passes `budget`.
+   *
+   * This lets callers apply a size budget *before* attempting the serialisation, instead of
+   * discovering the problem as a `RangeError` thrown from deep inside `JSON.stringify`.
+   *
+   * @param {*} value - Value that is about to be serialised
+   * @param {Number} budget - Length past which the exact total stops mattering
+   * @returns {Number} Serialised length, or some value greater than `budget`
+   */
+  measureJsonLength = (value, budget) => {
+    let total = 0;
+    const stack = [value];
+
+    while (stack.length > 0) {
+      if (total > budget) {
+        return total;
+      }
+
+      const current = stack.pop(),
+        type = typeof current;
+
+      if (current === null) {
+        total += 4; // null
+        continue;
+      }
+
+      if (type === 'string') {
+        total += JSON.stringify(current).length;
+        continue;
+      }
+
+      if (type === 'number') {
+        total += Number.isFinite(current) ? String(current).length : 4;
+        continue;
+      }
+
+      if (type === 'boolean') {
+        total += current ? 4 : 5;
+        continue;
+      }
+
+      // undefined / function / symbol serialise as `null` inside an array and are dropped as
+      // object members (handled below), anything exotic is counted as a short literal.
+      if (type !== 'object') {
+        total += 4;
+        continue;
+      }
+
+      // Dates and anything else with a custom serialisation are small leaves - measure directly.
+      if (_.isFunction(current.toJSON)) {
+        total += JSON.stringify(current).length;
+        continue;
+      }
+
+      if (_.isArray(current)) {
+        total += 2 + Math.max(current.length - 1, 0); // brackets + separating commas
+        for (let index = 0; index < current.length; index++) {
+          stack.push(current[index]);
+        }
+        continue;
+      }
+
+      const keys = Object.keys(current);
+      let members = 0;
+
+      total += 2; // braces
+
+      for (let index = 0; index < keys.length; index++) {
+        const memberValue = current[keys[index]],
+          memberType = typeof memberValue;
+
+        if (memberType === 'undefined' || memberType === 'function' || memberType === 'symbol') {
+          continue;
+        }
+
+        members++;
+        total += JSON.stringify(keys[index]).length + 1; // "key":
+        stack.push(memberValue);
+      }
+
+      total += Math.max(members - 1, 0); // separating commas
+    }
+
+    return total;
+  },
+
+  /**
+   * Serialises a generated body, applying MAX_GENERATED_BODY_LENGTH as a hard ceiling.
+   *
+   * The budget is evaluated from the already generated object, before any `JSON.stringify` call,
+   * so an oversized body yields a clear sentinel rather than a `RangeError`.
+   *
+   * @param {Object} context - Global context object
+   * @param {*} bodyData - Generated body
+   * @param {String} indentCharacter - Indentation to apply
+   * @param {Object} issueMeta - Extra metadata recorded if the body is dropped
+   * @returns {String|undefined} Serialised body
+   */
+  serialiseGeneratedBody = (context, bodyData, indentCharacter, issueMeta = {}) => {
+    if (!_.isObject(bodyData) && _.isFunction(_.get(bodyData, 'toString'))) {
+      return bodyData.toString();
+    }
+
+    const projectedLength = measureJsonLength(bodyData, MAX_GENERATED_BODY_LENGTH);
+
+    if (projectedLength > MAX_GENERATED_BODY_LENGTH) {
+      recordConversionIssue(context, Object.assign({
+        type: CONVERSION_ISSUE_TYPES.BODY_TOO_LARGE,
+        reason: 'Generated body of ' + projectedLength + ' characters exceeded the maximum ' +
+          'supported body size of ' + MAX_GENERATED_BODY_LENGTH + ' characters and was omitted.',
+        generatedBodyLength: projectedLength,
+        maxBodyLength: MAX_GENERATED_BODY_LENGTH
+      }, issueMeta));
+
+      return ERR_BODY_TOO_LARGE;
+    }
+
+    // Indentation can multiply the serialised length several times over, so anything already
+    // this large is serialised compactly. Everything below the threshold - i.e. every body an
+    // ordinary spec produces - takes the original indented path untouched.
+    if (projectedLength > COMPACT_SERIALIZATION_THRESHOLD) {
+      return JSON.stringify(bodyData);
+    }
+
+    return JSON.stringify(bodyData, null, indentCharacter);
+  },
+
+  /**
+   * Item count json-schema-faker will generate for an array schema under `fanOut`.
+   *
+   * This mirrors `arrayType` in assets/json-schema-faker.js exactly. With
+   * `optionalsProbability: 1.0` - which this module sets - the generated length is simply the
+   * `maxItems` that function settles on, so `minItems` never widens the result:
+   *
+   *   1. `minItems` is defaulted to `defaultMinItems` only when the schema declares no
+   *      `minItems` AND declares a truthy `maxItems` that is at least `defaultMinItems`.
+   *   2. A `minItems` greater than zero then *overwrites* `maxItems`.
+   *   3. A still-undeclared `maxItems` falls back to `defaultMaxItems`.
+   *   4. The global `maxItems` option finally clamps whatever survived.
+   *
+   * The consequence that matters here: an array declaring `minItems: 0` skips steps 1 and 2, so
+   * `defaultMinItems`/`defaultMaxItems` never touch it and its declared `maxItems` stands. The
+   * global `maxItems` option is the only lever that bounds those, which is why the fan-out tiers
+   * lower it rather than relying on the defaults.
+   *
+   * @param {Object} schema - Resolved array schema
+   * @param {Object} fanOut - Faker array options in force
+   * @returns {Number} Item count that will be generated
+   */
+  projectedArrayItemCount = (schema, fanOut) => {
+    let minItems = schema.minItems,
+      maxItems = schema.maxItems;
+
+    if (typeof minItems !== 'number' && maxItems && maxItems >= fanOut.defaultMinItems) {
+      minItems = fanOut.defaultMinItems;
+    }
+
+    if (typeof minItems === 'number' && minItems > 0) {
+      maxItems = minItems;
+    }
+
+    if (typeof maxItems !== 'number') {
+      maxItems = fanOut.defaultMaxItems;
+    }
+
+    if (fanOut.maxItems && maxItems && maxItems > fanOut.maxItems) {
+      maxItems = fanOut.maxItems;
+    }
+
+    return Math.max(maxItems, 0);
+  },
+
+  /**
+   * Projects how large the body json-schema-faker would build for an already resolved schema,
+   * without building it.
+   *
+   * `_resolveSchema` returns a structure-shared DAG - the same sub-schema object is reachable
+   * along many paths - while the faker expands that DAG into a tree. Memoising on object
+   * identity makes this linear in the number of *unique* sub-schemas rather than exponential
+   * in the size of the expanded tree, which is exactly the blow-up we are trying to predict.
+   *
+   * @param {Object} schema - Resolved schema
+   * @param {Object} fanOut - Faker array options to project for
+   * @param {Map} memo - Identity-keyed memo of already projected sub-schemas
+   * @param {Number} depth - Current recursion depth
+   * @returns {Number} Projected serialised length of the faked body
+   */
+  projectFakedBodyLength = (schema, fanOut, memo, depth = 0) => {
+    if (!_.isObject(schema)) {
+      return 4;
+    }
+
+    if (memo.has(schema)) {
+      return memo.get(schema);
+    }
+
+    if (depth > BODY_SIZE_PROJECTION_DEPTH_LIMIT) {
+      return 4;
+    }
+
+    // Seed the memo before recursing so a self-referential schema terminates.
+    memo.set(schema, 0);
+
+    let projected = 8;
+    const compositeSchema = schema.anyOf || schema.oneOf;
+
+    if (_.isArray(compositeSchema)) {
+      // CONVERSION resolution keeps only the first branch.
+      projected = compositeSchema.length ?
+        projectFakedBodyLength(compositeSchema[0], fanOut, memo, depth + 1) :
+        4;
+    }
+    else if (schema.example !== undefined) {
+      projected = measureJsonLength(schema.example, MAX_GENERATED_BODY_LENGTH);
+    }
+    else if (_.isObject(schema.properties)) {
+      projected = 2;
+      _.forOwn(schema.properties, (propertySchema, propertyName) => {
+        // "key": plus a separating comma
+        projected += propertyName.length + 4 +
+          projectFakedBodyLength(propertySchema, fanOut, memo, depth + 1);
+      });
+    }
+    else if (_.isObject(schema.items)) {
+      const itemCount = projectedArrayItemCount(schema, fanOut);
+
+      projected = 2 + itemCount * (projectFakedBodyLength(schema.items, fanOut, memo, depth + 1) + 1);
+    }
+    else if (schema.default !== undefined) {
+      projected = measureJsonLength(schema.default, MAX_GENERATED_BODY_LENGTH);
+    }
+    else if (_.isArray(schema.enum) && schema.enum.length) {
+      projected = measureJsonLength(schema.enum[0], MAX_GENERATED_BODY_LENGTH);
+    }
+    else if (schema.type === SCHEMA_TYPES.string) {
+      projected = Math.min(_.isNumber(schema.maxLength) ? schema.maxLength : 24, 256) + 2;
+    }
+
+    memo.set(schema, projected);
+
+    return projected;
+  },
+
+  /**
+   * Largest `minItems` declared anywhere inside a resolved schema.
+   *
+   * A declared `minItems` greater than zero overwrites `maxItems` inside the faker's `arrayType`
+   * and is then clamped by the global `maxItems` option, so that global cap has to stay at or
+   * above this value. Capping below it generates a body that violates its own schema, which
+   * validation duly reports as an INVALID_RESPONSE_BODY mismatch against the very specification
+   * the body was generated from.
+   *
+   * @param {Object} schema - Resolved schema
+   * @param {Map} memo - Identity-keyed memo of already visited sub-schemas
+   * @returns {Number} Largest declared `minItems`, or 0 when none is declared
+   */
+  maxDeclaredMinItems = (schema, memo) => {
+    if (!_.isObject(schema) || memo.has(schema)) {
+      return 0;
+    }
+
+    memo.set(schema, 0);
+
+    let largest = _.isNumber(schema.minItems) && schema.minItems > 0 ? schema.minItems : 0;
+
+    const visit = (subSchema) => {
+      largest = Math.max(largest, maxDeclaredMinItems(subSchema, memo));
+    };
+
+    _.forOwn(schema.properties, visit);
+    _.forEach(schema.anyOf, visit);
+    _.forEach(schema.oneOf, visit);
+    _.forEach(schema.allOf, visit);
+
+    if (_.isObject(schema.items)) {
+      visit(schema.items);
+    }
+
+    memo.set(schema, largest);
+
+    return largest;
+  },
+
+  /**
+   * Decides the array fan-out to fake `schema` with.
+   *
+   * With no body size budget in force (ordinary spec, or `optimizeConversion` turned off) this
+   * reproduces the historical behaviour exactly: two items per array unless the *stringified
+   * resolved schema* was over SCHEMA_SIZE_OPTIMIZATION_THRESHOLD, in which case one.
+   *
+   * When the governor did set a budget, the tiers are keyed on the *projected output size*
+   * instead. That matters because the two are inversely related: lowering the ref stack limit
+   * shrinks the resolved schema (so the old safeguard disengages) while the arrays it contains
+   * are what actually inflate the output.
+   *
+   * @param {Object} context - Global context object
+   * @param {Object} schema - Resolved schema about to be faked
+   * @param {Boolean} restrictArrayItems - Whether the legacy schema-size safeguard engaged
+   * @returns {Object} Faker array options to use
+   */
+  resolveArrayFanOut = (context, schema, restrictArrayItems) => {
+    const budget = _.get(context, 'computedOptions.generatedBodySizeBudget'),
+      // The legacy safeguard stays a floor: the governor may only tighten it further.
+      firstTier = restrictArrayItems ? 1 : 0;
+
+    if (!_.isNumber(budget) || budget <= 0) {
+      return ARRAY_FAN_OUT_TIERS[firstTier];
+    }
+
+    /**
+     * No global `minItems` floor here. An array that declares its own `minItems` is honoured
+     * per array inside the faker's `arrayType`, so one `minItems: N` deep in a schema no longer
+     * forces every other array in the same body up to N items.
+     */
+    let tier = ARRAY_FAN_OUT_TIERS[ARRAY_FAN_OUT_TIERS.length - 1];
+
+    for (let index = firstTier; index < ARRAY_FAN_OUT_TIERS.length; index++) {
+      tier = ARRAY_FAN_OUT_TIERS[index];
+
+      if (projectFakedBodyLength(schema, tier, new Map()) <= budget) {
+        break;
+      }
+    }
+
+    return tier;
   },
 
   /**
@@ -292,26 +715,50 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * Normalises the seenRef argument of the public resolveSchema() into a Set.
+   *
+   * Internally seenRef is a Set maintained with add-before-recurse / delete-after-return, but the
+   * parameter used to be a plain string -> bool map, so one may still be handed in from outside.
+   *
+   * @param {Object|Set} seenRef - References already seen, as a Set or as a legacy map
+   * @returns {Set} Set of seen references
+   */
+  toSeenRefSet = (seenRef) => {
+    if (seenRef instanceof Set) {
+      return seenRef;
+    }
+
+    return new Set(_.isObject(seenRef) ? _.keys(seenRef) : []);
+  },
+
+  /**
    * Resolve a given ref from the schema
    * @param {Object} context - Global context object
    * @param {Object} $ref - Ref that is to be resolved
    * @param {Number} stackDepth - Depth of the current stack for Ref resolution
-   * @param {Object} seenRef - Seen Reference map
+   * @param {Set} seenRef - Set of references seen on the current resolution path
    *
    * @returns {Object} Returns the object that satisfies the schema
    */
-  resolveRefFromSchema = (context, $ref, stackDepth = 0, seenRef = {}) => {
-    const { specComponents } = context,
-      { stackLimit } = context.computedOptions;
+  // seenRef is a Set (path-scoped cycle detection, no clone per branch); the ref-stack
+  // limit now comes from the whole options object so the governor can lower it.
+  resolveRefFromSchema = (context, $ref, stackDepth = 0, seenRef = new Set()) => {
+    const { specComponents } = context;
 
     context.schemaCache = context.schemaCache || {};
 
-    if (stackDepth >= getRefStackLimit(stackLimit)) {
+    if (stackDepth >= getRefStackLimit(context.computedOptions)) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
 
     stackDepth++;
-    seenRef[$ref] = true;
+
+    /**
+     * `seenRef` is deliberately NOT mutated here. The mark for `$ref` is only ever consumed by
+     * the nested resolution at the bottom of this function, which gets its own branch-scoped
+     * copy -- exactly what the `_.cloneDeep(seenRef)` that used to be passed down provided.
+     * Leaving the caller's set untouched is what lets it be shared instead of cloned.
+     */
 
     if (context.schemaCache[$ref]) {
       // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
@@ -356,12 +803,17 @@ let QUERYPARAM = 'query',
     }
 
     if (_.get(resolvedSchema, '$ref')) {
-      if (seenRef[resolvedSchema.$ref]) {
+      // Branch-scoped copy, taken only on this rare nested-$ref path
+      const branchSeenRef = new Set(seenRef);
+
+      branchSeenRef.add($ref);
+
+      if (branchSeenRef.has(resolvedSchema.$ref)) {
         return {
           value: '<Circular reference to ' + resolvedSchema.$ref + ' detected>'
         };
       }
-      return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth, _.cloneDeep(seenRef));
+      return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth, branchSeenRef);
     }
 
     return resolvedSchema;
@@ -372,20 +824,22 @@ let QUERYPARAM = 'query',
    * @param {Object} context - Global context object
    * @param {Object} $ref - Ref that is to be resolved
    * @param {Number} stackDepth - Depth of the current stack for Ref resolution
-   * @param {Object} seenRef - Seen Reference map
+   * @param {Set} seenRef - Set of references seen on the current resolution path
    *
    * @returns {Object} Returns the object that satisfies the schema
    */
-  resolveRefForExamples = (context, $ref, stackDepth = 0, seenRef = {}) => {
-    const { specComponents } = context,
-      { stackLimit } = context.computedOptions;
+  // seenRef is a Set (path-scoped cycle detection, no clone per branch); the ref-stack
+  // limit now comes from the whole options object so the governor can lower it.
+  resolveRefForExamples = (context, $ref, stackDepth = 0, seenRef = new Set()) => {
+    const { specComponents } = context;
 
-    if (stackDepth >= getRefStackLimit(stackLimit)) {
+    if (stackDepth >= getRefStackLimit(context.computedOptions)) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
 
     stackDepth++;
-    seenRef[$ref] = true;
+
+    // See the note in resolveRefFromSchema: the caller's set is left untouched.
 
     if (context.schemaCache[$ref]) {
       // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
@@ -430,12 +884,17 @@ let QUERYPARAM = 'query',
     }
 
     if (_.has(resolvedExample, '$ref')) {
-      if (seenRef[resolvedExample.$ref]) {
+      // Branch-scoped copy, taken only on this rare nested-$ref path
+      const branchSeenRef = new Set(seenRef);
+
+      branchSeenRef.add($ref);
+
+      if (branchSeenRef.has(resolvedExample.$ref)) {
         return {
           value: `<Circular reference to ${resolvedExample.$ref} detected>`
         };
       }
-      return resolveRefFromSchema(context, resolvedExample.$ref, stackDepth, _.cloneDeep(seenRef));
+      return resolveRefFromSchema(context, resolvedExample.$ref, stackDepth, branchSeenRef);
     }
 
     // Add the resolved schema to the global schema cache
@@ -497,12 +956,13 @@ let QUERYPARAM = 'query',
    * @param {Object} schema - Schema to be resolved
    * @param {Number} [stack] - Current recursion depth
    * @param {*} resolveFor - resolve refs for flow validation/conversion (value to be one of VALIDATION/CONVERSION)
-   * @param {Object} seenRef - Map of all the references that have been resolved
+   * @param {Set} seenRef - Set of references seen on the current resolution path
    * @param {String} currentPath - Current path (json-pointer) being resolved relative to original schema
    *
    * @returns {Object} Resolved schema
    */
-  resolveAllOfSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}, currentPath = '') => {
+  resolveAllOfSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = new Set(),
+    currentPath = '') => {
     /*
       For TYPES_GENERATION, we do not want to merge the allOf schemas
       instead we want to keep them separate so that we can generate types like:
@@ -522,7 +982,7 @@ let QUERYPARAM = 'query',
       const result = {
         allOf: _.map(schema.allOf, (schema) => {
           // eslint-disable-next-line no-use-before-define
-          return _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+          return _resolveSchema(context, schema, stack, resolveFor, seenRef, currentPath);
         })
       };
       if (schema.title !== undefined) {
@@ -541,7 +1001,7 @@ let QUERYPARAM = 'query',
       return mergeAllOf(_.assign(schema, {
         allOf: _.map(schema.allOf, (schema) => {
           // eslint-disable-next-line no-use-before-define
-          return _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+          return _resolveSchema(context, schema, stack, resolveFor, seenRef, currentPath);
         })
       }), {
         // below option is required to make sure schemas with additionalProperties set to false are resolved correctly
@@ -568,20 +1028,21 @@ let QUERYPARAM = 'query',
    * @param {Object} schema - Schema that is to be resolved
    * @param {Number} [stack] - Current recursion depth
    * @param {String} resolveFor - For which action this resolution is to be done
-   * @param {Object} seenRef - Map of all the references that have been resolved
+   * @param {Set} seenRef - Set of references seen on the current resolution path, maintained with
+   *   add-before-recurse / delete-after-return. That gives each branch exactly the path-scoped
+   *   visibility a cloned map gave it, without cloning once per branch.
    * @param {String} currentPath - Current path (json-pointer) being resolved relative to original schema
    * @todo: Explore using a directed graph/tree for maintaining seen ref
    *
    * @returns {Object} Returns the object that satisfies the schema
    */
-  _resolveSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}, currentPath = '') => {
+  _resolveSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = new Set(),
+    currentPath = '') => {
     if (!schema) {
       return new Error('Schema is empty');
     }
 
-    const { stackLimit } = context.computedOptions;
-
-    if (stack >= getRefStackLimit(stackLimit)) {
+    if (stack >= getRefStackLimit(context.computedOptions)) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
 
@@ -610,12 +1071,12 @@ let QUERYPARAM = 'query',
       });
 
       if (resolveFor === CONVERSION) {
-        return _resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+        return _resolveSchema(context, compositeSchema[0], stack, resolveFor, seenRef, currentPath);
       }
 
       const result = {
         [compositeKeyword]: _.map(compositeSchema, (schemaElement, index) => {
-          return _resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef),
+          return _resolveSchema(context, schemaElement, stack, resolveFor, seenRef,
             utils.addToJsonPath(currentPath, [compositeKeyword, index]));
         })
       };
@@ -634,57 +1095,69 @@ let QUERYPARAM = 'query',
     }
 
     if (schema.allOf) {
-      return resolveAllOfSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+      return resolveAllOfSchema(context, schema, stack, resolveFor, seenRef, currentPath);
     }
 
     if (schema.$ref) {
       const schemaRef = schema.$ref;
 
-      if (seenRef[schemaRef]) {
+      if (seenRef.has(schemaRef)) {
         return {
           value: '<Circular reference to ' + schemaRef + ' detected>'
         };
       }
 
-      seenRef[schemaRef] = true;
+      /**
+       * Mark this ref for the duration of the branch below and unwind it on the way out, which
+       * gives siblings exactly the view a freshly cloned map used to give them. The unwind is in a
+       * `finally` so a throw from deeper down (which resolveAllOfSchema catches and continues past)
+       * cannot leave a stale mark behind and make a later, legitimate reference look circular.
+       */
+      seenRef.add(schemaRef);
 
-      if (context.schemaCache[schemaRef]) {
-        // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
-        mergeReadWritePropCache(context, context.schemaCache[schemaRef].readOnlyPropCache,
-          context.schemaCache[schemaRef].writeOnlyPropCache, currentPath);
+      try {
+        if (context.schemaCache[schemaRef]) {
+          // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
+          mergeReadWritePropCache(context, context.schemaCache[schemaRef].readOnlyPropCache,
+            context.schemaCache[schemaRef].writeOnlyPropCache, currentPath);
 
-        schema = context.schemaCache[schemaRef].schema;
+          schema = context.schemaCache[schemaRef].schema;
+        }
+        else {
+          const existingReadPropCache = context.readOnlyPropCache,
+            existingWritePropCache = context.writeOnlyPropCache;
+
+          schema = resolveRefFromSchema(context, schemaRef, stack, seenRef);
+
+          /**
+           * Reset readOnly and writeOnly prop cache before resolving schema to make sure
+           * we have fresh cache for $ref resolution which will be stored as part of schemaCache
+           */
+          resetReadWritePropCache(context);
+          schema = _resolveSchema(context, schema, stack, resolveFor, seenRef, '');
+
+          // Add the resolved schema to the global schema cache
+          context.schemaCache[schemaRef] = {
+            schema,
+            readOnlyPropCache: context.readOnlyPropCache,
+            writeOnlyPropCache: context.writeOnlyPropCache
+          };
+
+          const newReadPropCache = context.readOnlyPropCache,
+            newWritePropCache = context.writeOnlyPropCache;
+
+          // Assign existing readOnly and writeOnly prop cache back to global context cache
+          context.readOnlyPropCache = existingReadPropCache;
+          context.writeOnlyPropCache = existingWritePropCache;
+
+          // Merge existing and current cache to make sure we have all the properties in cache
+          mergeReadWritePropCache(context, newReadPropCache, newWritePropCache, currentPath);
+        }
       }
-      else {
-        const existingReadPropCache = context.readOnlyPropCache,
-          existingWritePropCache = context.writeOnlyPropCache;
-
-        schema = resolveRefFromSchema(context, schemaRef, stack, _.cloneDeep(seenRef));
-
-        /**
-         * Reset readOnly and writeOnly prop cache before resolving schema to make sure
-         * we have fresh cache for $ref resolution which will be stored as part of schemaCache
-         */
-        resetReadWritePropCache(context);
-        schema = _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), '');
-
-        // Add the resolved schema to the global schema cache
-        context.schemaCache[schemaRef] = {
-          schema,
-          readOnlyPropCache: context.readOnlyPropCache,
-          writeOnlyPropCache: context.writeOnlyPropCache
-        };
-
-        const newReadPropCache = context.readOnlyPropCache,
-          newWritePropCache = context.writeOnlyPropCache;
-
-        // Assign existing readOnly and writeOnly prop cache back to global context cache
-        context.readOnlyPropCache = existingReadPropCache;
-        context.writeOnlyPropCache = existingWritePropCache;
-
-        // Merge existing and current cache to make sure we have all the properties in cache
-        mergeReadWritePropCache(context, newReadPropCache, newWritePropCache, currentPath);
+      finally {
+        seenRef.delete(schemaRef);
       }
+
       return schema;
     }
 
@@ -725,7 +1198,7 @@ let QUERYPARAM = 'query',
           const currentPropPath = utils.addToJsonPath(currentPath, ['properties', propertyName]);
 
           resolvedSchemaProps[propertyName] = _resolveSchema(context, property, stack, resolveFor,
-            _.cloneDeep(seenRef), currentPropPath);
+            seenRef, currentPropPath);
         });
 
         schema.properties = resolvedSchemaProps;
@@ -735,7 +1208,7 @@ let QUERYPARAM = 'query',
     }
     // If schema is of type array
     else if (concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.array) && schema.items) {
-      schema.items = _resolveSchema(context, schema.items, stack, resolveFor, _.cloneDeep(seenRef),
+      schema.items = _resolveSchema(context, schema.items, stack, resolveFor, seenRef,
         utils.addToJsonPath(currentPath, ['items']));
     }
     // Any properties to ignored should not be available in schema
@@ -774,7 +1247,7 @@ let QUERYPARAM = 'query',
       }
       else {
         schema.additionalProperties = _resolveSchema(context, schema.additionalProperties, stack, resolveFor,
-          _.cloneDeep(seenRef), utils.addToJsonPath(currentPath, ['additionalProperties']));
+          seenRef, utils.addToJsonPath(currentPath, ['additionalProperties']));
       }
 
       schema.type = schema.type || SCHEMA_TYPES.object;
@@ -785,7 +1258,7 @@ let QUERYPARAM = 'query',
       _.forEach(schema.enum, (item, index) => {
         if (item && item.hasOwnProperty('$ref')) {
           schema.enum[index] = resolveRefFromSchema(
-            context, item.$ref, stack, _.cloneDeep(seenRef)
+            context, item.$ref, stack, seenRef
           );
         }
       });
@@ -944,18 +1417,19 @@ let QUERYPARAM = 'query',
    * @param {Object} resolutionMeta - Metadata of resolution taking place
    * @param {Number} resolutionMeta.stack - Current recursion depth
    * @param {String} resolutionMeta.resolveFor - For which action this resolution is to be done
-   * @param {Object} resolutionMeta.seenRef - Map of all the references that have been resolved
+   * @param {Object|Set} resolutionMeta.seenRef - References already seen. A plain string -> bool
+   *   map is still accepted for backwards compatibility and converted to a Set.
    * @param {Boolean} resolutionMeta.isResponseSchema - Whether schema is from response or not
    *
    * @returns {Object} Returns the object that satisfies the schema
    */
   resolveSchema = (context, schema,
-    { stack = 0, resolveFor = CONVERSION, seenRef = {}, isResponseSchema = false } = {}
+    { stack = 0, resolveFor = CONVERSION, seenRef, isResponseSchema = false } = {}
   ) => {
     // reset readOnly and writeOnly prop cache before resolving schema to make sure we have fresh cache
     resetReadWritePropCache(context);
 
-    let resolvedSchema = _resolveSchema(context, schema, stack, resolveFor, seenRef);
+    let resolvedSchema = _resolveSchema(context, schema, stack, resolveFor, toSeenRefSet(seenRef));
 
     /**
      * If readOnly or writeOnly properties are present in the schema, we need to clone original schema first.
@@ -1091,8 +1565,43 @@ let QUERYPARAM = 'query',
     return crypto.createHash('sha1').update(input).digest('base64');
   },
 
+  /**
+   * Records a faked schema against the identity of the schema object it came from, so a repeat
+   * call for the very same object skips stringify + hash entirely. See fakeSchema().
+   *
+   * @param {Object} context - Required context from related SchemaPack function
+   * @param {*} schema - Schema the value was faked from
+   * @param {*} fakedSchema - The faked value
+   * @returns {void}
+   */
+  cacheFakedSchemaByIdentity = (context, schema, fakedSchema) => {
+    if (typeof schema === 'object' && schema !== null && context.schemaFakerIdentityCache) {
+      context.schemaFakerIdentityCache.set(schema, fakedSchema);
+    }
+  },
+
   fakeSchema = (context, schema, shouldGenerateFromExample = true) => {
     try {
+      /**
+       * Identity-keyed fast path in front of the value-keyed cache below.
+       *
+       * `context.schemaCache` hands the same resolved object back for a given $ref, so most repeat
+       * calls are for a schema we have already faked -- and recognising that by object identity
+       * avoids JSON.stringify-ing and SHA-1-ing a multi-megabyte schema just to build the key.
+       *
+       * It can only ever agree with the value-keyed cache: the same object, unmutated between
+       * calls, stringifies to the same thing. resolveSchema() clones before deleting readOnly /
+       * writeOnly properties, so the objects it mutates are always fresh ones, and those simply
+       * miss here and fall through to the hash below.
+       */
+      if (typeof schema === 'object' && schema !== null) {
+        context.schemaFakerIdentityCache = context.schemaFakerIdentityCache || new WeakMap();
+
+        if (context.schemaFakerIdentityCache.has(schema)) {
+          return context.schemaFakerIdentityCache.get(schema);
+        }
+      }
+
       let stringifiedSchema = typeof schema === 'object' && (JSON.stringify(schema)),
         key = hash(stringifiedSchema),
         restrictArrayItems = typeof stringifiedSchema === 'string' &&
@@ -1103,18 +1612,40 @@ let QUERYPARAM = 'query',
       stringifiedSchema = null;
 
       if (context.schemaFakerCache[key]) {
+        cacheFakedSchemaByIdentity(context, schema, context.schemaFakerCache[key]);
+
         return context.schemaFakerCache[key];
       }
 
+      const fanOut = resolveArrayFanOut(context, schema, restrictArrayItems);
+
       schemaFaker.option({
         useExamplesValue: shouldGenerateFromExample,
-        defaultMinItems: restrictArrayItems ? 1 : 2,
-        defaultMaxItems: restrictArrayItems ? 1 : 2
+        defaultMinItems: fanOut.defaultMinItems,
+        defaultMaxItems: fanOut.defaultMaxItems,
+        maxItems: fanOut.maxItems,
+        /**
+         * Gated on the same 50 KB threshold as `restrictArrayItems`, which already trades
+         * example fidelity for size above that line. Below it, generation is fast and every
+         * occurrence of a repeated sub-schema keeps its own independently faked value.
+         */
+        reuseIdenticalSubSchemas: restrictArrayItems
       });
 
-      fakedSchema = schemaFaker(schema, null, context.schemaValidationCache || {});
+      try {
+        fakedSchema = schemaFaker(schema, null, context.schemaValidationCache || {});
+      }
+      finally {
+        /**
+         * Both are process-wide json-schema-faker options, shared with the V1 conversion path.
+         * Restore the defaults so a tightened fan-out or enabled reuse cannot leak into a
+         * later conversion.
+         */
+        schemaFaker.option({ maxItems: DEFAULT_ARRAY_MAX_ITEMS, reuseIdenticalSubSchemas: false });
+      }
 
       context.schemaFakerCache[key] = fakedSchema;
+      cacheFakedSchemaByIdentity(context, schema, fakedSchema);
 
       return fakedSchema;
     }
@@ -2028,9 +2559,10 @@ let QUERYPARAM = 'query',
       }
 
       const { indentCharacter } = context.computedOptions,
-        rawModeData = !_.isObject(bodyData) && _.isFunction(_.get(bodyData, 'toString')) ?
-          bodyData.toString() :
-          JSON.stringify(bodyData, null, indentCharacter);
+        rawModeData = serialiseGeneratedBody(context, bodyData, indentCharacter, {
+          in: 'request',
+          contentType: bodyType
+        });
 
       dataToBeReturned = {
         mode: 'raw',
@@ -2489,13 +3021,16 @@ let QUERYPARAM = 'query',
       }
 
       const { indentCharacter } = context.computedOptions,
-        getRawModeData = (bodyData) => {
-          return !_.isObject(bodyData) && _.isFunction(_.get(bodyData, 'toString')) ?
-            bodyData.toString() :
-            JSON.stringify(bodyData, null, indentCharacter);
+        getRawModeData = (bodyData, position) => {
+          return serialiseGeneratedBody(context, bodyData, indentCharacter, {
+            in: position,
+            responseCode: code,
+            exampleName,
+            contentType: bodyType
+          });
         },
-        requestRawModeData = getRawModeData(requestBodyData),
-        responseRawModeData = getRawModeData(responseBodyData),
+        requestRawModeData = getRawModeData(requestBodyData, 'response~request'),
+        responseRawModeData = getRawModeData(responseBodyData, 'response'),
         responseMediaTypes = _.keys(responseContent);
 
       if (responseMediaTypes.length > 0) {
@@ -2968,5 +3503,9 @@ module.exports = {
   resolveResponseForPostmanRequest,
   resolveRequestBodyForPostmanRequest,
   resolveRefFromSchema,
-  resolveSchema
+  resolveSchema,
+  recordConversionIssue,
+  getRefStackLimit,
+  CONVERSION_ISSUE_TYPES,
+  MAX_CONVERSION_ISSUES
 };
