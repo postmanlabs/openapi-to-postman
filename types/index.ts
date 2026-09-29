@@ -134,19 +134,7 @@ export interface Options {
   /** Importing will collapse all folders that have only one child element (V1 only) */
   collapseFolders?: boolean;
 
-  /**
-   * Optimizes conversion for large specifications. Enabled by default.
-   *
-   * When on, the spec is analysed (`analyzeSpec`) and scored (`determineOptions`). A spec scores
-   * above zero once it has more than 500 `$ref`s or more than 500 operations, and from there the
-   * score rises with size and ref count. Any non-zero score caps the projected size of each
-   * generated request/response body, which bounds how far arrays fan out; scores do not currently
-   * differ in effect. Schema resolution depth is NOT affected -- that is governed separately by
-   * `stackLimit`, and is left alone here.
-   *
-   * Turning this off removes the size cap, so a spec whose schemas expand without bound can
-   * exhaust memory before conversion finishes.
-   */
+  /** Optimizes conversion for large specification (V1 only) */
   optimizeConversion?: boolean;
 
   /** Request parameter generation based on schema or example (V1 only) */

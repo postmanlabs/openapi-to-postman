@@ -96,24 +96,6 @@ const schemaFaker = require('../../assets/json-schema-faker.js'),
   FAKER_DEFAULT_MAX_ITEMS = 2,
 
   /**
-   * Array fan-out tiers, most generous first.
-   *
-   * `defaultMinItems`/`defaultMaxItems` only apply to arrays that do NOT declare their own
-   * `minItems`/`maxItems`; the `maxItems` faker option is what actually caps an array that
-   * declares a larger `maxItems` of its own (e.g. `maxItems: 200`).
-   */
-  ARRAY_FAN_OUT_TIERS = [
-    { defaultMinItems: 2, defaultMaxItems: 2, maxItems: DEFAULT_ARRAY_MAX_ITEMS },
-    { defaultMinItems: 1, defaultMaxItems: 1, maxItems: DEFAULT_ARRAY_MAX_ITEMS },
-    { defaultMinItems: 1, defaultMaxItems: 1, maxItems: 5 },
-    { defaultMinItems: 1, defaultMaxItems: 1, maxItems: 2 },
-    { defaultMinItems: 1, defaultMaxItems: 1, maxItems: 1 }
-  ],
-
-  // Hard cap on how deep the (memoised) body size projection walks a resolved schema.
-  BODY_SIZE_PROJECTION_DEPTH_LIMIT = 512,
-
-  /**
    * Hard ceiling on the length of a single generated request/response body, in characters.
    *
    * V8 cannot represent a string longer than `MAX_STRING_LENGTH` (536,870,888 on 64-bit), so
@@ -491,206 +473,6 @@ let QUERYPARAM = 'query',
     }
 
     return JSON.stringify(bodyData, null, indentCharacter);
-  },
-
-  /**
-   * Item count json-schema-faker will generate for an array schema under `fanOut`.
-   *
-   * This mirrors `arrayType` in assets/json-schema-faker.js exactly. With
-   * `optionalsProbability: 1.0` - which this module sets - the generated length is simply the
-   * `maxItems` that function settles on, so `minItems` never widens the result:
-   *
-   *   1. `minItems` is defaulted to `defaultMinItems` only when the schema declares no
-   *      `minItems` AND declares a truthy `maxItems` that is at least `defaultMinItems`.
-   *   2. A `minItems` greater than zero then *overwrites* `maxItems`.
-   *   3. A still-undeclared `maxItems` falls back to `defaultMaxItems`.
-   *   4. The global `maxItems` option finally clamps whatever survived.
-   *
-   * The consequence that matters here: an array declaring `minItems: 0` skips steps 1 and 2, so
-   * `defaultMinItems`/`defaultMaxItems` never touch it and its declared `maxItems` stands. The
-   * global `maxItems` option is the only lever that bounds those, which is why the fan-out tiers
-   * lower it rather than relying on the defaults.
-   *
-   * @param {Object} schema - Resolved array schema
-   * @param {Object} fanOut - Faker array options in force
-   * @returns {Number} Item count that will be generated
-   */
-  projectedArrayItemCount = (schema, fanOut) => {
-    let minItems = schema.minItems,
-      maxItems = schema.maxItems;
-
-    if (typeof minItems !== 'number' && maxItems && maxItems >= fanOut.defaultMinItems) {
-      minItems = fanOut.defaultMinItems;
-    }
-
-    if (typeof minItems === 'number' && minItems > 0) {
-      maxItems = minItems;
-    }
-
-    if (typeof maxItems !== 'number') {
-      maxItems = fanOut.defaultMaxItems;
-    }
-
-    if (fanOut.maxItems && maxItems && maxItems > fanOut.maxItems) {
-      maxItems = fanOut.maxItems;
-    }
-
-    return Math.max(maxItems, 0);
-  },
-
-  /**
-   * Projects how large the body json-schema-faker would build for an already resolved schema,
-   * without building it.
-   *
-   * `_resolveSchema` returns a structure-shared DAG - the same sub-schema object is reachable
-   * along many paths - while the faker expands that DAG into a tree. Memoising on object
-   * identity makes this linear in the number of *unique* sub-schemas rather than exponential
-   * in the size of the expanded tree, which is exactly the blow-up we are trying to predict.
-   *
-   * @param {Object} schema - Resolved schema
-   * @param {Object} fanOut - Faker array options to project for
-   * @param {Map} memo - Identity-keyed memo of already projected sub-schemas
-   * @param {Number} depth - Current recursion depth
-   * @returns {Number} Projected serialised length of the faked body
-   */
-  projectFakedBodyLength = (schema, fanOut, memo, depth = 0) => {
-    if (!_.isObject(schema)) {
-      return 4;
-    }
-
-    if (memo.has(schema)) {
-      return memo.get(schema);
-    }
-
-    if (depth > BODY_SIZE_PROJECTION_DEPTH_LIMIT) {
-      return 4;
-    }
-
-    // Seed the memo before recursing so a self-referential schema terminates.
-    memo.set(schema, 0);
-
-    let projected = 8;
-    const compositeSchema = schema.anyOf || schema.oneOf;
-
-    if (_.isArray(compositeSchema)) {
-      // CONVERSION resolution keeps only the first branch.
-      projected = compositeSchema.length ?
-        projectFakedBodyLength(compositeSchema[0], fanOut, memo, depth + 1) :
-        4;
-    }
-    else if (schema.example !== undefined) {
-      projected = measureJsonLength(schema.example, MAX_GENERATED_BODY_LENGTH);
-    }
-    else if (_.isObject(schema.properties)) {
-      projected = 2;
-      _.forOwn(schema.properties, (propertySchema, propertyName) => {
-        // "key": plus a separating comma
-        projected += propertyName.length + 4 +
-          projectFakedBodyLength(propertySchema, fanOut, memo, depth + 1);
-      });
-    }
-    else if (_.isObject(schema.items)) {
-      const itemCount = projectedArrayItemCount(schema, fanOut);
-
-      projected = 2 + itemCount * (projectFakedBodyLength(schema.items, fanOut, memo, depth + 1) + 1);
-    }
-    else if (schema.default !== undefined) {
-      projected = measureJsonLength(schema.default, MAX_GENERATED_BODY_LENGTH);
-    }
-    else if (_.isArray(schema.enum) && schema.enum.length) {
-      projected = measureJsonLength(schema.enum[0], MAX_GENERATED_BODY_LENGTH);
-    }
-    else if (schema.type === SCHEMA_TYPES.string) {
-      projected = Math.min(_.isNumber(schema.maxLength) ? schema.maxLength : 24, 256) + 2;
-    }
-
-    memo.set(schema, projected);
-
-    return projected;
-  },
-
-  /**
-   * Largest `minItems` declared anywhere inside a resolved schema.
-   *
-   * A declared `minItems` greater than zero overwrites `maxItems` inside the faker's `arrayType`
-   * and is then clamped by the global `maxItems` option, so that global cap has to stay at or
-   * above this value. Capping below it generates a body that violates its own schema, which
-   * validation duly reports as an INVALID_RESPONSE_BODY mismatch against the very specification
-   * the body was generated from.
-   *
-   * @param {Object} schema - Resolved schema
-   * @param {Map} memo - Identity-keyed memo of already visited sub-schemas
-   * @returns {Number} Largest declared `minItems`, or 0 when none is declared
-   */
-  maxDeclaredMinItems = (schema, memo) => {
-    if (!_.isObject(schema) || memo.has(schema)) {
-      return 0;
-    }
-
-    memo.set(schema, 0);
-
-    let largest = _.isNumber(schema.minItems) && schema.minItems > 0 ? schema.minItems : 0;
-
-    const visit = (subSchema) => {
-      largest = Math.max(largest, maxDeclaredMinItems(subSchema, memo));
-    };
-
-    _.forOwn(schema.properties, visit);
-    _.forEach(schema.anyOf, visit);
-    _.forEach(schema.oneOf, visit);
-    _.forEach(schema.allOf, visit);
-
-    if (_.isObject(schema.items)) {
-      visit(schema.items);
-    }
-
-    memo.set(schema, largest);
-
-    return largest;
-  },
-
-  /**
-   * Decides the array fan-out to fake `schema` with.
-   *
-   * With no body size budget in force (ordinary spec, or `optimizeConversion` turned off) this
-   * reproduces the historical behaviour exactly: two items per array unless the *stringified
-   * resolved schema* was over SCHEMA_SIZE_OPTIMIZATION_THRESHOLD, in which case one.
-   *
-   * When the governor did set a budget, the tiers are keyed on the *projected output size*
-   * instead. That matters because the two are inversely related: lowering the ref stack limit
-   * shrinks the resolved schema (so the old safeguard disengages) while the arrays it contains
-   * are what actually inflate the output.
-   *
-   * @param {Object} context - Global context object
-   * @param {Object} schema - Resolved schema about to be faked
-   * @param {Boolean} restrictArrayItems - Whether the legacy schema-size safeguard engaged
-   * @returns {Object} Faker array options to use
-   */
-  resolveArrayFanOut = (context, schema, restrictArrayItems) => {
-    const budget = _.get(context, 'computedOptions.generatedBodySizeBudget'),
-      // The legacy safeguard stays a floor: the governor may only tighten it further.
-      firstTier = restrictArrayItems ? 1 : 0;
-
-    if (!_.isNumber(budget) || budget <= 0) {
-      return ARRAY_FAN_OUT_TIERS[firstTier];
-    }
-
-    /**
-     * No global `minItems` floor here. An array that declares its own `minItems` is honoured
-     * per array inside the faker's `arrayType`, so one `minItems: N` deep in a schema no longer
-     * forces every other array in the same body up to N items.
-     */
-    let tier = ARRAY_FAN_OUT_TIERS[ARRAY_FAN_OUT_TIERS.length - 1];
-
-    for (let index = firstTier; index < ARRAY_FAN_OUT_TIERS.length; index++) {
-      tier = ARRAY_FAN_OUT_TIERS[index];
-
-      if (projectFakedBodyLength(schema, tier, new Map()) <= budget) {
-        break;
-      }
-    }
-
-    return tier;
   },
 
   /**
@@ -1626,13 +1408,10 @@ let QUERYPARAM = 'query',
         return context.schemaFakerCache[key];
       }
 
-      const fanOut = resolveArrayFanOut(context, schema, restrictArrayItems);
-
       schemaFaker.option({
         useExamplesValue: shouldGenerateFromExample,
-        defaultMinItems: fanOut.defaultMinItems,
-        defaultMaxItems: fanOut.defaultMaxItems,
-        maxItems: fanOut.maxItems,
+        defaultMinItems: restrictArrayItems ? 1 : 2,
+        defaultMaxItems: restrictArrayItems ? 1 : 2,
         /**
          * Gated on the same 50 KB threshold as `restrictArrayItems`, which already trades
          * example fidelity for size above that line. Below it, generation is fast and every

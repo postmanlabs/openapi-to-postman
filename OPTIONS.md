@@ -3,7 +3,7 @@ id|type|available options|default|description|usage|version
 requestNameSource|enum|URL, Fallback|Fallback|Determines how the requests inside the generated collection will be named. If “Fallback” is selected, the request will be named after one of the following schema values: `summary`, `operationId`, `description`, `url`.|CONVERSION, VALIDATION|v2, v1
 indentCharacter|enum|Space, Tab|Space|Option for setting indentation character.|CONVERSION|v2, v1
 collapseFolders|boolean|-|true|Importing will collapse all folders that have only one child element and lack persistent folder-level data.|CONVERSION|v1
-optimizeConversion|boolean|-|true|Optimizes conversion for large specification, disabling this option might affect the performance of conversion.|CONVERSION|v2, v1
+optimizeConversion|boolean|-|true|Optimizes conversion for large specification, disabling this option might affect the performance of conversion.|CONVERSION|v1
 requestParametersResolution|enum|Example, Schema|Schema|Select whether to generate the request parameters based on the [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject) in the schema.|CONVERSION|v1
 exampleParametersResolution|enum|Example, Schema|Example|Select whether to generate the response parameters based on the [schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject) or the [example](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#exampleObject) in the schema.|CONVERSION|v1
 disabledParametersValidation|boolean|-|true|Whether disabled parameters of collection should be validated|VALIDATION|v2, v1
