@@ -135,9 +135,17 @@ export interface Options {
   collapseFolders?: boolean;
 
   /**
-   * Optimizes conversion for large specifications. When enabled (the default), the spec is
-   * analysed and, if it is found complex, schema resolution depth and generated body size are
-   * bounded so conversion terminates. Disabling it removes those bounds.
+   * Optimizes conversion for large specifications. Enabled by default.
+   *
+   * When on, the spec is analysed (`analyzeSpec`) and scored (`determineOptions`). A spec scores
+   * above zero once it has more than 500 `$ref`s or more than 500 operations, and from there the
+   * score rises with size and ref count. Any non-zero score caps the projected size of each
+   * generated request/response body, which bounds how far arrays fan out; scores do not currently
+   * differ in effect. Schema resolution depth is NOT affected -- that is governed separately by
+   * `stackLimit`, and is left alone here.
+   *
+   * Turning this off removes the size cap, so a spec whose schemas expand without bound can
+   * exhaust memory before conversion finishes.
    */
   optimizeConversion?: boolean;
 
