@@ -292,15 +292,32 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * Normalises the seenRef argument of the public resolveSchema() into a Set.
+   *
+   * Internally seenRef is a Set maintained with add-before-recurse / delete-after-return, but the
+   * parameter used to be a plain string -> bool map, so one may still be handed in from outside.
+   *
+   * @param {Object|Set} seenRef - References already seen, as a Set or as a legacy map
+   * @returns {Set} Set of seen references
+   */
+  toSeenRefSet = (seenRef) => {
+    if (seenRef instanceof Set) {
+      return seenRef;
+    }
+
+    return new Set(_.isObject(seenRef) ? _.keys(seenRef) : []);
+  },
+
+  /**
    * Resolve a given ref from the schema
    * @param {Object} context - Global context object
    * @param {Object} $ref - Ref that is to be resolved
    * @param {Number} stackDepth - Depth of the current stack for Ref resolution
-   * @param {Object} seenRef - Seen Reference map
+   * @param {Set} seenRef - Set of references seen on the current resolution path
    *
    * @returns {Object} Returns the object that satisfies the schema
    */
-  resolveRefFromSchema = (context, $ref, stackDepth = 0, seenRef = {}) => {
+  resolveRefFromSchema = (context, $ref, stackDepth = 0, seenRef = new Set()) => {
     const { specComponents } = context,
       { stackLimit } = context.computedOptions;
 
@@ -311,7 +328,13 @@ let QUERYPARAM = 'query',
     }
 
     stackDepth++;
-    seenRef[$ref] = true;
+
+    /**
+     * `seenRef` is deliberately NOT mutated here. The mark for `$ref` is only ever consumed by
+     * the nested resolution at the bottom of this function, which gets its own branch-scoped
+     * copy -- exactly what the `_.cloneDeep(seenRef)` that used to be passed down provided.
+     * Leaving the caller's set untouched is what lets it be shared instead of cloned.
+     */
 
     if (context.schemaCache[$ref]) {
       // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
@@ -356,12 +379,17 @@ let QUERYPARAM = 'query',
     }
 
     if (_.get(resolvedSchema, '$ref')) {
-      if (seenRef[resolvedSchema.$ref]) {
+      // Branch-scoped copy, taken only on this rare nested-$ref path
+      const branchSeenRef = new Set(seenRef);
+
+      branchSeenRef.add($ref);
+
+      if (branchSeenRef.has(resolvedSchema.$ref)) {
         return {
           value: '<Circular reference to ' + resolvedSchema.$ref + ' detected>'
         };
       }
-      return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth, _.cloneDeep(seenRef));
+      return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth, branchSeenRef);
     }
 
     return resolvedSchema;
@@ -372,11 +400,11 @@ let QUERYPARAM = 'query',
    * @param {Object} context - Global context object
    * @param {Object} $ref - Ref that is to be resolved
    * @param {Number} stackDepth - Depth of the current stack for Ref resolution
-   * @param {Object} seenRef - Seen Reference map
+   * @param {Set} seenRef - Set of references seen on the current resolution path
    *
    * @returns {Object} Returns the object that satisfies the schema
    */
-  resolveRefForExamples = (context, $ref, stackDepth = 0, seenRef = {}) => {
+  resolveRefForExamples = (context, $ref, stackDepth = 0, seenRef = new Set()) => {
     const { specComponents } = context,
       { stackLimit } = context.computedOptions;
 
@@ -385,7 +413,8 @@ let QUERYPARAM = 'query',
     }
 
     stackDepth++;
-    seenRef[$ref] = true;
+
+    // See the note in resolveRefFromSchema: the caller's set is left untouched.
 
     if (context.schemaCache[$ref]) {
       // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
@@ -430,12 +459,17 @@ let QUERYPARAM = 'query',
     }
 
     if (_.has(resolvedExample, '$ref')) {
-      if (seenRef[resolvedExample.$ref]) {
+      // Branch-scoped copy, taken only on this rare nested-$ref path
+      const branchSeenRef = new Set(seenRef);
+
+      branchSeenRef.add($ref);
+
+      if (branchSeenRef.has(resolvedExample.$ref)) {
         return {
           value: `<Circular reference to ${resolvedExample.$ref} detected>`
         };
       }
-      return resolveRefFromSchema(context, resolvedExample.$ref, stackDepth, _.cloneDeep(seenRef));
+      return resolveRefFromSchema(context, resolvedExample.$ref, stackDepth, branchSeenRef);
     }
 
     // Add the resolved schema to the global schema cache
@@ -497,12 +531,13 @@ let QUERYPARAM = 'query',
    * @param {Object} schema - Schema to be resolved
    * @param {Number} [stack] - Current recursion depth
    * @param {*} resolveFor - resolve refs for flow validation/conversion (value to be one of VALIDATION/CONVERSION)
-   * @param {Object} seenRef - Map of all the references that have been resolved
+   * @param {Set} seenRef - Set of references seen on the current resolution path
    * @param {String} currentPath - Current path (json-pointer) being resolved relative to original schema
    *
    * @returns {Object} Resolved schema
    */
-  resolveAllOfSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}, currentPath = '') => {
+  resolveAllOfSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = new Set(),
+    currentPath = '') => {
     /*
       For TYPES_GENERATION, we do not want to merge the allOf schemas
       instead we want to keep them separate so that we can generate types like:
@@ -522,7 +557,7 @@ let QUERYPARAM = 'query',
       const result = {
         allOf: _.map(schema.allOf, (schema) => {
           // eslint-disable-next-line no-use-before-define
-          return _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+          return _resolveSchema(context, schema, stack, resolveFor, seenRef, currentPath);
         })
       };
       if (schema.title !== undefined) {
@@ -541,7 +576,7 @@ let QUERYPARAM = 'query',
       return mergeAllOf(_.assign(schema, {
         allOf: _.map(schema.allOf, (schema) => {
           // eslint-disable-next-line no-use-before-define
-          return _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+          return _resolveSchema(context, schema, stack, resolveFor, seenRef, currentPath);
         })
       }), {
         // below option is required to make sure schemas with additionalProperties set to false are resolved correctly
@@ -568,13 +603,16 @@ let QUERYPARAM = 'query',
    * @param {Object} schema - Schema that is to be resolved
    * @param {Number} [stack] - Current recursion depth
    * @param {String} resolveFor - For which action this resolution is to be done
-   * @param {Object} seenRef - Map of all the references that have been resolved
+   * @param {Set} seenRef - Set of references seen on the current resolution path, maintained with
+   *   add-before-recurse / delete-after-return. That gives each branch exactly the path-scoped
+   *   visibility a cloned map gave it, without cloning once per branch.
    * @param {String} currentPath - Current path (json-pointer) being resolved relative to original schema
    * @todo: Explore using a directed graph/tree for maintaining seen ref
    *
    * @returns {Object} Returns the object that satisfies the schema
    */
-  _resolveSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}, currentPath = '') => {
+  _resolveSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = new Set(),
+    currentPath = '') => {
     if (!schema) {
       return new Error('Schema is empty');
     }
@@ -610,12 +648,12 @@ let QUERYPARAM = 'query',
       });
 
       if (resolveFor === CONVERSION) {
-        return _resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+        return _resolveSchema(context, compositeSchema[0], stack, resolveFor, seenRef, currentPath);
       }
 
       const result = {
         [compositeKeyword]: _.map(compositeSchema, (schemaElement, index) => {
-          return _resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef),
+          return _resolveSchema(context, schemaElement, stack, resolveFor, seenRef,
             utils.addToJsonPath(currentPath, [compositeKeyword, index]));
         })
       };
@@ -634,57 +672,69 @@ let QUERYPARAM = 'query',
     }
 
     if (schema.allOf) {
-      return resolveAllOfSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+      return resolveAllOfSchema(context, schema, stack, resolveFor, seenRef, currentPath);
     }
 
     if (schema.$ref) {
       const schemaRef = schema.$ref;
 
-      if (seenRef[schemaRef]) {
+      if (seenRef.has(schemaRef)) {
         return {
           value: '<Circular reference to ' + schemaRef + ' detected>'
         };
       }
 
-      seenRef[schemaRef] = true;
+      /**
+       * Mark this ref for the duration of the branch below and unwind it on the way out, which
+       * gives siblings exactly the view a freshly cloned map used to give them. The unwind is in a
+       * `finally` so a throw from deeper down (which resolveAllOfSchema catches and continues past)
+       * cannot leave a stale mark behind and make a later, legitimate reference look circular.
+       */
+      seenRef.add(schemaRef);
 
-      if (context.schemaCache[schemaRef]) {
-        // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
-        mergeReadWritePropCache(context, context.schemaCache[schemaRef].readOnlyPropCache,
-          context.schemaCache[schemaRef].writeOnlyPropCache, currentPath);
+      try {
+        if (context.schemaCache[schemaRef]) {
+          // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
+          mergeReadWritePropCache(context, context.schemaCache[schemaRef].readOnlyPropCache,
+            context.schemaCache[schemaRef].writeOnlyPropCache, currentPath);
 
-        schema = context.schemaCache[schemaRef].schema;
+          schema = context.schemaCache[schemaRef].schema;
+        }
+        else {
+          const existingReadPropCache = context.readOnlyPropCache,
+            existingWritePropCache = context.writeOnlyPropCache;
+
+          schema = resolveRefFromSchema(context, schemaRef, stack, seenRef);
+
+          /**
+           * Reset readOnly and writeOnly prop cache before resolving schema to make sure
+           * we have fresh cache for $ref resolution which will be stored as part of schemaCache
+           */
+          resetReadWritePropCache(context);
+          schema = _resolveSchema(context, schema, stack, resolveFor, seenRef, '');
+
+          // Add the resolved schema to the global schema cache
+          context.schemaCache[schemaRef] = {
+            schema,
+            readOnlyPropCache: context.readOnlyPropCache,
+            writeOnlyPropCache: context.writeOnlyPropCache
+          };
+
+          const newReadPropCache = context.readOnlyPropCache,
+            newWritePropCache = context.writeOnlyPropCache;
+
+          // Assign existing readOnly and writeOnly prop cache back to global context cache
+          context.readOnlyPropCache = existingReadPropCache;
+          context.writeOnlyPropCache = existingWritePropCache;
+
+          // Merge existing and current cache to make sure we have all the properties in cache
+          mergeReadWritePropCache(context, newReadPropCache, newWritePropCache, currentPath);
+        }
       }
-      else {
-        const existingReadPropCache = context.readOnlyPropCache,
-          existingWritePropCache = context.writeOnlyPropCache;
-
-        schema = resolveRefFromSchema(context, schemaRef, stack, _.cloneDeep(seenRef));
-
-        /**
-         * Reset readOnly and writeOnly prop cache before resolving schema to make sure
-         * we have fresh cache for $ref resolution which will be stored as part of schemaCache
-         */
-        resetReadWritePropCache(context);
-        schema = _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), '');
-
-        // Add the resolved schema to the global schema cache
-        context.schemaCache[schemaRef] = {
-          schema,
-          readOnlyPropCache: context.readOnlyPropCache,
-          writeOnlyPropCache: context.writeOnlyPropCache
-        };
-
-        const newReadPropCache = context.readOnlyPropCache,
-          newWritePropCache = context.writeOnlyPropCache;
-
-        // Assign existing readOnly and writeOnly prop cache back to global context cache
-        context.readOnlyPropCache = existingReadPropCache;
-        context.writeOnlyPropCache = existingWritePropCache;
-
-        // Merge existing and current cache to make sure we have all the properties in cache
-        mergeReadWritePropCache(context, newReadPropCache, newWritePropCache, currentPath);
+      finally {
+        seenRef.delete(schemaRef);
       }
+
       return schema;
     }
 
@@ -725,7 +775,7 @@ let QUERYPARAM = 'query',
           const currentPropPath = utils.addToJsonPath(currentPath, ['properties', propertyName]);
 
           resolvedSchemaProps[propertyName] = _resolveSchema(context, property, stack, resolveFor,
-            _.cloneDeep(seenRef), currentPropPath);
+            seenRef, currentPropPath);
         });
 
         schema.properties = resolvedSchemaProps;
@@ -735,7 +785,7 @@ let QUERYPARAM = 'query',
     }
     // If schema is of type array
     else if (concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.array) && schema.items) {
-      schema.items = _resolveSchema(context, schema.items, stack, resolveFor, _.cloneDeep(seenRef),
+      schema.items = _resolveSchema(context, schema.items, stack, resolveFor, seenRef,
         utils.addToJsonPath(currentPath, ['items']));
     }
     // Any properties to ignored should not be available in schema
@@ -774,7 +824,7 @@ let QUERYPARAM = 'query',
       }
       else {
         schema.additionalProperties = _resolveSchema(context, schema.additionalProperties, stack, resolveFor,
-          _.cloneDeep(seenRef), utils.addToJsonPath(currentPath, ['additionalProperties']));
+          seenRef, utils.addToJsonPath(currentPath, ['additionalProperties']));
       }
 
       schema.type = schema.type || SCHEMA_TYPES.object;
@@ -785,7 +835,7 @@ let QUERYPARAM = 'query',
       _.forEach(schema.enum, (item, index) => {
         if (item && item.hasOwnProperty('$ref')) {
           schema.enum[index] = resolveRefFromSchema(
-            context, item.$ref, stack, _.cloneDeep(seenRef)
+            context, item.$ref, stack, seenRef
           );
         }
       });
@@ -944,18 +994,19 @@ let QUERYPARAM = 'query',
    * @param {Object} resolutionMeta - Metadata of resolution taking place
    * @param {Number} resolutionMeta.stack - Current recursion depth
    * @param {String} resolutionMeta.resolveFor - For which action this resolution is to be done
-   * @param {Object} resolutionMeta.seenRef - Map of all the references that have been resolved
+   * @param {Object|Set} resolutionMeta.seenRef - References already seen. A plain string -> bool
+   *   map is still accepted for backwards compatibility and converted to a Set.
    * @param {Boolean} resolutionMeta.isResponseSchema - Whether schema is from response or not
    *
    * @returns {Object} Returns the object that satisfies the schema
    */
   resolveSchema = (context, schema,
-    { stack = 0, resolveFor = CONVERSION, seenRef = {}, isResponseSchema = false } = {}
+    { stack = 0, resolveFor = CONVERSION, seenRef, isResponseSchema = false } = {}
   ) => {
     // reset readOnly and writeOnly prop cache before resolving schema to make sure we have fresh cache
     resetReadWritePropCache(context);
 
-    let resolvedSchema = _resolveSchema(context, schema, stack, resolveFor, seenRef);
+    let resolvedSchema = _resolveSchema(context, schema, stack, resolveFor, toSeenRefSet(seenRef));
 
     /**
      * If readOnly or writeOnly properties are present in the schema, we need to clone original schema first.
@@ -1091,8 +1142,43 @@ let QUERYPARAM = 'query',
     return crypto.createHash('sha1').update(input).digest('base64');
   },
 
+  /**
+   * Records a faked schema against the identity of the schema object it came from, so a repeat
+   * call for the very same object skips stringify + hash entirely. See fakeSchema().
+   *
+   * @param {Object} context - Required context from related SchemaPack function
+   * @param {*} schema - Schema the value was faked from
+   * @param {*} fakedSchema - The faked value
+   * @returns {void}
+   */
+  cacheFakedSchemaByIdentity = (context, schema, fakedSchema) => {
+    if (typeof schema === 'object' && schema !== null && context.schemaFakerIdentityCache) {
+      context.schemaFakerIdentityCache.set(schema, fakedSchema);
+    }
+  },
+
   fakeSchema = (context, schema, shouldGenerateFromExample = true) => {
     try {
+      /**
+       * Identity-keyed fast path in front of the value-keyed cache below.
+       *
+       * `context.schemaCache` hands the same resolved object back for a given $ref, so most repeat
+       * calls are for a schema we have already faked -- and recognising that by object identity
+       * avoids JSON.stringify-ing and SHA-1-ing a multi-megabyte schema just to build the key.
+       *
+       * It can only ever agree with the value-keyed cache: the same object, unmutated between
+       * calls, stringifies to the same thing. resolveSchema() clones before deleting readOnly /
+       * writeOnly properties, so the objects it mutates are always fresh ones, and those simply
+       * miss here and fall through to the hash below.
+       */
+      if (typeof schema === 'object' && schema !== null) {
+        context.schemaFakerIdentityCache = context.schemaFakerIdentityCache || new WeakMap();
+
+        if (context.schemaFakerIdentityCache.has(schema)) {
+          return context.schemaFakerIdentityCache.get(schema);
+        }
+      }
+
       let stringifiedSchema = typeof schema === 'object' && (JSON.stringify(schema)),
         key = hash(stringifiedSchema),
         restrictArrayItems = typeof stringifiedSchema === 'string' &&
@@ -1103,6 +1189,8 @@ let QUERYPARAM = 'query',
       stringifiedSchema = null;
 
       if (context.schemaFakerCache[key]) {
+        cacheFakedSchemaByIdentity(context, schema, context.schemaFakerCache[key]);
+
         return context.schemaFakerCache[key];
       }
 
@@ -1115,6 +1203,7 @@ let QUERYPARAM = 'query',
       fakedSchema = schemaFaker(schema, null, context.schemaValidationCache || {});
 
       context.schemaFakerCache[key] = fakedSchema;
+      cacheFakedSchemaByIdentity(context, schema, fakedSchema);
 
       return fakedSchema;
     }
