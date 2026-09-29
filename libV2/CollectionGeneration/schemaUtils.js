@@ -87,6 +87,15 @@ const schemaFaker = require('../../assets/json-schema-faker.js'),
   DEFAULT_ARRAY_MAX_ITEMS = 20,
 
   /**
+   * json-schema-faker's own defaults for `defaultMinItems` / `defaultMaxItems`, used to restore
+   * them after a body-specific fan-out tier. Both are process-wide options: leaving a tier's
+   * values in place let them leak into whatever was faked next -- parameters, headers, or the
+   * next body -- so what a parameter got depended on which body happened to be faked before it.
+   */
+  FAKER_DEFAULT_MIN_ITEMS = 2,
+  FAKER_DEFAULT_MAX_ITEMS = 2,
+
+  /**
    * Array fan-out tiers, most generous first.
    *
    * `defaultMinItems`/`defaultMaxItems` only apply to arrays that do NOT declare their own
@@ -1637,11 +1646,16 @@ let QUERYPARAM = 'query',
       }
       finally {
         /**
-         * Both are process-wide json-schema-faker options, shared with the V1 conversion path.
-         * Restore the defaults so a tightened fan-out or enabled reuse cannot leak into a
-         * later conversion.
+         * These are process-wide json-schema-faker options, shared with the V1 conversion path.
+         * Restore every one this call set, so a tightened fan-out or enabled reuse cannot leak
+         * into whatever is faked next.
          */
-        schemaFaker.option({ maxItems: DEFAULT_ARRAY_MAX_ITEMS, reuseIdenticalSubSchemas: false });
+        schemaFaker.option({
+          maxItems: DEFAULT_ARRAY_MAX_ITEMS,
+          defaultMinItems: FAKER_DEFAULT_MIN_ITEMS,
+          defaultMaxItems: FAKER_DEFAULT_MAX_ITEMS,
+          reuseIdenticalSubSchemas: false
+        });
       }
 
       context.schemaFakerCache[key] = fakedSchema;
@@ -1721,8 +1735,15 @@ let QUERYPARAM = 'query',
       return example;
     }
 
+    /**
+     * State the array bounds explicitly rather than inheriting whatever the last `fakeSchema`
+     * call happened to leave behind.
+     */
     schemaFaker.option({
-      useExamplesValue: true
+      useExamplesValue: true,
+      defaultMinItems: FAKER_DEFAULT_MIN_ITEMS,
+      defaultMaxItems: FAKER_DEFAULT_MAX_ITEMS,
+      maxItems: DEFAULT_ARRAY_MAX_ITEMS
     });
 
     if (resolvedSchema.properties) {
