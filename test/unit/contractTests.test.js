@@ -227,3 +227,160 @@ describe('generateContractTests — embedded schema is JSON-Schema compliant', f
     expect(function () { return ajv.compile(schema200); }).to.not.throw();
   });
 });
+
+describe('generateContractTests — request chaining (x-postman-variables)', function () {
+  const specChaining = {
+    openapi: '3.0.0',
+    info: { title: 'Chaining', version: '1.0.0' },
+    paths: {
+      '/pets': {
+        post: {
+          summary: 'Create pet',
+          responses: {
+            201: {
+              description: 'Created',
+              headers: { Location: { schema: { type: 'string' } } },
+              content: {
+                'application/json': {
+                  schema: { type: 'object', properties: { id: { type: 'string' } } }
+                }
+              },
+              'x-postman-variables': [
+                { type: 'save', name: 'petId', path: '$.id' },
+                { type: 'save', name: 'petUrl', from: 'header', header: 'Location' }
+              ]
+            }
+          }
+        }
+      },
+      '/pets/{petId}': {
+        get: {
+          summary: 'Get pet',
+          parameters: [
+            {
+              name: 'petId', in: 'path', required: true, schema: { type: 'string', example: 'seed-123' },
+              'x-postman-variables': { type: 'load', name: 'petId' }
+            },
+            {
+              name: 'expand', in: 'query', schema: { type: 'string', example: 'owner' },
+              'x-postman-variables': { type: 'load', name: 'expandVar' }
+            },
+            {
+              name: 'X-Trace', in: 'header', schema: { type: 'string' },
+              'x-postman-variables': { type: 'load', name: 'traceVar' }
+            }
+          ],
+          responses: {
+            200: {
+              description: 'ok',
+              content: {
+                'application/json': {
+                  schema: { type: 'object', properties: { id: { type: 'string' } } }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  };
+
+  /**
+   * Finds a generated request item by HTTP method.
+   *
+   * @param {Object} collection - the generated collection (result.output[0].data)
+   * @param {String} method - HTTP method (upper-case)
+   * @returns {Object} the request item
+   */
+  function requestByMethod (collection, method) {
+    return collectRequestItems(collection.item).find((item) => {
+      return item.request.method === method;
+    });
+  }
+
+  describe('with the option ON', function () {
+    let collection;
+
+    before(function (done) {
+      Converter.convertV2WithTypes(
+        { type: 'json', data: specChaining },
+        { generateContractTests: true },
+        (err, result) => {
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+          collection = result.output[0].data;
+          done();
+        }
+      );
+    });
+
+    it('should append a marker-first save-block that captures declared values by status', function () {
+      const event = getContractTestEvent(requestByMethod(collection, 'POST'));
+
+      expect(event, 'producer should carry a contract-test event').to.be.an('object');
+      // Marker must remain the first line so the sync-carry keeps identifying the event.
+      expect(event.script.exec[0].indexOf(CONTRACT_TEST_MARKER)).to.equal(0);
+
+      const exec = event.script.exec.join('\n');
+
+      expect(exec).to.include('var contractSavesByStatus =');
+      expect(exec).to.include('pm.collectionVariables.set(binding.name, value)');
+      expect(exec).to.include("Saved '\" + binding.name + \"' from response");
+      // Saves are keyed by the response status they were declared under.
+      expect(exec).to.include('"201"');
+      // JSONPath-style `$.id` is normalized to a lodash path; header source is preserved.
+      expect(exec).to.include('"path":"id"');
+      expect(exec).to.include('"source":"header"');
+      expect(exec).to.include('"header":"Location"');
+    });
+
+    it('should inject {{var}} into path, query and header params that declare a load binding', function () {
+      const getItem = requestByMethod(collection, 'GET'),
+        pathVar = (getItem.request.url.variable || []).find((v) => { return v.key === 'petId'; }),
+        queryVar = (getItem.request.url.query || []).find((q) => { return q.key === 'expand'; }),
+        headerVar = (getItem.request.header || []).find((h) => { return h.key === 'X-Trace'; });
+
+      expect(pathVar.value).to.equal('{{petId}}');
+      expect(queryVar.value).to.equal('{{expandVar}}');
+      expect(headerVar.value).to.equal('{{traceVar}}');
+    });
+
+    it('should seed a collection variable for each loaded variable from the parameter example', function () {
+      const vars = collection.variable || [],
+        petId = vars.find((v) => { return v.key === 'petId'; }),
+        expandVar = vars.find((v) => { return v.key === 'expandVar'; }),
+        traceVar = vars.find((v) => { return v.key === 'traceVar'; });
+
+      expect(petId, 'petId seeded').to.be.an('object');
+      expect(petId.value).to.equal('seed-123');
+      expect(expandVar.value).to.equal('owner');
+      // No example on the header param -> seeded empty so the variable still exists.
+      expect(traceVar.value).to.equal('');
+    });
+  });
+
+  describe('with the option OFF (default)', function () {
+    let collection;
+
+    before(function (done) {
+      Converter.convertV2WithTypes({ type: 'json', data: specChaining }, {}, (err, result) => {
+        expect(err).to.be.null;
+        collection = result.output[0].data;
+        done();
+      });
+    });
+
+    it('should not add any save-block or contract-test event', function () {
+      expect(getContractTestEvent(requestByMethod(collection, 'POST'))).to.be.undefined;
+    });
+
+    it('should not template load params and should not seed chaining variables', function () {
+      const getItem = requestByMethod(collection, 'GET'),
+        pathVar = (getItem.request.url.variable || []).find((v) => { return v.key === 'petId'; }),
+        seeded = (collection.variable || []).find((v) => { return v.key === 'petId'; });
+
+      expect(pathVar.value).to.not.equal('{{petId}}');
+      expect(seeded).to.be.undefined;
+    });
+  });
+});

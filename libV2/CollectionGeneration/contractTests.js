@@ -20,6 +20,82 @@ const _ = require('lodash'),
   RESOLVE_FOR_VALIDATION = 'validation',
 
   /**
+   * OpenAPI vendor extension that declares request-chaining bindings (contract-test feature).
+   * `save` (on a response object) captures a value from the response into a collection variable;
+   * `load` (on a parameter object) injects a previously-saved variable as `{{name}}` into the request.
+   */
+  X_POSTMAN_VARIABLES = 'x-postman-variables',
+
+  /**
+   * Normalizes a save `path` into a lodash property path for `_.get`. A leading `$`/`$.` (JSONPath
+   * habit) is stripped; the remainder is used verbatim. This is member-access + numeric-index only —
+   * NOT a JSONPath evaluator, so wildcards/filters/recursive-descent are unsupported.
+   *
+   * @param {String} path - the declared path (e.g. `$.data[0].id`)
+   * @returns {String} a lodash path (e.g. `data[0].id`)
+   */
+  normalizeLodashPath = (path) => {
+    if (typeof path !== 'string') {
+      return '';
+    }
+
+    return path.replace(/^\$\.?/, '');
+  },
+
+  /**
+   * Reads `x-postman-variables` entries of a given `type` off a spec node, tolerating either a single
+   * object or an array. Returns the raw matching entries (unnormalized).
+   *
+   * @param {Object} node - a spec node (response object or parameter object)
+   * @param {String} type - `save` | `load`
+   * @returns {Object[]} matching binding entries
+   */
+  readVariableBindings = (node, type) => {
+    const raw = _.get(node, [X_POSTMAN_VARIABLES]),
+      list = _.isArray(raw) ? raw : (_.isObject(raw) ? [raw] : []);
+
+    return list.filter((binding) => {
+      return _.isObject(binding) && binding.type === type &&
+        typeof binding.name === 'string' && binding.name.length > 0;
+    });
+  },
+
+  /**
+   * Normalized `save` bindings declared on a response object. Each becomes a runtime capture into a
+   * collection variable: from the JSON body (`_.get(body, path)`) or a named response header.
+   *
+   * @param {Object} responseObject - an OpenAPI response object
+   * @returns {Object[]} normalized save bindings, each `{ name, source, path | header }`
+   */
+  getSaveBindings = (responseObject) => {
+    return readVariableBindings(responseObject, 'save')
+      .map((binding) => {
+        if (binding.from === 'header') {
+          return { name: binding.name, source: 'header', header: binding.header };
+        }
+
+        return { name: binding.name, source: 'body', path: normalizeLodashPath(binding.path || '') };
+      })
+      .filter((binding) => {
+        // A header save needs a header name; a body save is always usable (empty path reads the root).
+        return binding.source === 'header' ?
+          (typeof binding.header === 'string' && binding.header.length > 0) : true;
+      });
+  },
+
+  /**
+   * The single `load` binding declared on a parameter object, if any (first wins).
+   *
+   * @param {Object} param - an OpenAPI parameter object
+   * @returns {Object|null} the load binding `{ name }`, or null when none is declared
+   */
+  getLoadBinding = (param) => {
+    const load = readVariableBindings(param, 'load')[0];
+
+    return load ? { name: load.name } : null;
+  },
+
+  /**
    * Picks the JSON body schema out of an OpenAPI `content` object, preferring `application/json`
    * and falling back to any `*+json` / json-family media type.
    *
@@ -212,6 +288,39 @@ const _ = require('lodash'),
   },
 
   /**
+   * Builds the runtime save-block appended to the contract-test script: for the matched response
+   * status it captures each declared value into a collection variable (so a later request can reuse
+   * it) and asserts the value was present. Emitted only when the operation declares `save` bindings.
+   *
+   * @param {Object} savesByStatus - map of status-code (string) | 'default' -> normalized save bindings
+   * @returns {String[]} the script `exec` lines
+   */
+  buildSaveBlock = (savesByStatus) => {
+    return [
+      '',
+      '// Request chaining: capture declared values from the response into collection variables so a',
+      '// later request can reuse them (e.g. an id from a create response used as a path parameter).',
+      'var contractSavesByStatus = ' + JSON.stringify(savesByStatus) + ';',
+      'var contractSaves = contractSavesByStatus[String(pm.response.code)] || contractSavesByStatus.default || [];',
+      'if (contractSaves.length) {',
+      '  var contractLodash = require(\'lodash\');',
+      '  var contractBody;',
+      '  try { contractBody = pm.response.json(); } catch (e) { contractBody = undefined; }',
+      '  contractSaves.forEach(function (binding) {',
+      '    var value = binding.source === \'header\' ?',
+      '      pm.response.headers.get(binding.header) : contractLodash.get(contractBody, binding.path);',
+      '    pm.test("Contract | Saved \'" + binding.name + "\' from response", function () {',
+      '      pm.expect(value, binding.name + \' not found in response\').to.not.be.undefined;',
+      '    });',
+      '    if (typeof value !== \'undefined\' && value !== null) {',
+      '      pm.collectionVariables.set(binding.name, value);',
+      '    }',
+      '  });',
+      '}'
+    ];
+  },
+
+  /**
    * Builds the contract-test event for a single OpenAPI operation.
    *
    * @param {Object} context - conversion context (carries computedOptions, schema caches, openapi)
@@ -231,9 +340,11 @@ const _ = require('lodash'),
     }
 
     const declaredCodes = [],
-      schemasByStatus = {};
+      schemasByStatus = {},
+      savesByStatus = {};
 
-    let hasDefaultResponse = false;
+    let hasDefaultResponse = false,
+      hasSaves = false;
 
     _.forOwn(responses, (responseObject, code) => {
       let resolvedResponse = responseObject;
@@ -266,6 +377,15 @@ const _ = require('lodash'),
         return;
       }
 
+      // Request-chaining `save` bindings declared on this response: capture into collection variables
+      // at runtime, keyed by the response status so we only save when that status actually occurs.
+      const saveBindings = getSaveBindings(resolvedResponse);
+
+      if (saveBindings.length) {
+        savesByStatus[statusKey] = saveBindings;
+        hasSaves = true;
+      }
+
       const bodySchema = pickJsonSchema(_.get(resolvedResponse, 'content'));
 
       if (bodySchema) {
@@ -281,20 +401,30 @@ const _ = require('lodash'),
       }
     });
 
-    if (declaredCodes.length === 0 && !hasDefaultResponse) {
+    if (declaredCodes.length === 0 && !hasDefaultResponse && !hasSaves) {
       return [];
+    }
+
+    const exec = buildExec(declaredCodes, schemasByStatus, hasDefaultResponse);
+
+    if (hasSaves) {
+      exec.push(...buildSaveBlock(savesByStatus));
     }
 
     return [{
       listen: 'test',
       script: {
         type: 'text/javascript',
-        exec: buildExec(declaredCodes, schemasByStatus, hasDefaultResponse)
+        exec
       }
     }];
   };
 
 module.exports = {
   CONTRACT_TEST_MARKER,
-  buildContractTestEvent
+  X_POSTMAN_VARIABLES,
+  buildContractTestEvent,
+  getSaveBindings,
+  getLoadBinding,
+  normalizeLodashPath
 };
