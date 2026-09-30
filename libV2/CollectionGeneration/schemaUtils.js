@@ -1,6 +1,6 @@
 const generateAuthForCollectionFromOpenAPI = require('./helpers/collection/generateAuthForCollectionFromOpenAPI.js');
 const utils = require('./utils.js');
-const { buildContractTestEvent } = require('./contractTests.js');
+const { buildContractTestEvent, getLoadBinding } = require('./contractTests.js');
 const { Url } = require('postman-collection/lib/collection/url');
 
 const schemaFaker = require('../../assets/json-schema-faker.js'),
@@ -2203,6 +2203,88 @@ let QUERYPARAM = 'query',
     };
   },
 
+  /**
+   * Request-chaining (contract tests): when generation is opted in and a parameter carries a `load`
+   * binding (`x-postman-variables`), the generated value is the collection variable reference
+   * `{{name}}` instead of a faked example, so a value saved by an earlier request flows in here. Pushes
+   * the templated param and signals the caller to skip normal value/style resolution for it.
+   *
+   * @param {Object} context - conversion context (gates on computedOptions.generateContractTests)
+   * @param {Object} param - a resolved OpenAPI parameter object
+   * @param {Array} pmParams - the accumulating Postman param list to push onto
+   * @returns {Boolean} true when a load override was applied (caller should stop processing this param)
+   */
+  applyContractLoadOverride = (context, param, pmParams) => {
+    if (!_.get(context, 'computedOptions.generateContractTests')) {
+      return false;
+    }
+
+    const load = getLoadBinding(param);
+
+    if (!load) {
+      return false;
+    }
+
+    pmParams.push({ key: param.name, value: '{{' + load.name + '}}' });
+
+    return true;
+  },
+
+  /**
+   * Collects the collection variables to seed for an operation's request-chaining `load` bindings, so
+   * every request runs standalone (with the spec example) before an earlier request overwrites the
+   * value at runtime. One entry per loaded variable, seeded from the parameter's example / schema
+   * example / schema default (else empty string). Cross-request de-duplication happens later via
+   * `_.uniqBy(collection.variable, 'key')` in libV2/index.js.
+   *
+   * @param {Object} context - conversion context (gates on computedOptions.generateContractTests)
+   * @param {Object} operationItem - the path item object
+   * @param {String} method - HTTP method (lowercase)
+   * @returns {Object[]} seed entries `{ key, value }`, one per loaded variable
+   */
+  collectContractChainVariables = (context, operationItem, method) => {
+    if (!_.get(context, 'computedOptions.generateContractTests')) {
+      return [];
+    }
+
+    const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
+      seeds = [];
+
+    _.forEach(params, (param) => {
+      if (!_.isObject(param)) {
+        return;
+      }
+
+      if (_.has(param, '$ref')) {
+        param = resolveSchema(context, param);
+      }
+
+      const load = getLoadBinding(param);
+
+      if (!load) {
+        return;
+      }
+
+      let seed = param.example;
+
+      if (typeof seed === 'undefined') {
+        seed = _.get(param, 'schema.example');
+      }
+
+      if (typeof seed === 'undefined') {
+        seed = _.get(param, 'schema.default');
+      }
+
+      if (typeof seed === 'undefined' || seed === null) {
+        seed = '';
+      }
+
+      seeds.push({ key: load.name, value: _.isObject(seed) ? JSON.stringify(seed) : String(seed) });
+    });
+
+    return seeds;
+  },
+
   resolveQueryParamsForPostmanRequest = (context, operationItem, method, { exampleKey } = {}) => {
     const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
       pmParams = [],
@@ -2219,6 +2301,10 @@ let QUERYPARAM = 'query',
       }
 
       if (param.in !== QUERYPARAM || (!includeDeprecated && param.deprecated)) {
+        return;
+      }
+
+      if (applyContractLoadOverride(context, param, pmParams)) {
         return;
       }
 
@@ -2275,6 +2361,9 @@ let QUERYPARAM = 'query',
         return;
       }
 
+      if (applyContractLoadOverride(context, param, pmParams)) {
+        return;
+      }
 
       const shouldResolveSchema = _.has(param, 'schema') &&
         (_.has(param.schema, '$ref') || _.has(param.schema, 'anyOf') ||
@@ -2354,6 +2443,10 @@ let QUERYPARAM = 'query',
       }
 
       if (param.in !== HEADER || (!includeDeprecated && param.deprecated)) {
+        return;
+      }
+
+      if (applyContractLoadOverride(context, param, pmParams)) {
         return;
       }
 
@@ -2882,6 +2975,10 @@ module.exports = {
     headers.push(..._.get(requestBody, 'headers', []));
     pathVariables.push(...baseUrlData.pathVariables);
     collectionVariables.push(...baseUrlData.collectionVariables);
+
+    // Seed a collection variable for each request-chaining `load` binding so the request is runnable
+    // standalone; an earlier request's save-block overwrites the value at run time.
+    collectionVariables.push(...collectContractChainVariables(context, operationItem, method));
 
     // url at this point is still the path portion (pre base-url). Capture it so per-example
     // parameter resolution can filter path variables against the same url as the base request.
