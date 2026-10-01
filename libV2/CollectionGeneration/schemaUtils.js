@@ -120,7 +120,8 @@ const schemaFaker = require('../../assets/json-schema-faker.js'),
 
   CONVERSION_ISSUE_TYPES = {
     REQUEST_GENERATION_FAILED: 'REQUEST_GENERATION_FAILED',
-    BODY_TOO_LARGE: 'BODY_TOO_LARGE'
+    BODY_TOO_LARGE: 'BODY_TOO_LARGE',
+    ISSUE_LIMIT_REACHED: 'ISSUE_LIMIT_REACHED'
   },
 
   PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable', 'properties'],
@@ -289,36 +290,13 @@ let QUERYPARAM = 'query',
   },
 
   /**
-   * Provides ref stack limit for current instance.
-   *
-   * Resolution order:
-   *  1. `refStackLimit` - the limit the spec-complexity governor decided on. It is only present
-   *     when `optimizeConversion` is on AND the spec was actually found to be complex, and it
-   *     wins for the same reason it wins in V1: an unbounded expansion of a spec this size does
-   *     not terminate inside a sane memory budget.
-   *  2. An explicitly supplied `stackLimit`. Without this the user-facing option is inert for
-   *     every value <= REF_STACK_LIMIT, which is what it historically was.
-   *  3. `REF_STACK_LIMIT` as a floor, so the default (10) keeps behaving as it always has.
-   *
-   * @param {Object} options - Computed options for the current conversion
-   *
-   * @returns {Number} Returns the stackLimit to be used
+   * @param {Number} stackLimit - Nesting limit the caller asked for
+   * @returns {Number} Effective ref resolution depth
    */
-  getRefStackLimit = (options) => {
-    const { stackLimit, stackLimitProvided, refStackLimit } = options || {};
-
-    if (typeof refStackLimit === 'number' && refStackLimit > 0) {
-      return refStackLimit;
-    }
-
-    if (stackLimitProvided && typeof stackLimit === 'number' && stackLimit > 0) {
-      return stackLimit;
-    }
-
+  getRefStackLimit = (stackLimit) => {
     if (typeof stackLimit === 'number' && stackLimit > REF_STACK_LIMIT) {
       return stackLimit;
     }
-
     return REF_STACK_LIMIT;
   },
 
@@ -340,6 +318,19 @@ let QUERYPARAM = 'query',
     }
 
     if (context.conversionIssues.length >= MAX_CONVERSION_ISSUES) {
+      /**
+       * Replace the last entry with a marker the first time we overflow, so a caller can tell
+       * "this many failed" from "at least this many failed".
+       */
+      const last = context.conversionIssues[MAX_CONVERSION_ISSUES - 1];
+
+      if (!last || last.type !== CONVERSION_ISSUE_TYPES.ISSUE_LIMIT_REACHED) {
+        context.conversionIssues[MAX_CONVERSION_ISSUES - 1] = {
+          type: CONVERSION_ISSUE_TYPES.ISSUE_LIMIT_REACHED,
+          reason: 'More than ' + MAX_CONVERSION_ISSUES + ' issues were found; the rest are not listed.'
+        };
+      }
+
       return;
     }
 
@@ -534,11 +525,12 @@ let QUERYPARAM = 'query',
   // seenRef is a Set (path-scoped cycle detection, no clone per branch); the ref-stack
   // limit now comes from the whole options object so the governor can lower it.
   resolveRefFromSchema = (context, $ref, stackDepth = 0, seenRef = new Set()) => {
-    const { specComponents } = context;
+    const { specComponents } = context,
+      { stackLimit } = context.computedOptions;
 
     context.schemaCache = context.schemaCache || {};
 
-    if (stackDepth >= getRefStackLimit(context.computedOptions)) {
+    if (stackDepth >= getRefStackLimit(stackLimit)) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
 
@@ -622,9 +614,10 @@ let QUERYPARAM = 'query',
   // seenRef is a Set (path-scoped cycle detection, no clone per branch); the ref-stack
   // limit now comes from the whole options object so the governor can lower it.
   resolveRefForExamples = (context, $ref, stackDepth = 0, seenRef = new Set()) => {
-    const { specComponents } = context;
+    const { specComponents } = context,
+      { stackLimit } = context.computedOptions;
 
-    if (stackDepth >= getRefStackLimit(context.computedOptions)) {
+    if (stackDepth >= getRefStackLimit(stackLimit)) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
 
@@ -833,7 +826,9 @@ let QUERYPARAM = 'query',
       return new Error('Schema is empty');
     }
 
-    if (stack >= getRefStackLimit(context.computedOptions)) {
+    const { stackLimit } = context.computedOptions;
+
+    if (stack >= getRefStackLimit(stackLimit)) {
       return { value: ERR_TOO_MANY_LEVELS };
     }
 
@@ -1356,43 +1351,8 @@ let QUERYPARAM = 'query',
     return crypto.createHash('sha1').update(input).digest('base64');
   },
 
-  /**
-   * Records a faked schema against the identity of the schema object it came from, so a repeat
-   * call for the very same object skips stringify + hash entirely. See fakeSchema().
-   *
-   * @param {Object} context - Required context from related SchemaPack function
-   * @param {*} schema - Schema the value was faked from
-   * @param {*} fakedSchema - The faked value
-   * @returns {void}
-   */
-  cacheFakedSchemaByIdentity = (context, schema, fakedSchema) => {
-    if (typeof schema === 'object' && schema !== null && context.schemaFakerIdentityCache) {
-      context.schemaFakerIdentityCache.set(schema, fakedSchema);
-    }
-  },
-
   fakeSchema = (context, schema, shouldGenerateFromExample = true) => {
     try {
-      /**
-       * Identity-keyed fast path in front of the value-keyed cache below.
-       *
-       * `context.schemaCache` hands the same resolved object back for a given $ref, so most repeat
-       * calls are for a schema we have already faked -- and recognising that by object identity
-       * avoids JSON.stringify-ing and SHA-1-ing a multi-megabyte schema just to build the key.
-       *
-       * It can only ever agree with the value-keyed cache: the same object, unmutated between
-       * calls, stringifies to the same thing. resolveSchema() clones before deleting readOnly /
-       * writeOnly properties, so the objects it mutates are always fresh ones, and those simply
-       * miss here and fall through to the hash below.
-       */
-      if (typeof schema === 'object' && schema !== null) {
-        context.schemaFakerIdentityCache = context.schemaFakerIdentityCache || new WeakMap();
-
-        if (context.schemaFakerIdentityCache.has(schema)) {
-          return context.schemaFakerIdentityCache.get(schema);
-        }
-      }
-
       let stringifiedSchema = typeof schema === 'object' && (JSON.stringify(schema)),
         key = hash(stringifiedSchema),
         restrictArrayItems = typeof stringifiedSchema === 'string' &&
@@ -1403,8 +1363,6 @@ let QUERYPARAM = 'query',
       stringifiedSchema = null;
 
       if (context.schemaFakerCache[key]) {
-        cacheFakedSchemaByIdentity(context, schema, context.schemaFakerCache[key]);
-
         return context.schemaFakerCache[key];
       }
 
@@ -1412,10 +1370,16 @@ let QUERYPARAM = 'query',
         useExamplesValue: shouldGenerateFromExample,
         defaultMinItems: restrictArrayItems ? 1 : 2,
         defaultMaxItems: restrictArrayItems ? 1 : 2,
+
         /**
          * Gated on the same 50 KB threshold as `restrictArrayItems`, which already trades
          * example fidelity for size above that line. Below it, generation is fast and every
          * occurrence of a repeated sub-schema keeps its own independently faked value.
+         *
+         * IMPORTANT: when this is on, the returned value graph is ALIASED. A sub-schema reached
+         * from several places yields the same object in all of them, so mutating a generated
+         * body in place would change every occurrence at once. Callers must treat the result as
+         * read-only and serialise it, which is all they do today.
          */
         reuseIdenticalSubSchemas: restrictArrayItems
       });
@@ -1426,11 +1390,9 @@ let QUERYPARAM = 'query',
       finally {
         /**
          * These are process-wide json-schema-faker options, shared with the V1 conversion path.
-         * Restore every one this call set, so a tightened fan-out or enabled reuse cannot leak
-         * into whatever is faked next.
+         * Restore every one this call set, so they cannot leak into whatever is faked next.
          */
         schemaFaker.option({
-          maxItems: DEFAULT_ARRAY_MAX_ITEMS,
           defaultMinItems: FAKER_DEFAULT_MIN_ITEMS,
           defaultMaxItems: FAKER_DEFAULT_MAX_ITEMS,
           reuseIdenticalSubSchemas: false
@@ -1438,7 +1400,6 @@ let QUERYPARAM = 'query',
       }
 
       context.schemaFakerCache[key] = fakedSchema;
-      cacheFakedSchemaByIdentity(context, schema, fakedSchema);
 
       return fakedSchema;
     }
@@ -3305,7 +3266,6 @@ module.exports = {
   resolveRefFromSchema,
   resolveSchema,
   recordConversionIssue,
-  getRefStackLimit,
   CONVERSION_ISSUE_TYPES,
   MAX_CONVERSION_ISSUES
 };

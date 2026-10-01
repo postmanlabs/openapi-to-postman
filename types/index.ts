@@ -28,8 +28,11 @@ interface BaseResult {
 
 export interface ConversionIssue {
 
-  /** What went wrong: a dropped request, or a body that breached the size ceiling */
-  type: 'REQUEST_GENERATION_FAILED' | 'BODY_TOO_LARGE';
+  /**
+   * What went wrong: a dropped request, a body that breached the size ceiling, or a marker
+   * saying the issue list itself was capped.
+   */
+  type: 'REQUEST_GENERATION_FAILED' | 'BODY_TOO_LARGE' | 'ISSUE_LIMIT_REACHED';
 
   /** Human readable explanation */
   reason: string;
@@ -46,8 +49,11 @@ export interface ConversionIssue {
   /** Which part of the operation was affected */
   in?: 'request' | 'response' | 'response~request';
 
-  /** Response code, for response bodies */
-  responseCode?: string;
+  /** Response code, for response bodies. Null when the body is not tied to a response. */
+  responseCode?: string | null;
+
+  /** Name of the saved example the body belongs to, when there is one */
+  exampleName?: string;
 
   /** Media type of the affected body */
   contentType?: string;

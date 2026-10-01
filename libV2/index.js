@@ -21,6 +21,24 @@ const { resolvePostmanRequest, resolveRefFromSchema, recordConversionIssue, CONV
   require('./CollectionGeneration/schemaUtils');
 const { generateRequestItemObject, fixPathVariablesInUrl } = require('./CollectionGeneration/utils');
 
+/**
+ * A thrown value is not always an Error with a useful message - `new Error()` has an empty one,
+ * and `_.get(error, 'message', fallback)` would return that empty string rather than the
+ * fallback, because the property exists.
+ *
+ * @param {*} error - Whatever was thrown
+ * @returns {String} Something a caller can read
+ */
+function describeError (error) {
+  const message = _.get(error, 'message');
+
+  if (_.isString(message) && message.length > 0) {
+    return message;
+  }
+
+  return String(error) || 'Unknown error';
+}
+
 module.exports = {
   convertV2: function (context, cb) {
     // Reset per-conversion issue accumulation (a SchemaPack can be converted more than once).
@@ -123,11 +141,14 @@ module.exports = {
             /**
              * The request could not be generated, so it is dropped from the collection. Record it
              * so the caller is told which requests are missing instead of silently receiving a
-             * collection with fewer requests than the specification describes.
+             * collection with fewer requests than the specification describes. The error is still
+             * printed, because the stack is what makes a failure diagnosable and the recorded
+             * issue only carries a message.
              */
+            console.error(error);
             recordConversionIssue(context, {
               type: CONVERSION_ISSUE_TYPES.REQUEST_GENERATION_FAILED,
-              reason: _.get(error, 'message', String(error))
+              reason: describeError(error)
             });
             break;
           }
@@ -216,9 +237,10 @@ module.exports = {
           }
           catch (error) {
             // Same silent-drop hazard as the `request` case above - see the comment there.
+            console.error(error);
             recordConversionIssue(context, {
               type: CONVERSION_ISSUE_TYPES.REQUEST_GENERATION_FAILED,
-              reason: _.get(error, 'message', String(error))
+              reason: describeError(error)
             });
             break;
           }
