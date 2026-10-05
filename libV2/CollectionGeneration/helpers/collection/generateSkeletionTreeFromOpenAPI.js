@@ -18,8 +18,10 @@ let _ = require('lodash'),
   isAllowedHttpMethod = function (method, pathItem, is32) {
     return ALLOWED_HTTP_METHODS[method] ||
       (is32 && method === 'query') ||
-      (is32 && _.some(_.keys(_.get(pathItem, 'additionalOperations')), (customMethod) =>
-        customMethod.toLowerCase() === method));
+      (is32 && _.some(
+        _.keys(_.get(pathItem, 'additionalOperations')),
+        (customMethod) => { return customMethod.toLowerCase() === method; }
+      ));
   },
 
   /**
@@ -29,9 +31,8 @@ let _ = require('lodash'),
    * `pathItem[methodLowercased]` so the rest of the converter can iterate
    * operations uniformly. Keys that already exist on the Path Item (or that
    * collide with another additionalOperations entry of the same lowercased
-   * name) are left untouched. The lowercased method name is also registered
-   * on `ALLOWED_HTTP_METHODS` as a side effect so the standard tree-walkers
-   * pick the operation up.
+   * name) are left untouched. The outbound method spelling is preserved on
+   * the operation metadata.
    *
    * See https://spec.openapis.org/oas/v3.2.0.html (Path Item Object,
    * `additionalOperations` field).
@@ -137,6 +138,7 @@ let _ = require('lodash'),
             meta: {
               path: completePath,
               method: method,
+              requestMethod: _.get(data, '__postmanMethod'),
               pathIdentifier: pathSplit[0]
             }
           });
@@ -200,6 +202,7 @@ let _ = require('lodash'),
                 meta: {
                   path: completePath,
                   method: method,
+                  requestMethod: _.get(data, '__postmanMethod'),
                   pathIdentifier: pathIdentifier
                 }
               });
@@ -374,7 +377,8 @@ let _ = require('lodash'),
               meta: {
                 tag: tag,
                 path: path,
-                method: method
+                method: method,
+                requestMethod: _.get(data, '__postmanMethod')
               }
             });
 
@@ -388,7 +392,8 @@ let _ = require('lodash'),
             data: {},
             meta: {
               path: path,
-              method: method
+              method: method,
+              requestMethod: _.get(data, '__postmanMethod')
             }
           });
 
@@ -499,7 +504,8 @@ let _ = require('lodash'),
             meta: {
               tags: data.tags,
               path: path,
-              method: method
+              method: method,
+              requestMethod: _.get(data, '__postmanMethod')
             }
           });
 
@@ -513,7 +519,8 @@ let _ = require('lodash'),
             data: {},
             meta: {
               path: path,
-              method: method
+              method: method,
+              requestMethod: _.get(data, '__postmanMethod')
             }
           });
 
@@ -551,6 +558,7 @@ let _ = require('lodash'),
         if (!isAllowedHttpMethod(method, methodData, is32)) {
           return;
         }
+
         /**
          * include deprecated handling.
          * If true, add in the postman collection. If false ignore the request.
@@ -561,7 +569,7 @@ let _ = require('lodash'),
 
         tree.setNode(`${PATH_WEBHOOK}:${path}:${method}`, {
           type: 'webhook~request',
-          meta: { path: path, method: method },
+          meta: { path: path, method: method, requestMethod: _.get(data, '__postmanMethod') },
           data: {}
         });
 
@@ -584,7 +592,7 @@ let _ = require('lodash'),
 module.exports = function (context, openapi,
   { folderStrategy, includeWebhooks, includeDeprecated, nestedFolderHierarchy }) {
   let skeletonTree;
-  const is32 = /^3\.2(?:\.|$)/.test(_.get(openapi, 'openapi', ''));
+  const is32 = (/^3\.2(?:\.|$)/).test(_.get(openapi, 'openapi', ''));
 
   switch (folderStrategy) {
     case 'tags':

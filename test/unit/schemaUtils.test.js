@@ -124,6 +124,43 @@ describe('getParametersForPathItem function', function () {
     expect(result.header.length).to.equal(2);
     expect(result.path.length).to.equal(2);
   });
+
+  it('should expand OAS 3.2 querystring content, encoding, and examples', function () {
+    const param = {
+        in: 'querystring',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['filter'],
+              properties: {
+                filter: { type: 'string' },
+                page: { type: 'integer' }
+              }
+            },
+            encoding: {
+              filter: { style: 'deepObject', explode: true }
+            },
+            examples: {
+              first: { value: { filter: 'active', page: 2 } }
+            }
+          }
+        }
+      },
+      result = getParametersForPathItem([param], {}, { openapi: '3.2.0' });
+
+    expect(result.query).to.have.length(2);
+    expect(result.query[0]).to.include({
+      name: 'filter',
+      required: true,
+      style: 'deepObject',
+      explode: true,
+      example: 'active'
+    });
+    expect(result.query[0].examples.first.value).to.equal('active');
+    expect(result.query[1].examples.first.value).to.equal(2);
+    expect(getParametersForPathItem([param], {}, { openapi: '3.1.0' }).query).to.be.empty;
+  });
 });
 
 describe('verifyDeprecatedProperties function', function () {

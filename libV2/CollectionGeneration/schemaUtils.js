@@ -87,7 +87,7 @@ const schemaFaker = require('../../assets/json-schema-faker.js'),
   crypto = require('crypto'),
 
   normalizeDefaultMappingRef = (ref) => {
-    if (ref.startsWith('#') || /^[a-z][a-z\d+.-]*:/i.test(ref) || ref.includes('/')) {
+    if (ref.startsWith('#') || (/^[a-z][a-z\d+.-]*:/i).test(ref) || ref.includes('/')) {
       return ref;
     }
     return '#/components/schemas/' + ref.replace(/~/g, '~0').replace(/\//g, '~1');
@@ -659,7 +659,7 @@ let QUERYPARAM = 'query',
         // See https://spec.openapis.org/oas/v3.2.0.html (Discriminator
         // Object, `defaultMapping` field).
         const defaultMappingRef = _.get(schema, 'discriminator.defaultMapping');
-        if (/^3\.2(?:\.|$)/.test(_.get(context, 'openapi.openapi', '')) &&
+        if ((/^3\.2(?:\.|$)/).test(_.get(context, 'openapi.openapi', '')) &&
             typeof defaultMappingRef === 'string' && defaultMappingRef.length > 0) {
           return _resolveSchema(context, { $ref: normalizeDefaultMappingRef(defaultMappingRef) }, stack, resolveFor,
             _.cloneDeep(seenRef), currentPath);
@@ -713,7 +713,7 @@ let QUERYPARAM = 'query',
       // its `discriminator` field by a prior TYPES_GENERATION pass.
       // See https://spec.openapis.org/oas/v3.2.0.html (Discriminator
       // Object, `defaultMapping` field).
-      if (resolveFor === CONVERSION && /^3\.2(?:\.|$)/.test(_.get(context, 'openapi.openapi', ''))) {
+      if (resolveFor === CONVERSION && (/^3\.2(?:\.|$)/).test(_.get(context, 'openapi.openapi', ''))) {
         const rawSchema = lookupSchemaInSpecComponents(context, schemaRef),
           defaultMappingRef = _.get(rawSchema, 'discriminator.defaultMapping'),
           isCompositeWithDiscriminator = _.isObject(rawSchema) &&
@@ -2304,7 +2304,7 @@ let QUERYPARAM = 'query',
       return [param];
     }
 
-    if (!/^3\.2(?:\.|$)/.test(_.get(context, 'openapi.openapi', ''))) {
+    if (!(/^3\.2(?:\.|$)/).test(_.get(context, 'openapi.openapi', ''))) {
       return [];
     }
 
@@ -2353,9 +2353,7 @@ let QUERYPARAM = 'query',
           }
         }, {});
       }
-      return {
-        ...expandedParam
-      };
+      return expandedParam;
     });
   },
 
@@ -2577,25 +2575,28 @@ let QUERYPARAM = 'query',
    * @returns {String} Streaming-framed body
    */
   wrapStreamingItemBody = (bodyType, responseBodyData, responseRawModeData) => {
-    const compactJson = JSON.stringify(responseBodyData);
-    if (bodyType === 'application/jsonl' || bodyType === 'application/x-ndjson' ||
-        bodyType === 'application/ndjson') {
+    const mediaType = bodyType.split(';')[0].trim().toLowerCase(),
+      compactJson = JSON.stringify(responseBodyData) || 'null';
+    if (mediaType === 'application/jsonl' || mediaType === 'application/x-ndjson' ||
+        mediaType === 'application/ndjson') {
       return { body: compactJson + '\n', contentType: bodyType };
     }
-    if (bodyType === 'application/json-seq') {
+    if (mediaType === 'application/json-seq') {
       return { body: '\x1e' + compactJson + '\n', contentType: bodyType };
     }
-    if (bodyType.startsWith('multipart/')) {
-      const boundaryMatch = /(?:^|;)\s*boundary="?([^";]+)"?/i.exec(bodyType),
+    if (mediaType.startsWith('multipart/')) {
+      const boundaryMatch = (/(?:^|;)\s*boundary="?([^";]+)"?/i).exec(bodyType),
         boundary = boundaryMatch ? boundaryMatch[1] : 'postman-openapi-stream',
         contentType = boundaryMatch ? bodyType : bodyType + '; boundary=' + boundary;
       return {
-        body: '--' + boundary + '\r\nContent-Type: application/json\r\n\r\n' +
+        body: '--' + boundary + '\r\n' +
+          (mediaType === 'multipart/form-data' ? 'Content-Disposition: form-data; name="item"\r\n' : '') +
+          'Content-Type: application/json\r\n\r\n' +
           compactJson + '\r\n--' + boundary + '--\r\n',
         contentType
       };
     }
-    if (bodyType !== 'text/event-stream') {
+    if (mediaType !== 'text/event-stream') {
       return { body: responseRawModeData, contentType: bodyType };
     }
 
@@ -2607,12 +2608,12 @@ let QUERYPARAM = 'query',
     if (fields.id !== undefined && !String(fields.id).includes('\0')) {
       lines.push('id: ' + String(fields.id).replace(/[\r\n]/g, ' '));
     }
-    if (fields.retry !== undefined && Number.isFinite(Number(fields.retry)) && Number(fields.retry) >= 0) {
+    if (fields.retry !== undefined && Number.isInteger(Number(fields.retry)) && Number(fields.retry) >= 0) {
       lines.push('retry: ' + String(fields.retry));
     }
     if (fields.data !== undefined) {
       const data = _.isObject(fields.data) ? JSON.stringify(fields.data) : String(fields.data);
-      data.split(/\r\n|\r|\n/).forEach((line) => lines.push('data: ' + line));
+      data.split(/\r\n|\r|\n/).forEach((line) => { return lines.push('data: ' + line); });
     }
     return { body: lines.join('\n') + '\n\n', contentType: bodyType };
   },
@@ -2713,7 +2714,7 @@ let QUERYPARAM = 'query',
     let responseMediaTypeObject = mediaTypeObject,
       usingItemSchema = false;
     if (
-      /^3\.2(?:\.|$)/.test(_.get(context, 'openapi.openapi', '')) &&
+      (/^3\.2(?:\.|$)/).test(_.get(context, 'openapi.openapi', '')) &&
       _.isObject(mediaTypeObject) &&
       _.isObject(mediaTypeObject.itemSchema)
     ) {
@@ -3116,7 +3117,7 @@ let QUERYPARAM = 'query',
   };
 
 module.exports = {
-  resolvePostmanRequest: function (context, operationItem, path, method) {
+  resolvePostmanRequest: function (context, operationItem, path, method, requestMethod) {
     /**
      * schemaCache object will be used to cache the already resolved refs
      * in the schema.
@@ -3177,7 +3178,7 @@ module.exports = {
       description: operationItem[method].description,
       url,
       name: requestName,
-      method: _.get(operationItem, [method, '__postmanMethod'], method.toUpperCase()),
+      method: requestMethod || _.get(operationItem, [method, '__postmanMethod'], method.toUpperCase()),
       params: {
         queryParams,
         pathParams: pathVariables
