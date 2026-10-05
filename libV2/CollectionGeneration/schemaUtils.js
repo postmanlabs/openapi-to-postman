@@ -86,6 +86,13 @@ const schemaFaker = require('../../assets/json-schema-faker.js'),
   PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable', 'properties'],
   crypto = require('crypto'),
 
+  normalizeDefaultMappingRef = (ref) => {
+    if (ref.startsWith('#') || /^[a-z][a-z\d+.-]*:/i.test(ref) || ref.includes('/')) {
+      return ref;
+    }
+    return '#/components/schemas/' + ref.replace(/~/g, '~0').replace(/\//g, '~1');
+  },
+
   /**
    * @param {*} rootObject - the object from which you're trying to read a property
    * @param {*} pathArray - each element in this array a property of the previous object
@@ -652,8 +659,9 @@ let QUERYPARAM = 'query',
         // See https://spec.openapis.org/oas/v3.2.0.html (Discriminator
         // Object, `defaultMapping` field).
         const defaultMappingRef = _.get(schema, 'discriminator.defaultMapping');
-        if (typeof defaultMappingRef === 'string' && defaultMappingRef.length > 0) {
-          return _resolveSchema(context, { $ref: defaultMappingRef }, stack, resolveFor,
+        if (/^3\.2(?:\.|$)/.test(_.get(context, 'openapi.openapi', '')) &&
+            typeof defaultMappingRef === 'string' && defaultMappingRef.length > 0) {
+          return _resolveSchema(context, { $ref: normalizeDefaultMappingRef(defaultMappingRef) }, stack, resolveFor,
             _.cloneDeep(seenRef), currentPath);
         }
         return _resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef), currentPath);
@@ -705,7 +713,7 @@ let QUERYPARAM = 'query',
       // its `discriminator` field by a prior TYPES_GENERATION pass.
       // See https://spec.openapis.org/oas/v3.2.0.html (Discriminator
       // Object, `defaultMapping` field).
-      if (resolveFor === CONVERSION) {
+      if (resolveFor === CONVERSION && /^3\.2(?:\.|$)/.test(_.get(context, 'openapi.openapi', ''))) {
         const rawSchema = lookupSchemaInSpecComponents(context, schemaRef),
           defaultMappingRef = _.get(rawSchema, 'discriminator.defaultMapping'),
           isCompositeWithDiscriminator = _.isObject(rawSchema) &&
@@ -717,7 +725,7 @@ let QUERYPARAM = 'query',
           defaultMappingRef.length > 0 &&
           defaultMappingRef !== schemaRef
         ) {
-          return _resolveSchema(context, { $ref: defaultMappingRef }, stack, resolveFor,
+          return _resolveSchema(context, { $ref: normalizeDefaultMappingRef(defaultMappingRef) }, stack, resolveFor,
             _.cloneDeep(seenRef), currentPath);
         }
       }
@@ -2296,7 +2304,16 @@ let QUERYPARAM = 'query',
       return [param];
     }
 
-    let schema = param.schema;
+    if (!/^3\.2(?:\.|$)/.test(_.get(context, 'openapi.openapi', ''))) {
+      return [];
+    }
+
+    const mediaTypeKey = _.keys(param.content || {})[0],
+      mediaType = _.get(param, ['content', mediaTypeKey], {}),
+      examples = mediaType.examples || param.examples || {},
+      mediaExample = mediaType.example !== undefined ? mediaType.example :
+        _.get(_.values(examples), '[0].value');
+    let schema = mediaType.schema;
     if (_.isObject(schema) && (_.has(schema, '$ref') || _.has(schema, 'anyOf') ||
         _.has(schema, 'oneOf') || _.has(schema, 'allOf'))) {
       schema = resolveSchema(context, schema);
@@ -2313,22 +2330,31 @@ let QUERYPARAM = 'query',
 
     const requiredList = Array.isArray(_.get(schema, 'required')) ? schema.required : [];
     return _.map(properties, (propSchema, propName) => {
+      const encoding = _.get(mediaType, ['encoding', propName], {}),
+        expandedParam = {
+          name: propName,
+          in: QUERYPARAM,
+          description: _.isObject(propSchema) ? propSchema.description : undefined,
+          required: requiredList.indexOf(propName) !== -1,
+          deprecated: _.isObject(propSchema) ? Boolean(propSchema.deprecated) : false,
+          schema: propSchema,
+          style: encoding.style,
+          explode: encoding.explode,
+          allowReserved: encoding.allowReserved
+        };
+
+      if (_.isObject(mediaExample) && _.has(mediaExample, propName)) {
+        expandedParam.example = mediaExample[propName];
+      }
+      if (_.isObject(examples)) {
+        expandedParam.examples = _.transform(examples, (result, example, exampleName) => {
+          if (_.has(example, ['value', propName])) {
+            result[exampleName] = { value: _.get(example, ['value', propName]) };
+          }
+        }, {});
+      }
       return {
-        name: propName,
-        in: QUERYPARAM,
-        // OAS Parameter `description` overrides the inner schema's description;
-        // we mirror that behaviour by preferring the property-level description
-        // already on the inner schema (the querystring parameter itself usually
-        // doesn't have a description for individual properties).
-        description: _.isObject(propSchema) ? propSchema.description : undefined,
-        required: requiredList.indexOf(propName) !== -1,
-        deprecated: _.isObject(propSchema) ? Boolean(propSchema.deprecated) : false,
-        schema: propSchema,
-        // No styling/explode info on a querystring schema property -- fall
-        // back to OAS 3 defaults (style: 'form', explode: true) so the
-        // existing serialiser produces the expected key=value layout.
-        style: undefined,
-        explode: undefined
+        ...expandedParam
       };
     });
   },
@@ -2551,22 +2577,44 @@ let QUERYPARAM = 'query',
    * @returns {String} Streaming-framed body
    */
   wrapStreamingItemBody = (bodyType, responseBodyData, responseRawModeData) => {
+    const compactJson = JSON.stringify(responseBodyData);
+    if (bodyType === 'application/jsonl' || bodyType === 'application/x-ndjson' ||
+        bodyType === 'application/ndjson') {
+      return { body: compactJson + '\n', contentType: bodyType };
+    }
+    if (bodyType === 'application/json-seq') {
+      return { body: '\x1e' + compactJson + '\n', contentType: bodyType };
+    }
+    if (bodyType.startsWith('multipart/')) {
+      const boundaryMatch = /(?:^|;)\s*boundary="?([^";]+)"?/i.exec(bodyType),
+        boundary = boundaryMatch ? boundaryMatch[1] : 'postman-openapi-stream',
+        contentType = boundaryMatch ? bodyType : bodyType + '; boundary=' + boundary;
+      return {
+        body: '--' + boundary + '\r\nContent-Type: application/json\r\n\r\n' +
+          compactJson + '\r\n--' + boundary + '--\r\n',
+        contentType
+      };
+    }
     if (bodyType !== 'text/event-stream') {
-      return responseRawModeData;
+      return { body: responseRawModeData, contentType: bodyType };
     }
 
-    // SSE `data:` payloads must not contain bare newlines, so re-stringify
-    // the object on a single line. If the body is already a non-object
-    // (e.g. a primitive string) just use it as-is.
-    let dataLine = responseRawModeData;
-    if (_.isObject(responseBodyData)) {
-      dataLine = JSON.stringify(responseBodyData);
+    const fields = _.isObject(responseBodyData) ? responseBodyData : { data: responseBodyData },
+      lines = [];
+    if (fields.event !== undefined) {
+      lines.push('event: ' + String(fields.event).replace(/[\r\n]/g, ' '));
     }
-    else if (typeof dataLine === 'string') {
-      dataLine = dataLine.replace(/\r?\n/g, ' ');
+    if (fields.id !== undefined && !String(fields.id).includes('\0')) {
+      lines.push('id: ' + String(fields.id).replace(/[\r\n]/g, ' '));
     }
-
-    return 'event: message\ndata: ' + dataLine + '\n\n';
+    if (fields.retry !== undefined && Number.isFinite(Number(fields.retry)) && Number(fields.retry) >= 0) {
+      lines.push('retry: ' + String(fields.retry));
+    }
+    if (fields.data !== undefined) {
+      const data = _.isObject(fields.data) ? JSON.stringify(fields.data) : String(fields.data);
+      data.split(/\r\n|\r|\n/).forEach((line) => lines.push('data: ' + line));
+    }
+    return { body: lines.join('\n') + '\n\n', contentType: bodyType };
   },
 
   /**
@@ -2600,8 +2648,11 @@ let QUERYPARAM = 'query',
         return;
       }
 
-      if (_.isObject(param.examples)) {
-        keys.push(...Object.keys(param.examples));
+      const examples = param.in === QUERYSTRING_PARAM ?
+        _.get(param, ['content', _.keys(param.content || {})[0], 'examples']) :
+        param.examples;
+      if (_.isObject(examples)) {
+        keys.push(...Object.keys(examples));
       }
     });
 
@@ -2659,18 +2710,20 @@ let QUERYPARAM = 'query',
     // See https://spec.openapis.org/oas/v3.2.0.html (Media Type Object,
     // `itemSchema` field).
     const mediaTypeObject = responseContent[bodyType];
-    let usingItemSchema = false;
+    let responseMediaTypeObject = mediaTypeObject,
+      usingItemSchema = false;
     if (
+      /^3\.2(?:\.|$)/.test(_.get(context, 'openapi.openapi', '')) &&
       _.isObject(mediaTypeObject) &&
-      !_.has(mediaTypeObject, 'schema') &&
       _.isObject(mediaTypeObject.itemSchema)
     ) {
-      mediaTypeObject.schema = mediaTypeObject.itemSchema;
-      usingItemSchema = true;
+      responseMediaTypeObject = Object.assign({}, mediaTypeObject, { schema: mediaTypeObject.itemSchema });
+      usingItemSchema = !(context.computedOptions.parametersResolution === 'example' &&
+        (mediaTypeObject.example !== undefined || !_.isEmpty(mediaTypeObject.examples)));
     }
 
     resolvedResponseBodyResult = resolveBodyData(
-      context, responseContent[bodyType], bodyType, true, code, requestBodyExamples, parameterExampleKeys);
+      context, responseMediaTypeObject, bodyType, true, code, requestBodyExamples, parameterExampleKeys);
     allBodyData = resolvedResponseBodyResult.generatedBody;
     resolvedResponseBodyTypes = resolvedResponseBodyResult.resolvedSchemaType;
 
@@ -2698,7 +2751,9 @@ let QUERYPARAM = 'query',
       // `itemSchema`, frame it according to the media type so the example
       // body looks like an actual stream chunk a client would receive.
       if (usingItemSchema && responseRawModeData) {
-        responseRawModeData = wrapStreamingItemBody(bodyType, responseBodyData, responseRawModeData);
+        const framedBody = wrapStreamingItemBody(bodyType, responseBodyData, responseRawModeData);
+        responseRawModeData = framedBody.body;
+        bodyType = framedBody.contentType;
       }
 
       if (responseMediaTypes.length > 0) {
@@ -3122,7 +3177,7 @@ module.exports = {
       description: operationItem[method].description,
       url,
       name: requestName,
-      method: method.toUpperCase(),
+      method: _.get(operationItem, [method, '__postmanMethod'], method.toUpperCase()),
       params: {
         queryParams,
         pathParams: pathVariables

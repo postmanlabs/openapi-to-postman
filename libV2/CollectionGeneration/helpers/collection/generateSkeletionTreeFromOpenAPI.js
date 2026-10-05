@@ -12,12 +12,14 @@ let _ = require('lodash'),
     delete: true,
     connect: true,
     options: true,
-    trace: true,
-    // OAS 3.2 introduces the `query` HTTP method as an idempotent, body-bearing,
-    // GET-like operation for complex search endpoints. The Postman SDK supports
-    // arbitrary HTTP methods, so we list it alongside the standard set.
-    // See https://spec.openapis.org/oas/v3.2.0.html (Path Item Object).
-    query: true
+    trace: true
+  },
+
+  isAllowedHttpMethod = function (method, pathItem, is32) {
+    return ALLOWED_HTTP_METHODS[method] ||
+      (is32 && method === 'query') ||
+      (is32 && _.some(_.keys(_.get(pathItem, 'additionalOperations')), (customMethod) =>
+        customMethod.toLowerCase() === method));
   },
 
   /**
@@ -37,8 +39,8 @@ let _ = require('lodash'),
    * @param {Object} pathItem - The resolved Path Item Object
    * @returns {Object} The same path item (mutated when applicable)
    */
-  applyAdditionalOperations = function (pathItem) {
-    if (!_.isObject(pathItem) || !_.isObject(pathItem.additionalOperations)) {
+  applyAdditionalOperations = function (pathItem, is32) {
+    if (!is32 || !_.isObject(pathItem) || !_.isObject(pathItem.additionalOperations)) {
       return pathItem;
     }
 
@@ -54,14 +56,13 @@ let _ = require('lodash'),
         return;
       }
 
-      pathItem[methodLower] = operation;
-      ALLOWED_HTTP_METHODS[methodLower] = true;
+      pathItem[methodLower] = Object.assign({}, operation, { __postmanMethod: method });
     });
 
     return pathItem;
   },
 
-  _generateTreeFromPathsV2 = function (context, openapi, { includeDeprecated }) {
+  _generateTreeFromPathsV2 = function (context, openapi, { includeDeprecated }, is32) {
     /**
      * We will create a unidirectional graph
      */
@@ -101,10 +102,10 @@ let _ = require('lodash'),
           methods = resolveRefFromSchema(context, methods.$ref);
         }
 
-        applyAdditionalOperations(methods);
+        applyAdditionalOperations(methods, is32);
 
         _.forEach(methods, function (data, method) {
-          if (!ALLOWED_HTTP_METHODS[method]) {
+          if (!isAllowedHttpMethod(method, methods, is32)) {
             return;
           }
 
@@ -156,10 +157,10 @@ let _ = require('lodash'),
               methods = resolveRefFromSchema(context, methods.$ref);
             }
 
-            applyAdditionalOperations(methods);
+            applyAdditionalOperations(methods, is32);
 
             _.forEach(methods, function (data, method) {
-              if (!ALLOWED_HTTP_METHODS[method]) {
+              if (!isAllowedHttpMethod(method, methods, is32)) {
                 return;
               }
 
@@ -250,7 +251,7 @@ let _ = require('lodash'),
    * @param {Object} tagsByName - Map of tag name to Tag Object
    * @returns {Array<string>} Ordered ancestor chain (root first, leaf last)
    */
-  resolveTagParentChain = function (tagName, tagsByName) {
+  resolveTagParentChain = function (tagName, tagsByName, is32) {
     const chain = [],
       seen = new Set();
     let cursor = tagName;
@@ -262,7 +263,7 @@ let _ = require('lodash'),
       seen.add(cursor);
       chain.unshift(cursor);
 
-      const parentName = _.get(tagsByName, [cursor, 'parent']);
+      const parentName = is32 ? _.get(tagsByName, [cursor, 'parent']) : undefined;
       if (typeof parentName !== 'string' || parentName.length === 0 || !_.has(tagsByName, parentName)) {
         break;
       }
@@ -272,7 +273,7 @@ let _ = require('lodash'),
     return chain;
   },
 
-  _generateTreeFromTags = function (context, openapi, { includeDeprecated }) {
+  _generateTreeFromTags = function (context, openapi, { includeDeprecated }, is32) {
     let tree = new Graph(),
 
       tagsByName = _.reduce(openapi.tags, function (acc, data) {
@@ -301,7 +302,7 @@ let _ = require('lodash'),
      * folder's node id so a request can attach to it.
      */
     const ensureTagFolderChain = function (tagName) {
-      const chain = resolveTagParentChain(tagName, tagsByName);
+      const chain = resolveTagParentChain(tagName, tagsByName, is32);
       let parentNodeId = 'root:collection',
         nodeId = `path:${tagName}`;
 
@@ -339,10 +340,10 @@ let _ = require('lodash'),
         methods = resolveRefFromSchema(context, methods.$ref);
       }
 
-      applyAdditionalOperations(methods);
+      applyAdditionalOperations(methods, is32);
 
       _.forEach(methods, function (data, method) {
-        if (!ALLOWED_HTTP_METHODS[method]) {
+        if (!isAllowedHttpMethod(method, methods, is32)) {
           return;
         }
 
@@ -407,7 +408,7 @@ let _ = require('lodash'),
    * @param {boolean} options.includeDeprecated - Whether to include deprecated operations
    * @returns {Object} - Graph tree with nested folder structure
    */
-  _generateTreeFromNestedTags = function (context, openapi, { includeDeprecated }) {
+  _generateTreeFromNestedTags = function (context, openapi, { includeDeprecated }, is32) {
     let tree = new Graph(),
 
       tagDescMap = _.reduce(openapi.tags, function (acc, data) {
@@ -467,10 +468,10 @@ let _ = require('lodash'),
         methods = resolveRefFromSchema(context, methods.$ref);
       }
 
-      applyAdditionalOperations(methods);
+      applyAdditionalOperations(methods, is32);
 
       _.forEach(methods, function (data, method) {
-        if (!ALLOWED_HTTP_METHODS[method]) {
+        if (!isAllowedHttpMethod(method, methods, is32)) {
           return;
         }
 
@@ -524,7 +525,7 @@ let _ = require('lodash'),
     return tree;
   },
 
-  _generateWebhookEndpoints = function (context, openapi, tree, { includeDeprecated }) {
+  _generateWebhookEndpoints = function (context, openapi, tree, { includeDeprecated }, is32) {
     if (!_.isEmpty(openapi.webhooks)) {
       tree.setNode(`${PATH_WEBHOOK}:folder`, {
         type: 'webhook~folder',
@@ -544,7 +545,12 @@ let _ = require('lodash'),
         methodData = resolveRefFromSchema(context, methodData.$ref);
       }
 
+      applyAdditionalOperations(methodData, is32);
+
       _.forEach(methodData, function (data, method) {
+        if (!isAllowedHttpMethod(method, methodData, is32)) {
+          return;
+        }
         /**
          * include deprecated handling.
          * If true, add in the postman collection. If false ignore the request.
@@ -578,20 +584,21 @@ let _ = require('lodash'),
 module.exports = function (context, openapi,
   { folderStrategy, includeWebhooks, includeDeprecated, nestedFolderHierarchy }) {
   let skeletonTree;
+  const is32 = /^3\.2(?:\.|$)/.test(_.get(openapi, 'openapi', ''));
 
   switch (folderStrategy) {
     case 'tags':
       if (nestedFolderHierarchy) {
-        skeletonTree = _generateTreeFromNestedTags(context, openapi, { includeDeprecated });
+        skeletonTree = _generateTreeFromNestedTags(context, openapi, { includeDeprecated }, is32);
       }
       else {
-        skeletonTree = _generateTreeFromTags(context, openapi, { includeDeprecated });
+        skeletonTree = _generateTreeFromTags(context, openapi, { includeDeprecated }, is32);
       }
 
       break;
 
     case 'paths':
-      skeletonTree = _generateTreeFromPathsV2(context, openapi, { includeDeprecated });
+      skeletonTree = _generateTreeFromPathsV2(context, openapi, { includeDeprecated }, is32);
       break;
 
     default:
@@ -599,7 +606,7 @@ module.exports = function (context, openapi,
   }
 
   if (includeWebhooks) {
-    skeletonTree = _generateWebhookEndpoints(context, openapi, skeletonTree, { includeDeprecated });
+    skeletonTree = _generateWebhookEndpoints(context, openapi, skeletonTree, { includeDeprecated }, is32);
   }
 
   return skeletonTree;
