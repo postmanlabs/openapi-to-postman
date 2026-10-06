@@ -2770,6 +2770,93 @@ describe('The convert v2 Function', function() {
     });
   });
 
+  it('should resolve $ref path items, querystring params, and self defaultMapping names', function(done) {
+    const spec = {
+        openapi: '3.2.0',
+        info: { title: 'OAS 3.2 refs', version: '1.0.0' },
+        paths: {
+          '/purge': { $ref: '#/components/pathItems/PurgeItem' },
+          '/search': {
+            get: {
+              parameters: [{ $ref: '#/components/parameters/SearchQuery' }],
+              responses: { '200': { description: 'ok' } }
+            }
+          },
+          '/pets': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'pet',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Pet' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        components: {
+          pathItems: {
+            PurgeItem: {
+              additionalOperations: {
+                Purge: { responses: { '204': { description: 'purged' } } }
+              }
+            }
+          },
+          parameters: {
+            SearchQuery: {
+              in: 'querystring',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: { q: { type: 'string' } }
+                  },
+                  example: { q: 'ref-term' }
+                }
+              }
+            }
+          },
+          schemas: {
+            Pet: {
+              oneOf: [
+                { $ref: '#/components/schemas/Cat' }
+              ],
+              discriminator: { propertyName: 'kind', defaultMapping: 'Pet' }
+            },
+            Cat: { type: 'object', properties: { cat: { type: 'string', default: 'cat' } } }
+          }
+        }
+      },
+      collectRequests = (items, result = []) => {
+        _.forEach(items, (item) => {
+          item.request && result.push(item);
+          item.item && collectRequests(item.item, result);
+        });
+        return result;
+      };
+
+    Converter.convertV2({ type: 'string', data: JSON.stringify(spec) },
+      { parametersResolution: 'Example' }, (err, converted) => {
+        expect(err).to.be.null;
+        const requests = collectRequests(converted.output[0].data.item),
+          purgeRequest = requests.find(({ request }) => { return request.method === 'Purge'; }),
+          searchRequest = requests.find(({ request }) => {
+            return request.url.path && request.url.path[request.url.path.length - 1] === 'search';
+          }),
+          petBody = JSON.parse(requests.find(({ request }) => {
+            return request.url.path && request.url.path[request.url.path.length - 1] === 'pets';
+          }).response[0].body);
+
+        expect(purgeRequest).to.not.equal(undefined);
+        expect(searchRequest.request.url.query[0]).to.include({ key: 'q', value: 'ref-term' });
+        expect(petBody).to.eql({ cat: 'cat' });
+        done();
+      });
+  });
+
   describe('Should pair examples by matching key (and fall back to first example otherwise) when', function() {
     it('request body contains multiple examples but request body has single example', function(done) {
       var openapi = fs.readFileSync(multiExampleRequest, 'utf8');

@@ -161,6 +161,36 @@ describe('getParametersForPathItem function', function () {
     expect(result.query[1].examples.first.value).to.equal(2);
     expect(getParametersForPathItem([param], {}, { openapi: '3.1.0' }).query).to.be.empty;
   });
+
+  it('should expand OAS 3.2 querystring parameters referenced by $ref', function () {
+    const components = {
+        components: {
+          parameters: {
+            SearchQuery: {
+              in: 'querystring',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: { q: { type: 'string' } }
+                  },
+                  example: { q: 'ref-term' }
+                }
+              }
+            }
+          }
+        }
+      },
+      result = getParametersForPathItem(
+        [{ $ref: '#/components/parameters/SearchQuery' }],
+        {},
+        { openapi: '3.2.0' },
+        components
+      );
+
+    expect(result.query).to.have.length(1);
+    expect(result.query[0]).to.include({ name: 'q', example: 'ref-term' });
+  });
 });
 
 describe('verifyDeprecatedProperties function', function () {

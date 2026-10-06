@@ -93,6 +93,36 @@ const schemaFaker = require('../../assets/json-schema-faker.js'),
     return '#/components/schemas/' + ref.replace(/~/g, '~0').replace(/\//g, '~1');
   },
 
+  isOpenApi32 = (openapi) => {
+    return (/^3\.2(?:\.|$)/).test(_.get(openapi, 'openapi', ''));
+  },
+
+  /**
+   * Copies OAS 3.2 `additionalOperations` onto the Path Item using lowercased
+   * keys for lookup, while preserving the original map-key spelling on
+   * `__postmanMethod` for the outbound request method.
+   */
+  applyAdditionalOperations = (pathItem, is32) => {
+    if (!is32 || !_.isObject(pathItem) || !_.isObject(pathItem.additionalOperations)) {
+      return pathItem;
+    }
+
+    _.forEach(pathItem.additionalOperations, (operation, method) => {
+      if (typeof method !== 'string' || method.length === 0) {
+        return;
+      }
+
+      const methodLower = method.toLowerCase();
+      if (_.has(pathItem, methodLower)) {
+        return;
+      }
+
+      pathItem[methodLower] = Object.assign({}, operation, { __postmanMethod: method });
+    });
+
+    return pathItem;
+  },
+
   /**
    * @param {*} rootObject - the object from which you're trying to read a property
    * @param {*} pathArray - each element in this array a property of the previous object
@@ -659,10 +689,15 @@ let QUERYPARAM = 'query',
         // See https://spec.openapis.org/oas/v3.2.0.html (Discriminator
         // Object, `defaultMapping` field).
         const defaultMappingRef = _.get(schema, 'discriminator.defaultMapping');
-        if ((/^3\.2(?:\.|$)/).test(_.get(context, 'openapi.openapi', '')) &&
+        if (isOpenApi32(context.openapi) &&
             typeof defaultMappingRef === 'string' && defaultMappingRef.length > 0) {
-          return _resolveSchema(context, { $ref: normalizeDefaultMappingRef(defaultMappingRef) }, stack, resolveFor,
-            _.cloneDeep(seenRef), currentPath);
+          const normalizedDefaultMapping = normalizeDefaultMappingRef(defaultMappingRef);
+          // A bare component name can normalize back to the schema already being
+          // resolved; skip that self-redirect and fake the first union member.
+          if (!seenRef[normalizedDefaultMapping]) {
+            return _resolveSchema(context, { $ref: normalizedDefaultMapping }, stack, resolveFor,
+              _.cloneDeep(seenRef), currentPath);
+          }
         }
         return _resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef), currentPath);
       }
@@ -723,7 +758,7 @@ let QUERYPARAM = 'query',
           isCompositeWithDiscriminator &&
           typeof defaultMappingRef === 'string' &&
           defaultMappingRef.length > 0 &&
-          defaultMappingRef !== schemaRef
+          normalizeDefaultMappingRef(defaultMappingRef) !== schemaRef
         ) {
           return _resolveSchema(context, { $ref: normalizeDefaultMappingRef(defaultMappingRef) }, stack, resolveFor,
             _.cloneDeep(seenRef), currentPath);
@@ -2300,11 +2335,19 @@ let QUERYPARAM = 'query',
    * `in: querystring` value).
    */
   expandQuerystringParameter = (context, param) => {
+    if (!_.isObject(param)) {
+      return [param];
+    }
+
+    if (_.has(param, '$ref')) {
+      param = resolveSchema(context, param);
+    }
+
     if (!_.isObject(param) || param.in !== QUERYSTRING_PARAM) {
       return [param];
     }
 
-    if (!(/^3\.2(?:\.|$)/).test(_.get(context, 'openapi.openapi', ''))) {
+    if (!isOpenApi32(context.openapi)) {
       return [];
     }
 
@@ -2557,13 +2600,11 @@ let QUERYPARAM = 'query',
 
   /**
    * Frames a single faked response body as one chunk of an OAS 3.2 streaming
-   * response. Currently handles `text/event-stream` (Server-Sent Events) by
-   * wrapping the body in an `event: message\ndata: <json>\n\n` envelope
-   * (one-line `data:` payload, since the SSE spec requires `data:` lines
-   * not to contain bare newlines). For any other media type the original
-   * raw body is returned unchanged so non-SSE streaming types (e.g.
-   * `application/jsonl`, `application/json-seq`) still render their faked
-   * single-frame body, just without explicit framing.
+   * response. SSE fields (`event`, `id`, `retry`, `data`) are serialized
+   * separately, JSON Lines/NDJSON get a compact value plus newline,
+   * `application/json-seq` uses record-separator framing, and multipart
+   * streams get a single boundary-delimited part. Other media types keep
+   * the original raw body.
    *
    * See https://spec.openapis.org/oas/v3.2.0.html (Media Type Object,
    * `itemSchema` field) and https://html.spec.whatwg.org/multipage/server-sent-events.html
@@ -3124,6 +3165,10 @@ module.exports = {
      */
     context.schemaCache = context.schemaCache || {};
     context.schemaFakerCache = context.schemaFakerCache || {};
+
+    // Fold additionalOperations onto $ref-resolved path items as well, so
+    // convert-time lookup of mixed-case custom methods still works.
+    applyAdditionalOperations(operationItem, isOpenApi32(context.openapi));
 
     let url = resolveUrlForPostmanRequest(path),
       baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[method]),
