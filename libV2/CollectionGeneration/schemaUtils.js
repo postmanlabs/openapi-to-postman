@@ -111,6 +111,13 @@ const schemaFaker = require('../../assets/json-schema-faker.js'),
    */
   COMPACT_SERIALIZATION_THRESHOLD = 8 * 1024 * 1024,
 
+  /**
+   * Strings at or below this length are measured with `JSON.stringify`. JSON escaping expands a
+   * string by at most six times, so the serialised form stays far below V8's string limit and the
+   * call cannot throw; longer strings are measured character by character instead.
+   */
+  SAFE_NATIVE_STRINGIFY_LENGTH = 8 * 1024 * 1024,
+
   // Placeholder used in place of a body that breached MAX_GENERATED_BODY_LENGTH.
   ERR_BODY_TOO_LARGE = '<Error: The generated body was too large to be included in the collection>',
 
@@ -338,73 +345,157 @@ let QUERYPARAM = 'query',
   },
 
   /**
-   * Computes the exact length `JSON.stringify(value)` (no indentation) would produce, bailing out
-   * as soon as the running total passes `budget`.
+   * Computes the length `JSON.stringify(value)` would produce for a string, without building it.
+   *
+   * A string leaf can on its own be long enough that serialising it overflows V8's string limit,
+   * and JSON escaping only makes it longer (a control character costs six characters as `\u00xx`).
+   * Measuring by character code keeps the check allocation free, so the measurement itself cannot
+   * throw the `RangeError` it exists to predict.
+   *
+   * @param {String} value - String about to be serialised
+   * @returns {Number} Length `JSON.stringify(value)` would return
+   */
+  measureJsonStringLength = (value) => {
+    // Escaping expands a string by at most 6x, so below this length the serialised form is
+    // nowhere near V8's limit and the native call cannot throw. It is also much faster, which
+    // matters because every object key comes through here.
+    if (value.length <= SAFE_NATIVE_STRINGIFY_LENGTH) {
+      return JSON.stringify(value).length;
+    }
+
+    let total = 2; // surrounding quotes
+
+    for (let index = 0; index < value.length; index++) {
+      const code = value.charCodeAt(index);
+
+      // `"` and `\` take a backslash, as do the five characters with short escapes.
+      if (code === 0x22 || code === 0x5c || code === 0x08 || code === 0x09 ||
+        code === 0x0a || code === 0x0c || code === 0x0d) {
+        total += 2;
+      }
+      else if (code < 0x20) {
+        total += 6; // \u00xx
+      }
+      else if (code >= 0xd800 && code <= 0xdbff) {
+        // High surrogate. Paired with a low surrogate it serialises as the two code units it
+        // already is; unpaired it is escaped as `\udXXX`.
+        const next = index + 1 < value.length ? value.charCodeAt(index + 1) : 0;
+
+        if (next >= 0xdc00 && next <= 0xdfff) {
+          total += 2;
+          index++;
+        }
+        else {
+          total += 6;
+        }
+      }
+      else if (code >= 0xdc00 && code <= 0xdfff) {
+        total += 6; // lone low surrogate
+      }
+      else {
+        total += 1;
+      }
+    }
+
+    return total;
+  },
+
+  /**
+   * Computes what `JSON.stringify` would produce for `value`, both compactly and indented, in a
+   * single walk. Bails out as soon as the compact total passes `budget`, because that alone
+   * decides whether the body is served at all.
    *
    * This lets callers apply a size budget *before* attempting the serialisation, instead of
    * discovering the problem as a `RangeError` thrown from deep inside `JSON.stringify`.
    *
    * @param {*} value - Value that is about to be serialised
-   * @param {Number} budget - Length past which the exact total stops mattering
-   * @returns {Number} Serialised length, or some value greater than `budget`
+   * @param {Number} budget - Compact length past which the exact totals stop mattering
+   * @param {Number} indentLength - Width of one indentation level
+   * @returns {Object} `compact` and `indented` lengths
    */
-  measureJsonLength = (value, budget) => {
-    let total = 0;
-    const stack = [value];
+  measureJson = (value, budget, indentLength) => {
+    let compact = 0,
+      // Everything indentation adds on top of the compact form: the newlines, the leading
+      // indent on each member or element, and the space after each object key's colon.
+      surcharge = 0;
+
+    // Depths are tracked alongside the values rather than as objects on the stack, because
+    // indentation cost depends on how deeply nested each value is.
+    const stack = [value],
+      depths = [0],
+      measureIndent = indentLength > 0;
 
     while (stack.length > 0) {
-      if (total > budget) {
-        return total;
+      if (compact > budget) {
+        break;
       }
 
       const current = stack.pop(),
+        depth = depths.pop(),
         type = typeof current;
 
       if (current === null) {
-        total += 4; // null
+        compact += 4; // null
         continue;
       }
 
       if (type === 'string') {
-        total += JSON.stringify(current).length;
+        compact += measureJsonStringLength(current);
         continue;
       }
 
       if (type === 'number') {
-        total += Number.isFinite(current) ? String(current).length : 4;
+        compact += Number.isFinite(current) ? String(current).length : 4;
         continue;
       }
 
       if (type === 'boolean') {
-        total += current ? 4 : 5;
+        compact += current ? 4 : 5;
         continue;
       }
 
       // undefined / function / symbol serialise as `null` inside an array and are dropped as
       // object members (handled below), anything exotic is counted as a short literal.
       if (type !== 'object') {
-        total += 4;
+        compact += 4;
         continue;
       }
 
       // Dates and anything else with a custom serialisation are small leaves - measure directly.
+      // `JSON.stringify` already returns the quoted JSON literal here, so its length is the
+      // serialised length; a `toJSON` returning `undefined` makes the member disappear instead.
       if (_.isFunction(current.toJSON)) {
-        total += JSON.stringify(current).length;
+        const serialised = JSON.stringify(current);
+
+        compact += _.isUndefined(serialised) ? 0 : serialised.length;
         continue;
       }
 
       if (_.isArray(current)) {
-        total += 2 + Math.max(current.length - 1, 0); // brackets + separating commas
+        if (current.length === 0) {
+          compact += 2; // [] is unchanged by indentation
+          continue;
+        }
+
+        compact += 2 + (current.length - 1); // brackets + separating commas
+
+        if (measureIndent) {
+          // A newline and one indent per element, plus the newline and indent before `]`.
+          surcharge += current.length * (1 + indentLength * (depth + 1)) + 1 + indentLength * depth;
+        }
+
         for (let index = 0; index < current.length; index++) {
           stack.push(current[index]);
+          depths.push(depth + 1);
         }
+
         continue;
       }
 
       const keys = Object.keys(current);
       let members = 0;
 
-      total += 2; // braces
+      compact += 2; // braces
 
       for (let index = 0; index < keys.length; index++) {
         const memberValue = current[keys[index]],
@@ -415,14 +506,35 @@ let QUERYPARAM = 'query',
         }
 
         members++;
-        total += JSON.stringify(keys[index]).length + 1; // "key":
+        compact += measureJsonStringLength(keys[index]) + 1; // "key":
         stack.push(memberValue);
+        depths.push(depth + 1);
       }
 
-      total += Math.max(members - 1, 0); // separating commas
+      compact += Math.max(members - 1, 0); // separating commas
+
+      if (measureIndent && members > 0) {
+        // A newline, one indent and the space after each colon, plus the newline and indent
+        // before `}`.
+        surcharge += members * (2 + indentLength * (depth + 1)) + 1 + indentLength * depth;
+      }
     }
 
-    return total;
+    return { compact: compact, indented: compact + surcharge };
+  },
+
+  /**
+   * Length `JSON.stringify` would produce for `value`, compact when `indentLength` is 0.
+   *
+   * @param {*} value - Value that is about to be serialised
+   * @param {Number} budget - Compact length past which the exact total stops mattering
+   * @param {Number} indentLength - Width of one indentation level; 0 measures the compact form
+   * @returns {Number} Serialised length, or some value greater than `budget`
+   */
+  measureJsonLength = (value, budget, indentLength = 0) => {
+    const measured = measureJson(value, budget, indentLength);
+
+    return indentLength > 0 ? measured.indented : measured.compact;
   },
 
   /**
@@ -438,28 +550,46 @@ let QUERYPARAM = 'query',
    * @returns {String|undefined} Serialised body
    */
   serialiseGeneratedBody = (context, bodyData, indentCharacter, issueMeta = {}) => {
-    if (!_.isObject(bodyData) && _.isFunction(_.get(bodyData, 'toString'))) {
-      return bodyData.toString();
-    }
-
-    const projectedLength = measureJsonLength(bodyData, MAX_GENERATED_BODY_LENGTH);
-
-    if (projectedLength > MAX_GENERATED_BODY_LENGTH) {
+    const tooLarge = (length) => {
       recordConversionIssue(context, Object.assign({
         type: CONVERSION_ISSUE_TYPES.BODY_TOO_LARGE,
-        reason: 'Generated body of ' + projectedLength + ' characters exceeded the maximum ' +
+        reason: 'Generated body of ' + length + ' characters exceeded the maximum ' +
           'supported body size of ' + MAX_GENERATED_BODY_LENGTH + ' characters and was omitted.',
-        generatedBodyLength: projectedLength,
+        generatedBodyLength: length,
         maxBodyLength: MAX_GENERATED_BODY_LENGTH
       }, issueMeta));
 
       return ERR_BODY_TOO_LARGE;
+    };
+
+    // Raw bodies - XML, and text examples taken verbatim from the spec - are already strings and
+    // are never serialised below, so the ceiling has to be applied to them here too.
+    if (!_.isObject(bodyData) && _.isFunction(_.get(bodyData, 'toString'))) {
+      const rawBody = bodyData.toString();
+
+      return rawBody.length > MAX_GENERATED_BODY_LENGTH ? tooLarge(rawBody.length) : rawBody;
+    }
+
+    const indentLength = _.isString(indentCharacter) ? indentCharacter.length : 0,
+      // Both forms come out of one walk; the indented length is what the ceiling has to be
+      // judged against when we are about to indent.
+      projected = measureJson(bodyData, MAX_GENERATED_BODY_LENGTH, indentLength);
+
+    if (projected.compact > MAX_GENERATED_BODY_LENGTH) {
+      return tooLarge(projected.compact);
     }
 
     // Indentation can multiply the serialised length several times over, so anything already
     // this large is serialised compactly. Everything below the threshold - i.e. every body an
     // ordinary spec produces - takes the original indented path untouched.
-    if (projectedLength > COMPACT_SERIALIZATION_THRESHOLD) {
+    if (projected.compact > COMPACT_SERIALIZATION_THRESHOLD) {
+      return JSON.stringify(bodyData);
+    }
+
+    // Indenting a deeply nested body can cost tens of times its compact length, so a body that
+    // is comfortably small compactly can still breach the ceiling once indented. Dropping the
+    // indentation is safe here: the compact form is known to be under the compact threshold.
+    if (projected.indented > MAX_GENERATED_BODY_LENGTH) {
       return JSON.stringify(bodyData);
     }
 
@@ -1834,6 +1964,9 @@ let QUERYPARAM = 'query',
           request: requestExample ?
             getExampleData(context, { [requestExample.key]: requestExample.value }) :
             undefined,
+          // The request example is paired by key and may well be declared under a different
+          // content type than the response, so record its own rather than inferring it later.
+          requestContentType: _.get(requestExample, 'contentType'),
           response: responseExampleData,
           name: getResponseExampleName(responseExample) || 'Example',
           // carries the OAS example key so callers can resolve per-key parameter values for the
@@ -1869,6 +2002,7 @@ let QUERYPARAM = 'query',
       if (firstRequestExample) {
         firstExample.request = getExampleData(context,
           { [firstRequestExample.key]: firstRequestExample.value });
+        firstExample.requestContentType = _.get(firstRequestExample, 'contentType');
       }
 
       pmExamples.push(firstExample);
@@ -2782,16 +2916,19 @@ let QUERYPARAM = 'query',
       }
 
       const { indentCharacter } = context.computedOptions,
-        getRawModeData = (bodyData, position) => {
-          return serialiseGeneratedBody(context, bodyData, indentCharacter, {
+        getRawModeData = (data, position, contentType) => {
+          return serialiseGeneratedBody(context, data, indentCharacter, {
             in: position,
             responseCode: code,
             exampleName,
-            contentType: bodyType
+            contentType
           });
         },
-        requestRawModeData = getRawModeData(requestBodyData, 'response~request'),
-        responseRawModeData = getRawModeData(responseBodyData, 'response'),
+        // `bodyType` is the response's content type; the paired request body may have been
+        // declared under a different one, so report whichever actually produced each body.
+        requestRawModeData = getRawModeData(requestBodyData, 'response~request',
+          bodyData.requestContentType || bodyType),
+        responseRawModeData = getRawModeData(responseBodyData, 'response', bodyType),
         responseMediaTypes = _.keys(responseContent);
 
       if (responseMediaTypes.length > 0) {
@@ -3266,6 +3403,11 @@ module.exports = {
   resolveRefFromSchema,
   resolveSchema,
   recordConversionIssue,
+  measureJsonLength,
+  serialiseGeneratedBody,
   CONVERSION_ISSUE_TYPES,
-  MAX_CONVERSION_ISSUES
+  MAX_CONVERSION_ISSUES,
+  MAX_GENERATED_BODY_LENGTH,
+  COMPACT_SERIALIZATION_THRESHOLD,
+  ERR_BODY_TOO_LARGE
 };

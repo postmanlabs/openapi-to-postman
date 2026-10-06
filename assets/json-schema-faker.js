@@ -23562,6 +23562,18 @@ function extend() {
                       writable: false,
                       value: function (rootSchema) { return gen.call(context, schema[keys[length]], schema, keys[length], rootSchema); },
                   });
+                  /**
+                   * CHANGE: record which keyword supplied `generate`. Sub-schema value reuse has
+                   * to know whether a generator returns the same value for the same node
+                   * (`pattern` does) or a different one on every call (`autoIncrement` and
+                   * `sequentialDate` do, by design), and the keyword is the only thing that says.
+                   */
+                  Object.defineProperty(schema, 'generateKeyword', {
+                      configurable: false,
+                      enumerable: false,
+                      writable: false,
+                      value: fn,
+                  });
                   break;
               }
           }
@@ -24241,10 +24253,29 @@ function extend() {
       // so that value.items.map becomes recognized for typescript compiler
       var tmpItems = value.items;
       if (tmpItems instanceof Array) {
-          return Array.prototype.concat.call(items, tmpItems.map(function (item, key) {
-              var itemSubpath = path.concat(['items', key + '']);
-              return traverseCallback(item, itemSubpath, resolve, null, seenSchemaCache);
-          }));
+          /**
+           * CHANGE (correctness): a tuple can list the SAME shared schema object in more than one
+           * position, which sub-schema value reuse would resolve to one identical value for all of
+           * them -- leaving a `uniqueItems` tuple invalid. Suspend reuse for the tuple's subtree,
+           * exactly as the non-tuple branch below does around its own loop.
+           */
+          var suspendTupleReuse = reuseValueCache !== null && Boolean(value.uniqueItems);
+
+          if (suspendTupleReuse) {
+              reuseValueSuspendDepth++;
+          }
+
+          try {
+              return Array.prototype.concat.call(items, tmpItems.map(function (item, key) {
+                  var itemSubpath = path.concat(['items', key + '']);
+                  return traverseCallback(item, itemSubpath, resolve, null, seenSchemaCache);
+              }));
+          }
+          finally {
+              if (suspendTupleReuse) {
+                  reuseValueSuspendDepth--;
+              }
+          }
       }
       var minItems = value.minItems;
       var maxItems = value.maxItems;
@@ -24855,8 +24886,21 @@ function extend() {
            * alone because `traverse` consults `path` for them (type inference, and the
            * `properties`/`items` fallbacks), and `oneOf`/`anyOf` thunk nodes have no `type` at
            * all -- which keeps each occurrence's branch choice independent, as before.
+           *
+           * A concrete `type` is necessary but not sufficient: `Container.wrap` attaches a
+           * (non-enumerable) `generate` for the custom keywords, and not all of them are pure.
+           * `autoIncrement` and `sequentialDate` are deliberately stateful, returning a different
+           * value on every call, and `jsonPath` rewrites the node it is given; memoising either
+           * would be wrong. A custom keyword registered through `jsf.extend` could be stateful
+           * too, so the allowance is a whitelist: only `pattern`, whose generator is a plain
+           * random draw from the regex, is cached.
            */
-          var memoisable = typeof schema.type === 'string' && typeof typeMap[schema.type] !== 'undefined';
+          var generateKeyword = typeof schema.generate === 'function' ? schema.generateKeyword : null;
+
+          var memoisable = typeof schema.type === 'string' &&
+              typeof typeMap[schema.type] !== 'undefined' &&
+              (generateKeyword === null || generateKeyword === 'pattern') &&
+              typeof schema.thunk !== 'function';
 
           if (memoisable) {
               if (reuseValueCache.has(schema)) {
