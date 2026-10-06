@@ -8,6 +8,8 @@ const schemaFaker = require('../../assets/json-schema-faker.js'),
   xmlFaker = require('../xmlSchemaFaker.js'),
   URLENCODED = 'application/x-www-form-urlencoded',
   { DEFAULT_RESPONSE_CODE_IN_OAS } = require('../../lib/common/schemaUtilsCommon.js'),
+  { isOpenApi32, getDefaultMappingRedirect, getPathItemOperation, formatServerSentEvent } =
+    require('../../lib/common/oas32Utils.js'),
   APP_JSON = 'application/json',
   APP_JS = 'application/javascript',
   TEXT_XML = 'text/xml',
@@ -86,42 +88,9 @@ const schemaFaker = require('../../assets/json-schema-faker.js'),
   PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable', 'properties'],
   crypto = require('crypto'),
 
-  normalizeDefaultMappingRef = (ref) => {
-    if (ref.startsWith('#') || (/^[a-z][a-z\d+.-]*:/i).test(ref) || ref.includes('/')) {
-      return ref;
-    }
-    return '#/components/schemas/' + ref.replace(/~/g, '~0').replace(/\//g, '~1');
-  },
-
-  isOpenApi32 = (openapi) => {
-    return (/^3\.2(?:\.|$)/).test(_.get(openapi, 'openapi', ''));
-  },
-
-  /**
-   * Copies OAS 3.2 `additionalOperations` onto the Path Item using lowercased
-   * keys for lookup, while preserving the original map-key spelling on
-   * `__postmanMethod` for the outbound request method.
-   */
-  applyAdditionalOperations = (pathItem, is32) => {
-    if (!is32 || !_.isObject(pathItem) || !_.isObject(pathItem.additionalOperations)) {
-      return pathItem;
-    }
-
-    _.forEach(pathItem.additionalOperations, (operation, method) => {
-      if (typeof method !== 'string' || method.length === 0) {
-        return;
-      }
-
-      const methodLower = method.toLowerCase();
-      if (_.has(pathItem, methodLower)) {
-        return;
-      }
-
-      pathItem[methodLower] = Object.assign({}, operation, { __postmanMethod: method });
-    });
-
-    return pathItem;
-  },
+  // Key under which an OAS 3.2 `additionalOperations` entry is exposed on the
+  // operation view used by resolvePostmanRequest. It can't clash with any Path Item field.
+  ADDITIONAL_OPERATION_VIEW_KEY = '__postmanAdditionalOperation',
 
   /**
    * @param {*} rootObject - the object from which you're trying to read a property
@@ -688,16 +657,12 @@ let QUERYPARAM = 'query',
         // shape to fake. Prefer it when present.
         // See https://spec.openapis.org/oas/v3.2.0.html (Discriminator
         // Object, `defaultMapping` field).
-        const defaultMappingRef = _.get(schema, 'discriminator.defaultMapping');
-        if (isOpenApi32(context.openapi) &&
-            typeof defaultMappingRef === 'string' && defaultMappingRef.length > 0) {
-          const normalizedDefaultMapping = normalizeDefaultMappingRef(defaultMappingRef);
-          // A bare component name can normalize back to the schema already being
-          // resolved; skip that self-redirect and fake the first union member.
-          if (!seenRef[normalizedDefaultMapping]) {
-            return _resolveSchema(context, { $ref: normalizedDefaultMapping }, stack, resolveFor,
-              _.cloneDeep(seenRef), currentPath);
-          }
+        // Redirect is skipped if the target is already being resolved (e.g. a bare component
+        // name pointing back to this schema); the first union member is faked instead.
+        const defaultMappingRedirect = getDefaultMappingRedirect(schema, isOpenApi32(context.openapi), seenRef);
+        if (defaultMappingRedirect) {
+          return _resolveSchema(context, { $ref: defaultMappingRedirect }, stack, resolveFor,
+            _.cloneDeep(seenRef), currentPath);
         }
         return _resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef), currentPath);
       }
@@ -748,19 +713,13 @@ let QUERYPARAM = 'query',
       // its `discriminator` field by a prior TYPES_GENERATION pass.
       // See https://spec.openapis.org/oas/v3.2.0.html (Discriminator
       // Object, `defaultMapping` field).
-      if (resolveFor === CONVERSION && (/^3\.2(?:\.|$)/).test(_.get(context, 'openapi.openapi', ''))) {
-        const rawSchema = lookupSchemaInSpecComponents(context, schemaRef),
-          defaultMappingRef = _.get(rawSchema, 'discriminator.defaultMapping'),
-          isCompositeWithDiscriminator = _.isObject(rawSchema) &&
-            (Array.isArray(rawSchema.oneOf) || Array.isArray(rawSchema.anyOf));
+      // Same decision as the oneOf/anyOf branch above; seenRef already holds schemaRef here.
+      if (resolveFor === CONVERSION && isOpenApi32(context.openapi)) {
+        const defaultMappingRedirect = getDefaultMappingRedirect(
+          lookupSchemaInSpecComponents(context, schemaRef), true, seenRef);
 
-        if (
-          isCompositeWithDiscriminator &&
-          typeof defaultMappingRef === 'string' &&
-          defaultMappingRef.length > 0 &&
-          normalizeDefaultMappingRef(defaultMappingRef) !== schemaRef
-        ) {
-          return _resolveSchema(context, { $ref: normalizeDefaultMappingRef(defaultMappingRef) }, stack, resolveFor,
+        if (defaultMappingRedirect) {
+          return _resolveSchema(context, { $ref: defaultMappingRedirect }, stack, resolveFor,
             _.cloneDeep(seenRef), currentPath);
         }
       }
@@ -2641,22 +2600,7 @@ let QUERYPARAM = 'query',
       return { body: responseRawModeData, contentType: bodyType };
     }
 
-    const fields = _.isObject(responseBodyData) ? responseBodyData : { data: responseBodyData },
-      lines = [];
-    if (fields.event !== undefined) {
-      lines.push('event: ' + String(fields.event).replace(/[\r\n]/g, ' '));
-    }
-    if (fields.id !== undefined && !String(fields.id).includes('\0')) {
-      lines.push('id: ' + String(fields.id).replace(/[\r\n]/g, ' '));
-    }
-    if (fields.retry !== undefined && Number.isInteger(Number(fields.retry)) && Number(fields.retry) >= 0) {
-      lines.push('retry: ' + String(fields.retry));
-    }
-    if (fields.data !== undefined) {
-      const data = _.isObject(fields.data) ? JSON.stringify(fields.data) : String(fields.data);
-      data.split(/\r\n|\r|\n/).forEach((line) => { return lines.push('data: ' + line); });
-    }
-    return { body: lines.join('\n') + '\n\n', contentType: bodyType };
+    return { body: formatServerSentEvent(responseBodyData), contentType: bodyType };
   },
 
   /**
@@ -2755,7 +2699,7 @@ let QUERYPARAM = 'query',
     let responseMediaTypeObject = mediaTypeObject,
       usingItemSchema = false;
     if (
-      (/^3\.2(?:\.|$)/).test(_.get(context, 'openapi.openapi', '')) &&
+      isOpenApi32(context.openapi) &&
       _.isObject(mediaTypeObject) &&
       _.isObject(mediaTypeObject.itemSchema)
     ) {
@@ -3123,15 +3067,17 @@ let QUERYPARAM = 'query',
           responseDescriptionTrimmed = _.isString(responseDescription) ? responseDescription.trim() : '',
           codeName = String(!_.isNil(code) ? code : DEFAULT_RESPONSE_CODE_IN_OAS);
 
-        // response-name priority:
-        // 1) response-level summary  (OAS 3.2: short label, see
+        // response-name priority (unchanged from legacy, including for matching-key multi-example):
+        // 1) response-level summary, OAS 3.2 only (short label, see
         //    https://spec.openapis.org/oas/v3.2.0.html Response Object)
         // 2) response-level description
-        // 3) example-level description/summary (already baked into `name`
-        //    by generateExamples)
-        // 4) example key (already baked into `name` by generateExamples)
-        // 5) response code
-        name = responseSummaryTrimmed || responseDescriptionTrimmed || name || codeName;
+        // 3) example-level description/summary/key (baked into `name` by generateExamples)
+        // 4) response code
+        // The saved-response name maps back to the OAS response `description` during
+        // collection -> spec sync, so for 3.0/3.1 it MUST stay tied to the response description to keep
+        // two-way sync deterministic. Per-example identity is carried by the example key, not the name.
+        name = (isOpenApi32(context.openapi) && responseSummaryTrimmed) || responseDescriptionTrimmed ||
+          name || codeName;
 
         // set accept header value as first found response content's media type
         if (_.isEmpty(requestAcceptHeader)) {
@@ -3158,7 +3104,7 @@ let QUERYPARAM = 'query',
   };
 
 module.exports = {
-  resolvePostmanRequest: function (context, operationItem, path, method, requestMethod) {
+  resolvePostmanRequest: function (context, pathItem, path, method, requestMethod) {
     /**
      * schemaCache object will be used to cache the already resolved refs
      * in the schema.
@@ -3166,21 +3112,27 @@ module.exports = {
     context.schemaCache = context.schemaCache || {};
     context.schemaFakerCache = context.schemaFakerCache || {};
 
-    // Fold additionalOperations onto $ref-resolved path items as well, so
-    // convert-time lookup of mixed-case custom methods still works.
-    applyAdditionalOperations(operationItem, isOpenApi32(context.openapi));
+    // OAS 3.2 `additionalOperations` entries are identified by `requestMethod` (the exact map key).
+    // They are exposed under a reserved key on a read-only view instead of being added to the path item,
+    // so that custom method names can't clash with Path Item fields (e.g. `parameters`).
+    const isAdditionalOperation = Boolean(requestMethod) && isOpenApi32(context.openapi),
+      operationKey = isAdditionalOperation ? ADDITIONAL_OPERATION_VIEW_KEY : method,
+      operationItem = isAdditionalOperation ? {
+        parameters: pathItem.parameters,
+        [ADDITIONAL_OPERATION_VIEW_KEY]: getPathItemOperation(pathItem, method, requestMethod)
+      } : pathItem;
 
     let url = resolveUrlForPostmanRequest(path),
-      baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[method]),
-      requestName = resolveNameForPostmanReqeust(context, operationItem[method], url),
-      { queryParamTypes, queryParams } = resolveQueryParamsForPostmanRequest(context, operationItem, method),
-      { headerTypes, headers } = resolveHeadersForPostmanRequest(context, operationItem, method),
-      { pathParamTypes, pathParams } = resolvePathParamsForPostmanRequest(context, operationItem, method),
+      baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[operationKey]),
+      requestName = resolveNameForPostmanReqeust(context, operationItem[operationKey], url),
+      { queryParamTypes, queryParams } = resolveQueryParamsForPostmanRequest(context, operationItem, operationKey),
+      { headerTypes, headers } = resolveHeadersForPostmanRequest(context, operationItem, operationKey),
+      { pathParamTypes, pathParams } = resolvePathParamsForPostmanRequest(context, operationItem, operationKey),
       { pathVariables, collectionVariables } = filterCollectionAndPathVariables(url, pathParams),
-      requestBody = resolveRequestBodyForPostmanRequest(context, operationItem[method]),
+      requestBody = resolveRequestBodyForPostmanRequest(context, operationItem[operationKey]),
       requestBodyTypes = requestBody && requestBody.resolvedSchemaTypeObject,
       request,
-      securitySchema = _.get(operationItem, [method, 'security']),
+      securitySchema = _.get(operationItem, [operationKey, 'security']),
       authHelper = generateAuthForCollectionFromOpenAPI(context.openapi, securitySchema),
       { alwaysInheritAuthentication } = context.computedOptions,
       requestIdentifier,
@@ -3199,14 +3151,14 @@ module.exports = {
     // pairing. The resolver mirrors the base query/path/header resolution above but resolves each
     // parameter's value for a specific example key (fallback: examples[key] -> example ->
     // examples[firstKey] -> schema default).
-    const parameterExampleKeys = getParameterExampleKeys(context, operationItem, method),
+    const parameterExampleKeys = getParameterExampleKeys(context, operationItem, operationKey),
       resolveParamsForExampleKey = (exampleKey) => {
         const keyedQueryParams = resolveQueryParamsForPostmanRequest(
-            context, operationItem, method, { exampleKey }).queryParams,
+            context, operationItem, operationKey, { exampleKey }).queryParams,
           keyedHeaders = resolveHeadersForPostmanRequest(
-            context, operationItem, method, { exampleKey }).headers,
+            context, operationItem, operationKey, { exampleKey }).headers,
           keyedPathParams = resolvePathParamsForPostmanRequest(
-            context, operationItem, method, { exampleKey }).pathParams,
+            context, operationItem, operationKey, { exampleKey }).pathParams,
           { pathVariables: keyedPathVariables } = filterCollectionAndPathVariables(preBaseUrl, keyedPathParams);
 
         keyedHeaders.push(..._.get(requestBody, 'headers', []));
@@ -3220,10 +3172,10 @@ module.exports = {
       };
 
     request = {
-      description: operationItem[method].description,
+      description: operationItem[operationKey].description,
       url,
       name: requestName,
-      method: requestMethod || _.get(operationItem, [method, '__postmanMethod'], method.toUpperCase()),
+      method: requestMethod || method.toUpperCase(),
       params: {
         queryParams,
         pathParams: pathVariables
@@ -3244,7 +3196,7 @@ module.exports = {
         responses,
         acceptHeader,
         responseTypes
-      } = resolveResponseForPostmanRequest(context, operationItem[method], request, {
+      } = resolveResponseForPostmanRequest(context, operationItem[operationKey], request, {
         keys: parameterExampleKeys,
         resolveForKey: resolveParamsForExampleKey
       });

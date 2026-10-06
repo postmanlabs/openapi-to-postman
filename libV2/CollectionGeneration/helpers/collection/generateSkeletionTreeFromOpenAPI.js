@@ -1,6 +1,7 @@
 let _ = require('lodash'),
   Graph = require('graphlib').Graph,
   { resolveRefFromSchema } = require('../../schemaUtils'),
+  { isOpenApi32, getPathItemOperations, resolveTagParentChain } = require('../../../../lib/common/oas32Utils'),
 
   PATH_WEBHOOK = 'path~webhook',
   ALLOWED_HTTP_METHODS = {
@@ -15,52 +16,19 @@ let _ = require('lodash'),
     trace: true
   },
 
-  isAllowedHttpMethod = function (method, pathItem, is32) {
-    return ALLOWED_HTTP_METHODS[method] ||
-      (is32 && method === 'query') ||
-      (is32 && _.some(
-        _.keys(_.get(pathItem, 'additionalOperations')),
-        (customMethod) => { return customMethod.toLowerCase() === method; }
-      ));
-  },
+  STANDARD_HTTP_METHODS = _.keys(ALLOWED_HTTP_METHODS),
 
   /**
-   * Folds OAS 3.2's `additionalOperations` map (custom HTTP methods like
-   * PURGE/LINK/UNLINK) into the Path Item Object as if they were standard
-   * operations: each `additionalOperations[METHOD]` entry is copied to
-   * `pathItem[methodLowercased]` so the rest of the converter can iterate
-   * operations uniformly. Keys that already exist on the Path Item (or that
-   * collide with another additionalOperations entry of the same lowercased
-   * name) are left untouched. The outbound method spelling is preserved on
-   * the operation metadata.
-   *
-   * See https://spec.openapis.org/oas/v3.2.0.html (Path Item Object,
-   * `additionalOperations` field).
+   * Returns operations defined on the path item (including OAS 3.2 `query` and
+   * `additionalOperations`) as a list of { method, requestMethod, operation }.
+   * The path item is not modified.
    *
    * @param {Object} pathItem - The resolved Path Item Object
-   * @returns {Object} The same path item (mutated when applicable)
+   * @param {Boolean} is32 - whether the spec is OAS 3.2.x
+   * @returns {Array<Object>} operations
    */
-  applyAdditionalOperations = function (pathItem, is32) {
-    if (!is32 || !_.isObject(pathItem) || !_.isObject(pathItem.additionalOperations)) {
-      return pathItem;
-    }
-
-    _.forEach(pathItem.additionalOperations, function (operation, method) {
-      if (typeof method !== 'string' || method.length === 0) {
-        return;
-      }
-
-      const methodLower = method.toLowerCase();
-      // Don't clobber a standard operation (or another already-applied custom
-      // operation) on the same path item.
-      if (_.has(pathItem, methodLower)) {
-        return;
-      }
-
-      pathItem[methodLower] = Object.assign({}, operation, { __postmanMethod: method });
-    });
-
-    return pathItem;
+  getPathOperations = function (pathItem, is32) {
+    return getPathItemOperations(pathItem, STANDARD_HTTP_METHODS, is32);
   },
 
   _generateTreeFromPathsV2 = function (context, openapi, { includeDeprecated }, is32) {
@@ -103,12 +71,7 @@ let _ = require('lodash'),
           methods = resolveRefFromSchema(context, methods.$ref);
         }
 
-        applyAdditionalOperations(methods, is32);
-
-        _.forEach(methods, function (data, method) {
-          if (!isAllowedHttpMethod(method, methods, is32)) {
-            return;
-          }
+        _.forEach(getPathOperations(methods, is32), function ({ method, requestMethod, operation: data }) {
 
           /**
            * include deprecated handling.
@@ -138,7 +101,7 @@ let _ = require('lodash'),
             meta: {
               path: completePath,
               method: method,
-              requestMethod: _.get(data, '__postmanMethod'),
+              requestMethod: requestMethod,
               pathIdentifier: pathSplit[0]
             }
           });
@@ -159,12 +122,7 @@ let _ = require('lodash'),
               methods = resolveRefFromSchema(context, methods.$ref);
             }
 
-            applyAdditionalOperations(methods, is32);
-
-            _.forEach(methods, function (data, method) {
-              if (!isAllowedHttpMethod(method, methods, is32)) {
-                return;
-              }
+            _.forEach(getPathOperations(methods, is32), function ({ method, requestMethod, operation: data }) {
 
               /**
                * include deprecated handling.
@@ -202,7 +160,7 @@ let _ = require('lodash'),
                 meta: {
                   path: completePath,
                   method: method,
-                  requestMethod: _.get(data, '__postmanMethod'),
+                  requestMethod: requestMethod,
                   pathIdentifier: pathIdentifier
                 }
               });
@@ -238,44 +196,6 @@ let _ = require('lodash'),
     return tree;
   },
 
-  /**
-   * Resolves OAS 3.2 hierarchical tags by walking each tag's `parent`
-   * chain back to the root and returning [rootTag, ..., leafTag]. Cycles
-   * and dangling parents are guarded against -- if a parent reference
-   * cannot be resolved or a cycle is detected, the chain stops at the
-   * deepest valid ancestor and returns from there. Returns the tag's
-   * own name in a single-element array when no parent is declared (the
-   * common 3.0/3.1 case).
-   *
-   * See https://spec.openapis.org/oas/v3.2.0.html (Tag Object,
-   * `parent` field).
-   *
-   * @param {string} tagName - The leaf tag's name
-   * @param {Object} tagsByName - Map of tag name to Tag Object
-   * @returns {Array<string>} Ordered ancestor chain (root first, leaf last)
-   */
-  resolveTagParentChain = function (tagName, tagsByName, is32) {
-    const chain = [],
-      seen = new Set();
-    let cursor = tagName;
-
-    while (typeof cursor === 'string' && cursor.length > 0) {
-      if (seen.has(cursor)) {
-        break;
-      }
-      seen.add(cursor);
-      chain.unshift(cursor);
-
-      const parentName = is32 ? _.get(tagsByName, [cursor, 'parent']) : undefined;
-      if (typeof parentName !== 'string' || parentName.length === 0 || !_.has(tagsByName, parentName)) {
-        break;
-      }
-      cursor = parentName;
-    }
-
-    return chain;
-  },
-
   _generateTreeFromTags = function (context, openapi, { includeDeprecated }, is32) {
     let tree = new Graph(),
 
@@ -300,18 +220,33 @@ let _ = require('lodash'),
     });
 
     /**
+     * Returns the parent tag (OAS 3.2 hierarchical tags) if it refers to a known tag.
+     * For 3.0/3.1 tags (no `parent`) the chain is always [tagName].
+     *
+     * @param {String} tagName - tag name
+     * @returns {String|undefined} parent tag name
+     */
+    const getTagParent = function (tagName) {
+      const parentName = is32 ? _.get(tagsByName, [tagName, 'parent']) : undefined;
+
+      return _.isString(parentName) && _.has(tagsByName, parentName) ? parentName : undefined;
+    };
+
+    /**
      * Builds a chain of nested folder nodes for the given tag (resolving
      * its `parent` ancestry), wires them up, and returns the deepest
      * folder's node id so a request can attach to it.
      */
     const ensureTagFolderChain = function (tagName) {
-      const chain = resolveTagParentChain(tagName, tagsByName, is32);
+      const chain = resolveTagParentChain(tagName, getTagParent);
       let parentNodeId = 'root:collection',
         nodeId = `path:${tagName}`;
 
       for (let index = 0; index < chain.length; index++) {
         const ancestorName = chain[index];
-        nodeId = `path:${chain.slice(0, index + 1).join(':')}`;
+        // Root tag folders keep the flat (3.0/3.1) id. Nested folders use a JSON encoded
+        // chain so that tag names containing separators can't collide with a nested chain.
+        nodeId = index === 0 ? `path:${ancestorName}` : `tag-chain:${JSON.stringify(chain.slice(0, index + 1))}`;
 
         if (!tree.hasNode(nodeId)) {
           tree.setNode(nodeId, {
@@ -343,12 +278,7 @@ let _ = require('lodash'),
         methods = resolveRefFromSchema(context, methods.$ref);
       }
 
-      applyAdditionalOperations(methods, is32);
-
-      _.forEach(methods, function (data, method) {
-        if (!isAllowedHttpMethod(method, methods, is32)) {
-          return;
-        }
+      _.forEach(getPathOperations(methods, is32), function ({ method, requestMethod, operation: data }) {
 
         /**
          * include deprecated handling.
@@ -378,7 +308,7 @@ let _ = require('lodash'),
                 tag: tag,
                 path: path,
                 method: method,
-                requestMethod: _.get(data, '__postmanMethod')
+                requestMethod: requestMethod
               }
             });
 
@@ -393,7 +323,7 @@ let _ = require('lodash'),
             meta: {
               path: path,
               method: method,
-              requestMethod: _.get(data, '__postmanMethod')
+              requestMethod: requestMethod
             }
           });
 
@@ -473,12 +403,7 @@ let _ = require('lodash'),
         methods = resolveRefFromSchema(context, methods.$ref);
       }
 
-      applyAdditionalOperations(methods, is32);
-
-      _.forEach(methods, function (data, method) {
-        if (!isAllowedHttpMethod(method, methods, is32)) {
-          return;
-        }
+      _.forEach(getPathOperations(methods, is32), function ({ method, requestMethod, operation: data }) {
 
         /**
          * include deprecated handling.
@@ -505,7 +430,7 @@ let _ = require('lodash'),
               tags: data.tags,
               path: path,
               method: method,
-              requestMethod: _.get(data, '__postmanMethod')
+              requestMethod: requestMethod
             }
           });
 
@@ -520,7 +445,7 @@ let _ = require('lodash'),
             meta: {
               path: path,
               method: method,
-              requestMethod: _.get(data, '__postmanMethod')
+              requestMethod: requestMethod
             }
           });
 
@@ -552,12 +477,7 @@ let _ = require('lodash'),
         methodData = resolveRefFromSchema(context, methodData.$ref);
       }
 
-      applyAdditionalOperations(methodData, is32);
-
-      _.forEach(methodData, function (data, method) {
-        if (!isAllowedHttpMethod(method, methodData, is32)) {
-          return;
-        }
+      _.forEach(getPathOperations(methodData, is32), function ({ method, requestMethod, operation: data }) {
 
         /**
          * include deprecated handling.
@@ -569,7 +489,7 @@ let _ = require('lodash'),
 
         tree.setNode(`${PATH_WEBHOOK}:${path}:${method}`, {
           type: 'webhook~request',
-          meta: { path: path, method: method, requestMethod: _.get(data, '__postmanMethod') },
+          meta: { path: path, method: method, requestMethod: requestMethod },
           data: {}
         });
 
@@ -592,7 +512,7 @@ let _ = require('lodash'),
 module.exports = function (context, openapi,
   { folderStrategy, includeWebhooks, includeDeprecated, nestedFolderHierarchy }) {
   let skeletonTree;
-  const is32 = (/^3\.2(?:\.|$)/).test(_.get(openapi, 'openapi', ''));
+  const is32 = isOpenApi32(openapi);
 
   switch (folderStrategy) {
     case 'tags':

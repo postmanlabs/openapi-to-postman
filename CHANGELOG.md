@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Added support for OpenAPI 3.2 specifications (`query` and `additionalOperations` operations, `querystring` parameters, hierarchical tags, `itemSchema` streaming responses, response `summary`, `discriminator.defaultMapping` and OAuth 2.0 Device Authorization flow).
+
+### Fixed
+
+-   Fixed an issue where non-operation fields of a webhook Path Item (e.g. `summary`, `description`) were converted into requests by the v2 converter.
+
 ## [v6.3.3] - 2026-08-11
 
 ## [v6.3.2] - 2026-07-31
