@@ -6,7 +6,6 @@ const _ = require('lodash'),
   BASE_OPTIONS = {
     requiredOnly: false,
     optionalsProbability: 1.0,
-    minLength: 4,
     maxLength: 256,
     minItems: 1,
     maxItems: 20,
@@ -42,26 +41,25 @@ function distinct (values) {
 }
 
 describe('json-schema-faker sub-schema value reuse', function () {
+  let previousOptions;
+
+  before(function () {
+    // The faker is one shared instance and its options are process wide, so remember the current
+    // value of every option this file overwrites and put them all back in `after`.
+    const overwritten = _.assign({}, BASE_OPTIONS, { reuseIdenticalSubSchemas: false });
+
+    previousOptions = _.mapValues(overwritten, function (value, name) {
+      return schemaFaker.option(name);
+    });
+  });
+
   afterEach(function () {
-    // The option lives on the shared module instance, so never leave it enabled.
+    // Never leave reuse enabled between cases in this file.
     schemaFaker.option({ reuseIdenticalSubSchemas: false });
   });
 
   after(function () {
-    // `fake` above replaces options on the shared faker instance, so put the global defaults
-    // back for whatever test file runs next.
-    schemaFaker.option({
-      requiredOnly: false,
-      optionalsProbability: 1.0,
-      maxLength: 256,
-      minItems: 1,
-      maxItems: 20,
-      useDefaultValue: true,
-      ignoreMissingRefs: true,
-      avoidExampleItemsLength: true,
-      failOnInvalidFormat: false,
-      reuseIdenticalSubSchemas: false
-    });
+    schemaFaker.option(previousOptions);
   });
 
   it('should be disabled by default so ordinary generation is unchanged', function () {
@@ -154,10 +152,45 @@ describe('json-schema-faker sub-schema value reuse', function () {
     });
   });
 
+  it('should not reuse a shared container holding a stateful descendant', function () {
+    // Checking only the shared node itself is not enough: a plain object or array looks safe to
+    // reuse, so it gets cached, its child's generator runs once and every later occurrence is
+    // handed that one value. Objects and arrays are built by different code, so check both.
+    _.forEach(['object', 'array'], function (containerType) {
+      const child = { type: 'integer', 'x-autoIncrement': true },
+        container = containerType === 'object' ?
+          { type: 'object', required: ['id'], properties: { id: child } } :
+          { type: 'array', minItems: 1, items: child },
+        schema = {
+          type: 'object',
+          required: ['a', 'b', 'c'],
+          properties: { a: container, b: container, c: container }
+        },
+        faked = fake(schema, true);
+
+      expect(distinct([faked.a, faked.b, faked.c]), containerType + ' container').to.equal(3);
+    });
+  });
+
+  it('should still reuse a shared container whose descendants are all pure', function () {
+    // The counterpart to the case above: refusing to cache containers outright would have given
+    // up the whole optimisation, so a container with no such generator must still be reused.
+    const leaf = { type: 'integer', minimum: 1, maximum: 1000000000 },
+      middle = { type: 'object', required: ['n'], properties: { n: leaf } },
+      container = { type: 'object', required: ['x', 'y'], properties: { x: middle, y: middle } },
+      schema = {
+        type: 'object',
+        required: ['a', 'b', 'c'],
+        properties: { a: container, b: container, c: container }
+      },
+      faked = fake(schema, true);
+
+    expect(distinct([faked.a, faked.b, faked.c])).to.equal(1);
+  });
+
   it('should still reuse values from pure generators such as pattern', function () {
-    // `pattern` is a plain random draw from the regex, so it is cached like any other leaf --
-    // excluding every generator from the cache would have blunted the reuse win on specs that
-    // use `pattern` heavily.
+    // `pattern` repeats harmlessly, so it is cached like any other leaf. Excluding every
+    // generator would have cost the reuse win on specs that use `pattern` heavily.
     const shared = { type: 'string', pattern: '[a-z]{12}' },
       schema = {
         type: 'object',

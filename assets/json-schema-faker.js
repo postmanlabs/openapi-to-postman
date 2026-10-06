@@ -23563,10 +23563,8 @@ function extend() {
                       value: function (rootSchema) { return gen.call(context, schema[keys[length]], schema, keys[length], rootSchema); },
                   });
                   /**
-                   * CHANGE: record which keyword supplied `generate`. Sub-schema value reuse has
-                   * to know whether a generator returns the same value for the same node
-                   * (`pattern` does) or a different one on every call (`autoIncrement` and
-                   * `sequentialDate` do, by design), and the keyword is the only thing that says.
+                   * CHANGE: record which keyword supplied `generate`, since it is the only thing
+                   * telling sub-schema value reuse whether that generator repeats.
                    */
                   Object.defineProperty(schema, 'generateKeyword', {
                       configurable: false,
@@ -24254,10 +24252,9 @@ function extend() {
       var tmpItems = value.items;
       if (tmpItems instanceof Array) {
           /**
-           * CHANGE (correctness): a tuple can list the SAME shared schema object in more than one
-           * position, which sub-schema value reuse would resolve to one identical value for all of
-           * them -- leaving a `uniqueItems` tuple invalid. Suspend reuse for the tuple's subtree,
-           * exactly as the non-tuple branch below does around its own loop.
+           * CHANGE (correctness): a tuple can list the same schema object in several positions,
+           * which reuse would give one identical value, breaking `uniqueItems`. Suspend reuse
+           * here as the non-tuple branch below does.
            */
           var suspendTupleReuse = reuseValueCache !== null && Boolean(value.uniqueItems);
 
@@ -24873,6 +24870,13 @@ function extend() {
    */
   var reuseValueSuspendDepth = 0;
 
+  /**
+   * CHANGE (correctness): calls to generators that return a new value each time, such as
+   * `x-autoIncrement` and `x-sequentialDate`. The reuse cache compares this before and after
+   * building a value to decide whether that value can be repeated.
+   */
+  var statefulGeneratorCalls = 0;
+
   function traverse(schema, path, resolve, rootSchema, seenSchemaCache) {
       schema = resolve(schema);
       if (!schema) {
@@ -24881,35 +24885,35 @@ function extend() {
 
       if (reuseValueCache !== null && reuseValueSuspendDepth === 0 && typeof schema === 'object') {
           /**
-           * Only nodes that carry their own concrete, known `type` are memoised. For those the
-           * result is a pure function of the node, so reuse is sound. Nodes without one are left
-           * alone because `traverse` consults `path` for them (type inference, and the
-           * `properties`/`items` fallbacks), and `oneOf`/`anyOf` thunk nodes have no `type` at
-           * all -- which keeps each occurrence's branch choice independent, as before.
-           *
-           * A concrete `type` is necessary but not sufficient: `Container.wrap` attaches a
-           * (non-enumerable) `generate` for the custom keywords, and not all of them are pure.
-           * `autoIncrement` and `sequentialDate` are deliberately stateful, returning a different
-           * value on every call, and `jsonPath` rewrites the node it is given; memoising either
-           * would be wrong. A custom keyword registered through `jsf.extend` could be stateful
-           * too, so the allowance is a whitelist: only `pattern`, whose generator is a plain
-           * random draw from the regex, is cached.
+           * Reuse needs a node whose value depends on the node alone: a known `type` (without
+           * one, `traverse` also uses `path`, and `oneOf`/`anyOf` must pick a branch per
+           * occurrence), and no custom-keyword generator except `pattern` -- `autoIncrement`
+           * and `sequentialDate` return a new value each call, `jsonPath` edits its node, and a
+           * `jsf.extend` keyword could do either.
            */
           var generateKeyword = typeof schema.generate === 'function' ? schema.generateKeyword : null;
 
-          var memoisable = typeof schema.type === 'string' &&
+          var canReuseValue = typeof schema.type === 'string' &&
               typeof typeMap[schema.type] !== 'undefined' &&
               (generateKeyword === null || generateKeyword === 'pattern') &&
               typeof schema.thunk !== 'function';
 
-          if (memoisable) {
+          if (canReuseValue) {
               if (reuseValueCache.has(schema)) {
                   return reuseValueCache.get(schema);
               }
 
+              /**
+               * The node can be safe to reuse while a descendant is not, as with a shared object
+               * whose child carries `x-autoIncrement`. Keep the value only if none ran.
+               */
+              var callsBeforeBuild = statefulGeneratorCalls;
+
               var produced = traverseResolved(schema, path, resolve, rootSchema, seenSchemaCache);
 
-              reuseValueCache.set(schema, produced);
+              if (statefulGeneratorCalls === callsBeforeBuild) {
+                  reuseValueCache.set(schema, produced);
+              }
 
               return produced;
           }
@@ -24971,6 +24975,14 @@ function extend() {
           return traverse(schema.thunk(), path, resolve, null, seenSchemaCache);
       }
       if (typeof schema.generate === 'function') {
+          /**
+           * CHANGE: `pattern` is a repeatable random draw; every other keyword generator either
+           * returns a new value each call or edits its node, so count it.
+           */
+          if (schema.generateKeyword !== 'pattern') {
+              statefulGeneratorCalls++;
+          }
+
           return utils.typecast(schema, function () { return schema.generate(rootSchema); });
       }
       // TODO remove the ugly overcome
@@ -25104,9 +25116,11 @@ function extend() {
        * torn down, so nothing leaks between calls.
        */
       var previousReuseValueCache = reuseValueCache;
+      var previousStatefulGeneratorCalls = statefulGeneratorCalls;
 
       reuseValueCache = optionAPI('reuseIdenticalSubSchemas') ? new Map() : null;
       reuseValueSuspendDepth = 0;
+      statefulGeneratorCalls = 0;
 
       try {
           /**
@@ -25229,6 +25243,7 @@ function extend() {
       }
       finally {
           reuseValueCache = previousReuseValueCache;
+          statefulGeneratorCalls = previousStatefulGeneratorCalls;
       }
   }
 
