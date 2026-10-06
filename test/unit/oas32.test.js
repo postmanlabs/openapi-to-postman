@@ -265,6 +265,88 @@ describe('OAS 3.2 conversion', function () {
 
         expect(requests.map((item) => { return item.request.method; })).to.eql(['POST']);
       });
+
+      it('should mark querystring rows required only from the schema required list', async function () {
+        const getSpec = (schemaRequired) => {
+            return spec32({
+              paths: {
+                '/search': {
+                  get: {
+                    parameters: [{
+                      name: 'q',
+                      in: 'querystring',
+                      // only means the query string has to be present
+                      required: true,
+                      content: {
+                        'application/x-www-form-urlencoded': {
+                          schema: Object.assign({
+                            type: 'object',
+                            properties: {
+                              term: { type: 'string', description: 'search term' },
+                              page: { type: 'integer', description: 'page number' }
+                            }
+                          }, schemaRequired ? { required: schemaRequired } : {})
+                        }
+                      }
+                    }],
+                    responses: OK_RESPONSES
+                  }
+                }
+              }
+            });
+          },
+          getDescriptions = async (spec) => {
+            const [request] = flattenItems((await convert(converterFn, spec)).item);
+
+            return _.map(request.request.url.query, (queryParam) => {
+              return _.get(queryParam, 'description.content', queryParam.description);
+            });
+          };
+
+        expect(await getDescriptions(getSpec())).to.eql(['search term', 'page number']);
+        expect(await getDescriptions(getSpec(['term']))).to.eql(['(Required) search term', 'page number']);
+      });
     });
+  });
+
+  it('v2 should pair querystring examples defined on the parameter with response examples', async function () {
+    const examples = { cats: { value: { term: 'cats' } }, dogs: { value: { term: 'dogs' } } },
+      getSpec = (examplesOnParameter) => {
+        const mediaType = { schema: { type: 'object', properties: { term: { type: 'string' } } } },
+          param = { name: 'q', in: 'querystring', content: { 'application/x-www-form-urlencoded': mediaType } };
+
+        examplesOnParameter ? (param.examples = examples) : (mediaType.examples = examples);
+
+        return spec32({
+          paths: {
+            '/search': {
+              get: {
+                parameters: [param],
+                responses: {
+                  '200': {
+                    description: 'ok',
+                    content: {
+                      'application/json': {
+                        schema: { type: 'object' },
+                        examples: { cats: { value: { pet: 'cat' } }, dogs: { value: { pet: 'dog' } } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        });
+      },
+      getExampleQueries = async (spec) => {
+        const [request] = flattenItems((await convert('convertV2', spec, { parametersResolution: 'Example' })).item);
+
+        return request.response.map((response) => {
+          return response.originalRequest.url.query.map(({ key, value }) => { return `${key}=${value}`; }).join('&');
+        });
+      };
+
+    expect(await getExampleQueries(getSpec(false))).to.eql(['term=cats', 'term=dogs']);
+    expect(await getExampleQueries(getSpec(true))).to.eql(['term=cats', 'term=dogs']);
   });
 });

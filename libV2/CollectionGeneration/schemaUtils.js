@@ -8,7 +8,8 @@ const schemaFaker = require('../../assets/json-schema-faker.js'),
   xmlFaker = require('../xmlSchemaFaker.js'),
   URLENCODED = 'application/x-www-form-urlencoded',
   { DEFAULT_RESPONSE_CODE_IN_OAS } = require('../../lib/common/schemaUtilsCommon.js'),
-  { isOpenApi32, getDefaultMappingRedirect, getPathItemOperation, formatServerSentEvent } =
+  { isOpenApi32, getDefaultMappingRedirect, getPathItemOperation, formatServerSentEvent,
+    getQuerystringMediaType, getQuerystringExamples, expandQuerystringParameter: expandQuerystringSchema } =
     require('../../lib/common/oas32Utils.js'),
   APP_JSON = 'application/json',
   APP_JS = 'application/javascript',
@@ -2310,53 +2311,15 @@ let QUERYPARAM = 'query',
       return [];
     }
 
-    const mediaTypeKey = _.keys(param.content || {})[0],
-      mediaType = _.get(param, ['content', mediaTypeKey], {}),
-      examples = mediaType.examples || param.examples || {},
-      mediaExample = mediaType.example !== undefined ? mediaType.example :
-        _.get(_.values(examples), '[0].value');
-    let schema = mediaType.schema;
+    let schema = getQuerystringMediaType(param).schema;
     if (_.isObject(schema) && (_.has(schema, '$ref') || _.has(schema, 'anyOf') ||
         _.has(schema, 'oneOf') || _.has(schema, 'allOf'))) {
       schema = resolveSchema(context, schema);
     }
 
-    const properties = _.get(schema, 'properties');
-    if (!_.isObject(properties) || _.isEmpty(properties)) {
-      // Without a `properties` object on the schema, there's nothing to
-      // enumerate. Drop the parameter rather than emit a single Postman row
-      // representing the whole query string -- there's no useful name/value
-      // shape we can construct for it.
-      return [];
-    }
-
-    const requiredList = Array.isArray(_.get(schema, 'required')) ? schema.required : [];
-    return _.map(properties, (propSchema, propName) => {
-      const encoding = _.get(mediaType, ['encoding', propName], {}),
-        expandedParam = {
-          name: propName,
-          in: QUERYPARAM,
-          description: _.isObject(propSchema) ? propSchema.description : undefined,
-          required: requiredList.indexOf(propName) !== -1,
-          deprecated: _.isObject(propSchema) ? Boolean(propSchema.deprecated) : false,
-          schema: propSchema,
-          style: encoding.style,
-          explode: encoding.explode,
-          allowReserved: encoding.allowReserved
-        };
-
-      if (_.isObject(mediaExample) && _.has(mediaExample, propName)) {
-        expandedParam.example = mediaExample[propName];
-      }
-      if (_.isObject(examples)) {
-        expandedParam.examples = _.transform(examples, (result, example, exampleName) => {
-          if (_.has(example, ['value', propName])) {
-            result[exampleName] = { value: _.get(example, ['value', propName]) };
-          }
-        }, {});
-      }
-      return expandedParam;
-    });
+    // Without a `properties` object on the schema there's nothing to enumerate, so the
+    // parameter is dropped rather than emitting a single row for the whole query string.
+    return expandQuerystringSchema(param, schema);
   },
 
   resolveQueryParamsForPostmanRequest = (context, operationItem, method, { exampleKey } = {}) => {
@@ -2634,9 +2597,8 @@ let QUERYPARAM = 'query',
         return;
       }
 
-      const examples = param.in === QUERYSTRING_PARAM ?
-        _.get(param, ['content', _.keys(param.content || {})[0], 'examples']) :
-        param.examples;
+      // Use the same example lookup as expandQuerystringParameter so that keys match
+      const examples = param.in === QUERYSTRING_PARAM ? getQuerystringExamples(param) : param.examples;
       if (_.isObject(examples)) {
         keys.push(...Object.keys(examples));
       }
