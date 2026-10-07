@@ -106,10 +106,14 @@ module.exports = {
             ({ request, collectionVariables, requestTypesObject } = resolvePostmanRequest(context,
               pathItem,
               node.meta.path,
-              node.meta.method
+              node.meta.method,
+              node.meta.requestMethod
             ));
 
             requestObject = generateRequestItemObject(request);
+            if (node.meta.requestMethod) {
+              requestObject.request.method = node.meta.requestMethod;
+            }
             extractedTypesObject = Object.assign({}, extractedTypesObject, requestTypesObject);
 
           }
@@ -190,10 +194,14 @@ module.exports = {
             ({ request, collectionVariables } = resolvePostmanRequest(context,
               webhookPathItem,
               node.meta.path,
-              node.meta.method
+              node.meta.method,
+              node.meta.requestMethod
             ));
 
             requestObject = generateRequestItemObject(request);
+            if (node.meta.requestMethod) {
+              requestObject.request.method = node.meta.requestMethod;
+            }
           }
           catch (error) {
             console.error(error);
