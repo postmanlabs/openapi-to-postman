@@ -1523,6 +1523,22 @@ describe('The convert v2 Function', function() {
         expect(conversionResult.output[0].data.item.length).to.equal(1);
         expect(conversionResult.output[0].data.auth.basic[0].value).to.equal('{{basicAuthUsername}}');
         expect(conversionResult.output[0].data.auth.basic[1].value).to.equal('{{basicAuthPassword}}');
+
+        // Empty collection-level variables for the auth placeholders should be
+        // pushed alongside `baseUrl` so users can fill them in the Variables
+        // tab. See #894.
+        const variableKeys = conversionResult.output[0].data.variable.map((v) => v.key);
+        expect(variableKeys).to.include('basicAuthUsername');
+        expect(variableKeys).to.include('basicAuthPassword');
+        const basicAuthUsername = conversionResult.output[0].data.variable.find(
+          (v) => v.key === 'basicAuthUsername'
+        );
+        const basicAuthPassword = conversionResult.output[0].data.variable.find(
+          (v) => v.key === 'basicAuthPassword'
+        );
+        expect(basicAuthUsername.value).to.equal('');
+        expect(basicAuthPassword.value).to.equal('');
+
         done();
       });
     });
