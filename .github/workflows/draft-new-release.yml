@@ -13,6 +13,7 @@ jobs:
     if: startsWith(github.event.inputs.version, 'v')
     name: Draft a new release
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     permissions:
       contents: write
       pull-requests: write
