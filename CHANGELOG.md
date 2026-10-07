@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v6.4.0] - 2026-10-07
+
 ### Added
 
 -   Added support for OpenAPI 3.2 specifications (`query` and `additionalOperations` operations, `querystring` parameters, hierarchical tags, `itemSchema` streaming responses, response `summary`, `discriminator.defaultMapping` and OAuth 2.0 Device Authorization flow).
@@ -715,7 +717,9 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.3.3...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.0...HEAD
+
+[v6.4.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.3.3...v6.4.0
 
 [v6.3.3]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.3.2...v6.3.3
 
