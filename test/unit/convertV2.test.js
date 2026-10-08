@@ -2530,6 +2530,333 @@ describe('The convert v2 Function', function() {
     });
   });
 
+  it('should preserve OAS 3.2 custom method casing and gate query/webhook operations by version', function(done) {
+    const spec32 = {
+        openapi: '3.2.0',
+        info: { title: 'OAS 3.2 operations', version: '1.0.0' },
+        paths: {
+          '/search': {
+            query: {
+              parameters: [{
+                in: 'querystring',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: { term: { type: 'string' } }
+                    },
+                    example: { term: 'cats' }
+                  }
+                }
+              }],
+              responses: { '200': { description: 'ok' } }
+            },
+            additionalOperations: {
+              Foo: { responses: { '204': { description: 'ok' } } }
+            }
+          },
+          '/events': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'stream',
+                  content: {
+                    'text/event-stream': {
+                      schema: { type: 'array', items: { type: 'string' } },
+                      itemSchema: {
+                        type: 'object',
+                        properties: {
+                          event: { type: 'string', default: 'update' },
+                          id: { type: 'string', default: '7' },
+                          retry: { type: 'integer', default: 20 },
+                          data: { type: 'string', default: 'first\nsecond' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '/full-stream': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'complete stream example',
+                  content: {
+                    'text/event-stream': {
+                      itemSchema: {
+                        type: 'object',
+                        properties: { data: { type: 'string' } }
+                      },
+                      example: 'event: supplied\ndata: complete stream\n\n'
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '/pets': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'pet',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Pet' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        webhooks: {
+          notify: {
+            additionalOperations: {
+              Bar: { responses: { '200': { description: 'ok' } } }
+            }
+          }
+        },
+        components: {
+          schemas: {
+            Pet: {
+              oneOf: [
+                { $ref: '#/components/schemas/Cat' },
+                { $ref: '#/components/schemas/Dog' }
+              ],
+              discriminator: { propertyName: 'kind', defaultMapping: 'OtherPet' }
+            },
+            Cat: { type: 'object', properties: { cat: { type: 'string', default: 'cat' } } },
+            Dog: { type: 'object', properties: { dog: { type: 'string', default: 'dog' } } },
+            OtherPet: { type: 'object', properties: { other: { type: 'string', default: 'other' } } }
+          }
+        }
+      },
+      spec31 = {
+        openapi: '3.1.0',
+        info: { title: 'OAS 3.1 operations', version: '1.0.0' },
+        paths: {
+          '/search': {
+            query: { responses: { '200': { description: 'invalid in 3.1' } } }
+          }
+        }
+      },
+      collectRequests = (items, result = []) => {
+        _.forEach(items, (item) => {
+          item.request && result.push(item);
+          item.item && collectRequests(item.item, result);
+        });
+        return result;
+      };
+
+    Converter.convertV2({ type: 'string', data: JSON.stringify(spec32) },
+      { includeWebhooks: true, parametersResolution: 'Example' }, (err, converted32) => {
+        expect(err).to.be.null;
+        const requests = collectRequests(converted32.output[0].data.item);
+        expect(requests.map(({ request }) => { return request.method; })).to.include.members(['QUERY', 'Foo', 'Bar']);
+        const queryRequest = requests.find(({ request }) => { return request.method === 'QUERY'; });
+        expect(queryRequest.request.url.query[0]).to.include({ key: 'term', value: 'cats' });
+        expect(requests.find(({ request }) => { return request.method === 'GET'; }).response[0].body).to.equal(
+          'event: update\nid: 7\nretry: 20\ndata: first\ndata: second\n\n');
+        expect(requests.find(({ response }) => {
+          return response && response[0] &&
+            response[0].body === 'event: supplied\ndata: complete stream\n\n';
+        }).response[0].body)
+          .to.equal('event: supplied\ndata: complete stream\n\n');
+        expect(JSON.parse(requests.find(({ response }) => {
+          return response && response[0] && _.isString(response[0].body) &&
+            response[0].body.includes('"other"');
+        }).response[0].body)).to.eql({ other: 'other' });
+
+        Converter.convert({ type: 'string', data: JSON.stringify(spec32) }, {}, (v1Error, convertedV1) => {
+          expect(v1Error).to.be.null;
+          const v1Requests = collectRequests(convertedV1.output[0].data.item);
+          expect(v1Requests.map(({ request }) => { return request.method; })).to.include.members(['QUERY', 'Foo']);
+          expect(v1Requests.find(({ request }) => { return request.method === 'GET'; }).response[0].body).to.equal(
+            'event: update\nid: 7\nretry: 20\ndata: first\ndata: second\n\n');
+          expect(JSON.parse(v1Requests.find(({ response }) => {
+            return response && response[0] && _.isString(response[0].body) &&
+              response[0].body.includes('"other"');
+          }).response[0].body)).to.eql({ other: 'other' });
+
+          Converter.convertV2({ type: 'string', data: JSON.stringify(spec31) }, {}, (v2Error, converted31) => {
+            expect(v2Error).to.be.null;
+            expect(collectRequests(converted31.output[0].data.item)).to.be.empty;
+            done();
+          });
+        });
+      });
+  });
+
+  it('should frame sequential and multipart itemSchema response bodies', function(done) {
+    const spec = {
+        openapi: '3.2.0',
+        info: { title: 'Streaming responses', version: '1.0.0' },
+        paths: {
+          '/lines': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'lines',
+                  content: {
+                    'application/x-ndjson': {
+                      itemSchema: {
+                        type: 'object',
+                        properties: { value: { type: 'integer', default: 1 } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '/sequence': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'sequence',
+                  content: {
+                    'application/json-seq': {
+                      itemSchema: { type: 'string', default: 'frame' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '/multipart': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'multipart',
+                  content: {
+                    'multipart/form-data; boundary=frame': {
+                      itemSchema: {
+                        type: 'object',
+                        properties: { value: { type: 'string', default: 'part' } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      collectRequests = (items, result = []) => {
+        _.forEach(items, (item) => {
+          item.request && result.push(item);
+          item.item && collectRequests(item.item, result);
+        });
+        return result;
+      };
+
+    Converter.convertV2({ type: 'string', data: JSON.stringify(spec) }, {}, (err, converted) => {
+      expect(err).to.be.null;
+      const requests = collectRequests(converted.output[0].data.item),
+        responseFor = (path) => {
+          return requests.find(({ request }) => {
+            return request.url.path.join('/') === path;
+          }).response[0];
+        };
+
+      expect(responseFor('lines').body).to.equal('{"value":1}\n');
+      expect(responseFor('sequence').body).to.equal('\x1e"frame"\n');
+      expect(responseFor('multipart').body).to.contain(
+        '--frame\r\nContent-Disposition: form-data; name="item"\r\nContent-Type: application/json\r\n\r\n');
+      expect(responseFor('multipart').header[0].value).to.equal('multipart/form-data; boundary=frame');
+      done();
+    });
+  });
+
+  it('should resolve $ref path items, querystring params, and self defaultMapping names', function(done) {
+    const spec = {
+        openapi: '3.2.0',
+        info: { title: 'OAS 3.2 refs', version: '1.0.0' },
+        paths: {
+          '/purge': { $ref: '#/components/pathItems/PurgeItem' },
+          '/search': {
+            get: {
+              parameters: [{ $ref: '#/components/parameters/SearchQuery' }],
+              responses: { '200': { description: 'ok' } }
+            }
+          },
+          '/pets': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'pet',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Pet' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        components: {
+          pathItems: {
+            PurgeItem: {
+              additionalOperations: {
+                Purge: { responses: { '204': { description: 'purged' } } }
+              }
+            }
+          },
+          parameters: {
+            SearchQuery: {
+              in: 'querystring',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: { q: { type: 'string' } }
+                  },
+                  example: { q: 'ref-term' }
+                }
+              }
+            }
+          },
+          schemas: {
+            Pet: {
+              oneOf: [
+                { $ref: '#/components/schemas/Cat' }
+              ],
+              discriminator: { propertyName: 'kind', defaultMapping: 'Pet' }
+            },
+            Cat: { type: 'object', properties: { cat: { type: 'string', default: 'cat' } } }
+          }
+        }
+      },
+      collectRequests = (items, result = []) => {
+        _.forEach(items, (item) => {
+          item.request && result.push(item);
+          item.item && collectRequests(item.item, result);
+        });
+        return result;
+      };
+
+    Converter.convertV2({ type: 'string', data: JSON.stringify(spec) },
+      { parametersResolution: 'Example' }, (err, converted) => {
+        expect(err).to.be.null;
+        const requests = collectRequests(converted.output[0].data.item),
+          purgeRequest = requests.find(({ request }) => { return request.method === 'Purge'; }),
+          searchRequest = requests.find(({ request }) => {
+            return request.url.path && request.url.path[request.url.path.length - 1] === 'search';
+          }),
+          petBody = JSON.parse(requests.find(({ request }) => {
+            return request.url.path && request.url.path[request.url.path.length - 1] === 'pets';
+          }).response[0].body);
+
+        expect(purgeRequest).to.not.equal(undefined);
+        expect(searchRequest.request.url.query[0]).to.include({ key: 'q', value: 'ref-term' });
+        expect(petBody).to.eql({ cat: 'cat' });
+        done();
+      });
+  });
+
   describe('Should pair examples by matching key (and fall back to first example otherwise) when', function() {
     it('request body contains multiple examples but request body has single example', function(done) {
       var openapi = fs.readFileSync(multiExampleRequest, 'utf8');
