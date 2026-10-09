@@ -456,9 +456,9 @@ describe('convertV2WithTypes', function() {
 
   it('should resolve extractedTypes into correct schema structure', function(done) {
     const expectedExtractedTypes = {
-        // `GET /pets` overrides the server URL with `http://petstore3.swagger.io/{v3}`, so its
-        // resolved request path (and therefore its type-data key) carries the `:v3` server segment.
-        'get/:v3/pets': {
+        // Operation-level servers become collection variables (`baseUrl*`), so the type-data key
+        // stays the OpenAPI path (`get/pets`) rather than inlining server path segments.
+        'get/pets': {
           'request': {
             'headers': '[\n  {\n    "keyName": "variable",\n    "properties": {\n      "type": "array"\n    }\n  }\n]',
             'pathParam': '[]',
@@ -582,11 +582,10 @@ describe('convertV2WithTypes', function() {
 
       const typeKeys = Object.keys(conversionResult.extractedTypes);
 
-      // Operation-level server path segments are part of the key (matches the request's getPath).
-      expect(typeKeys).to.include('get/eslsvc/api/v3/profile-preferences');
-      // Top-level server stays behind {{baseUrl}}, so its key is just the spec path.
+      // Operation-level servers are collection variables, so the type key stays the spec path.
+      expect(typeKeys).to.include('get/profile-preferences');
       expect(typeKeys).to.include('get/pets');
-      expect(typeKeys).to.not.include('get/profile-preferences');
+      expect(typeKeys).to.not.include('get/eslsvc/api/v3/profile-preferences');
 
       done();
     });

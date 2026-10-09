@@ -34,7 +34,6 @@ const _ = require('lodash'),
 
     return description;
   },
-
   fixPathVariablesInUrl = function (url) {
     // URL should always be string so update value if non-string value is found
     if (typeof url !== 'string') {
@@ -47,40 +46,101 @@ const _ = require('lodash'),
     // {{text}} will not be converted
 
     let replacer = function (match, p1, offset, string) {
-      if (string[offset - 1] === '{' && string[offset + match.length + 1] !== '}') {
+      if (
+        string[offset - 1] === '{' &&
+        string[offset + match.length + 1] !== '}'
+      ) {
         return match;
       }
       return '{' + p1 + '}';
     };
     return _.isString(url) ? url.replace(/(\{[^\/\{\}]+\})/g, replacer) : '';
   },
+  PATH_ITEM_OPERATIONS = [
+    'get',
+    'put',
+    'post',
+    'delete',
+    'options',
+    'head',
+    'patch',
+    'trace',
+    'query'
+  ],
+  serverVariableName = (index) => {
+    return index === 0 ? 'baseUrl' : `baseUrl${index}`;
+  },
+  addUniqueServers = (target, servers, seen) => {
+    _.forEach(servers, (server) => {
+      if (!server || typeof server.url !== 'string' || seen.has(server.url)) {
+        return;
+      }
 
-  resolveCollectionVariablesForBaseUrlFromServersObject = (serverObject) => {
-    if (!serverObject) {
-      return [];
+      seen.add(server.url);
+      target.push(server);
+    });
+  },
+  visitPathItemServers = (pathItem, target, seen) => {
+    if (!pathItem || typeof pathItem !== 'object') {
+      return;
     }
 
-    let baseUrl = fixPathVariablesInUrl(serverObject.url),
-      collectionVariables = [];
+    addUniqueServers(target, pathItem.servers, seen);
+    _.forEach(PATH_ITEM_OPERATIONS, (method) => {
+      addUniqueServers(target, _.get(pathItem, [method, 'servers']), seen);
+    });
+  },
 
-    _.forOwn(serverObject.variables, (value, key) => {
+  /**
+   * Unique servers in first-seen order: root, then path-item, then operation.
+   * Used so every distinct URL becomes a collection variable (`baseUrl`, `baseUrl1`, …).
+   *
+   * @param {Object} openapi OpenAPI document
+   * @returns {Array} Unique server objects
+   */
+  collectUniqueServerObjects = (openapi) => {
+    const servers = [],
+      seen = new Set();
+
+    addUniqueServers(servers, openapi.servers, seen);
+    _.forEach(openapi.paths, (pathItem) => {
+      visitPathItemServers(pathItem, servers, seen);
+    });
+    _.forEach(openapi.webhooks, (pathItem) => {
+      visitPathItemServers(pathItem, servers, seen);
+    });
+
+    return servers;
+  },
+  resolveCollectionVariablesFromServers = (serverObjects) => {
+    const collectionVariables = [],
+      urlToVariable = {};
+
+    _.forEach(serverObjects, (serverObject, index) => {
+      const key = serverVariableName(index);
+
+      urlToVariable[serverObject.url] = key;
+
+      _.forOwn(serverObject.variables, (value, variableKey) => {
+        collectionVariables.push({
+          key: variableKey,
+          value: value.default || ''
+        });
+      });
+
       collectionVariables.push({
         key,
-        value: value.default || ''
+        value: fixPathVariablesInUrl(serverObject.url)
       });
     });
 
-    collectionVariables.push({
-      key: 'baseUrl',
-      value: baseUrl
-    });
-
-    return collectionVariables;
+    return { collectionVariables, urlToVariable };
   };
 
-
 module.exports = function ({ openapi }) {
-  openapi.servers = _.isEmpty(openapi.servers) ? [{ url: '/' }] : openapi.servers;
+  openapi.servers = _.isEmpty(openapi.servers) ?
+    [{ url: '/' }] :
+    openapi.servers;
 
   // @todo: @sujay to check for better handling of securty schemes.
   openapi.securityDefs = _.get(openapi, 'components.securitySchemes', {});
@@ -89,9 +149,15 @@ module.exports = function ({ openapi }) {
   openapi.baseUrlVariables = _.get(openapi, 'servers.0.variables');
 
   // Fix {scheme} and {path} vars in the URL to :scheme and :path
-  openapi.baseUrl = fixPathVariablesInUrl(_.get(openapi, 'servers.0.url', '{{baseURL}}'));
+  openapi.baseUrl = fixPathVariablesInUrl(
+    _.get(openapi, 'servers.0.url', '{{baseURL}}')
+  );
 
-  const collectionVariables = resolveCollectionVariablesForBaseUrlFromServersObject(_.get(openapi, 'servers.0'));
+  const uniqueServers = collectUniqueServerObjects(openapi),
+    { collectionVariables, urlToVariable } =
+      resolveCollectionVariablesFromServers(uniqueServers);
+
+  openapi.serverUrlToVariable = urlToVariable;
 
   return {
     data: {
