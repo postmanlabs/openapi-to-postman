@@ -15,6 +15,8 @@ const expect = require('chai').expect,
   testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
   testSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/test1.json'),
   testSpec2 = path.join(__dirname, VALID_OPENAPI_PATH + '/test-title-description.json'),
+  issue160 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#160.json'),
+  serverOverRidingSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/server_overriding.json'),
   readOnlyNestedSpec =
   path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyNested.json'),
   referencedPathItemsSpec =
@@ -542,10 +544,8 @@ describe('convertV2WithTypes', function() {
   });
 
   it('should key extractedTypes by the resolved request path when an operation overrides the server URL with path segments', function(done) {
-    // An operation-level server URL with path segments (e.g. `/eslsvc/api/v3`) gets resolved
-    // directly into the request URL, while a top-level server is surfaced via the `{{baseUrl}}`
-    // host. The extracted-type identifier must mirror the request's resolved path (Url#getPath) in
-    // both cases so consumers can map the types back to the generated requests.
+    // Operation/path-level servers become collection variables (`baseUrl*`). Type keys stay on the
+    // OpenAPI path so consumers can map types back to generated requests.
     const openapi = {
         openapi: '3.0.0',
         info: { title: 'Operation level servers', version: '1.0.0' },
@@ -589,6 +589,53 @@ describe('convertV2WithTypes', function() {
 
       done();
     });
+  });
+
+  it('#GITHUB-160 should map path-level servers to baseUrl* collection variables via convertV2WithTypes' +
+  issue160, function(done) {
+    const openapi = fs.readFileSync(issue160, 'utf8');
+
+    Converter.convertV2WithTypes({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      const collection = conversionResult.output[0].data,
+        baseUrl1 = collection.variable.find((variable) => {
+          return variable.key === 'baseUrl1';
+        });
+
+      expect(collection.item[0].item[0].request.url.host[0]).to.equal('{{baseUrl1}}');
+      expect(baseUrl1.value).to.equal('http://petstore.swagger.io:{{port}}/{{basePath}}');
+      done();
+    });
+  });
+
+  it('[Github #90] should prefer operation-level server as baseUrl1 over root baseUrl via convertV2WithTypes' +
+  serverOverRidingSpec, function(done) {
+    Converter.convertV2WithTypes({ type: 'file', data: serverOverRidingSpec }, { schemaFaker: true },
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data,
+          variables = collection.variable,
+          baseUrl = variables.find((variable) => {
+            return variable.key === 'baseUrl';
+          }),
+          baseUrl1 = variables.find((variable) => {
+            return variable.key === 'baseUrl1';
+          }),
+          overrideRequest = collection.item[1].item[0].item[0].request,
+          rootRequest = collection.item[0].item[0].item[0].request;
+
+        expect(overrideRequest.url.host[0]).to.equal('{{baseUrl1}}');
+        expect(overrideRequest.url.path.join('/')).to.equal('secondary-domain/fails');
+        expect(baseUrl1.value).to.equal('http://petstore.swagger.io:{{port}}/{{basePath}}');
+
+        expect(rootRequest.url.host[0]).to.equal('{{baseUrl}}');
+        expect(baseUrl.value + '/' + rootRequest.url.path.join('/'))
+          .to.equal('https://api.example.com/primary-domain/works');
+        done();
+      });
   });
 
   describe('composite schema support (anyOf, oneOf, allOf)', function() {
