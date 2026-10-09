@@ -305,7 +305,14 @@ describe('The convert v2 Function', function() {
       expect(conversionResult.output[0].type).to.equal('collection');
       expect(conversionResult.output[0].data).to.have.property('info');
       expect(conversionResult.output[0].data).to.have.property('item');
-      expect(conversionResult.output[0].data.item[0].item[0].request.url.host[0]).to.equal('{{baseUrl}}');
+      // Path-level servers become a dedicated collection variable (`baseUrl1`); requests
+      // reference it instead of inlining the server URL into the host.
+      expect(conversionResult.output[0].data.item[0].item[0].request.url.host[0]).to.equal('{{baseUrl1}}');
+      expect(
+        conversionResult.output[0].data.variable.find((variable) => {
+          return variable.key === 'baseUrl1';
+        }).value
+      ).to.equal('http://petstore.swagger.io:{{port}}/{{basePath}}');
       done();
     });
   });
@@ -391,19 +398,28 @@ describe('The convert v2 Function', function() {
   serverOverRidingSpec, function(done) {
     Converter.convertV2({ type: 'file', data: serverOverRidingSpec }, { schemaFaker: true },
       (err, conversionResult) => {
-      // Combining protocol, host, path to create a request
-      // Ex https:// + example.com + /example = https://example.com/example
-        let request = conversionResult.output[0].data.item[1].item[0].item[0].request,
-          protocol = request.url.protocol,
-          host = request.url.host.join('.'),
-          port = request.url.port,
-          path = request.url.path.join('/'),
-          endPoint = protocol + '://' + host + ':' + port + '/' + path,
-          host1 = conversionResult.output[0].data.variable[0].value,
-          path1 = conversionResult.output[0].data.item[0].item[0].item[0].request.url.path.join('/'),
-          endPoint1 = host1 + '/' + path1;
-        expect(endPoint).to.equal('http://petstore.swagger.io:{{port}}/:basePath/secondary-domain/fails');
-        expect(endPoint1).to.equal('https://api.example.com/primary-domain/works');
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data,
+          variables = collection.variable,
+          baseUrl = variables.find((variable) => {
+            return variable.key === 'baseUrl';
+          }),
+          baseUrl1 = variables.find((variable) => {
+            return variable.key === 'baseUrl1';
+          }),
+          // Operation-level server override → dedicated `baseUrl1` collection variable
+          overrideRequest = collection.item[1].item[0].item[0].request,
+          // Root server → `baseUrl`
+          rootRequest = collection.item[0].item[0].item[0].request;
+
+        expect(overrideRequest.url.host[0]).to.equal('{{baseUrl1}}');
+        expect(overrideRequest.url.path.join('/')).to.equal('secondary-domain/fails');
+        expect(baseUrl1.value).to.equal('http://petstore.swagger.io:{{port}}/{{basePath}}');
+
+        expect(rootRequest.url.host[0]).to.equal('{{baseUrl}}');
+        expect(baseUrl.value + '/' + rootRequest.url.path.join('/'))
+          .to.equal('https://api.example.com/primary-domain/works');
         done();
       });
   });
