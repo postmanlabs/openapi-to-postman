@@ -83,8 +83,7 @@ describe('buildContractTestCollection', function () {
   it('orders flows by dependency and deletes in a children-first teardown', async function () {
     const result = await generate(PETSTORE);
 
-    expect(_.map(folders(result), 'name')).to.eql(['1. owner flow', '2. pet flow',
-      '3. teardown (deletes, children first)', '4. negative checks']);
+    expect(_.map(folders(result), 'name')).to.eql(['owner', 'pet', 'teardown', 'negative checks']);
     expect(_.map(folders(result).slice(0, 3), (f) => { return _.map(f.item, 'name'); })).to.eql([
       ['1. POST /owners', '2. GET /owners/{ownerId}'],
       ['3. POST /pets', '4. GET /pets', '5. GET /pets/{petId}', '6. PUT /pets/{petId}'],

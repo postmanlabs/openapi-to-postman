@@ -188,10 +188,7 @@ const _ = require('lodash'),
         )));
       });
 
-      if (flowItems.length) {
-        folders.push({ name: `${folders.length + 1}. ${resource === 'teardown' ?
-          'teardown (deletes, children first)' : `${resource} flow`}`, item: flowItems });
-      }
+      if (flowItems.length) { folders.push({ name: resource, item: flowItems }); }
     });
 
     // Alphabetical, like the flows, so the negative checks don't depend on spec order either.
@@ -221,7 +218,7 @@ const _ = require('lodash'),
       }
     });
 
-    if (negatives.length) { folders.push({ name: `${folders.length + 1}. negative checks`, item: negatives }); }
+    if (negatives.length) { folders.push({ name: 'negative checks', item: negatives }); }
 
     return { folder: { name: CONTRACT_FOLDER, item: folders }, skipped };
   },
