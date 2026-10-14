@@ -1,10 +1,9 @@
-// Builds the "Contract Tests" folder from the converter's requests: ordered flows wired with the
-// bindings, a children-first teardown, and negative checks.
+// Builds the contract-test requests from the converter's output: one numbered list in run order,
+// wired with the bindings, followed by a children-first teardown and negative checks.
 const _ = require('lodash'),
   { hash, toLodashPath } = require('./utils'),
   scripts = require('./scripts'),
 
-  CONTRACT_FOLDER = 'Contract Tests',
   UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
 
   flattenItems = (items) => {
@@ -81,13 +80,12 @@ const _ = require('lodash'),
     }));
   },
 
-  buildContractFolder = ({ collection, operations, bindings, flows }) => {
+  buildRequests = ({ collection, operations, bindings, flows }) => {
     const items = _.keyBy(flattenItems(collection.item), itemKey),
       opsById = _.keyBy(operations, 'operationId'),
       uses = {},
       skipped = [],
-      folders = [],
-      negatives = [];
+      requests = [];
     let step = 0;
 
     bindings.forEach((binding) => {
@@ -129,7 +127,8 @@ const _ = require('lodash'),
           });
       },
 
-      copy = (op, stepId, name) => {
+      // Numbered only once included, so skipped requests leave no gaps.
+      copy = (op, stepId, label) => {
         if (isUnsafeWrite(op)) {
           if (!skipped.includes(op.key)) { skipped.push(op.key); }
 
@@ -140,7 +139,7 @@ const _ = require('lodash'),
         const item = _.cloneDeep(items[op.key]);
 
         item.id = `ct-${hash(stepId)}`;
-        item.name = name;
+        item.name = `${++step}. ${label}`;
         delete item.response;
 
         return item;
@@ -164,31 +163,25 @@ const _ = require('lodash'),
         return item;
       };
 
-    _.forEach(flows, (stepIds, resource) => {
-      const flowItems = [];
+    _.flatten(_.values(flows)).forEach((stepId) => {
+      const [operationId, variant] = stepId.split(':'),
+        op = opsById[operationId],
+        expect404 = variant === 'expect-404',
+        item = op && copy(op, stepId, `${op.method} ${op.path}${expect404 ? ' (expect 404)' : ''}`);
 
-      stepIds.forEach((stepId) => {
-        const [operationId, variant] = stepId.split(':'),
-          op = opsById[operationId],
-          expect404 = variant === 'expect-404',
-          item = op && copy(op, stepId, `${++step}. ${op.method} ${op.path}${expect404 ? ' (expect 404)' : ''}`);
+      if (!item) { return; }
 
-        if (!item) { return; }
+      const needs = wire(item, op, (binding, param) => {
+          return expect404 && isIdParam(op, param) ? `deleted_${variableOf(binding)}` : variableOf(binding);
+        }),
+        deletedIds = usesOf(op).filter(({ param }) => { return isIdParam(op, param); })
+          .map(({ binding }) => { return binding.variable; });
 
-        const needs = wire(item, op, (binding, param) => {
-            return expect404 && isIdParam(op, param) ? `deleted_${variableOf(binding)}` : variableOf(binding);
-          }),
-          deletedIds = usesOf(op).filter(({ param }) => { return isIdParam(op, param); })
-            .map(({ binding }) => { return binding.variable; });
-
-        flowItems.push(withEvents(item, scripts.guard(needs), testExec(item).concat(
-          scripts.save(expect404 ? [] : savesFor(op)),
-          op.role === 'delete' ? scripts.markDeleted(deletedIds) : [],
-          expect404 ? scripts.expectGone : []
-        )));
-      });
-
-      if (flowItems.length) { folders.push({ name: resource, item: flowItems }); }
+      requests.push(withEvents(item, scripts.guard(needs), testExec(item).concat(
+        scripts.save(expect404 ? [] : savesFor(op)),
+        op.role === 'delete' ? scripts.markDeleted(deletedIds) : [],
+        expect404 ? scripts.expectGone : []
+      )));
     });
 
     // Alphabetical, like the flows, so the negative checks don't depend on spec order either.
@@ -198,7 +191,7 @@ const _ = require('lodash'),
 
         if (item) {
           item.request.auth = { type: 'noauth' };
-          negatives.push(withEvents(item, [], scripts.expectNoTokenRejected));
+          requests.push(withEvents(item, [], scripts.expectNoTokenRejected));
         }
       }
 
@@ -213,14 +206,12 @@ const _ = require('lodash'),
           });
 
           removeBodyField(item.request, field);
-          negatives.push(withEvents(item, scripts.guard(needs), scripts.expectMissingFieldRejected(field)));
+          requests.push(withEvents(item, scripts.guard(needs), scripts.expectMissingFieldRejected(field)));
         });
       }
     });
 
-    if (negatives.length) { folders.push({ name: 'negative checks', item: negatives }); }
-
-    return { folder: { name: CONTRACT_FOLDER, item: folders }, skipped };
+    return { requests, skipped };
   },
 
   /**
@@ -252,18 +243,18 @@ const _ = require('lodash'),
       });
     }
 
-    const { folder, skipped } = buildContractFolder({ collection, operations, bindings, flows }),
+    const { requests, skipped } = buildRequests({ collection, operations, bindings, flows }),
       variables = (collection.variable || []).concat(bindings
         .filter((binding) => { return !_.get(binding, 'producer.environment'); })
         .map((binding) => { return { key: binding.variable, value: '' }; }));
 
     return {
       collection: stabilizeIds(Object.assign({}, collection, {
-        item: [folder],
+        item: requests,
         variable: _.uniqBy(variables, 'key')
       }), seed),
       skipped
     };
   };
 
-module.exports = { CONTRACT_FOLDER, buildCollection };
+module.exports = { buildCollection };

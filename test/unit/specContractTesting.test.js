@@ -51,8 +51,7 @@ const expect = require('chai').expect,
     });
   },
 
-  folders = (result) => { return result.output[0].data.item[0].item; },
-  requests = (result) => { return _.flatMap(folders(result), 'item'); },
+  requests = (result) => { return result.output[0].data.item; },
   request = (result, name) => { return _.find(requests(result), { name }); },
   exec = (item, listen) => { return _.get(_.find(item.event, { listen }), 'script.exec', []).join('\n'); },
   binding = (result, variable) => { return _.find(result.lock.bindings, { variable }); },
@@ -80,14 +79,16 @@ describe('buildContractTestCollection', function () {
     expect(result.summary.unresolved).to.be.empty;
   });
 
-  it('orders flows by dependency and deletes in a children-first teardown', async function () {
+  it('lists requests in dependency order, then a children-first teardown and negative checks', async function () {
     const result = await generate(PETSTORE);
 
-    expect(_.map(folders(result), 'name')).to.eql(['owner', 'pet', 'teardown', 'negative checks']);
-    expect(_.map(folders(result).slice(0, 3), (f) => { return _.map(f.item, 'name'); })).to.eql([
-      ['1. POST /owners', '2. GET /owners/{ownerId}'],
-      ['3. POST /pets', '4. GET /pets', '5. GET /pets/{petId}', '6. PUT /pets/{petId}'],
-      ['7. DELETE /pets/{petId}', '8. GET /pets/{petId} (expect 404)']
+    expect(_.map(requests(result), 'name')).to.eql([
+      '1. POST /owners', '2. GET /owners/{ownerId}',
+      '3. POST /pets', '4. GET /pets', '5. GET /pets/{petId}', '6. PUT /pets/{petId}',
+      '7. DELETE /pets/{petId}', '8. GET /pets/{petId} (expect 404)',
+      '9. GET /owners/{ownerId} without a token', '10. GET /pets without a token',
+      '11. GET /pets/{petId} without a token', '12. POST /owners without "name"',
+      '13. POST /pets without "name"', '14. POST /pets without "ownerId"'
     ]);
   });
 
@@ -107,13 +108,13 @@ describe('buildContractTestCollection', function () {
 
   it('unwraps { meta, data } envelopes, resolves parent ids and skips unlinked writes', async function () {
     const result = await generate(NESTED),
-      teardown = _.find(folders(result), (f) => { return f.name.includes('teardown'); });
+      names = _.map(requests(result), 'name');
 
     expect(binding(result, 'specification_id').producer.value).to.equal('$response.body#/data/id');
     expect(_.map(binding(result, 'file_id').consumers, 'param')).to.deep.include({ in: 'path', name: 'fileId' });
-    expect(_.map(teardown.item, 'name')).to.eql([
-      '6. DELETE /specifications/{id}/files/{fileId}', '7. GET /specifications/{id}/files/{fileId} (expect 404)',
-      '8. DELETE /specifications/{id}', '9. GET /specifications/{id} (expect 404)'
+    expect(names.slice(-4)).to.eql([
+      '5. DELETE /specifications/{id}/files/{fileId}', '6. GET /specifications/{id}/files/{fileId} (expect 404)',
+      '7. DELETE /specifications/{id}', '8. GET /specifications/{id} (expect 404)'
     ]);
     expect(result.summary.skipped).to.eql(['POST /specs/{id}/files']);
   });
@@ -153,7 +154,7 @@ describe('buildContractTestCollection', function () {
       auth = _.fromPairs(_.map(result.output[0].data.auth.apikey, (e) => { return [e.key, e.value]; }));
 
     expect(result.summary.excluded).to.equal(1);
-    expect(_.map(requests(result), 'name')).to.not.include('4. GET /pets');
+    expect(_.map(requests(result), 'name').join()).to.not.include('GET /pets,');
     expect(auth).to.eql({ key: 'x-access-token', value: '{{xAccessToken}}', in: 'header' });
   });
 
