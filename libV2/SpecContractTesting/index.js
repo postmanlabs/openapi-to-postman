@@ -29,7 +29,7 @@ const _ = require('lodash'),
     const exclude = _.map(options.excludeOperations, (pattern) => { return new RegExp(pattern); }),
       isExcluded = (op) => { return exclude.some((pattern) => { return pattern.test(op.key); }); },
       specHash = `sha256:${hash(conversion.extractedTypes, 16)}`,
-      allOperations = listOperations(conversion.extractedTypes),
+      allOperations = listOperations(conversion.extractedTypes, converted),
       operations = _.reject(allOperations, isExcluded),
       { bindings, flows, lock, summary } = reconcile({
         title: _.get(converted, 'info.name'),

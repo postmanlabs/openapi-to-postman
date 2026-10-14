@@ -1,4 +1,5 @@
-const crypto = require('crypto'),
+const _ = require('lodash'),
+  crypto = require('crypto'),
 
   /**
    * Short, stable sha256 hex digest of a string or JSON-serialisable value.
@@ -15,6 +16,30 @@ const crypto = require('crypto'),
   },
 
   /**
+   * All request items in a collection, folders flattened.
+   *
+   * @param {Object[]} items - collection items
+   * @returns {Object[]} request items
+   */
+  flattenItems = (items) => {
+    return _.flatMap(items, (item) => { return item.item ? flattenItems(item.item) : [item]; });
+  },
+
+  /**
+   * `METHOD /path/{param}` for a request item, matching the operation keys.
+   *
+   * @param {Object} item - request item
+   * @returns {String} key
+   */
+  itemKey = (item) => {
+    const path = (item.request.url.path || []).map((segment) => {
+      return segment.startsWith(':') ? `{${segment.slice(1)}}` : segment;
+    });
+
+    return `${item.request.method} /${path.join('/')}`;
+  },
+
+  /**
    * Converts a JSON pointer (`/data/0/id`) into a lodash path (`data[0].id`).
    *
    * @param {String} pointer - JSON pointer
@@ -28,4 +53,4 @@ const crypto = require('crypto'),
     }).join('');
   };
 
-module.exports = { hash, toLodashPath };
+module.exports = { hash, flattenItems, itemKey, toLodashPath };

@@ -1,22 +1,10 @@
 // Builds the contract-test requests from the converter's output: one numbered list in run order,
 // wired with the bindings, followed by a children-first teardown and negative checks.
 const _ = require('lodash'),
-  { hash, toLodashPath } = require('./utils'),
+  { hash, flattenItems, itemKey, toLodashPath } = require('./utils'),
   scripts = require('./scripts'),
 
   UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
-
-  flattenItems = (items) => {
-    return _.flatMap(items, (item) => { return item.item ? flattenItems(item.item) : [item]; });
-  },
-
-  itemKey = (item) => {
-    const path = (item.request.url.path || []).map((segment) => {
-      return segment.startsWith(':') ? `{${segment.slice(1)}}` : segment;
-    });
-
-    return `${item.request.method} /${path.join('/')}`;
-  },
 
   event = (listen, exec) => { return { listen, script: { type: 'text/javascript', exec } }; },
 
@@ -28,7 +16,7 @@ const _ = require('lodash'),
       return ignoreCase ? candidate.key.toLowerCase() === key.toLowerCase() : candidate.key === key;
     });
 
-    if (entry) { entry.value = value; }
+    if (entry) { Object.assign(entry, { value, disabled: false }); }
     else { list.push({ key, value }); }
   },
 
@@ -42,8 +30,18 @@ const _ = require('lodash'),
 
       if (entry) { entry.value = value; }
     }
-    else if (param.in === 'query') { setEntry(request.url.query = request.url.query || [], param.name, value); }
-    else if (param.in === 'header') { setEntry(request.header = request.header || [], param.name, value, true); }
+    else if (param.in === 'query' || param.in === 'header') {
+      const list = param.in === 'query' ? (request.url.query = request.url.query || []) :
+          (request.header = request.header || []),
+        prefix = _.get((/^(.+)id$/i).exec(param.name), 1),
+        // `entityId` means nothing without its `entityType` sibling, so send that too.
+        sibling = prefix && _.find(list, (entry) => {
+          return entry.key.toLowerCase() === `${prefix}type`.toLowerCase();
+        });
+
+      setEntry(list, param.name, value, param.in === 'header');
+      if (sibling) { sibling.disabled = false; }
+    }
     else if (param.in === 'body' && _.get(request, 'body.raw')) {
       try {
         const body = _.set(JSON.parse(request.body.raw), toLodashPath(param.path), placeholder);
@@ -136,7 +134,18 @@ const _ = require('lodash'),
         }
         if (!items[op.key]) { return null; }
 
-        const item = _.cloneDeep(items[op.key]);
+        const item = _.cloneDeep(items[op.key]),
+          isOptional = (location) => {
+            const names = _(op.params).filter({ in: location, required: false })
+              .map((p) => { return p.name.toLowerCase(); }).value();
+
+            return (entry) => { return names.includes(entry.key.toLowerCase()); };
+          };
+
+        // Optional query and header parameters are not sent; wiring a binding re-enables one.
+        _.filter(item.request.url.query, isOptional('query'))
+          .concat(_.filter(item.request.header, isOptional('header')))
+          .forEach((entry) => { entry.disabled = true; });
 
         item.id = `ct-${hash(stepId)}`;
         item.name = `${++step}. ${label}`;

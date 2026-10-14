@@ -1,4 +1,5 @@
 const _ = require('lodash'),
+  { flattenItems, itemKey } = require('./utils'),
 
   ROLE_RANK = { create: 0, list: 1, read: 2, update: 3, other: 4, delete: 5 },
   PARAM_LOCATIONS = { pathParam: 'path', queryParam: 'query', headers: 'header' },
@@ -64,19 +65,29 @@ const _ = require('lodash'),
   /**
    * Lists every operation from the `extractedTypes` returned by convertV2WithTypes, keyed as
    * `method/path`, with its parameters, request body schema, response schemas and classification.
+   * Query and header parameters carry the example value the converter put on the request.
    *
    * @param {Object} extractedTypes - convertV2WithTypes result.extractedTypes
+   * @param {Object} collection - convertV2WithTypes collection
    * @returns {Object[]} operations
    */
-  listOperations = (extractedTypes) => {
+  listOperations = (extractedTypes, collection) => {
+    const items = _.keyBy(flattenItems(collection.item), itemKey),
+      exampleOf = (item, location, name) => {
+        const entries = location === 'query' ? _.get(item, 'request.url.query') : _.get(item, 'request.header');
+
+        return _.get(_.find(entries, { key: name }), 'value');
+      };
+
     return _.map(extractedTypes, (types, typeKey) => {
       const separator = typeKey.indexOf('/'),
         method = typeKey.slice(0, separator).toUpperCase(),
         path = typeKey.slice(separator),
+        item = items[`${method} ${path}`],
         params = _.flatMap(PARAM_LOCATIONS, (location, field) => {
           return _.map(parseJson(_.get(types, ['request', field])), (param) => {
             return { in: location, name: param.keyName, required: Boolean(_.get(param, 'properties.required')),
-              schema: _.pick(param.properties, ['type', 'format']) };
+              schema: _.pick(param.properties, ['type', 'format']), example: exampleOf(item, location, param.keyName) };
           });
         });
 
@@ -92,4 +103,4 @@ const _ = require('lodash'),
     });
   };
 
-module.exports = { ROLE_RANK, listOperations };
+module.exports = { ROLE_RANK, singular, listOperations };

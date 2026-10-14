@@ -2,11 +2,12 @@
 // and alphabetical tie-breaks, so the same spec always gives the same bindings.
 const _ = require('lodash'),
   { hash } = require('./utils'),
-  { ROLE_RANK } = require('./operations'),
+  { ROLE_RANK, singular } = require('./operations'),
 
   // Ranked by evidence: rules that tie the value to the right resource beat a bare name match.
   RULES = {
     'same-resource-create': 90,
+    'typed-reference': 85,
     'other-resource-create': 80,
     'same-resource-list': 70,
     'exact-name': 60
@@ -57,19 +58,31 @@ const _ = require('lodash'),
     return fields;
   },
 
+  // `entityId` next to `entityType=specification` refers to a specification: returns 'specification'.
+  referencedType = (op, param) => {
+    const prefix = _.get((/^(.+)id$/i).exec(param.name), 1),
+      sibling = prefix && _.find(op.params, (other) => {
+        return other !== param && normalize(other.name) === normalize(`${prefix}type`);
+      });
+
+    return sibling && typeof sibling.example === 'string' && sibling.example ? singular(sibling.example) : undefined;
+  },
+
   /**
-   * Values an operation needs: path parameters, required query/header parameters, and top-level
-   * body fields ending in `id`.
+   * Values an operation needs: path parameters, required query/header parameters, query/header
+   * parameters typed by a sibling `<x>Type` (even when optional), and top-level body fields ending in `id`.
    *
    * @param {Object} op - operation
-   * @returns {Object[]} consumers: { op, in, name, path?, type, format }
+   * @returns {Object[]} consumers: { op, in, name, path?, type, format, refType? }
    */
   consumedValues = (op) => {
-    const params = op.params.filter((param) => {
-        return param.in === 'path' || (param.required && (param.in === 'query' || param.in === 'header'));
-      }).map((param) => {
-        return { op, in: param.in, name: param.name, type: _.get(param, 'schema.type'),
-          format: _.get(param, 'schema.format') };
+    const params = op.params.map((param) => {
+        return { param, refType: param.in === 'path' ? undefined : referencedType(op, param) };
+      }).filter(({ param, refType }) => {
+        return param.in === 'path' || ((param.in === 'query' || param.in === 'header') && (param.required || refType));
+      }).map(({ param, refType }) => {
+        return _.omitBy({ op, in: param.in, name: param.name, type: _.get(param, 'schema.type'),
+          format: _.get(param, 'schema.format'), refType }, _.isUndefined);
       }),
       bodyIds = _.keys(_.get(op.requestBodySchema, 'properties')).filter((name) => { return (/id$/i).test(name); })
         .map((name) => {
@@ -122,6 +135,10 @@ const _ = require('lodash'),
 
     if (ownsParam && producer.role === 'create' && (isId || fieldName === name) && field.depth === 1) {
       return 'same-resource-create';
+    }
+    if (consumer.refType && normalize(consumer.refType) === normalize(producer.resource) &&
+        producer.role === 'create' && isId && field.depth === 1) {
+      return 'typed-reference';
     }
     if (isId && field.depth === 1 && producer.role === 'create' && normalize(`${producer.resource}id`) === name) {
       return 'other-resource-create';

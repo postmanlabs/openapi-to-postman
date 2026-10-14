@@ -22,8 +22,20 @@ const expect = require('chai').expect,
       '/specifications': { post: { responses: { 201: ok('created', wrapped) } } },
       '/specifications/{id}': {
         parameters: [idParam('id')],
-        get: { responses: { 200: ok('ok', wrapped) } },
+        get: {
+          parameters: [{ name: 'limit', in: 'query', schema: { type: 'string' }, example: 'pageLimit' }],
+          responses: { 200: ok('ok', wrapped) }
+        },
         delete: { responses: { 200: { description: 'deleted' } } }
+      },
+      '/tasks': {
+        get: {
+          parameters: [
+            { name: 'entityId', in: 'query', schema: { type: 'string' }, example: '{{entityId}}' },
+            { name: 'entityType', in: 'query', schema: { type: 'string' }, example: 'specification' }
+          ],
+          responses: { 200: ok('ok', wrapped) }
+        }
       },
       '/specifications/{id}/files': {
         parameters: [idParam('id')],
@@ -113,10 +125,28 @@ describe('buildContractTestCollection', function () {
     expect(binding(result, 'specification_id').producer.value).to.equal('$response.body#/data/id');
     expect(_.map(binding(result, 'file_id').consumers, 'param')).to.deep.include({ in: 'path', name: 'fileId' });
     expect(names.slice(-4)).to.eql([
-      '5. DELETE /specifications/{id}/files/{fileId}', '6. GET /specifications/{id}/files/{fileId} (expect 404)',
-      '7. DELETE /specifications/{id}', '8. GET /specifications/{id} (expect 404)'
+      '6. DELETE /specifications/{id}/files/{fileId}', '7. GET /specifications/{id}/files/{fileId} (expect 404)',
+      '8. DELETE /specifications/{id}', '9. GET /specifications/{id} (expect 404)'
     ]);
     expect(result.summary.skipped).to.eql(['POST /specs/{id}/files']);
+  });
+
+  it('does not send optional parameters unless a binding fills them', async function () {
+    const result = await generate(NESTED),
+      query = (name, key) => { return _.find(_.find(requests(result), { name }).request.url.query, { key }); };
+
+    expect(query('2. GET /specifications/{id}', 'limit')).to.include({ value: 'pageLimit', disabled: true });
+    expect(query('5. GET /tasks', 'entityId')).to.include({ value: '{{specification_id}}', disabled: false });
+    expect(query('5. GET /tasks', 'entityType')).to.include({ value: 'specification', disabled: false });
+  });
+
+  it('links <x>Id to the resource named by its <x>Type sibling', async function () {
+    const result = await generate(NESTED),
+      entity = _.find(binding(result, 'specification_id').consumers, { operation: 'GET /tasks' });
+
+    expect(entity.param).to.eql({ in: 'query', name: 'entityId' });
+    expect(binding(result, 'specification_id').rule).to.equal('same-resource-create');
+    expect(_.map(requests(result), 'name')).to.include('5. GET /tasks');
   });
 
   it('gives the same run order however the spec is laid out', async function () {
