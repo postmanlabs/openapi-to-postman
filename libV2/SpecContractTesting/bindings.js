@@ -156,21 +156,26 @@ const _ = require('lodash'),
   // Highest score wins; ties: producer path is a prefix of the consumer path, create before list,
   // shallower field, then producer key and pointer alphabetically.
   bestMatch = (consumer, fields, resourcesWithCreate) => {
-    const candidates = fields
-      .filter((field) => { return field.op.key !== consumer.op.key && typesMatch(field, consumer); })
-      .map((field) => {
-        const rule = ruleFor(field, consumer, resourcesWithCreate);
+    // A producer that itself needs an id of the consumer's resource (GET /tasks/{taskId} for a value
+    // GET /tasks needs) can never run first.
+    const runsFirst = (op) => { return !_.includes(_.values(op.paramResources), consumer.op.resource); },
+      candidates = fields
+        .filter((field) => {
+          return field.op.key !== consumer.op.key && runsFirst(field.op) && typesMatch(field, consumer);
+        })
+        .map((field) => {
+          const rule = ruleFor(field, consumer, resourcesWithCreate);
 
-        return rule && { field, rule, score: RULES[rule] };
-      })
-      .filter(Boolean)
-      .sort((a, b) => {
-        const underPath = (c) => { return Number(consumer.op.path.startsWith(c.field.op.collectionPath)); };
+          return rule && { field, rule, score: RULES[rule] };
+        })
+        .filter(Boolean)
+        .sort((a, b) => {
+          const underPath = (c) => { return Number(consumer.op.path.startsWith(c.field.op.collectionPath)); };
 
-        return (b.score - a.score) || (underPath(b) - underPath(a)) ||
-          (ROLE_RANK[a.field.op.role] - ROLE_RANK[b.field.op.role]) || (a.field.depth - b.field.depth) ||
-          a.field.op.key.localeCompare(b.field.op.key) || a.field.pointer.localeCompare(b.field.pointer);
-      });
+          return (b.score - a.score) || (underPath(b) - underPath(a)) ||
+            (ROLE_RANK[a.field.op.role] - ROLE_RANK[b.field.op.role]) || (a.field.depth - b.field.depth) ||
+            a.field.op.key.localeCompare(b.field.op.key) || a.field.pointer.localeCompare(b.field.pointer);
+        });
 
     return candidates.length && candidates[0].score >= MIN_SCORE ? candidates[0] : null;
   },

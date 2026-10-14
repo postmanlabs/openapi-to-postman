@@ -32,9 +32,17 @@ const expect = require('chai').expect,
         get: {
           parameters: [
             { name: 'entityId', in: 'query', schema: { type: 'string' }, example: '{{entityId}}' },
-            { name: 'entityType', in: 'query', schema: { type: 'string' }, example: 'specification' }
+            { name: 'entityType', in: 'query', schema: { type: 'string' }, example: 'specification' },
+            { name: 'type', in: 'query', required: true, schema: { type: 'string' }, example: 'collection-generation' }
           ],
           responses: { 200: ok('ok', wrapped) }
+        }
+      },
+      '/tasks/{taskId}': {
+        get: {
+          parameters: [idParam('taskId')],
+          responses: { 200: ok('ok', { type: 'object', properties: { data: { type: 'object',
+            properties: { type: { type: 'string' } } } } }) }
         }
       },
       '/specifications/{id}/files': {
@@ -125,8 +133,8 @@ describe('buildContractTestCollection', function () {
     expect(binding(result, 'specification_id').producer.value).to.equal('$response.body#/data/id');
     expect(_.map(binding(result, 'file_id').consumers, 'param')).to.deep.include({ in: 'path', name: 'fileId' });
     expect(names.slice(-4)).to.eql([
-      '6. DELETE /specifications/{id}/files/{fileId}', '7. GET /specifications/{id}/files/{fileId} (expect 404)',
-      '8. DELETE /specifications/{id}', '9. GET /specifications/{id} (expect 404)'
+      '7. DELETE /specifications/{id}/files/{fileId}', '8. GET /specifications/{id}/files/{fileId} (expect 404)',
+      '9. DELETE /specifications/{id}', '10. GET /specifications/{id} (expect 404)'
     ]);
     expect(result.summary.skipped).to.eql(['POST /specs/{id}/files']);
   });
@@ -147,6 +155,15 @@ describe('buildContractTestCollection', function () {
     expect(entity.param).to.eql({ in: 'query', name: 'entityId' });
     expect(binding(result, 'specification_id').rule).to.equal('same-resource-create');
     expect(_.map(requests(result), 'name')).to.include('5. GET /tasks');
+  });
+
+  it('never links a value to a request that needs the consumer\'s own resource', async function () {
+    const result = await generate(NESTED);
+
+    // GET /tasks needs `type`; GET /tasks/{taskId} returns one but needs a task id, so it can't run first.
+    expect(binding(result, 'type')).to.be.undefined;
+    expect(result.summary.unresolved).to.deep.include({ operation: 'GET /tasks', param: { in: 'query', name: 'type' },
+      reason: 'no response returns a matching value', fallback: 'example' });
   });
 
   it('gives the same run order however the spec is laid out', async function () {
