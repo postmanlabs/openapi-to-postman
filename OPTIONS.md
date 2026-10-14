@@ -28,4 +28,5 @@ includeReferenceMap|boolean|-|false|Whether or not to include reference map or n
 includeDeprecated|boolean|-|true|Select whether to include deprecated operations, parameters, and properties in generated collection or not|CONVERSION, VALIDATION|v2, v1
 alwaysInheritAuthentication|boolean|-|false|Whether authentication details should be included on every request, or always inherited from the collection.|CONVERSION|v2, v1
 nestedFolderHierarchy|boolean|-|false|Enable this option to create subfolders in the collection based on the order of tags.|CONVERSION|v2
+generateContractTests|boolean|-|false|Enable this option to add a contract test to each request that asserts the response status code is declared in the specification and the response body matches the declared response schema.|CONVERSION|v2
 preferredRequestBodyType|enum|x-www-form-urlencoded, form-data, raw, first-listed|first-listed|When there are multiple content-types defined in the request body of OpenAPI, the conversion selects the preferred option content-type as request body.If "first-listed" is set, the first content-type defined in the OpenAPI spec will be selected.|CONVERSION|v2
