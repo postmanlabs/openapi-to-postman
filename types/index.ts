@@ -33,6 +33,21 @@ export interface CollectionResult extends BaseResult {
   name?: string;
 }
 
+export interface ContractTestResult extends CollectionResult {
+
+  /** Updated bindings lock: saved links kept, new ones `pending`, broken ones `stale`. */
+  lock?: object;
+  summary?: {
+    excluded: number;
+    skipped: string[];
+    unchanged: number;
+    added: object[];
+    extended: object[];
+    stale: object[];
+    unresolved: object[];
+  };
+}
+
 export interface BundleResult extends BaseResult {
   output?: {
     type: string;
@@ -179,6 +194,21 @@ export interface Options {
 /**
  * Sync options for collection synchronization
  */
+/**
+ * Options for generating the spec contract-test collection
+ */
+export interface ContractTestOptions {
+
+  /** Bindings lock from a previous run; its links are reused instead of being inferred again. */
+  lock?: object | null;
+
+  /** Regex sources; operations whose "METHOD /path" matches are left out. */
+  excludeOperations?: string[];
+
+  /** Header sent on every request (e.g. "x-access-token"), valued {{camelCase(header)}}. */
+  authHeader?: string;
+}
+
 export interface SyncOptions {
 
   /** Whether to sync response examples from the OpenAPI specification */
