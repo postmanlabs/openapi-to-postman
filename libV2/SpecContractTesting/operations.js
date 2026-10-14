@@ -1,5 +1,5 @@
 const _ = require('lodash'),
-  { flattenItems, itemKey } = require('./utils'),
+  { hash, flattenItems, requestKey, itemKey } = require('./utils'),
   { singular, isCollection, resourceFromParam, splitCustomMethod } = require('./normalize'),
 
   ROLE_RANK = { create: 0, list: 1, read: 2, update: 3, other: 4, delete: 5 },
@@ -73,6 +73,7 @@ const _ = require('lodash'),
    * Lists every operation from the `extractedTypes` returned by convertV2WithTypes, keyed as
    * `method/path`, with its parameters, request body schema, response schemas and classification.
    * Query and header parameters carry the example value the converter put on the request.
+   * Operation ids are readable (`post_pets`); paths that read the same (`/a-b`, `/a_b`) get a hash suffix.
    *
    * @param {Object} extractedTypes - convertV2WithTypes result.extractedTypes
    * @param {Object} collection - convertV2WithTypes collection
@@ -86,11 +87,11 @@ const _ = require('lodash'),
         return _.get(_.find(entries, { key: name }), 'value');
       };
 
-    return _.map(extractedTypes, (types, typeKey) => {
+    const operations = _.map(extractedTypes, (types, typeKey) => {
       const separator = typeKey.indexOf('/'),
         method = typeKey.slice(0, separator).toUpperCase(),
         path = typeKey.slice(separator),
-        item = items[`${method} ${path}`],
+        item = items[requestKey(method, path)],
         params = _.flatMap(PARAM_LOCATIONS, (location, field) => {
           return _.map(parseJson(_.get(types, ['request', field])), (param) => {
             return { in: location, name: param.keyName, required: Boolean(_.get(param, 'properties.required')),
@@ -108,6 +109,12 @@ const _ = require('lodash'),
         responses: _.mapValues(types.response, (response) => { return { schema: parseJson(response.body) }; })
       }, classify(method, path));
     });
+
+    _.forEach(_.groupBy(operations, 'operationId'), (group) => {
+      if (group.length > 1) { group.forEach((op) => { op.operationId += `_${hash(op.key, 6)}`; }); }
+    });
+
+    return operations;
   };
 
 module.exports = { ROLE_RANK, listOperations };

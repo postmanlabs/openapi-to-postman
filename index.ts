@@ -223,5 +223,6 @@ export default {
   detectRelatedFiles,
   bundle,
   syncCollection,
+  buildContractTestCollection,
   SchemaPack
 };

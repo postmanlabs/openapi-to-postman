@@ -3,7 +3,8 @@
 // converter's status and schema checks. Links between requests are inferred from extractedTypes and
 // can be pinned with a lock. Collection generation itself is unchanged.
 const _ = require('lodash'),
-  { hash } = require('./utils'),
+  { hash, sortKeys, flattenItems } = require('./utils'),
+  { CONTRACT_TEST_MARKER } = require('../CollectionGeneration/contractTests'),
   { listOperations } = require('./operations'),
   { reconcile } = require('./lock'),
   { buildCollection } = require('./collection'),
@@ -17,7 +18,8 @@ const _ = require('lodash'),
    * @param {String[]} [options.excludeOperations] - regex sources matched against "METHOD /path"
    * @param {String} [options.authHeader] - header sent on every request, valued {{camelCase(header)}}
    * @returns {Object} { result, output: [{ type: 'collection', data }], lock, summary }, or
-   *   { result: false, reason } when the input is not a convertV2WithTypes result
+   *   { result: false, reason } when the input is not a convertV2WithTypes result made with
+   *   `generateContractTests: true`
    */
   build = (conversion, options = {}) => {
     const converted = _.get(conversion, 'output[0].data');
@@ -26,9 +28,17 @@ const _ = require('lodash'),
       return { result: false, reason: 'Expected a successful convertV2WithTypes result with extractedTypes' };
     }
 
+    const hasContractTests = flattenItems(converted.item).some((item) => {
+      return _.some(item.event, (e) => { return _.includes(_.get(e, 'script.exec'), CONTRACT_TEST_MARKER); });
+    });
+
+    if (!hasContractTests) {
+      return { result: false, reason: 'Expected a convertV2WithTypes result made with generateContractTests: true' };
+    }
+
     const exclude = _.map(options.excludeOperations, (pattern) => { return new RegExp(pattern); }),
       isExcluded = (op) => { return exclude.some((pattern) => { return pattern.test(op.key); }); },
-      specHash = `sha256:${hash(conversion.extractedTypes, 16)}`,
+      specHash = `sha256:${hash(sortKeys(conversion.extractedTypes), 16)}`,
       allOperations = listOperations(conversion.extractedTypes, converted),
       operations = _.reject(allOperations, isExcluded),
       { bindings, flows, lock, summary } = reconcile({

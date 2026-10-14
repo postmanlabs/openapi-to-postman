@@ -5,25 +5,33 @@ module.exports = {
    * that saves it failed, instead of sending a bogus value.
    *
    * @param {String[]} variables - variables the request uses
+   * @param {String} [reason] - why a variable would be empty, shown in the skip message
    * @returns {String[]} exec lines
    */
-  guard: (variables) => {
+  guard: (variables, reason = 'the request that saves it did not succeed') => {
     return variables.length ? [
       `var contractNeeds = ${JSON.stringify(variables)};`,
-      'var contractMissing = contractNeeds.filter(function (name) { return !pm.variables.get(name); });',
+      'var contractMissing = contractNeeds.filter(function (name) {',
+      '  var value = pm.variables.get(name);',
+      '',
+      '  return value === undefined || value === null || value === "";',
+      '});',
       'if (contractMissing.length) {',
-      '  console.warn("Skipping " + pm.info.requestName + ": missing " + contractMissing.join(", ") +',
-      '    " (the request that saves it did not succeed)");',
+      `  console.warn("Skipping " + pm.info.requestName + ": missing " + contractMissing.join(", ") + ${
+        JSON.stringify(` (${reason})`)});`,
       '  pm.execution.skipRequest();',
       '}'
     ] : [];
   },
 
+  expectSuccess: ['', 'pm.test("Flow | Succeeds (2xx)", function () {',
+    '  pm.expect(pm.response.code).to.be.within(200, 299);', '});'],
+
   /**
    * Post-response: on any 2xx (a spec may declare several success codes with the same body), save
    * each value into its collection variable.
    *
-   * @param {Object[]} saves - { variable, status, path }
+   * @param {Object[]} saves - { variable, path }
    * @returns {String[]} exec lines
    */
   save: (saves) => {
@@ -78,5 +86,35 @@ module.exports = {
   expectMissingFieldRejected: (field) => {
     return [`pm.test("Rejects a request without \\"${field}\\" (4xx)", function () {`,
       '  pm.expect(pm.response.code).to.be.within(400, 499);', '});'];
-  }
+  },
+
+  /**
+   * Post-response on a negative create: if the API wrongly accepted it, keep the new id so the
+   * next request can delete it.
+   *
+   * @param {String} variable - variable to keep the id in
+   * @param {String} path - lodash path of the id in the response body
+   * @returns {String[]} exec lines
+   */
+  captureCreated: (variable, path) => {
+    return [
+      '',
+      '// Contract flow: if this was wrongly accepted, keep the new id so the next request deletes it.',
+      'if (pm.response.code >= 200 && pm.response.code < 300) {',
+      '  var created;',
+      `  try { created = require("lodash").get(pm.response.json(), ${JSON.stringify(path)}); } catch (e) {}`,
+      '  if (created !== undefined && created !== null) {',
+      `    pm.collectionVariables.set(${JSON.stringify(variable)}, created);`,
+      '  }',
+      '}'
+    ];
+  },
+
+  /**
+   * Post-response: clear a variable once used.
+   *
+   * @param {String} variable - variable
+   * @returns {String[]} exec lines
+   */
+  clear: (variable) => { return [`pm.collectionVariables.unset(${JSON.stringify(variable)});`]; }
 };

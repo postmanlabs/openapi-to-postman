@@ -234,11 +234,11 @@ const _ = require('lodash'),
           source: 'inferred',
           rule: match.rule,
           score: match.score,
-          status: 'pending',
-          fingerprint: fingerprintOf(field, consumer)
+          status: 'pending'
         });
       }
-      bindings.get(key).consumers.push({ operation: consumer.op.key, param: consumerParam(consumer) });
+      bindings.get(key).consumers.push({ operation: consumer.op.key, param: consumerParam(consumer),
+        fingerprint: fingerprintOf(field, consumer) });
     });
 
     return { bindings: [...bindings.values()], unresolved };

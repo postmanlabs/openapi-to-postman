@@ -26,16 +26,37 @@ const _ = require('lodash'),
   },
 
   /**
-   * `METHOD /path/{param}` for a request item, matching the operation keys.
+   * Same value for any key order, so reordering a spec doesn't change its hash.
+   *
+   * @param {*} value - JSON-serialisable value
+   * @returns {*} copy with object keys sorted
+   */
+  sortKeys = (value) => {
+    if (_.isArray(value)) { return value.map(sortKeys); }
+    if (!_.isPlainObject(value)) { return value; }
+
+    return _.fromPairs(_.sortBy(_.keys(value)).map((key) => { return [key, sortKeys(value[key])]; }));
+  },
+
+  /**
+   * `METHOD /path/:param` for an operation, matching itemKey.
+   *
+   * @param {String} method - upper-case HTTP method
+   * @param {String} path - path template, e.g. `/pets/{petId}`
+   * @returns {String} key
+   */
+  requestKey = (method, path) => { return `${method} ${path.replace(/\{([^}]+)\}/g, ':$1')}`; },
+
+  /**
+   * `METHOD /path/:param` for a request item, matching requestKey. The converter writes `:petId`
+   * for path variables, `{{petId}}:verify` before a custom method, and keeps server-template
+   * segments such as `:version` as they are, so `:` segments stay untouched.
    *
    * @param {Object} item - request item
    * @returns {String} key
    */
   itemKey = (item) => {
-    // The converter writes `:petId` for path variables, and `{{petId}}:verify` before a custom method.
-    const path = (item.request.url.path || []).map((segment) => {
-      return segment.replace(/^:([^:]+)/, '{$1}').replace(/^\{\{([^}]+)\}\}/, '{$1}');
-    });
+    const path = (item.request.url.path || []).map((segment) => { return segment.replace(/^\{\{([^}]+)\}\}/, ':$1'); });
 
     return `${item.request.method} /${path.join('/')}`;
   },
@@ -54,4 +75,4 @@ const _ = require('lodash'),
     }).join('');
   };
 
-module.exports = { hash, flattenItems, itemKey, toLodashPath };
+module.exports = { hash, sortKeys, flattenItems, requestKey, itemKey, toLodashPath };

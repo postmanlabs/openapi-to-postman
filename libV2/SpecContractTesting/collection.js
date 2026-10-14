@@ -1,10 +1,8 @@
 // Builds the contract-test requests from the converter's output: one numbered list in run order,
-// wired with the bindings, then no-token checks, a children-first teardown and missing-field checks.
+// wired with the bindings, then no-token checks, missing-field checks and a children-first teardown.
 const _ = require('lodash'),
-  { hash, flattenItems, itemKey, toLodashPath } = require('./utils'),
+  { hash, flattenItems, requestKey, itemKey, toLodashPath } = require('./utils'),
   scripts = require('./scripts'),
-
-  UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
 
   // Values from the environment use the environment variable's name.
   variableOf = (binding) => { return _.get(binding, 'producer.environment') || binding.variable; },
@@ -36,7 +34,8 @@ const _ = require('lodash'),
     else { list.push({ key, value }); }
   },
 
-  // Points a path, query, header or top-level body parameter at `{{variable}}`.
+  // Points a path, query, header or top-level body parameter at `{{variable}}`. Returns false when
+  // the request has no place for it (e.g. an XML body), so the example value would be sent instead.
   useVariable = (request, param, variable, type) => {
     const value = `{{${variable}}}`;
 
@@ -44,14 +43,20 @@ const _ = require('lodash'),
       const entry = _.find(request.url.variable, { key: param.name }),
         inline = `{{${param.name}}}`;
 
-      if (entry) { entry.value = value; }
-      else {
-        // Written inline as `{{petId}}` (before a custom method such as `:verify`).
-        request.url.path = _.map(request.url.path, (segment) => { return segment.split(inline).join(value); });
-        if (typeof request.url.raw === 'string') { request.url.raw = request.url.raw.split(inline).join(value); }
+      if (entry) {
+        entry.value = value;
+
+        return true;
       }
+      if (!_.some(request.url.path, (segment) => { return segment.includes(inline); })) { return false; }
+
+      // Written inline as `{{petId}}` (before a custom method such as `:verify`).
+      request.url.path = _.map(request.url.path, (segment) => { return segment.split(inline).join(value); });
+      if (typeof request.url.raw === 'string') { request.url.raw = request.url.raw.split(inline).join(value); }
+
+      return true;
     }
-    else if (param.in === 'query' || param.in === 'header') {
+    if (param.in === 'query' || param.in === 'header') {
       const list = param.in === 'query' ? (request.url.query = request.url.query || []) :
           (request.header = request.header || []),
         prefix = _.get((/^(.+)id$/i).exec(param.name), 1),
@@ -61,16 +66,28 @@ const _ = require('lodash'),
 
       setEntry(list, param.name, value, param.in === 'header');
       if (sibling) { sibling.disabled = false; }
-    }
-    else if (param.in === 'body' && _.get(request, 'body.raw')) {
-      const placeholder = `__CT_VAR__${variable}__`;
 
-      try {
-        request.body.raw = JSON.stringify(_.set(JSON.parse(request.body.raw), toLodashPath(param.path), placeholder),
-          null, 2).replace(`"${placeholder}"`, !type || type === 'string' ? `"${value}"` : value);
-      }
-      catch (e) { /* non-JSON body: keep the example value */ }
+      return true;
     }
+
+    const mode = _.get(request, 'body.mode');
+
+    if (mode === 'urlencoded' || mode === 'formdata') {
+      setEntry(request.body[mode] = request.body[mode] || [], param.path.slice(1), value);
+
+      return true;
+    }
+    if (mode !== 'raw') { return false; }
+
+    const placeholder = `__CT_VAR__${variable}__`;
+
+    try {
+      request.body.raw = JSON.stringify(_.set(JSON.parse(request.body.raw), toLodashPath(param.path), placeholder),
+        null, 2).replace(`"${placeholder}"`, !type || type === 'string' ? `"${value}"` : value);
+
+      return true;
+    }
+    catch (e) { return false; }
   },
 
   removeBodyField = (request, field) => {
@@ -111,20 +128,11 @@ const _ = require('lodash'),
     return result;
   },
 
-  // Replaces every UUID with one derived from the seed and its order of appearance, so the
-  // converter's random ids and example values come out the same on every run.
-  stabilizeIds = (collection, seed) => {
-    const seen = new Map();
+  // Fixed collection id for a spec, so regenerating gives the same collection.
+  uuidFrom = (seed) => {
+    const h = hash(seed, 32);
 
-    return JSON.parse(JSON.stringify(collection).replace(UUID, (uuid) => {
-      if (!seen.has(uuid)) {
-        const h = hash(`${seed}:${seen.size}`, 32);
-
-        seen.set(uuid, `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20)}`);
-      }
-
-      return seen.get(uuid);
-    }));
+    return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20)}`;
   },
 
   buildRequests = ({ collection, operations, bindings, flows }) => {
@@ -137,13 +145,16 @@ const _ = require('lodash'),
       sortedOperations = operations.slice().sort((a, b) => { return a.key.localeCompare(b.key); }),
       skipped = [],
       requests = [];
-    let step = 0;
 
     const usesOf = (op) => { return uses[op.key] || []; },
 
+      itemOf = (op) => { return items[requestKey(op.method, op.path)]; },
+
+      savePath = (binding) => { return toLodashPath(binding.producer.value.replace(/^\$response\.body#/, '')); },
+
       // The auth the request actually sends: its own, else the collection's.
       isSecured = (op) => {
-        const auth = _.get(items[op.key], 'request.auth') || collection.auth;
+        const auth = _.get(itemOf(op), 'request.auth') || collection.auth;
 
         return Boolean(auth && auth.type !== 'noauth');
       },
@@ -157,94 +168,119 @@ const _ = require('lodash'),
         return op.params.some((p) => { return p.in === 'path' && !linked.includes(p.name); });
       },
 
-      // Numbered only once included, so skipped requests leave no gaps.
-      copy = (op, stepId, label) => {
-        if (hasUnlinkedPathId(op)) {
+      // A copy of the operation's request wired to the variables `variableFor` picks (null leaves a
+      // parameter alone). Null, and reported in `skipped`, when a path id isn't linked or a linked
+      // value can't be put into the request.
+      prepare = (op, variableFor) => {
+        const skip = () => {
           skipped.push(op.key);
 
           return null;
-        }
-        if (!items[op.key]) { return null; }
+        };
 
-        const item = _.cloneDeep(items[op.key]);
+        if (!itemOf(op)) { return null; }
+        if (hasUnlinkedPathId(op)) { return skip(); }
+
+        const item = _.cloneDeep(itemOf(op));
 
         disableOptionalParams(item, op);
-        item.id = `ct-${hash(stepId)}`;
-        item.name = `${++step}. ${label}`;
         delete item.response;
 
-        return item;
-      },
-
-      // Wires each consumed parameter to the variable `variableFor` returns (null skips it).
-      wire = (item, op, variableFor) => {
-        return usesOf(op).map(({ binding, param }) => {
+        const wired = usesOf(op).map(({ binding, param }) => {
           const variable = variableFor(binding, param);
 
-          if (variable) { useVariable(item.request, param, variable, typeOf(op, param)); }
+          return variable && (useVariable(item.request, param, variable, typeOf(op, param)) ? variable : false);
+        });
 
-          return variable;
-        }).filter(Boolean);
+        return wired.includes(false) ? skip() : { item, needs: _.compact(wired) };
+      },
+
+      // Numbered only once included, so skipped requests leave no gaps.
+      add = ({ item, needs }, stepId, label, test, skipReason) => {
+        item.id = `ct-${hash(stepId)}`;
+        item.name = `${requests.length + 1}. ${label}`;
+        requests.push(withEvents(item, scripts.guard(needs, skipReason), test));
       },
 
       savesFor = (op) => {
         return bindings.filter((binding) => { return _.get(binding, 'producer.operation') === op.key; })
-          .map((binding) => {
-            return { variable: binding.variable, status: String(binding.producer.status),
-              path: toLodashPath(binding.producer.value.replace(/^\$response\.body#/, '')) };
+          .map((binding) => { return { variable: binding.variable, path: savePath(binding) }; });
+      },
+
+      // The delete that removes what `op` creates, and where its id is in the create response.
+      cleanupFor = (op) => {
+        const del = _.find(operations, (other) => {
+            return other.role === 'delete' && other.resource === op.resource && other.collectionPath === op.path;
+          }),
+          use = del && !hasUnlinkedPathId(del) && _.find(usesOf(del), ({ binding, param }) => {
+            return isIdParam(del, param) && _.get(binding, 'producer.operation') === op.key;
           });
+
+        return use ? { op: del, variable: `leaked_${use.binding.variable}`, path: savePath(use.binding) } : null;
       },
 
       flowStep = (stepId) => {
         const [operationId, variant] = stepId.split(':'),
           op = opsById[operationId],
           expect404 = variant === 'expect-404',
-          item = op && copy(op, stepId, `${op.method} ${op.path}${expect404 ? ' (expect 404)' : ''}`);
-
-        if (!item) { return; }
-
-        const needs = wire(item, op, (binding, param) => {
+          prepared = op && prepare(op, (binding, param) => {
             return expect404 && isIdParam(op, param) ? `deleted_${variableOf(binding)}` : variableOf(binding);
-          }),
-          deletedIds = usesOf(op).filter(({ param }) => { return isIdParam(op, param); })
-            .map(({ binding }) => { return binding.variable; });
+          });
 
-        requests.push(withEvents(item, scripts.guard(needs), testExec(item).concat(
-          scripts.save(expect404 ? [] : savesFor(op)),
-          op.role === 'delete' ? scripts.markDeleted(deletedIds) : [],
-          expect404 ? scripts.expectGone : []
-        )));
+        if (!prepared) { return; }
+
+        const deletedIds = usesOf(op).filter(({ param }) => { return isIdParam(op, param); })
+          .map(({ binding }) => { return binding.variable; });
+
+        add(prepared, stepId, `${op.method} ${op.path}${expect404 ? ' (expect 404)' : ''}`, testExec(prepared.item)
+          .concat(
+            expect404 ? scripts.expectGone : scripts.expectSuccess,
+            scripts.save(expect404 ? [] : savesFor(op)),
+            op.role === 'delete' ? scripts.markDeleted(deletedIds) : []
+          ));
+      },
+
+      // While the resources still exist, with the real ids, so a rejection can only be about the token.
+      noTokenCheck = (op) => {
+        const prepared = prepare(op, variableOf);
+
+        if (!prepared) { return; }
+
+        prepared.item.request.auth = { type: 'noauth' };
+        add(prepared, `${op.operationId}:no-auth`, `${op.method} ${op.path} without a token`,
+          scripts.expectNoTokenRejected);
+      },
+
+      // Before the teardown, so parent ids still exist. If the API wrongly creates the resource,
+      // the next request deletes it.
+      missingFieldChecks = (op) => {
+        const cleanup = cleanupFor(op);
+
+        _.get(op.requestBodySchema, 'required', []).forEach((field) => {
+          const stepId = `${op.operationId}:missing-${field}`,
+            prepared = prepare(op, (binding, param) => {
+              return param.in === 'body' && param.path === `/${field}` ? null : variableOf(binding);
+            }),
+            deletion = prepared && cleanup && prepare(cleanup.op, (binding, param) => {
+              return isIdParam(cleanup.op, param) ? cleanup.variable : variableOf(binding);
+            });
+
+          if (!prepared) { return; }
+
+          removeBodyField(prepared.item.request, field);
+          add(prepared, stepId, `${op.method} ${op.path} without "${field}"`, scripts.expectMissingFieldRejected(field)
+            .concat(deletion ? scripts.captureCreated(cleanup.variable, cleanup.path) : []));
+          if (deletion) {
+            add(deletion, `${stepId}:cleanup`, `${cleanup.op.method} ${cleanup.op.path} (clean up if created)`,
+              scripts.clear(cleanup.variable), 'nothing was created');
+          }
+        });
       };
 
     _.flatten(_.values(_.omit(flows, 'teardown'))).forEach(flowStep);
-
-    // No-token checks run while the resources still exist, with the real ids, so a rejection can
-    // only be about the missing token.
-    sortedOperations.filter((op) => { return op.method === 'GET' && isSecured(op); }).forEach((op) => {
-      const item = copy(op, `${op.operationId}:no-auth`, `${op.method} ${op.path} without a token`);
-
-      if (item) {
-        item.request.auth = { type: 'noauth' };
-        requests.push(withEvents(item, scripts.guard(wire(item, op, variableOf)), scripts.expectNoTokenRejected));
-      }
-    });
-
+    sortedOperations.filter((op) => { return op.method === 'GET' && isSecured(op); }).forEach(noTokenCheck);
+    _.filter(sortedOperations, { role: 'create' }).forEach(missingFieldChecks);
     _.forEach(flows.teardown, flowStep);
-
-    _.filter(sortedOperations, { role: 'create' }).forEach((op) => {
-      _.get(op.requestBodySchema, 'required', []).forEach((field) => {
-        const item = copy(op, `${op.operationId}:missing-${field}`, `${op.method} ${op.path} without "${field}"`);
-
-        if (!item) { return; }
-
-        const needs = wire(item, op, (binding, param) => {
-          return param.in === 'body' && param.path === `/${field}` ? null : variableOf(binding);
-        });
-
-        removeBodyField(item.request, field);
-        requests.push(withEvents(item, scripts.guard(needs), scripts.expectMissingFieldRejected(field)));
-      });
-    });
 
     return { requests, skipped: _.uniq(skipped) };
   },
@@ -257,10 +293,10 @@ const _ = require('lodash'),
    * @param {Object[]} options.operations - operations
    * @param {Object[]} options.bindings - active bindings
    * @param {Object} options.flows - run order from buildFlows
-   * @param {String} options.seed - seed for stable ids (the spec hash)
+   * @param {String} options.seed - seed for the collection id (the spec hash)
    * @param {Object} [options.authHeader] - { name, variable }: send this header on every request
    * @returns {Object} { collection, skipped }: skipped lists requests left out because a path id
-   *   couldn't be linked
+   *   couldn't be linked or a linked value couldn't be put into the request
    */
   buildCollection = ({ collection, operations, bindings, flows, seed, authHeader }) => {
     const source = authHeader ? applyAuthHeader(collection, authHeader) : collection,
@@ -268,9 +304,10 @@ const _ = require('lodash'),
       variables = (source.variable || []).concat(bindings
         .filter((binding) => { return !_.get(binding, 'producer.environment'); })
         .map((binding) => { return { key: binding.variable, value: '' }; })),
-      output = Object.assign({}, source, { item: requests, variable: _.uniqBy(variables, 'key') });
+      info = Object.assign({}, source.info, { _postman_id: uuidFrom(seed) });
 
-    return { collection: stabilizeIds(output, seed), skipped };
+    return { collection: Object.assign({}, source, { info, item: requests, variable: _.uniqBy(variables, 'key') }),
+      skipped };
   };
 
 module.exports = { buildCollection };

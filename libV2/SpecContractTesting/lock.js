@@ -21,13 +21,52 @@ const _ = require('lodash'),
       const current = consumers[paramKey(consumer.operation, consumer.param)];
 
       if (!current) { return `consumer ${paramKey(consumer.operation, consumer.param)} no longer exists`; }
-      if (field && binding.source !== 'user' && binding.fingerprint &&
-          fingerprintOf(field, current) !== binding.fingerprint) {
+      if (field && binding.source !== 'user' && consumer.fingerprint &&
+          fingerprintOf(field, current) !== consumer.fingerprint) {
         return `type of ${producer.value} or ${consumer.param.name || consumer.param.path} changed`;
       }
     }
 
     return null;
+  },
+
+  unresolvedRef = (operation, param, reason) => { return { operation, param, reason, fallback: 'example' }; },
+
+  /**
+   * Drops consumers whose producer doesn't run before them, which only happens in a dependency
+   * cycle (A needs B's id and B needs A's): the guard would skip them at run time.
+   *
+   * @param {Object[]} bindings - active bindings
+   * @param {Object} flows - run order from buildFlows
+   * @param {Object} ops - operations by key
+   * @returns {Object} { runnable: bindings with only satisfiable consumers, blocked: unresolved refs }
+   */
+  dropUnorderedConsumers = (bindings, flows, ops) => {
+    const position = {},
+      blocked = [];
+
+    _.flatten(_.values(flows)).forEach((step, index) => {
+      const operationId = step.split(':')[0];
+
+      if (!_.has(position, operationId)) { position[operationId] = index; }
+    });
+
+    const at = (operation) => { return _.get(position, _.get(ops, [operation, 'operationId']), -1); },
+      runnable = bindings.map((binding) => {
+        const producer = _.get(binding, 'producer.operation'),
+          [ok, late] = _.partition(binding.consumers, (consumer) => {
+            return !producer || at(producer) < at(consumer.operation);
+          });
+
+        late.forEach((consumer) => {
+          blocked.push(unresolvedRef(consumer.operation, consumer.param,
+            `${producer} runs after this request (dependency cycle)`));
+        });
+
+        return late.length ? Object.assign({}, binding, { consumers: ok }) : binding;
+      });
+
+    return { runnable, blocked };
   },
 
   /**
@@ -41,7 +80,7 @@ const _ = require('lodash'),
    * @param {String} options.specHash - hash of the operations, recorded in the lock
    * @param {Object[]} options.operations - operations
    * @param {Object} [options.lock] - saved lock
-   * @returns {Object} { bindings, flows, lock, summary }
+   * @returns {Object} { bindings: the runnable part of the active bindings, flows, lock, summary }
    */
   reconcile = ({ title, specHash, operations, lock }) => {
     if (lock && lock.lockfileVersion !== LOCK_VERSION) {
@@ -98,16 +137,16 @@ const _ = require('lodash'),
 
     const active = kept.concat(added),
       flows = buildFlows(operations, active),
+      { runnable, blocked } = dropUnorderedConsumers(active, flows, ops),
       sortKey = (binding) => {
         return _.get(binding, 'producer.operation') || `~env ${_.get(binding, 'producer.environment', '')}`;
       },
       unresolvedRefs = unresolved.map((consumer) => {
-        return { operation: consumer.op.key, param: consumerParam(consumer),
-          reason: 'no response returns a matching value', fallback: 'example' };
-      });
+        return unresolvedRef(consumer.op.key, consumerParam(consumer), 'no response returns a matching value');
+      }).concat(blocked);
 
     return {
-      bindings: active,
+      bindings: runnable,
       flows,
       lock: {
         lockfileVersion: LOCK_VERSION,

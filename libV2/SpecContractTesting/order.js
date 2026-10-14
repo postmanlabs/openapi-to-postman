@@ -40,7 +40,7 @@ const _ = require('lodash'),
       remaining = resources.filter((resource) => { return linked.has(resource); }).sort();
 
     while (remaining.length) {
-      // First ready resource; on a cycle, the first remaining one.
+      // First ready resource; on a cycle, the first remaining one (reconcile reports the links this breaks).
       const next = remaining.find((resource) => {
         return [...deps[resource]].every((dep) => { return ordered.includes(dep); });
       }) || remaining[0];
