@@ -146,7 +146,9 @@ const _ = require('lodash'),
     if (ownsParam && producer.role === 'list' && isId && field.depth === 2 && (/\/0\/id$/).test(field.pointer)) {
       return 'same-resource-list';
     }
-    if (!isReference && !isId && fieldName === name && field.depth === 1 && producer.role !== 'delete') {
+    // Only identifier-like names: `type`, `name` or `status` fields match by accident.
+    if (!isReference && !isId && fieldName === name && (/(id|key|uuid|ref|slug|code|handle)$/).test(name) &&
+        field.depth === 1 && producer.role !== 'delete') {
       return 'exact-name';
     }
 

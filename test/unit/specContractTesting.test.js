@@ -12,7 +12,7 @@ const expect = require('chai').expect,
   },
   idParam = (name) => { return { name, in: 'path', required: true, schema: { type: 'string' } }; },
   wrapped = { type: 'object', properties: { meta: { type: 'object' }, data: { type: 'object',
-    properties: { id: { type: 'string' } } } } },
+    properties: { id: { type: 'string' }, type: { type: 'string' } } } } },
 
   // Nested resources behind a `{ meta, data }` envelope, plus a write whose id can't be linked.
   NESTED = {
@@ -157,10 +157,11 @@ describe('buildContractTestCollection', function () {
     expect(_.map(requests(result), 'name')).to.include('5. GET /tasks');
   });
 
-  it('never links a value to a request that needs the consumer\'s own resource', async function () {
+  it('never links by a non-identifier name or from a request that needs the consumer\'s resource', async function () {
     const result = await generate(NESTED);
 
-    // GET /tasks needs `type`; GET /tasks/{taskId} returns one but needs a task id, so it can't run first.
+    // GET /tasks needs `type`. POST /specifications returns an unrelated `type`, and GET /tasks/{taskId}
+    // returns one but needs a task id first; neither may be linked.
     expect(binding(result, 'type')).to.be.undefined;
     expect(result.summary.unresolved).to.deep.include({ operation: 'GET /tasks', param: { in: 'query', name: 'type' },
       reason: 'no response returns a matching value', fallback: 'example' });
