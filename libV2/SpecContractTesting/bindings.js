@@ -74,30 +74,22 @@ const _ = require('lodash'),
    */
   consumedValues = (op) => {
     const params = op.params.map((param) => {
-        return { param, refType: param.in === 'path' ? undefined : referencedType(op, param) };
-      }).filter(({ param, refType }) => {
-        return param.in === 'path' || ((param.in === 'query' || param.in === 'header') && (param.required || refType));
-      }).map(({ param, refType }) => {
+        const refType = param.in === 'path' ? undefined : referencedType(op, param),
+          needed = param.in === 'path' || (['query', 'header'].includes(param.in) && (param.required || refType));
+
+        if (!needed) { return null; }
+
         return _.omitBy({ op, in: param.in, name: param.name, type: normalizeType(_.get(param, 'schema.type')),
           format: _.get(param, 'schema.format'), refType }, _.isUndefined);
-      }),
-      bodyIds = _.keys(_.get(op.requestBodySchema, 'properties')).filter((name) => { return (/id$/i).test(name); })
-        .map((name) => {
-          const schema = op.requestBodySchema.properties[name];
-
-          return { op, in: 'body', name, path: `/${name}`, type: normalizeType(schema.type), format: schema.format };
-        });
+      }).filter(Boolean),
+      idFields = _.pickBy(_.get(op.requestBodySchema, 'properties'), (schema, name) => { return (/id$/i).test(name); }),
+      bodyIds = _.map(idFields, (schema, name) => {
+        return { op, in: 'body', name, path: `/${name}`, type: normalizeType(_.get(schema, 'type')),
+          format: _.get(schema, 'format') };
+      });
 
     return params.concat(bodyIds);
   },
-
-  /**
-   * Stable key for a consumer: `METHOD /path in:name` (body fields use their pointer).
-   *
-   * @param {Object} consumer - consumer from consumedValues
-   * @returns {String} key
-   */
-  consumerKey = (consumer) => { return `${consumer.op.key} ${consumer.in}:${consumer.path || consumer.name}`; },
 
   /**
    * Lock-file form of a consumer's parameter: `{ in, name }`, or `{ in: 'body', path }`.
@@ -110,6 +102,35 @@ const _ = require('lodash'),
   },
 
   /**
+   * Stable key for a parameter: `METHOD /path in:name` (body fields use their pointer).
+   *
+   * @param {String} operation - operation key
+   * @param {Object} param - parameter reference from consumerParam
+   * @returns {String} key
+   */
+  paramKey = (operation, param) => {
+    return `${operation} ${param.in}:${param.in === 'body' ? param.path : param.name}`;
+  },
+
+  /**
+   * Stable key for a consumer, see paramKey.
+   *
+   * @param {Object} consumer - consumer from consumedValues
+   * @returns {String} key
+   */
+  consumerKey = (consumer) => { return paramKey(consumer.op.key, consumerParam(consumer)); },
+
+  /**
+   * Stable key for a response field: `METHOD /path status pointer`.
+   *
+   * @param {String} operation - operation key
+   * @param {String} status - response status
+   * @param {String} pointer - JSON pointer
+   * @returns {String} key
+   */
+  fieldKey = (operation, status, pointer) => { return `${operation} ${status} ${pointer}`; },
+
+  /**
    * Hash of the producer and consumer types, used to notice when a saved binding no longer fits.
    *
    * @param {Object} field - producer field
@@ -120,15 +141,15 @@ const _ = require('lodash'),
     return `sha256:${hash({ p: [field.type, field.format], c: [consumer.type, consumer.format] })}`;
   },
 
-  ruleFor = (field, consumer, resourcesWithCreate) => {
+  // `isReference`: the consumer is named `<x>Id` for a resource with a create, so a same-named field
+  // elsewhere is only a reference to it.
+  ruleFor = (field, consumer, isReference) => {
     const producer = field.op,
       name = normalize(consumer.name),
       fieldName = normalize(field.name),
       isId = isIdField(field.name, producer.resource),
       owner = consumer.in === 'path' ? consumer.op.paramResources[consumer.name] : null,
-      ownsParam = owner && producer.resource === owner,
-      // `ownerId` names a resource with a create; an `ownerId` field elsewhere is only a reference to it.
-      isReference = [...resourcesWithCreate].some((resource) => { return normalize(`${resource}id`) === name; });
+      ownsParam = owner && producer.resource === owner;
 
     if (ownsParam && producer.role === 'create' && (isId || fieldName === name) && field.depth === 1) {
       return 'same-resource-create';
@@ -155,16 +176,17 @@ const _ = require('lodash'),
 
   // Highest score wins; ties: producer path is a prefix of the consumer path, create before list,
   // shallower field, then producer key and pointer alphabetically.
-  bestMatch = (consumer, fields, resourcesWithCreate) => {
+  bestMatch = (consumer, fields, referenceNames) => {
     // A producer that itself needs an id of the consumer's resource (GET /tasks/{taskId} for a value
     // GET /tasks needs) can never run first.
     const runsFirst = (op) => { return !_.includes(_.values(op.paramResources), consumer.op.resource); },
+      isReference = referenceNames.has(normalize(consumer.name)),
       candidates = fields
         .filter((field) => {
           return field.op.key !== consumer.op.key && runsFirst(field.op) && typesMatch(field, consumer);
         })
         .map((field) => {
-          const rule = ruleFor(field, consumer, resourcesWithCreate);
+          const rule = ruleFor(field, consumer, isReference);
 
           return rule && { field, rule, score: RULES[rule] };
         })
@@ -182,7 +204,7 @@ const _ = require('lodash'),
 
   /**
    * Infers bindings for the given consumers. Consumers matched to the same producer field share one
-   * binding, i.e. one collection variable.
+   * binding, i.e. one collection variable. Variable names are made unique by the caller.
    *
    * @param {Object[]} operations - all operations
    * @param {Object[]} consumers - consumers to resolve
@@ -190,23 +212,21 @@ const _ = require('lodash'),
    */
   inferBindings = (operations, consumers) => {
     const fields = _.flatMap(operations, producedFields),
-      resourcesWithCreate = new Set(operations.filter((op) => { return op.role === 'create'; })
-        .map((op) => { return op.resource; })),
+      referenceNames = new Set(_.filter(operations, { role: 'create' })
+        .map((op) => { return normalize(`${op.resource}id`); })),
       bindings = new Map(),
-      unresolved = [],
-      used = new Set();
+      unresolved = [];
 
     consumers.slice().sort((a, b) => { return consumerKey(a).localeCompare(consumerKey(b)); }).forEach((consumer) => {
-      const match = bestMatch(consumer, fields, resourcesWithCreate);
+      const match = bestMatch(consumer, fields, referenceNames);
 
       if (!match) { return unresolved.push(consumer); }
 
       const { field } = match,
-        key = `${field.op.key} ${field.status} ${field.pointer}`;
+        key = fieldKey(field.op.key, field.status, field.pointer);
 
       if (!bindings.has(key)) {
         bindings.set(key, {
-          id: null,
           variable: isIdField(field.name, field.op.resource) ? `${snake(field.op.resource)}_id` : snake(field.name),
           producer: { operation: field.op.key, operationId: field.op.operationId, status: field.status,
             value: `$response.body#${field.pointer}` },
@@ -221,16 +241,9 @@ const _ = require('lodash'),
       bindings.get(key).consumers.push({ operation: consumer.op.key, param: consumerParam(consumer) });
     });
 
-    bindings.forEach((binding) => {
-      let name = binding.variable,
-        n = 2;
-
-      while (used.has(name)) { name = `${binding.variable}_${n++}`; }
-      used.add(name);
-      binding.id = binding.variable = name;
-    });
-
     return { bindings: [...bindings.values()], unresolved };
   };
 
-module.exports = { producedFields, consumedValues, consumerKey, consumerParam, fingerprintOf, inferBindings };
+module.exports = {
+  producedFields, consumedValues, consumerParam, paramKey, consumerKey, fieldKey, fingerprintOf, inferBindings
+};

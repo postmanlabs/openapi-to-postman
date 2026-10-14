@@ -2,16 +2,11 @@
 // inferred again, so a change elsewhere in the spec can't quietly change it. Reading and writing
 // the lock file is left to the caller; this module only works on the lock object.
 const _ = require('lodash'),
-  { producedFields, consumedValues, consumerKey, consumerParam, fingerprintOf, inferBindings } = require('./bindings'),
+  { producedFields, consumedValues, consumerParam, paramKey, consumerKey, fieldKey, fingerprintOf, inferBindings } =
+    require('./bindings'),
   { buildFlows } = require('./order'),
 
   LOCK_VERSION = 1,
-
-  paramKey = (operation, param) => {
-    return `${operation} ${param.in}:${param.in === 'body' ? param.path : param.name}`;
-  },
-
-  fieldKey = (operation, status, pointer) => { return `${operation} ${status} ${pointer}`; },
 
   // Returns why a saved binding no longer fits the spec, or null if it still does.
   staleReason = (binding, ops, fields, consumers) => {
@@ -77,7 +72,8 @@ const _ = require('lodash'),
     });
 
     const { bindings: inferred, unresolved } = inferBindings(operations,
-      allConsumers.filter((consumer) => { return !covered.has(consumerKey(consumer)); }));
+        allConsumers.filter((consumer) => { return !covered.has(consumerKey(consumer)); })),
+      taken = new Set(_.map(kept, 'variable'));
 
     inferred.forEach((binding) => {
       const existing = _.find(kept, (candidate) => {
@@ -92,13 +88,12 @@ const _ = require('lodash'),
         });
       }
 
-      const taken = new Set(_.map(kept.concat(added), 'variable'));
       let name = binding.variable,
         n = 2;
 
       while (taken.has(name)) { name = `${binding.variable}_${n++}`; }
-      binding.id = binding.variable = name;
-      added.push(binding);
+      taken.add(name);
+      added.push(Object.assign({ id: name }, binding, { variable: name }));
     });
 
     const active = kept.concat(added),
@@ -106,7 +101,7 @@ const _ = require('lodash'),
       sortKey = (binding) => {
         return _.get(binding, 'producer.operation') || `~env ${_.get(binding, 'producer.environment', '')}`;
       },
-      unresolvedJson = unresolved.map((consumer) => {
+      unresolvedRefs = unresolved.map((consumer) => {
         return { operation: consumer.op.key, param: consumerParam(consumer),
           reason: 'no response returns a matching value', fallback: 'example' };
       });
@@ -121,9 +116,9 @@ const _ = require('lodash'),
           return sortKey(a).localeCompare(sortKey(b)) || a.variable.localeCompare(b.variable);
         }),
         flows,
-        unresolved: unresolvedJson
+        unresolved: unresolvedRefs
       },
-      summary: { unchanged: kept.length, added, extended, stale, unresolved: unresolvedJson }
+      summary: { unchanged: kept.length, added, extended, stale, unresolved: unresolvedRefs }
     };
   };
 

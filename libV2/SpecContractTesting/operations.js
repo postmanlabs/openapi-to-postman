@@ -3,9 +3,15 @@ const _ = require('lodash'),
   { singular, isCollection, resourceFromParam, splitCustomMethod } = require('./normalize'),
 
   ROLE_RANK = { create: 0, list: 1, read: 2, update: 3, other: 4, delete: 5 },
+  ROLES = {
+    collection: { POST: 'create', GET: 'list' },
+    item: { GET: 'read', PUT: 'update', PATCH: 'update', DELETE: 'delete' }
+  },
   PARAM_LOCATIONS = { pathParam: 'path', queryParam: 'query', headers: 'header' },
 
   isParamSegment = (segment) => { return (/^\{.+\}$/).test(segment); },
+
+  paramName = (segment) => { return segment.slice(1, -1); },
 
   // extractedTypes stores schemas and parameter lists as JSON strings.
   parseJson = (text) => {
@@ -43,30 +49,21 @@ const _ = require('lodash'),
       owner = isTrailingAction ? segments.slice(0, -1) : segments,
       isItem = isParamSegment(_.last(owner) || ''),
       paramResources = {};
-    let role = 'other';
 
     segments.forEach((segment, index) => {
+      if (!isParamSegment(segment)) { return; }
+
       const before = segments[index - 1],
         after = segments[index + 1],
         isComposite = !before || isParamSegment(before) || (after && isParamSegment(after));
 
-      if (isParamSegment(segment)) {
-        paramResources[segment.slice(1, -1)] = isComposite ? resourceFromParam(segment.slice(1, -1)) : singular(before);
-      }
+      paramResources[paramName(segment)] = isComposite ? resourceFromParam(paramName(segment)) : singular(before);
     });
-
-    if (!action && !isTrailingAction) {
-      if (!isItem && method === 'POST') { role = 'create'; }
-      else if (!isItem && method === 'GET') { role = 'list'; }
-      else if (isItem && method === 'GET') { role = 'read'; }
-      else if (isItem && (method === 'PUT' || method === 'PATCH')) { role = 'update'; }
-      else if (isItem && method === 'DELETE') { role = 'delete'; }
-    }
 
     return {
       resource: singular(_.last(owner.filter((segment) => { return !isParamSegment(segment); })) || 'root'),
-      role,
-      idParam: isItem ? _.last(owner).slice(1, -1) : null,
+      role: (!action && !isTrailingAction && ROLES[isItem ? 'item' : 'collection'][method]) || 'other',
+      idParam: isItem ? paramName(_.last(owner)) : null,
       paramResources,
       collectionPath: `/${(isItem ? owner.slice(0, -1) : owner).join('/')}`
     };
@@ -113,4 +110,4 @@ const _ = require('lodash'),
     });
   };
 
-module.exports = { ROLE_RANK, singular, listOperations };
+module.exports = { ROLE_RANK, listOperations };

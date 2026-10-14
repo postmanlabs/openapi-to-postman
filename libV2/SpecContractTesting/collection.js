@@ -1,15 +1,31 @@
 // Builds the contract-test requests from the converter's output: one numbered list in run order,
-// wired with the bindings, followed by a children-first teardown and negative checks.
+// wired with the bindings, then no-token checks, a children-first teardown and missing-field checks.
 const _ = require('lodash'),
   { hash, flattenItems, itemKey, toLodashPath } = require('./utils'),
   scripts = require('./scripts'),
 
   UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
 
-  event = (listen, exec) => { return { listen, script: { type: 'text/javascript', exec } }; },
-
   // Values from the environment use the environment variable's name.
   variableOf = (binding) => { return _.get(binding, 'producer.environment') || binding.variable; },
+
+  isIdParam = (op, param) => { return param.in === 'path' && param.name === op.idParam; },
+
+  typeOf = (op, param) => {
+    return param.in === 'body' ?
+      _.get(op.requestBodySchema, ['properties', param.path.slice(1), 'type']) :
+      _.get(_.find(op.params, { in: param.in, name: param.name }), 'schema.type');
+  },
+
+  withEvents = (item, prerequest, test) => {
+    item.event = [['prerequest', prerequest], ['test', test]]
+      .filter(([, exec]) => { return exec.length; })
+      .map(([listen, exec]) => { return { listen, script: { type: 'text/javascript', exec } }; });
+
+    return item;
+  },
+
+  testExec = (item) => { return [].concat(_.get(_.find(item.event, { listen: 'test' }), 'script.exec', [])); },
 
   setEntry = (list, key, value, ignoreCase) => {
     const entry = _.find(list, (candidate) => {
@@ -22,8 +38,7 @@ const _ = require('lodash'),
 
   // Points a path, query, header or top-level body parameter at `{{variable}}`.
   useVariable = (request, param, variable, type) => {
-    const value = `{{${variable}}}`,
-      placeholder = `__CT_VAR__${variable}__`;
+    const value = `{{${variable}}}`;
 
     if (param.in === 'path') {
       const entry = _.find(request.url.variable, { key: param.name }),
@@ -41,19 +56,18 @@ const _ = require('lodash'),
           (request.header = request.header || []),
         prefix = _.get((/^(.+)id$/i).exec(param.name), 1),
         // `entityId` means nothing without its `entityType` sibling, so send that too.
-        sibling = prefix && _.find(list, (entry) => {
-          return entry.key.toLowerCase() === `${prefix}type`.toLowerCase();
-        });
+        siblingKey = prefix && `${prefix}type`.toLowerCase(),
+        sibling = siblingKey && _.find(list, (entry) => { return entry.key.toLowerCase() === siblingKey; });
 
       setEntry(list, param.name, value, param.in === 'header');
       if (sibling) { sibling.disabled = false; }
     }
     else if (param.in === 'body' && _.get(request, 'body.raw')) {
-      try {
-        const body = _.set(JSON.parse(request.body.raw), toLodashPath(param.path), placeholder);
+      const placeholder = `__CT_VAR__${variable}__`;
 
-        request.body.raw = JSON.stringify(body, null, 2)
-          .replace(`"${placeholder}"`, !type || type === 'string' ? `"${value}"` : value);
+      try {
+        request.body.raw = JSON.stringify(_.set(JSON.parse(request.body.raw), toLodashPath(param.path), placeholder),
+          null, 2).replace(`"${placeholder}"`, !type || type === 'string' ? `"${value}"` : value);
       }
       catch (e) { /* non-JSON body: keep the example value */ }
     }
@@ -64,8 +78,37 @@ const _ = require('lodash'),
     catch (e) { /* non-JSON body: nothing to remove */ }
   },
 
-  testExec = (item) => {
-    return [].concat(_.get(_.find(item.event, { listen: 'test' }), 'script.exec', []));
+  // Optional query and header parameters are not sent; wiring a binding re-enables one.
+  disableOptionalParams = (item, op) => {
+    const optional = (location) => {
+      const names = _(op.params).filter({ in: location, required: false })
+        .map((p) => { return p.name.toLowerCase(); }).value();
+
+      return (entry) => { return names.includes(entry.key.toLowerCase()); };
+    };
+
+    _.filter(item.request.url.query, optional('query'))
+      .concat(_.filter(item.request.header, optional('header')))
+      .forEach((entry) => { entry.disabled = true; });
+  },
+
+  // Collection-level API key auth; drops same-named request headers the spec declares as placeholders.
+  applyAuthHeader = (collection, authHeader) => {
+    const result = _.cloneDeep(collection);
+
+    result.auth = { type: 'apikey', apikey: [
+      { key: 'key', value: authHeader.name, type: 'string' },
+      { key: 'value', value: `{{${authHeader.variable}}}`, type: 'string' },
+      { key: 'in', value: 'header', type: 'string' }
+    ] };
+    flattenItems(result.item).forEach((item) => {
+      item.request.header = _.reject(item.request.header, (h) => {
+        return h.key.toLowerCase() === authHeader.name.toLowerCase();
+      });
+      if (item.request.auth && item.request.auth.type !== 'noauth') { delete item.request.auth; }
+    });
+
+    return result;
   },
 
   // Replaces every UUID with one derived from the seed and its order of appearance, so the
@@ -87,16 +130,14 @@ const _ = require('lodash'),
   buildRequests = ({ collection, operations, bindings, flows }) => {
     const items = _.keyBy(flattenItems(collection.item), itemKey),
       opsById = _.keyBy(operations, 'operationId'),
-      uses = {},
+      uses = _.groupBy(_.flatMap(bindings, (binding) => {
+        return _.map(binding.consumers, (consumer) => { return Object.assign({ binding }, consumer); });
+      }), 'operation'),
+      // Alphabetical, like the flows, so the negative checks don't depend on spec order either.
+      sortedOperations = operations.slice().sort((a, b) => { return a.key.localeCompare(b.key); }),
       skipped = [],
       requests = [];
     let step = 0;
-
-    bindings.forEach((binding) => {
-      (binding.consumers || []).forEach((consumer) => {
-        (uses[consumer.operation] = uses[consumer.operation] || []).push({ binding, param: consumer.param });
-      });
-    });
 
     const usesOf = (op) => { return uses[op.key] || []; },
 
@@ -105,13 +146,6 @@ const _ = require('lodash'),
         const auth = _.get(items[op.key], 'request.auth') || collection.auth;
 
         return Boolean(auth && auth.type !== 'noauth');
-      },
-      isIdParam = (op, param) => { return param.in === 'path' && param.name === op.idParam; },
-
-      typeOf = (op, param) => {
-        return param.in === 'body' ?
-          _.get(op.requestBodySchema, ['properties', param.path.slice(1), 'type']) :
-          _.get(_.find(op.params, { in: param.in, name: param.name }), 'schema.type');
       },
 
       // A request whose path ids aren't all linked would use the spec's example ids: on a shared
@@ -123,36 +157,18 @@ const _ = require('lodash'),
         return op.params.some((p) => { return p.in === 'path' && !linked.includes(p.name); });
       },
 
-      savesFor = (op) => {
-        return bindings.filter((binding) => { return _.get(binding, 'producer.operation') === op.key; })
-          .map((binding) => {
-            return { variable: binding.variable, status: String(binding.producer.status),
-              path: toLodashPath(binding.producer.value.replace(/^\$response\.body#/, '')) };
-          });
-      },
-
       // Numbered only once included, so skipped requests leave no gaps.
       copy = (op, stepId, label) => {
         if (hasUnlinkedPathId(op)) {
-          if (!skipped.includes(op.key)) { skipped.push(op.key); }
+          skipped.push(op.key);
 
           return null;
         }
         if (!items[op.key]) { return null; }
 
-        const item = _.cloneDeep(items[op.key]),
-          isOptional = (location) => {
-            const names = _(op.params).filter({ in: location, required: false })
-              .map((p) => { return p.name.toLowerCase(); }).value();
+        const item = _.cloneDeep(items[op.key]);
 
-            return (entry) => { return names.includes(entry.key.toLowerCase()); };
-          };
-
-        // Optional query and header parameters are not sent; wiring a binding re-enables one.
-        _.filter(item.request.url.query, isOptional('query'))
-          .concat(_.filter(item.request.header, isOptional('header')))
-          .forEach((entry) => { entry.disabled = true; });
-
+        disableOptionalParams(item, op);
         item.id = `ct-${hash(stepId)}`;
         item.name = `${++step}. ${label}`;
         delete item.response;
@@ -171,11 +187,12 @@ const _ = require('lodash'),
         }).filter(Boolean);
       },
 
-      withEvents = (item, prerequest, test) => {
-        item.event = [event('prerequest', prerequest), event('test', test)]
-          .filter((e) => { return e.script.exec.length; });
-
-        return item;
+      savesFor = (op) => {
+        return bindings.filter((binding) => { return _.get(binding, 'producer.operation') === op.key; })
+          .map((binding) => {
+            return { variable: binding.variable, status: String(binding.producer.status),
+              path: toLodashPath(binding.producer.value.replace(/^\$response\.body#/, '')) };
+          });
       },
 
       flowStep = (stepId) => {
@@ -197,9 +214,7 @@ const _ = require('lodash'),
           op.role === 'delete' ? scripts.markDeleted(deletedIds) : [],
           expect404 ? scripts.expectGone : []
         )));
-      },
-      // Alphabetical, like the flows, so the negative checks don't depend on spec order either.
-      sortedOperations = operations.slice().sort((a, b) => { return a.key.localeCompare(b.key); });
+      };
 
     _.flatten(_.values(_.omit(flows, 'teardown'))).forEach(flowStep);
 
@@ -216,24 +231,22 @@ const _ = require('lodash'),
 
     _.forEach(flows.teardown, flowStep);
 
-    sortedOperations.forEach((op) => {
-      if (op.role === 'create') {
-        _.get(op.requestBodySchema, 'required', []).forEach((field) => {
-          const item = copy(op, `${op.operationId}:missing-${field}`, `${op.method} ${op.path} without "${field}"`);
+    _.filter(sortedOperations, { role: 'create' }).forEach((op) => {
+      _.get(op.requestBodySchema, 'required', []).forEach((field) => {
+        const item = copy(op, `${op.operationId}:missing-${field}`, `${op.method} ${op.path} without "${field}"`);
 
-          if (!item) { return; }
+        if (!item) { return; }
 
-          const needs = wire(item, op, (binding, param) => {
-            return param.in === 'body' && param.path === `/${field}` ? null : variableOf(binding);
-          });
-
-          removeBodyField(item.request, field);
-          requests.push(withEvents(item, scripts.guard(needs), scripts.expectMissingFieldRejected(field)));
+        const needs = wire(item, op, (binding, param) => {
+          return param.in === 'body' && param.path === `/${field}` ? null : variableOf(binding);
         });
-      }
+
+        removeBodyField(item.request, field);
+        requests.push(withEvents(item, scripts.guard(needs), scripts.expectMissingFieldRejected(field)));
+      });
     });
 
-    return { requests, skipped };
+    return { requests, skipped: _.uniq(skipped) };
   },
 
   /**
@@ -250,34 +263,14 @@ const _ = require('lodash'),
    *   couldn't be linked
    */
   buildCollection = ({ collection, operations, bindings, flows, seed, authHeader }) => {
-    if (authHeader) {
-      // Collection-level API key auth; drop same-named request headers the spec declares as placeholders.
-      collection = _.cloneDeep(collection);
-      collection.auth = { type: 'apikey', apikey: [
-        { key: 'key', value: authHeader.name, type: 'string' },
-        { key: 'value', value: `{{${authHeader.variable}}}`, type: 'string' },
-        { key: 'in', value: 'header', type: 'string' }
-      ] };
-      flattenItems(collection.item).forEach((item) => {
-        item.request.header = _.reject(item.request.header, (h) => {
-          return h.key.toLowerCase() === authHeader.name.toLowerCase();
-        });
-        if (item.request.auth && item.request.auth.type !== 'noauth') { delete item.request.auth; }
-      });
-    }
-
-    const { requests, skipped } = buildRequests({ collection, operations, bindings, flows }),
-      variables = (collection.variable || []).concat(bindings
+    const source = authHeader ? applyAuthHeader(collection, authHeader) : collection,
+      { requests, skipped } = buildRequests({ collection: source, operations, bindings, flows }),
+      variables = (source.variable || []).concat(bindings
         .filter((binding) => { return !_.get(binding, 'producer.environment'); })
-        .map((binding) => { return { key: binding.variable, value: '' }; }));
+        .map((binding) => { return { key: binding.variable, value: '' }; })),
+      output = Object.assign({}, source, { item: requests, variable: _.uniqBy(variables, 'key') });
 
-    return {
-      collection: stabilizeIds(Object.assign({}, collection, {
-        item: requests,
-        variable: _.uniqBy(variables, 'key')
-      }), seed),
-      skipped
-    };
+    return { collection: stabilizeIds(output, seed), skipped };
   };
 
 module.exports = { buildCollection };

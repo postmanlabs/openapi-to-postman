@@ -12,8 +12,8 @@ const _ = require('lodash'),
   WRAPPER_KEYS = ['data', 'items', 'results', 'result', 'records', 'payload', 'content', '_embedded'],
 
   isContainer = (schema) => {
-    return Boolean(schema) &&
-      (schema.type === 'object' || schema.type === 'array' || Boolean(schema.properties) || Boolean(schema.items));
+    return Boolean(schema &&
+      (schema.type === 'object' || schema.type === 'array' || schema.properties || schema.items));
   },
 
   /**
@@ -102,10 +102,6 @@ const _ = require('lodash'),
     });
   },
 
-  // The wrapper property inside `schema`, if any: `data`, `items`, ... or the single entry of `_embedded`.
-  wrapperKey = (schema, keys) => {
-    return _.find(keys, (key) => { return isContainer(_.get(schema, ['properties', key])); });
-  },
 
   /**
    * Unwraps payload wrappers (`{ data }`, `{ items }`, HAL `{ _embedded: { pets } }`) up to two levels.
@@ -115,16 +111,24 @@ const _ = require('lodash'),
    * @returns {Object} { schema, pointer } of the payload
    */
   unwrap = (schema, level = 0) => {
-    const key = level < 2 && wrapperKey(schema, WRAPPER_KEYS),
-      inner = key && schema.properties[key],
-      embedded = key === '_embedded' && _.keys(_.pickBy(_.get(inner, 'properties'), isContainer));
+    const key = level < 2 && _.find(WRAPPER_KEYS, (k) => { return isContainer(_.get(schema, ['properties', k])); });
 
-    if (!key || (embedded && embedded.length !== 1)) { return { schema, pointer: '' }; }
+    if (!key) { return { schema, pointer: '' }; }
 
-    const payload = embedded ? inner.properties[embedded[0]] : inner,
-      rest = embedded ? { schema: payload, pointer: '' } : unwrap(payload, level + 1);
+    const inner = schema.properties[key];
 
-    return { schema: rest.schema, pointer: `/${key}${embedded ? `/${embedded[0]}` : ''}${rest.pointer}` };
+    // HAL: `_embedded` holds one entry per relation; only a single one is unambiguous.
+    if (key === '_embedded') {
+      const relations = _.keys(_.pickBy(inner.properties, isContainer));
+
+      return relations.length === 1 ?
+        { schema: inner.properties[relations[0]], pointer: `/_embedded/${relations[0]}` } :
+        { schema, pointer: '' };
+    }
+
+    const rest = unwrap(inner, level + 1);
+
+    return { schema: rest.schema, pointer: `/${key}${rest.pointer}` };
   },
 
   /**
