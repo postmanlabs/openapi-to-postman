@@ -20,7 +20,8 @@ module.exports = {
   },
 
   /**
-   * Post-response: on the producer's status, save each value into its collection variable.
+   * Post-response: on any 2xx (a spec may declare several success codes with the same body), save
+   * each value into its collection variable.
    *
    * @param {Object[]} saves - { variable, status, path }
    * @returns {String[]} exec lines
@@ -33,7 +34,7 @@ module.exports = {
       'var contractBody;',
       'try { contractBody = pm.response.json(); } catch (e) { contractBody = undefined; }',
       'contractSaves.forEach(function (save) {',
-      '  if (String(pm.response.code) !== save.status) { return; }',
+      '  if (pm.response.code < 200 || pm.response.code >= 300) { return; }',
       '  var value = require("lodash").get(contractBody, save.path);',
       '  pm.test("Flow | Saved " + save.variable + " from the response", function () {',
       '    pm.expect(value, save.path + " not found in response").to.not.be.undefined;',

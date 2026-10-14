@@ -47,7 +47,7 @@ const expect = require('chai').expect,
       },
       '/specifications/{id}/files': {
         parameters: [idParam('id')],
-        post: { responses: { 201: ok('created', wrapped) } }
+        post: { responses: { 200: ok('ok', wrapped), 201: ok('created', wrapped) } }
       },
       '/specifications/{id}/files/{fileId}': {
         parameters: [idParam('id'), idParam('fileId')],
@@ -137,6 +137,15 @@ describe('buildContractTestCollection', function () {
       '9. DELETE /specifications/{id}', '10. GET /specifications/{id} (expect 404)'
     ]);
     expect(result.summary.skipped).to.eql(['POST /specs/{id}/files']);
+  });
+
+  it('saves a value from any 2xx when the spec declares several success codes', async function () {
+    const result = await generate(NESTED),
+      script = exec(request(result, '3. POST /specifications/{id}/files'), 'test');
+
+    expect(binding(result, 'file_id').producer.status).to.equal('200');
+    expect(script).to.include('pm.response.code < 200 || pm.response.code >= 300')
+      .and.not.include('String(pm.response.code) !== save.status');
   });
 
   it('does not send optional parameters unless a binding fills them', async function () {
