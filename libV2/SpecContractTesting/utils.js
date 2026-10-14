@@ -32,8 +32,9 @@ const _ = require('lodash'),
    * @returns {String} key
    */
   itemKey = (item) => {
+    // The converter writes `:petId` for path variables, and `{{petId}}:verify` before a custom method.
     const path = (item.request.url.path || []).map((segment) => {
-      return segment.startsWith(':') ? `{${segment.slice(1)}}` : segment;
+      return segment.replace(/^:([^:]+)/, '{$1}').replace(/^\{\{([^}]+)\}\}/, '{$1}');
     });
 
     return `${item.request.method} /${path.join('/')}`;

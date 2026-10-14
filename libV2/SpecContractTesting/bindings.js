@@ -2,7 +2,8 @@
 // and alphabetical tie-breaks, so the same spec always gives the same bindings.
 const _ = require('lodash'),
   { hash } = require('./utils'),
-  { ROLE_RANK, singular } = require('./operations'),
+  { ROLE_RANK } = require('./operations'),
+  { isContainer, normalizeName: normalize, singular, isIdField, normalizeType, isMap, unwrap } = require('./normalize'),
 
   // Ranked by evidence: rules that tie the value to the right resource beat a bare name match.
   RULES = {
@@ -14,19 +15,20 @@ const _ = require('lodash'),
   },
   MIN_SCORE = 60,
 
-  normalize = (name) => { return String(name).toLowerCase().replace(/[^a-z0-9]/g, ''); },
-
   snake = (name) => {
     return String(name).replace(/([a-z0-9])([A-Z])/g, '$1_$2').replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase();
   },
 
   typesMatch = (a, b) => {
-    return (!a.type || !b.type || a.type === b.type) && (!a.format || !b.format || a.format === b.format);
+    const [typeA, typeB] = [normalizeType(a.type), normalizeType(b.type)];
+
+    return (!typeA || !typeB || typeA === typeB) && (!a.format || !b.format || a.format === b.format);
   },
 
   /**
-   * Scalar fields returned by an operation's 2xx responses, as JSON pointers. Arrays contribute
-   * their first item (`/0`); a `{ meta, data }` envelope is unwrapped so `data.id` counts as top level.
+   * Scalar fields returned by an operation's 2xx responses, as JSON pointers. Payload wrappers
+   * (`{ data }`, `{ items }`, HAL `_embedded`) are unwrapped so their fields count as top level;
+   * arrays contribute their first item (`/0`); maps keyed by ids are skipped.
    *
    * @param {Object} op - operation
    * @returns {Object[]} fields: { op, status, pointer, name, type, format, depth }
@@ -35,24 +37,19 @@ const _ = require('lodash'),
     const fields = [];
 
     _.keys(op.responses).sort().filter((code) => { return (/^2/).test(code); }).forEach((status) => {
-      const isContainer = (schema) => {
-          return schema && (schema.type === 'object' || schema.type === 'array' || schema.properties || schema.items);
-        },
-        walk = (schema, pointer, depth) => {
-          if (!schema || depth > 3) { return; }
+      const walk = (schema, pointer, depth) => {
+          if (!schema || depth > 3 || isMap(schema)) { return; }
           if (schema.type === 'array' || schema.items) { return walk(schema.items, `${pointer}/0`, depth + 1); }
 
           _.forEach(schema.properties, (child, name) => {
             if (isContainer(child)) { return walk(child, `${pointer}/${name}`, depth + 1); }
-            fields.push({ op, status, pointer: `${pointer}/${name}`, name, type: _.get(child, 'type'),
+            fields.push({ op, status, pointer: `${pointer}/${name}`, name, type: normalizeType(_.get(child, 'type')),
               format: _.get(child, 'format'), depth: depth + 1 });
           });
         },
-        schema = op.responses[status].schema,
-        envelope = _.get(schema, 'properties.data');
+        payload = unwrap(op.responses[status].schema);
 
-      if (isContainer(envelope)) { walk(envelope, '/data', 0); }
-      else { walk(schema, '', 0); }
+      walk(payload.schema, payload.pointer, 0);
     });
 
     return fields;
@@ -81,14 +78,14 @@ const _ = require('lodash'),
       }).filter(({ param, refType }) => {
         return param.in === 'path' || ((param.in === 'query' || param.in === 'header') && (param.required || refType));
       }).map(({ param, refType }) => {
-        return _.omitBy({ op, in: param.in, name: param.name, type: _.get(param, 'schema.type'),
+        return _.omitBy({ op, in: param.in, name: param.name, type: normalizeType(_.get(param, 'schema.type')),
           format: _.get(param, 'schema.format'), refType }, _.isUndefined);
       }),
       bodyIds = _.keys(_.get(op.requestBodySchema, 'properties')).filter((name) => { return (/id$/i).test(name); })
         .map((name) => {
           const schema = op.requestBodySchema.properties[name];
 
-          return { op, in: 'body', name, path: `/${name}`, type: schema.type, format: schema.format };
+          return { op, in: 'body', name, path: `/${name}`, type: normalizeType(schema.type), format: schema.format };
         });
 
     return params.concat(bodyIds);
@@ -127,7 +124,7 @@ const _ = require('lodash'),
     const producer = field.op,
       name = normalize(consumer.name),
       fieldName = normalize(field.name),
-      isId = fieldName === 'id',
+      isId = isIdField(field.name, producer.resource),
       owner = consumer.in === 'path' ? consumer.op.paramResources[consumer.name] : null,
       ownsParam = owner && producer.resource === owner,
       // `ownerId` names a resource with a create; an `ownerId` field elsewhere is only a reference to it.
@@ -143,7 +140,8 @@ const _ = require('lodash'),
     if (isId && field.depth === 1 && producer.role === 'create' && normalize(`${producer.resource}id`) === name) {
       return 'other-resource-create';
     }
-    if (ownsParam && producer.role === 'list' && isId && field.depth === 2 && (/\/0\/id$/).test(field.pointer)) {
+    if (ownsParam && producer.role === 'list' && isId && field.depth === 2 &&
+        field.pointer.endsWith(`/0/${field.name}`)) {
       return 'same-resource-list';
     }
     // Only identifier-like names: `type`, `name` or `status` fields match by accident.
@@ -209,7 +207,7 @@ const _ = require('lodash'),
       if (!bindings.has(key)) {
         bindings.set(key, {
           id: null,
-          variable: normalize(field.name) === 'id' ? `${snake(field.op.resource)}_id` : snake(field.name),
+          variable: isIdField(field.name, field.op.resource) ? `${snake(field.op.resource)}_id` : snake(field.name),
           producer: { operation: field.op.key, operationId: field.op.operationId, status: field.status,
             value: `$response.body#${field.pointer}` },
           consumers: [],

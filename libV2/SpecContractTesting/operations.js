@@ -1,18 +1,11 @@
 const _ = require('lodash'),
   { flattenItems, itemKey } = require('./utils'),
+  { singular, isCollection, resourceFromParam, splitCustomMethod } = require('./normalize'),
 
   ROLE_RANK = { create: 0, list: 1, read: 2, update: 3, other: 4, delete: 5 },
   PARAM_LOCATIONS = { pathParam: 'path', queryParam: 'query', headers: 'header' },
 
   isParamSegment = (segment) => { return (/^\{.+\}$/).test(segment); },
-
-  singular = (word) => {
-    if ((/ies$/i).test(word)) { return word.replace(/ies$/i, 'y'); }
-    if ((/(ss|us)$/i).test(word)) { return word; }
-    if ((/ses$/i).test(word)) { return word.replace(/es$/i, ''); }
-
-    return word.replace(/s$/i, '');
-  },
 
   // extractedTypes stores schemas and parameter lists as JSON strings.
   parseJson = (text) => {
@@ -27,38 +20,55 @@ const _ = require('lodash'),
    *   POST /pets -> create, GET /pets -> list, GET /pets/{petId} -> read,
    *   PUT|PATCH /pets/{petId} -> update, DELETE /pets/{petId} -> delete
    *
-   * Each path parameter belongs to the resource named by the segment before it:
-   * /specifications/{id}/files/{fileId} -> { id: 'specification', fileId: 'file' }
+   * Each path parameter belongs to the resource named by the segment before it
+   * (/specifications/{id}/files/{fileId} -> { id: 'specification', fileId: 'file' }), or by its own
+   * name in a composite key (/repos/{owner}/{repo} -> { owner: 'owner', repo: 'repo' }).
+   *
+   * A trailing segment that is not a plural noun after an item or collection (/orders/{id}/cancel,
+   * /users/{id}/avatar, /users/search), or a custom method (/orders/{id}:cancel), is an action or
+   * singleton of the resource before it, with role `other`.
    *
    * @param {String} method - upper-case HTTP method
    * @param {String} path - path template
    * @returns {Object} resource, role, idParam, paramResources and collectionPath
    */
   classify = (method, path) => {
-    const segments = path.split('/').filter(Boolean),
+    const raw = path.split('/').filter(Boolean),
+      { segment: lastRaw, action } = splitCustomMethod(_.last(raw) || ''),
+      segments = raw.slice(0, -1).concat(lastRaw ? [lastRaw] : []),
       last = _.last(segments) || '',
-      isItem = isParamSegment(last),
+      previous = segments[segments.length - 2],
+      isTrailingAction = Boolean(previous) && !isParamSegment(last) && !isCollection(last) &&
+        (isParamSegment(previous) || isCollection(previous)),
+      owner = isTrailingAction ? segments.slice(0, -1) : segments,
+      isItem = isParamSegment(_.last(owner) || ''),
       paramResources = {};
     let role = 'other';
 
     segments.forEach((segment, index) => {
-      if (isParamSegment(segment) && index > 0 && !isParamSegment(segments[index - 1])) {
-        paramResources[segment.slice(1, -1)] = singular(segments[index - 1]);
+      const before = segments[index - 1],
+        after = segments[index + 1],
+        isComposite = !before || isParamSegment(before) || (after && isParamSegment(after));
+
+      if (isParamSegment(segment)) {
+        paramResources[segment.slice(1, -1)] = isComposite ? resourceFromParam(segment.slice(1, -1)) : singular(before);
       }
     });
 
-    if (!isItem && method === 'POST') { role = 'create'; }
-    else if (!isItem && method === 'GET') { role = 'list'; }
-    else if (isItem && method === 'GET') { role = 'read'; }
-    else if (isItem && (method === 'PUT' || method === 'PATCH')) { role = 'update'; }
-    else if (isItem && method === 'DELETE') { role = 'delete'; }
+    if (!action && !isTrailingAction) {
+      if (!isItem && method === 'POST') { role = 'create'; }
+      else if (!isItem && method === 'GET') { role = 'list'; }
+      else if (isItem && method === 'GET') { role = 'read'; }
+      else if (isItem && (method === 'PUT' || method === 'PATCH')) { role = 'update'; }
+      else if (isItem && method === 'DELETE') { role = 'delete'; }
+    }
 
     return {
-      resource: singular(_.last(segments.filter((segment) => { return !isParamSegment(segment); })) || 'root'),
+      resource: singular(_.last(owner.filter((segment) => { return !isParamSegment(segment); })) || 'root'),
       role,
-      idParam: isItem ? last.slice(1, -1) : null,
+      idParam: isItem ? _.last(owner).slice(1, -1) : null,
       paramResources,
-      collectionPath: isItem ? `/${segments.slice(0, -1).join('/')}` : path
+      collectionPath: `/${(isItem ? owner.slice(0, -1) : owner).join('/')}`
     };
   },
 

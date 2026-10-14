@@ -26,9 +26,15 @@ const _ = require('lodash'),
       placeholder = `__CT_VAR__${variable}__`;
 
     if (param.in === 'path') {
-      const entry = _.find(request.url.variable, { key: param.name });
+      const entry = _.find(request.url.variable, { key: param.name }),
+        inline = `{{${param.name}}}`;
 
       if (entry) { entry.value = value; }
+      else {
+        // Written inline as `{{petId}}` (before a custom method such as `:verify`).
+        request.url.path = _.map(request.url.path, (segment) => { return segment.split(inline).join(value); });
+        if (typeof request.url.raw === 'string') { request.url.raw = request.url.raw.split(inline).join(value); }
+      }
     }
     else if (param.in === 'query' || param.in === 'header') {
       const list = param.in === 'query' ? (request.url.query = request.url.query || []) :
@@ -108,13 +114,13 @@ const _ = require('lodash'),
           _.get(_.find(op.params, { in: param.in, name: param.name }), 'schema.type');
       },
 
-      // A write whose path ids aren't all linked would hit the spec's example ids, which on a
-      // shared environment can be someone else's data.
-      isUnsafeWrite = (op) => {
+      // A request whose path ids aren't all linked would use the spec's example ids: on a shared
+      // environment a write could hit someone else's data, and a read tests nothing.
+      hasUnlinkedPathId = (op) => {
         const linked = usesOf(op).filter(({ param }) => { return param.in === 'path'; })
           .map(({ param }) => { return param.name; });
 
-        return op.method !== 'GET' && op.params.some((p) => { return p.in === 'path' && !linked.includes(p.name); });
+        return op.params.some((p) => { return p.in === 'path' && !linked.includes(p.name); });
       },
 
       savesFor = (op) => {
@@ -127,7 +133,7 @@ const _ = require('lodash'),
 
       // Numbered only once included, so skipped requests leave no gaps.
       copy = (op, stepId, label) => {
-        if (isUnsafeWrite(op)) {
+        if (hasUnlinkedPathId(op)) {
           if (!skipped.includes(op.key)) { skipped.push(op.key); }
 
           return null;
@@ -170,40 +176,47 @@ const _ = require('lodash'),
           .filter((e) => { return e.script.exec.length; });
 
         return item;
-      };
+      },
 
-    _.flatten(_.values(flows)).forEach((stepId) => {
-      const [operationId, variant] = stepId.split(':'),
-        op = opsById[operationId],
-        expect404 = variant === 'expect-404',
-        item = op && copy(op, stepId, `${op.method} ${op.path}${expect404 ? ' (expect 404)' : ''}`);
+      flowStep = (stepId) => {
+        const [operationId, variant] = stepId.split(':'),
+          op = opsById[operationId],
+          expect404 = variant === 'expect-404',
+          item = op && copy(op, stepId, `${op.method} ${op.path}${expect404 ? ' (expect 404)' : ''}`);
 
-      if (!item) { return; }
+        if (!item) { return; }
 
-      const needs = wire(item, op, (binding, param) => {
-          return expect404 && isIdParam(op, param) ? `deleted_${variableOf(binding)}` : variableOf(binding);
-        }),
-        deletedIds = usesOf(op).filter(({ param }) => { return isIdParam(op, param); })
-          .map(({ binding }) => { return binding.variable; });
+        const needs = wire(item, op, (binding, param) => {
+            return expect404 && isIdParam(op, param) ? `deleted_${variableOf(binding)}` : variableOf(binding);
+          }),
+          deletedIds = usesOf(op).filter(({ param }) => { return isIdParam(op, param); })
+            .map(({ binding }) => { return binding.variable; });
 
-      requests.push(withEvents(item, scripts.guard(needs), testExec(item).concat(
-        scripts.save(expect404 ? [] : savesFor(op)),
-        op.role === 'delete' ? scripts.markDeleted(deletedIds) : [],
-        expect404 ? scripts.expectGone : []
-      )));
+        requests.push(withEvents(item, scripts.guard(needs), testExec(item).concat(
+          scripts.save(expect404 ? [] : savesFor(op)),
+          op.role === 'delete' ? scripts.markDeleted(deletedIds) : [],
+          expect404 ? scripts.expectGone : []
+        )));
+      },
+      // Alphabetical, like the flows, so the negative checks don't depend on spec order either.
+      sortedOperations = operations.slice().sort((a, b) => { return a.key.localeCompare(b.key); });
+
+    _.flatten(_.values(_.omit(flows, 'teardown'))).forEach(flowStep);
+
+    // No-token checks run while the resources still exist, with the real ids, so a rejection can
+    // only be about the missing token.
+    sortedOperations.filter((op) => { return op.method === 'GET' && isSecured(op); }).forEach((op) => {
+      const item = copy(op, `${op.operationId}:no-auth`, `${op.method} ${op.path} without a token`);
+
+      if (item) {
+        item.request.auth = { type: 'noauth' };
+        requests.push(withEvents(item, scripts.guard(wire(item, op, variableOf)), scripts.expectNoTokenRejected));
+      }
     });
 
-    // Alphabetical, like the flows, so the negative checks don't depend on spec order either.
-    operations.slice().sort((a, b) => { return a.key.localeCompare(b.key); }).forEach((op) => {
-      if (isSecured(op) && (op.role === 'read' || op.role === 'list')) {
-        const item = copy(op, `${op.operationId}:no-auth`, `${op.method} ${op.path} without a token`);
+    _.forEach(flows.teardown, flowStep);
 
-        if (item) {
-          item.request.auth = { type: 'noauth' };
-          requests.push(withEvents(item, [], scripts.expectNoTokenRejected));
-        }
-      }
-
+    sortedOperations.forEach((op) => {
       if (op.role === 'create') {
         _.get(op.requestBodySchema, 'required', []).forEach((field) => {
           const item = copy(op, `${op.operationId}:missing-${field}`, `${op.method} ${op.path} without "${field}"`);
@@ -233,7 +246,8 @@ const _ = require('lodash'),
    * @param {Object} options.flows - run order from buildFlows
    * @param {String} options.seed - seed for stable ids (the spec hash)
    * @param {Object} [options.authHeader] - { name, variable }: send this header on every request
-   * @returns {Object} { collection, skipped }: skipped lists writes left out for safety
+   * @returns {Object} { collection, skipped }: skipped lists requests left out because a path id
+   *   couldn't be linked
    */
   buildCollection = ({ collection, operations, bindings, flows, seed, authHeader }) => {
     if (authHeader) {
