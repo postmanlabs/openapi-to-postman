@@ -1,6 +1,5 @@
 const generateAuthForCollectionFromOpenAPI = require('./helpers/collection/generateAuthForCollectionFromOpenAPI.js');
 const utils = require('./utils.js');
-const { Url } = require('postman-collection/lib/collection/url');
 
 const schemaFaker = require('../../assets/json-schema-faker.js'),
   _ = require('lodash'),
@@ -285,26 +284,33 @@ let QUERYPARAM = 'query',
     };
   },
 
-  resolveBaseUrlForPostmanRequest = (operationItem) => {
-    let serverObj = _.get(operationItem, 'servers.0'),
+  resolveBaseUrlForPostmanRequest = (operation, pathItem, context) => {
+    let servers = _.get(operation, 'servers'),
+      serverObj,
+      varName = 'baseUrl',
       baseUrl = '{{baseUrl}}',
-      serverVariables = [],
       pathVariables = [],
       collectionVariables = [];
+
+    if (_.isEmpty(servers)) {
+      servers = _.get(pathItem, 'servers');
+    }
+
+    serverObj = _.get(servers, '0');
 
     if (!serverObj) {
       return { collectionVariables, pathVariables, baseUrl, serverObj };
     }
 
-    baseUrl = sanitizeUrl(serverObj.url);
+    varName = _.get(context, ['openapi', 'serverUrlToVariable', serverObj.url]) || 'baseUrl';
+    baseUrl = `{{${varName}}}`;
+
     _.forOwn(serverObj.variables, (value, key) => {
-      serverVariables.push({
+      collectionVariables.push({
         key,
         value: _.get(value, 'default') || ''
       });
     });
-
-    ({ collectionVariables, pathVariables } = filterCollectionAndPathVariables(baseUrl, serverVariables));
 
     return { collectionVariables, pathVariables, baseUrl, serverObj };
   },
@@ -3521,7 +3527,7 @@ module.exports = {
       } : pathItem;
 
     let url = resolveUrlForPostmanRequest(path),
-      baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[operationKey]),
+      baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[operationKey], operationItem, context),
       requestName = resolveNameForPostmanReqeust(context, operationItem[operationKey], url),
       { queryParamTypes, queryParams } = resolveQueryParamsForPostmanRequest(context, operationItem, operationKey),
       { headerTypes, headers } = resolveHeadersForPostmanRequest(context, operationItem, operationKey),
@@ -3599,9 +3605,7 @@ module.exports = {
         resolveForKey: resolveParamsForExampleKey
       });
 
-    const overridesServer = Boolean(baseUrlData.serverObj);
-
-    requestIdentifier = overridesServer ? method + new Url(url).getPath(true) : method + path;
+    requestIdentifier = method + path;
     Object.assign(requestTypesObject,
       { [requestIdentifier]: { request: requestTypes, response: responseTypes } });
 
