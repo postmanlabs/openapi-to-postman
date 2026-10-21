@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Fixed an issue where response headers defined via `$ref` were converted with an empty value, no description and no extracted type.
+-   Fixed out of memory and timeout when generating a collection from a heavily referenced spec.
+
 ## [v6.4.0] - 2026-10-07
 
 ### Added
