@@ -204,4 +204,33 @@ describe('syncCollection', function () {
       }).value
     ).to.equal('{{passVarReq}}');
   });
+
+  it('should add, update, and drop baseUrl* collection variables on sync', function () {
+    const latest = new Collection({
+        item: [],
+        variable: [
+          { key: 'baseUrl', value: 'https://api.example.com' },
+          { key: 'baseUrl1', value: 'https://staging.example.com' }
+        ]
+      }),
+      current = new Collection({
+        item: [],
+        variable: [
+          { key: 'baseUrl', value: 'https://old.example.com' },
+          { key: 'baseUrl2', value: 'https://gone.example.com' },
+          { key: 'keepMe', value: 'user-value' }
+        ]
+      }),
+      synced = syncCollection(latest, current);
+
+    expect(
+      synced.variables.all().map((variable) => {
+        return { key: variable.key, value: variable.value };
+      })
+    ).to.deep.equal([
+      { key: 'baseUrl', value: 'https://api.example.com' },
+      { key: 'keepMe', value: 'user-value' },
+      { key: 'baseUrl1', value: 'https://staging.example.com' }
+    ]);
+  });
 });

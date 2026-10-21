@@ -2,3 +2,5 @@
 export * from './shared';
 
 export { syncCollection } from './spec-to-collection';
+
+export { syncCollectionServerVariables } from './servers';
