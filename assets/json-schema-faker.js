@@ -1407,7 +1407,35 @@ var _ = require('lodash'),
   };
   });
 
+  /**
+   * CHANGE (perf): key under which `copy` stashes its source-object -> copied-object map on the
+   * `_` accumulator it already threads through the whole walk. A Symbol cannot collide with the
+   * `$ref` strings `_` is otherwise keyed by.
+   */
+  var SHARED_COPIES = typeof Symbol === 'function' ? Symbol('jsf.sharedCopies') : '__jsfSharedCopies';
+
   function copy(_, obj, refs, parent, resolve, callback) {
+    /**
+     * CHANGE (perf): `copy` used to allocate a brand new object for every *occurrence* of a
+     * sub-schema, which expands a structure-shared schema graph into a full tree before
+     * generation ever starts -- for AWS QuickSight's `Visual`, 1,588 distinct objects became
+     * 44,477. Reusing the copy we already made for a given source object keeps the graph shared.
+     *
+     * Objects carrying a `$ref` are deliberately excluded: that branch mutates `obj` in place
+     * (`deepExtend` then `delete obj.$ref`) and is guarded by the `_[id]` bookkeeping below, so
+     * it is left byte-for-byte as it was.
+     */
+    var shared = _[SHARED_COPIES];
+    var canShare = shared !== undefined && typeof obj.$ref !== 'string';
+
+    if (canShare) {
+      var reused = shared.get(obj);
+
+      if (reused !== undefined) {
+        return reused;
+      }
+    }
+
     var target =  Array.isArray(obj) ? [] : {};
 
     if (typeof obj.$ref === 'string') {
@@ -1439,6 +1467,15 @@ var _ = require('lodash'),
       }
     }
 
+    /**
+     * CHANGE (perf): recorded only once the copy is complete, so a source object that is
+     * re-entered while still being copied (i.e. a genuine cycle) behaves exactly as before
+     * rather than yielding a half-built object.
+     */
+    if (canShare) {
+      shared.set(obj, target);
+    }
+
     return target;
   }
 
@@ -1446,12 +1483,29 @@ var _ = require('lodash'),
     var fixedId = helpers.resolveURL(obj.$schema, obj.id),
         parent = helpers.getDocumentURI(fixedId);
 
-    return copy({}, obj, refs, parent, resolve, callback);
+    /**
+     * CHANGE (perf, opt-in): the accumulator `copy` already threads through the whole walk also
+     * carries the source -> copy map when sub-schema sharing is enabled, so `copy` needs one
+     * property read rather than an option lookup per node.
+     */
+    var seed = {};
+
+    if (optionAPI('reuseIdenticalSubSchemas')) {
+      seed[SHARED_COPIES] = new Map();
+    }
+
+    return copy(seed, obj, refs, parent, resolve, callback);
   };
 
   var cloneObj = createCommonjsModule(function (module) {
 
-  var clone = module.exports = function(obj, seen) {
+  /**
+   * CHANGE (perf, opt-in): `shared`, when supplied, is a source-object -> clone map that makes
+   * this clone structure-preserving instead of tree-expanding. `seen` (the ancestor path) still
+   * does all the cycle detection: `shared` is only written once a node's clone is complete, so
+   * re-entering a node that is still in progress -- a real cycle -- still hits the throw below.
+   */
+  var clone = module.exports = function(obj, seen, shared) {
     seen = seen || [];
 
     if (seen.indexOf(obj) > -1) {
@@ -1462,12 +1516,20 @@ var _ = require('lodash'),
       return obj;
     }
 
+    if (shared !== undefined) {
+      var reused = shared.get(obj);
+
+      if (reused !== undefined) {
+        return reused;
+      }
+    }
+
     seen = seen.concat([obj]);
 
     var target = Array.isArray(obj) ? [] : {};
 
     function copy(key, value) {
-      target[key] = clone(value, seen);
+      target[key] = clone(value, seen, shared);
     }
 
     if (Array.isArray(target)) {
@@ -1478,6 +1540,10 @@ var _ = require('lodash'),
       Object.keys(obj).forEach(function(key) {
         copy(key, obj[key]);
       });
+    }
+
+    if (shared !== undefined) {
+      shared.set(obj, target);
     }
 
     return target;
@@ -1527,7 +1593,12 @@ var _ = require('lodash'),
     }
 
     var base = fakeroot || '',
-        copy = cloneObj(schema);
+        /**
+         * CHANGE (perf, opt-in): this is the FIRST of the two clone stages that ran before
+         * generation, and the one that originally flattened the shared schema graph into a tree.
+         */
+        copy = cloneObj(schema, undefined,
+          optionAPI('reuseIdenticalSubSchemas') ? new Map() : undefined);
 
     if (copy.$schema && SCHEMA_URI.indexOf(copy.$schema) === -1) {
       throw new Error('Unsupported schema version (v4 only)');
@@ -23467,7 +23538,14 @@ function extend() {
           var length = keys.length;
           var context = {};
           while (length--) {
-              var fn = keys[length].replace(/^x-/, '');
+              /**
+               * CHANGE (perf): this runs for every key of every schema node, only to probe the
+               * 4-entry `this.support` map. `String.prototype.replace` with a regex is by far the
+               * most expensive thing here, so only pay for it when the key really is `x-`-prefixed.
+               * 120 === 'x', 45 === '-'. Semantically identical to `.replace(/^x-/, '')`.
+               */
+              var _k = keys[length];
+              var fn = (_k.charCodeAt(0) === 120 && _k.charCodeAt(1) === 45) ? _k.slice(2) : _k;
 
               /**
                * CHANGE: This Makes sure that we're not using Object's prototype properties,
@@ -23483,6 +23561,16 @@ function extend() {
                       enumerable: false,
                       writable: false,
                       value: function (rootSchema) { return gen.call(context, schema[keys[length]], schema, keys[length], rootSchema); },
+                  });
+                  /**
+                   * CHANGE: record which keyword supplied `generate`, since it is the only thing
+                   * telling sub-schema value reuse whether that generator repeats.
+                   */
+                  Object.defineProperty(schema, 'generateKeyword', {
+                      configurable: false,
+                      enumerable: false,
+                      writable: false,
+                      value: fn,
                   });
                   break;
               }
@@ -23591,6 +23679,13 @@ function extend() {
               data['resolveJsonPath'] = false;
               data['reuseProperties'] = false;
               data['fillProperties'] = true;
+              /**
+               * CHANGE (perf, opt-in): when true, a sub-schema that is reached more than once
+               * during a single fake is generated once and its value reused for every later
+               * occurrence. This is a deliberate OUTPUT change -- repeated identical sub-schemas
+               * stop getting independently random values -- so it is off by default.
+               */
+              data['reuseIdenticalSubSchemas'] = false;
               data['random'] = Math.random;
               return data;
           },
@@ -24156,10 +24251,28 @@ function extend() {
       // so that value.items.map becomes recognized for typescript compiler
       var tmpItems = value.items;
       if (tmpItems instanceof Array) {
-          return Array.prototype.concat.call(items, tmpItems.map(function (item, key) {
-              var itemSubpath = path.concat(['items', key + '']);
-              return traverseCallback(item, itemSubpath, resolve, null, seenSchemaCache);
-          }));
+          /**
+           * CHANGE (correctness): a tuple can list the same schema object in several positions,
+           * which reuse would give one identical value, breaking `uniqueItems`. Suspend reuse
+           * here as the non-tuple branch below does.
+           */
+          var suspendTupleReuse = reuseValueCache !== null && Boolean(value.uniqueItems);
+
+          if (suspendTupleReuse) {
+              reuseValueSuspendDepth++;
+          }
+
+          try {
+              return Array.prototype.concat.call(items, tmpItems.map(function (item, key) {
+                  var itemSubpath = path.concat(['items', key + '']);
+                  return traverseCallback(item, itemSubpath, resolve, null, seenSchemaCache);
+              }));
+          }
+          finally {
+              if (suspendTupleReuse) {
+                  reuseValueSuspendDepth--;
+              }
+          }
       }
       var minItems = value.minItems;
       var maxItems = value.maxItems;
@@ -24204,22 +24317,41 @@ function extend() {
           : random.number(minItems, maxItems, 1, 5),
       // TODO below looks bad. Should additionalItems be copied as-is?
       sample = typeof value.additionalItems === 'object' ? value.additionalItems : {};
-      for (var current = items.length; current < length; current++) {
-          var itemSubpath = path.concat(['items', current + '']);
-          var element = traverseCallback(value.items || sample, itemSubpath, resolve, null, seenSchemaCache);
-          items.push(element);
+      /**
+       * CHANGE (perf, opt-in): every element of this array is generated from the SAME `items`
+       * schema object, so sub-schema value reuse would make them all identical -- and `unique`
+       * below would then collapse the array down to a single element, breaking `minItems`.
+       * Reuse is therefore suspended for the whole subtree of a `uniqueItems` array.
+       */
+      var suspendReuse = reuseValueCache !== null && Boolean(value.uniqueItems);
+
+      if (suspendReuse) {
+          reuseValueSuspendDepth++;
       }
 
-      /**
-       * Below condition puts more computation load to check unique data across multiple items by
-       * traversing through all data and making sure it's unique.
-       * As such only apply unique constraint when parameter resolution is set to "example".
-       * As in other case, i.e. "schema", generated value for will be same anyways.
-       */
-      if (value.uniqueItems && optionAPI('useExamplesValue')) {
-          return unique(path.concat(['items']), items, value, sample, resolve, traverseCallback, seenSchemaCache);
+      try {
+          for (var current = items.length; current < length; current++) {
+              var itemSubpath = path.concat(['items', current + '']);
+              var element = traverseCallback(value.items || sample, itemSubpath, resolve, null, seenSchemaCache);
+              items.push(element);
+          }
+
+          /**
+           * Below condition puts more computation load to check unique data across multiple items by
+           * traversing through all data and making sure it's unique.
+           * As such only apply unique constraint when parameter resolution is set to "example".
+           * As in other case, i.e. "schema", generated value for will be same anyways.
+           */
+          if (value.uniqueItems && optionAPI('useExamplesValue')) {
+              return unique(path.concat(['items']), items, value, sample, resolve, traverseCallback, seenSchemaCache);
+          }
+          return items;
       }
-      return items;
+      finally {
+          if (suspendReuse) {
+              reuseValueSuspendDepth--;
+          }
+      }
   };
 
   var numberType = function numberType(value) {
@@ -24724,11 +24856,73 @@ function extend() {
   };
 
   // TODO provide types
+  /**
+   * CHANGE (perf, opt-in): set by `run()` for the duration of one fake when the
+   * `reuseIdenticalSubSchemas` option is on. Maps an already-reduced schema node to the value
+   * generated for it, so a node reached N times is generated once. `run()` is synchronous and
+   * never re-entered, so a module-scoped handle is sufficient.
+   */
+  var reuseValueCache = null;
+
+  /**
+   * CHANGE (perf, opt-in): non-zero while generating a subtree whose values must stay distinct
+   * from one another (the elements of a `uniqueItems` array), during which reuse is suspended.
+   */
+  var reuseValueSuspendDepth = 0;
+
+  /**
+   * CHANGE (correctness): calls to generators that return a new value each time, such as
+   * `x-autoIncrement` and `x-sequentialDate`. The reuse cache compares this before and after
+   * building a value to decide whether that value can be repeated.
+   */
+  var statefulGeneratorCalls = 0;
+
   function traverse(schema, path, resolve, rootSchema, seenSchemaCache) {
       schema = resolve(schema);
       if (!schema) {
         return;
       }
+
+      if (reuseValueCache !== null && reuseValueSuspendDepth === 0 && typeof schema === 'object') {
+          /**
+           * Reuse needs a node whose value depends on the node alone: a known `type` (without
+           * one, `traverse` also uses `path`, and `oneOf`/`anyOf` must pick a branch per
+           * occurrence), and no custom-keyword generator except `pattern` -- `autoIncrement`
+           * and `sequentialDate` return a new value each call, `jsonPath` edits its node, and a
+           * `jsf.extend` keyword could do either.
+           */
+          var generateKeyword = typeof schema.generate === 'function' ? schema.generateKeyword : null;
+
+          var canReuseValue = typeof schema.type === 'string' &&
+              typeof typeMap[schema.type] !== 'undefined' &&
+              (generateKeyword === null || generateKeyword === 'pattern') &&
+              typeof schema.thunk !== 'function';
+
+          if (canReuseValue) {
+              if (reuseValueCache.has(schema)) {
+                  return reuseValueCache.get(schema);
+              }
+
+              /**
+               * The node can be safe to reuse while a descendant is not, as with a shared object
+               * whose child carries `x-autoIncrement`. Keep the value only if none ran.
+               */
+              var callsBeforeBuild = statefulGeneratorCalls;
+
+              var produced = traverseResolved(schema, path, resolve, rootSchema, seenSchemaCache);
+
+              if (statefulGeneratorCalls === callsBeforeBuild) {
+                  reuseValueCache.set(schema, produced);
+              }
+
+              return produced;
+          }
+      }
+
+      return traverseResolved(schema, path, resolve, rootSchema, seenSchemaCache);
+  }
+
+  function traverseResolved(schema, path, resolve, rootSchema, seenSchemaCache) {
       if (optionAPI('useExamplesValue') && 'example' in schema) {
         var clonedSchema,
           result,
@@ -24781,6 +24975,14 @@ function extend() {
           return traverse(schema.thunk(), path, resolve, null, seenSchemaCache);
       }
       if (typeof schema.generate === 'function') {
+          /**
+           * CHANGE: `pattern` is a repeatable random draw; every other keyword generator either
+           * returns a new value each call or edits its node, so count it.
+           */
+          if (schema.generateKeyword !== 'pattern') {
+              statefulGeneratorCalls++;
+          }
+
           return utils.typecast(schema, function () { return schema.generate(rootSchema); });
       }
       // TODO remove the ugly overcome
@@ -24909,14 +25111,51 @@ function extend() {
   }
   // TODO provide types
   function run(refs, schema, container, seenSchemaCache) {
+      /**
+       * CHANGE (perf, opt-in): see `reuseValueCache` above. Scoped to this one fake and always
+       * torn down, so nothing leaks between calls.
+       */
+      var previousReuseValueCache = reuseValueCache;
+      var previousStatefulGeneratorCalls = statefulGeneratorCalls;
+
+      reuseValueCache = optionAPI('reuseIdenticalSubSchemas') ? new Map() : null;
+      reuseValueSuspendDepth = 0;
+      statefulGeneratorCalls = 0;
+
       try {
-          var result = traverse(schema, [], function reduce(sub, maxReduceDepth) {
+          /**
+           * CHANGE (perf): `reduce` recursively rewrites a schema node *and its whole subtree*,
+           * and `traverse` calls it again at every node it descends into. Because `_resolveSchema`
+           * hands back a structure-shared DAG (see `context.schemaCache`) while `traverse` walks it
+           * as a tree, the same object is reduced over and over -- for AWS QuickSight's `Visual`
+           * schema, 1,588 unique objects are visited as 44,477 tree nodes.
+           *
+           * `reduce` is idempotent on an already-reduced node (`$ref`/`allOf`/`oneOf`/`anyOf` have
+           * been stripped, and `container.wrap` re-entry is short-circuited by the
+           * `typeof sub.generate === 'function'` guard), and `maxReduceDepth` is threaded through
+           * but never compared against anything, so it cannot affect the result. Memoising the
+           * returned value per input object for the duration of one `run()` is therefore safe.
+           */
+          var reduceCache = new WeakMap();
+          function reduce(sub, maxReduceDepth) {
               if (typeof maxReduceDepth === 'undefined') {
                   maxReduceDepth = random.number(1, 3);
               }
               if (!sub) {
                   return null;
               }
+              if (typeof sub !== 'object') {
+                  return reduceNode(sub, maxReduceDepth);
+              }
+              var cached = reduceCache.get(sub);
+              if (cached !== undefined) {
+                  return cached;
+              }
+              var reduced = reduceNode(sub, maxReduceDepth);
+              reduceCache.set(sub, reduced);
+              return reduced;
+          }
+          function reduceNode(sub, maxReduceDepth) {
               if (typeof sub.generate === 'function') {
                   return sub;
               }
@@ -24971,13 +25210,24 @@ function extend() {
                       },
                   };
               }
-              for (var prop in sub) {
-                  if ((Array.isArray(sub[prop]) || typeof sub[prop] === 'object') && !utils.isKey(prop)) {
-                      sub[prop] = reduce(sub[prop], maxReduceDepth);
+              /**
+               * CHANGE (perf): `for..in` is markedly slower than a cached `Object.keys` loop on the
+               * megamorphic schema objects seen here, and it re-reads `sub[prop]` three times.
+               * `typeof null === 'object'`, so the original passed `null` values to `reduce`, which
+               * returned `null` straight back -- skipping them is equivalent. `Array.isArray(x)`
+               * implies `typeof x === 'object'`, so that half of the test was already redundant.
+               */
+              var subKeys = Object.keys(sub);
+              for (var i = 0, len = subKeys.length; i < len; i++) {
+                  var prop = subKeys[i];
+                  var value = sub[prop];
+                  if (value !== null && typeof value === 'object' && !utils.isKey(prop)) {
+                      sub[prop] = reduce(value, maxReduceDepth);
                   }
               }
               return container.wrap(sub);
-          }, null, seenSchemaCache);
+          }
+          var result = traverse(schema, [], reduce, null, seenSchemaCache);
           if (optionAPI('resolveJsonPath')) {
               return resolve(result);
           }
@@ -24990,6 +25240,10 @@ function extend() {
           else {
               throw e;
           }
+      }
+      finally {
+          reuseValueCache = previousReuseValueCache;
+          statefulGeneratorCalls = previousStatefulGeneratorCalls;
       }
   }
 

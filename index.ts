@@ -18,6 +18,7 @@ export type {
   SyncOptions,
   Callback,
   CollectionResult,
+  ConversionIssue,
   BundleResult,
   FilesResult,
   ValidationResult

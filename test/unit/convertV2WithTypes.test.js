@@ -487,7 +487,7 @@ describe('convertV2WithTypes', function() {
             },
             'default': {
               'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer",\n      "format": "int32"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
-              'headers': '[]'
+              'headers': '[\n  {\n    "keyName": "X-Rate-Limit-Limit",\n    "properties": {\n      "type": "integer",\n      "default": "<integer>"\n    }\n  }\n]'
             }
           }
         },
