@@ -3175,6 +3175,10 @@ let QUERYPARAM = 'query',
     }
 
     _.forOwn(responseHeaders, (value, headerName) => {
+      if (_.has(value, '$ref')) {
+        value = resolveSchema(context, value, { isResponseSchema: true });
+      }
+
       if (!_.isObject(value)) {
         return;
       }

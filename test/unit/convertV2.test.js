@@ -420,6 +420,54 @@ describe('The convert v2 Function', function() {
     });
   });
 
+  describe('convertor should resolve response headers defined via $ref', function() {
+    const openapi = `
+openapi: 3.0.3
+info:
+  title: Response header $ref
+  version: 1.0.0
+paths:
+  /transactions:
+    post:
+      responses:
+        '201':
+          description: Transaction created
+          headers:
+            X-Inline-Header:
+              schema:
+                type: boolean
+              example: false
+            X-Ref-Header:
+              $ref: '#/components/headers/RefHeader'
+components:
+  headers:
+    RefHeader:
+      description: Header defined via $ref
+      schema:
+        type: boolean
+      example: false
+`;
+
+    [
+      { parametersResolution: 'Schema', expectedValue: '<boolean>' },
+      { parametersResolution: 'Example', expectedValue: 'false' }
+    ].forEach(({ parametersResolution, expectedValue }) => {
+      it(`with parametersResolution: ${parametersResolution}`, function(done) {
+        Converter.convertV2({ type: 'string', data: openapi }, { parametersResolution }, (err, conversionResult) => {
+          expect(err).to.be.null;
+          const headers = conversionResult.output[0].data.item[0].item[0].response[0].header,
+            inlineHeader = _.find(headers, { key: 'X-Inline-Header' }),
+            refHeader = _.find(headers, { key: 'X-Ref-Header' });
+
+          expect(inlineHeader.value).to.equal(expectedValue);
+          expect(refHeader.value).to.equal(expectedValue);
+          expect(refHeader.description.content).to.equal('Header defined via $ref');
+          done();
+        });
+      });
+    });
+  });
+
   it('convertor should maintain implicit headers in the request' +
   implicitHeadersSpec, function(done) {
     var openapi = fs.readFileSync(implicitHeadersSpec, 'utf8');
