@@ -420,6 +420,68 @@ describe('The convert v2 Function', function() {
     });
   });
 
+  describe('convertor should resolve response headers defined via $ref', function() {
+    const getSpec = (version) => {
+      return {
+        openapi: version,
+        info: { title: 'Response header $ref', version: '1.0.0' },
+        paths: {
+          '/transactions': {
+            post: {
+              responses: {
+                201: {
+                  description: 'Transaction created',
+                  headers: {
+                    'X-Inline-Header': { schema: { type: 'boolean' }, example: false },
+                    'X-Ref-Header': { $ref: '#/components/headers/RefHeader' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        components: {
+          headers: {
+            RefHeader: {
+              description: 'Header defined via $ref',
+              schema: { type: 'boolean' },
+              example: false
+            }
+          }
+        }
+      };
+    };
+
+    ['3.0.3', '3.1.0'].forEach((version) => {
+      [
+        { parametersResolution: 'Schema', expectedValue: '<boolean>' },
+        { parametersResolution: 'Example', expectedValue: 'false' }
+      ].forEach(({ parametersResolution, expectedValue }) => {
+        it(`for OpenAPI ${version} with parametersResolution: ${parametersResolution}`, function(done) {
+          Converter.convertV2WithTypes({ type: 'json', data: getSpec(version) }, { parametersResolution },
+            (err, conversionResult) => {
+              expect(err).to.be.null;
+              const headers = conversionResult.output[0].data.item[0].item[0].response[0].header,
+                inlineHeader = _.find(headers, { key: 'X-Inline-Header' }),
+                refHeader = _.find(headers, { key: 'X-Ref-Header' }),
+                headerTypes = JSON.parse(conversionResult.extractedTypes['post/transactions'].response['201'].headers),
+                refHeaderType = _.find(headerTypes, { keyName: 'X-Ref-Header' });
+
+              expect(inlineHeader).to.exist;
+              expect(refHeader).to.exist;
+              expect(inlineHeader.value).to.equal(expectedValue);
+              expect(refHeader.value).to.equal(expectedValue);
+              expect(refHeader.description.content).to.equal('Header defined via $ref');
+
+              expect(refHeaderType).to.exist;
+              expect(refHeaderType.properties.type).to.equal('boolean');
+              done();
+            });
+        });
+      });
+    });
+  });
+
   it('convertor should maintain implicit headers in the request' +
   implicitHeadersSpec, function(done) {
     var openapi = fs.readFileSync(implicitHeadersSpec, 'utf8');
