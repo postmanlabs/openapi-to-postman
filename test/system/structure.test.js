@@ -9,6 +9,7 @@ const optionIds = [
     'exampleParametersResolution',
     'folderStrategy',
     'nestedFolderHierarchy',
+    'generateContractTests',
     'indentCharacter',
     'requestNameSource',
     'schemaFaker',
@@ -68,6 +69,13 @@ const optionIds = [
       default: 'Paths',
       availableOptions: ['Paths', 'Tags'],
       description: 'Select whether to create folders according to the spec’s paths or tags.'
+    },
+    generateContractTests: {
+      name: 'Generate contract tests',
+      type: 'boolean',
+      default: false,
+      description: 'Enable this option to add a contract test to each request that asserts the response ' +
+        'status code is declared in the specification and the response body matches the declared response schema.'
     },
     tagsFolderHierarchy: {
       name: 'Nested folder organization using tags',
