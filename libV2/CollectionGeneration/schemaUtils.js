@@ -296,7 +296,9 @@ let QUERYPARAM = 'query',
       return { collectionVariables, pathVariables, baseUrl, serverObj };
     }
 
-    baseUrl = sanitizeUrl(serverObj.url);
+    // The request path always starts with `/`, so a trailing slash on the server URL would produce
+    // `//` in the request URL (and in the extracted-type key derived from it).
+    baseUrl = sanitizeUrl(serverObj.url).replace(/\/+$/, '');
     _.forOwn(serverObj.variables, (value, key) => {
       serverVariables.push({
         key,

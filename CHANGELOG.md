@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Fixed an issue where an operation-level server URL with a trailing slash produced a double slash (`//`) in the generated request URL and its extracted-type key.
+
 ## [v6.4.1] - 2026-10-21
 
 ## [v6.4.0] - 2026-10-07
