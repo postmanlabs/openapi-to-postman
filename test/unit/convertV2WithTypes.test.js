@@ -7,6 +7,7 @@
 
 const expect = require('chai').expect,
   Converter = require('../../dist/index.js'),
+  sdk = require('postman-collection'),
   fs = require('fs'),
   path = require('path'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
@@ -587,6 +588,56 @@ describe('convertV2WithTypes', function() {
       // Top-level server stays behind {{baseUrl}}, so its key is just the spec path.
       expect(typeKeys).to.include('get/pets');
       expect(typeKeys).to.not.include('get/profile-preferences');
+
+      done();
+    });
+  });
+
+  it('should not produce a double slash when an operation-level server URL has a trailing slash', function(done) {
+    const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Operation level server with trailing slash', version: '1.0.0' },
+        paths: {
+          '/paymentus': {},
+          '/paymentus/healthcheck': {
+            get: {
+              servers: [{ url: 'https://localhost.com:9000/' }],
+              responses: { default: { description: 'Response' } }
+            }
+          },
+          '/accounts': {
+            get: {
+              servers: [{ url: 'https://api.example.com/v1/' }],
+              responses: { default: { description: 'Response' } }
+            }
+          }
+        }
+      },
+      requestUrls = [],
+      collectRequestUrls = (items) => {
+        items.forEach((item) => {
+          if (item.item) {
+            return collectRequestUrls(item.item);
+          }
+
+          requestUrls.push(new sdk.Url(item.request.url).toString());
+        });
+      };
+
+    Converter.convertV2WithTypes({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      collectRequestUrls(conversionResult.output[0].data.item);
+
+      expect(requestUrls).to.have.members([
+        'https://localhost.com:9000/paymentus/healthcheck',
+        'https://api.example.com/v1/accounts'
+      ]);
+      expect(Object.keys(conversionResult.extractedTypes)).to.have.members([
+        'get/paymentus/healthcheck',
+        'get/v1/accounts'
+      ]);
 
       done();
     });
