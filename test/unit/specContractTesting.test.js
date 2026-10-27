@@ -98,6 +98,9 @@ describe('buildContractTestCollection', function () {
       '8. DELETE /specifications/{id}', '9. GET /specifications/{id} (expect 404)'
     ]);
     expect(result.summary.skipped).to.eql(['POST /specs/{id}/files', 'GET /tasks/{taskId}']);
+    // Every skipped request has a path id listed as unresolved with `fallback: skip`.
+    expect(_(result.lock.unresolved).filter({ fallback: 'skip' }).map('operation').uniq().value())
+      .to.have.members(result.summary.skipped);
   });
 
   it('deletes a resource that a missing-field check wrongly creates', async function () {
@@ -127,6 +130,8 @@ describe('buildContractTestCollection', function () {
     expect(_.find(request(result, '2. POST /pets').request.body.urlencoded, { key: 'ownerId' }).value)
       .to.equal('{{owner_id}}');
     expect(result.summary.skipped).to.eql(['POST /toys']);
+    expect(result.lock.unresolved).to.deep.include({ operation: 'POST /toys', param: { in: 'body', path: '/ownerId' },
+      reason: 'the request body format cannot take a linked value', fallback: 'skip' });
   });
 
   it('saves a value from any 2xx when the spec declares several success codes', async function () {
@@ -210,13 +215,42 @@ describe('buildContractTestCollection', function () {
     expect(_.map(withoutOwners.summary.stale, 'staleReason')).to.eql(['producer POST /owners no longer exists']);
   });
 
-  it('excludes operations and adds header auth when asked', async function () {
-    const result = await generate(PETSTORE, { excludeOperations: ['^GET /pets$'], authHeader: 'x-access-token' }),
+  it('adds header auth when asked', async function () {
+    const result = await generate(PETSTORE, { authHeader: 'x-access-token' }),
       auth = _.fromPairs(_.map(result.output[0].data.auth.apikey, (e) => { return [e.key, e.value]; }));
 
-    expect(result.summary.excluded).to.equal(1);
-    expect(_.map(requests(result), 'name').join()).to.not.include('GET /pets,');
     expect(auth).to.eql({ key: 'x-access-token', value: '{{xAccessToken}}', in: 'header' });
+  });
+
+  it('leaves out the operations in the lock\'s exclude section, exactly or by pattern', async function () {
+    const exclude = [{ operation: 'GET /pets', reason: 'slow' }, { pattern: '^PUT ' }],
+      result = await generate(PETSTORE, { lock: { lockfileVersion: 1, exclude } }),
+      labels = _.map(requests(result), (item) => { return item.name.replace(/^\d+\. /, ''); });
+
+    expect(result.summary.excluded).to.eql(['GET /pets', 'PUT /pets/{petId}']);
+    expect(labels).to.not.include.members(['GET /pets', 'PUT /pets/{petId}', 'GET /pets without a token']);
+    expect(result.lock.exclude).to.eql(exclude);
+  });
+
+  it('keeps a link when one of its consumers is excluded, and marks it stale when its producer is', async function () {
+    const lock = (await generate(PETSTORE)).lock,
+      withExclude = (operation) => { return Object.assign({}, lock, { exclude: [{ operation }] }); },
+      consumerExcluded = await generate(PETSTORE, { lock: withExclude('GET /pets/{petId}') }),
+      producerExcluded = await generate(PETSTORE, { lock: withExclude('POST /owners') });
+
+    expect(consumerExcluded.summary).to.include({ unchanged: 2 });
+    expect(consumerExcluded.summary.stale).to.be.empty;
+    expect(_.map(binding(consumerExcluded, 'pet_id').consumers, 'operation')).to.include('GET /pets/{petId}');
+    expect(_.map(producerExcluded.summary.stale, 'staleReason')).to.eql(['producer POST /owners is excluded']);
+  });
+
+  it('rejects an invalid exclude entry', async function () {
+    const invalid = [{ operation: 'GET /pets', pattern: '^GET' }, { pattern: '(' }, {}];
+
+    for (const entry of invalid) {
+      expect(await generate(PETSTORE, { lock: { lockfileVersion: 1, exclude: [entry] } }))
+        .to.include({ result: false });
+    }
   });
 
   it('rejects input that is not a convertV2WithTypes result made with generateContractTests', function (done) {
@@ -251,6 +285,21 @@ describe('buildContractTestCollection', function () {
 
     expect(labels).to.include.members(['GET /:version/pets', 'GET /foo-bar', 'GET /foo_bar', 'POST /things']);
     expect(JSON.parse(things.request.body.raw).ref).to.equal(uuid);
+  });
+
+  it('reports values whose producer is itself skipped, so nothing is skipped only at run time', async function () {
+    const ok = { 200: { description: 'ok' } },
+      result = await generate({ openapi: '3.0.0', info: { title: 'Cascade', version: '1' }, paths: {
+        '/groups/{groupId}/items': { post: { parameters: [idParam('groupId')], responses: { 201: {
+          description: 'ok', content: { 'application/json': {
+            schema: { type: 'object', properties: { id: { type: 'string' } } } } } } } } },
+        '/items/{itemId}': { get: { parameters: [idParam('itemId')], responses: ok } }
+      } });
+
+    expect(result.summary.skipped).to.have.members(['POST /groups/{groupId}/items', 'GET /items/{itemId}']);
+    expect(result.lock.unresolved).to.deep.include({ operation: 'GET /items/{itemId}',
+      param: { in: 'path', name: 'itemId' }, fallback: 'skip',
+      reason: 'POST /groups/{groupId}/items is skipped (it needs an unresolved value)' });
   });
 
   it('reports links that a dependency cycle makes unusable', async function () {

@@ -1,12 +1,13 @@
 // Spec contract testing: rearranges the collection produced by convertV2WithTypes into one that
 // exercises the API in a valid order (create, read, update, child resources, teardown), keeping the
 // converter's status and schema checks. Links between requests are inferred from extractedTypes and
-// can be pinned with a lock. Collection generation itself is unchanged.
+// can be pinned with a lock. Every operation runs unless the lock excludes it or a value it needs
+// can't be resolved (listed under `unresolved`). Collection generation itself is unchanged.
 const _ = require('lodash'),
   { hash, sortKeys, flattenItems } = require('./utils'),
   { CONTRACT_TEST_MARKER } = require('../CollectionGeneration/contractTests'),
   { listOperations } = require('./operations'),
-  { reconcile } = require('./lock'),
+  { readExclude, unresolvedRef, reconcile } = require('./lock'),
   { buildCollection } = require('./collection'),
 
   /**
@@ -14,12 +15,12 @@ const _ = require('lodash'),
    *
    * @param {Object} conversion - convertV2WithTypes result (with output and extractedTypes)
    * @param {Object} [options] - options
-   * @param {Object} [options.lock] - previously saved lock; its bindings are reused
-   * @param {String[]} [options.excludeOperations] - regex sources matched against "METHOD /path"
+   * @param {Object} [options.lock] - previously saved lock; its bindings are reused and its `exclude`
+   *   entries ({ operation } or { pattern } matched against "METHOD /path") are left out
    * @param {String} [options.authHeader] - header sent on every request, valued {{camelCase(header)}}
    * @returns {Object} { result, output: [{ type: 'collection', data }], lock, summary }, or
    *   { result: false, reason } when the input is not a convertV2WithTypes result made with
-   *   `generateContractTests: true`
+   *   `generateContractTests: true`, or the lock's `exclude` section is invalid
    */
   build = (conversion, options = {}) => {
     const converted = _.get(conversion, 'output[0].data');
@@ -36,18 +37,21 @@ const _ = require('lodash'),
       return { result: false, reason: 'Expected a convertV2WithTypes result made with generateContractTests: true' };
     }
 
-    const exclude = _.map(options.excludeOperations, (pattern) => { return new RegExp(pattern); }),
-      isExcluded = (op) => { return exclude.some((pattern) => { return pattern.test(op.key); }); },
-      specHash = `sha256:${hash(sortKeys(conversion.extractedTypes), 16)}`,
-      allOperations = listOperations(conversion.extractedTypes, converted),
-      operations = _.reject(allOperations, isExcluded),
+    const { isExcluded, error } = readExclude(options.lock);
+
+    if (error) { return { result: false, reason: error }; }
+
+    const specHash = `sha256:${hash(sortKeys(conversion.extractedTypes), 16)}`,
+      [excluded, operations] = _.partition(listOperations(conversion.extractedTypes, converted),
+        (op) => { return isExcluded(op.key); }),
       { bindings, flows, lock, summary } = reconcile({
         title: _.get(converted, 'info.name'),
         specHash,
         operations,
+        excluded: new Set(_.map(excluded, 'key')),
         lock: options.lock
       }),
-      { collection, skipped } = buildCollection({
+      { collection, skipped, unapplied } = buildCollection({
         collection: converted,
         operations,
         bindings,
@@ -56,11 +60,17 @@ const _ = require('lodash'),
         authHeader: options.authHeader && { name: options.authHeader, variable: _.camelCase(options.authHeader) }
       });
 
+    // A linked value the request has no place for (e.g. an XML body) is as unresolved as one with no source.
+    lock.unresolved.push(...unapplied.map(({ operation, param }) => {
+      return unresolvedRef(operation, param, 'the request body format cannot take a linked value', true);
+    }));
+
     return {
       result: true,
       output: [{ type: 'collection', data: collection }],
       lock,
-      summary: Object.assign({ excluded: allOperations.length - operations.length, skipped }, summary)
+      summary: Object.assign({}, summary,
+        { excluded: _.map(excluded, 'key').sort(), skipped, unresolved: lock.unresolved })
     };
   };
 

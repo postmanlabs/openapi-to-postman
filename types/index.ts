@@ -38,7 +38,11 @@ export interface ContractTestResult extends CollectionResult {
   /** Updated bindings lock: saved links kept, new ones `pending`, broken ones `stale`. */
   lock?: object;
   summary?: {
-    excluded: number;
+
+    /** Operations left out by the lock's `exclude` section. */
+    excluded: string[];
+
+    /** Operations left out because a value they need is unresolved (see `unresolved`). */
     skipped: string[];
     unchanged: number;
     added: object[];
@@ -199,11 +203,11 @@ export interface Options {
  */
 export interface ContractTestOptions {
 
-  /** Bindings lock from a previous run; its links are reused instead of being inferred again. */
+  /**
+   * Bindings lock from a previous run: its links are reused instead of being inferred again, and the
+   * operations in its `exclude` section ({ operation } or { pattern } on "METHOD /path") are left out.
+   */
   lock?: object | null;
-
-  /** Regex sources; operations whose "METHOD /path" matches are left out. */
-  excludeOperations?: string[];
 
   /** Header sent on every request (e.g. "x-access-token"), valued {{camelCase(header)}}. */
   authHeader?: string;

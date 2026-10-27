@@ -144,6 +144,7 @@ const _ = require('lodash'),
       // Alphabetical, like the flows, so the negative checks don't depend on spec order either.
       sortedOperations = operations.slice().sort((a, b) => { return a.key.localeCompare(b.key); }),
       skipped = [],
+      unapplied = [],
       requests = [];
 
     const usesOf = (op) => { return uses[op.key] || []; },
@@ -170,7 +171,7 @@ const _ = require('lodash'),
 
       // A copy of the operation's request wired to the variables `variableFor` picks (null leaves a
       // parameter alone). Null, and reported in `skipped`, when a path id isn't linked or a linked
-      // value can't be put into the request.
+      // value can't be put into the request (reported in `unapplied`).
       prepare = (op, variableFor) => {
         const skip = () => {
           skipped.push(op.key);
@@ -189,7 +190,11 @@ const _ = require('lodash'),
         const wired = usesOf(op).map(({ binding, param }) => {
           const variable = variableFor(binding, param);
 
-          return variable && (useVariable(item.request, param, variable, typeOf(op, param)) ? variable : false);
+          if (!variable) { return null; }
+          if (useVariable(item.request, param, variable, typeOf(op, param))) { return variable; }
+          unapplied.push({ operation: op.key, param });
+
+          return false;
         });
 
         return wired.includes(false) ? skip() : { item, needs: _.compact(wired) };
@@ -282,7 +287,7 @@ const _ = require('lodash'),
     _.filter(sortedOperations, { role: 'create' }).forEach(missingFieldChecks);
     _.forEach(flows.teardown, flowStep);
 
-    return { requests, skipped: _.uniq(skipped) };
+    return { requests, skipped: _.uniq(skipped), unapplied: _.uniqWith(unapplied, _.isEqual) };
   },
 
   /**
@@ -295,19 +300,20 @@ const _ = require('lodash'),
    * @param {Object} options.flows - run order from buildFlows
    * @param {String} options.seed - seed for the collection id (the spec hash)
    * @param {Object} [options.authHeader] - { name, variable }: send this header on every request
-   * @returns {Object} { collection, skipped }: skipped lists requests left out because a path id
-   *   couldn't be linked or a linked value couldn't be put into the request
+   * @returns {Object} { collection, skipped, unapplied }: skipped lists requests left out because a
+   *   path id couldn't be linked or a linked value couldn't be put into the request; unapplied lists
+   *   those values ({ operation, param })
    */
   buildCollection = ({ collection, operations, bindings, flows, seed, authHeader }) => {
     const source = authHeader ? applyAuthHeader(collection, authHeader) : collection,
-      { requests, skipped } = buildRequests({ collection: source, operations, bindings, flows }),
+      { requests, skipped, unapplied } = buildRequests({ collection: source, operations, bindings, flows }),
       variables = (source.variable || []).concat(bindings
         .filter((binding) => { return !_.get(binding, 'producer.environment'); })
         .map((binding) => { return { key: binding.variable, value: '' }; })),
       info = Object.assign({}, source.info, { _postman_id: uuidFrom(seed) });
 
     return { collection: Object.assign({}, source, { info, item: requests, variable: _.uniqBy(variables, 'key') }),
-      skipped };
+      skipped, unapplied };
   };
 
 module.exports = { buildCollection };
