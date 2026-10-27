@@ -4,10 +4,15 @@
 //
 //   lockfileVersion: 1
 //   exclude:  [{ operation: METHOD /path } | { pattern: regex on "METHOD /path" }]
-//   bindings: [{ variable, producer, consumers: [{ operation, param }] }]
+//   bindings: [{ variable, note?, producer, consumers: [{ operation, param }] }]
 //
-// `producer` is `{ operation, value: $response.body#<pointer> }` or `{ environment: <variable> }`. A
-// binding with `producer: null` lists values nothing returns; filling in its producer resolves them.
+// `producer` is one of:
+//   { operation, value: $response.body#<pointer> | $response.header.<name>, pattern? }
+//   { environment: <variable> }
+//   null: nothing returns the value; filling in a producer resolves it.
+// `pattern` keeps the first capture group of a regex (e.g. the id at the end of a Location header).
+// Any producer may also have `constant`: that value is used for every consumer instead, and the
+// other fields are kept for reference only.
 const _ = require('lodash'),
   { typesMatch, producedFields, consumedValues, consumerParam, paramKey, consumerKey, fieldKey, describeParam,
     placeholderVariable, inferBindings } = require('./bindings'),
@@ -43,8 +48,46 @@ const _ = require('lodash'),
     };
   },
 
+  /**
+   * A lock written for another format version can't be read. A missing version counts as the current one.
+   *
+   * @param {Object} [lock] - saved lock
+   * @returns {String|undefined} error
+   */
+  versionError = (lock) => {
+    const version = _.get(lock, 'lockfileVersion', LOCK_VERSION);
+
+    return version === LOCK_VERSION ? undefined :
+      `Unsupported lockfileVersion ${JSON.stringify(version)}: expected ${LOCK_VERSION}`;
+  },
+
   hasProducer = (binding) => {
-    return Boolean(_.get(binding, 'producer.operation') || _.get(binding, 'producer.environment'));
+    return Boolean(_.get(binding, 'producer.operation') || _.get(binding, 'producer.environment')) ||
+      _.has(binding, 'producer.constant');
+  },
+
+  /**
+   * A consumer listed under two saved bindings would get two values; the user has to keep one.
+   *
+   * @param {Object} [lock] - saved lock
+   * @returns {String|undefined} error naming the consumer and both bindings
+   */
+  findDuplicateConsumer = (lock) => {
+    const owners = {};
+    let error;
+
+    _.filter(_.get(lock, 'bindings'), hasProducer).forEach((binding) => {
+      _.forEach(binding.consumers, ({ operation, param = {} }) => {
+        const key = paramKey(operation, param);
+
+        if (owners[key] && owners[key] !== binding.variable && !error) {
+          error = `${key} is listed under bindings "${owners[key]}" and "${binding.variable}": keep it in one`;
+        }
+        owners[key] = owners[key] || binding.variable;
+      });
+    });
+
+    return error;
   },
 
   // Returns why a saved binding no longer fits the spec, or null if it still does. Consumers that are
@@ -55,10 +98,15 @@ const _ = require('lodash'),
       pointer = _.get((/^\$response\.body#(.*)$/).exec(producer.value || ''), 1),
       field = fields[fieldKey(producer.operation, pointer)];
 
-    if (!producer.environment) {
+    // Response headers aren't described by the converter's output, so only the operation is checked.
+    // A constant makes the rest of the producer a reference, so it isn't checked.
+    if (producer.operation && !_.has(producer, 'constant')) {
       if (excluded.has(producer.operation)) { return `producer ${producer.operation} is excluded`; }
       if (!ops[producer.operation]) { return `producer ${producer.operation} no longer exists`; }
-      if (!field) { return `${producer.operation} no longer returns ${producer.value}`; }
+      if (pointer === undefined && !(/^\$response\.header\.\S+$/).test(producer.value || '')) {
+        return `${producer.value} is not a $response.body# or $response.header. value`;
+      }
+      if (pointer !== undefined && !field) { return `${producer.operation} no longer returns ${producer.value}`; }
     }
 
     for (const { operation, param = {} } of binding.consumers || []) {
@@ -76,14 +124,17 @@ const _ = require('lodash'),
 
   // The lock-file form of a binding: only what a user reads or edits.
   lockEntry = (binding) => {
-    return {
+    const producer = binding.producer;
+
+    return _.omitBy({
       variable: binding.variable,
-      producer: binding.producer && (binding.producer.environment ? { environment: binding.producer.environment } :
-        { operation: binding.producer.operation, value: binding.producer.value }),
+      note: binding.note,
+      producer: producer && _.omitBy(_.pick(producer, ['operation', 'value', 'pattern', 'environment', 'constant']),
+        _.isUndefined),
       consumers: _.map(binding.consumers, (consumer) => {
         return { operation: consumer.operation, param: consumer.param };
       })
-    };
+    }, _.isUndefined);
   },
 
   // A unique variable name, adding `_2`, `_3` on clashes.
@@ -200,10 +251,6 @@ const _ = require('lodash'),
    * @returns {Object} { bindings: the runnable part of the active bindings, flows, lock, summary }
    */
   reconcile = ({ operations, excluded, lock }) => {
-    if (lock && lock.lockfileVersion !== LOCK_VERSION) {
-      throw new Error(`Unsupported lockfileVersion ${lock.lockfileVersion}`);
-    }
-
     const ops = _.keyBy(operations, 'key'),
       fields = _.keyBy(_.flatMap(operations, producedFields), (field) => {
         return fieldKey(field.op.key, field.pointer);
@@ -230,7 +277,8 @@ const _ = require('lodash'),
 
     inferred.forEach((binding) => {
       const existing = _.find(kept, (candidate) => {
-        return _.isEqual(candidate.producer, binding.producer);
+        return candidate.producer.operation === binding.producer.operation &&
+          candidate.producer.value === binding.producer.value;
       });
 
       if (existing) {
@@ -243,12 +291,16 @@ const _ = require('lodash'),
     });
 
     const active = kept.concat(added),
-      flows = buildFlows(operations, active),
-      ordered = dropUnorderedConsumers(active, flows, ops),
+      // What the run uses: a binding with a constant has no producer request to wait for or save from.
+      runtime = active.map((binding) => {
+        return _.has(binding.producer, 'constant') ?
+          Object.assign({}, binding, { producer: { constant: binding.producer.constant } }) : binding;
+      }),
+      flows = buildFlows(operations, runtime),
+      ordered = dropUnorderedConsumers(runtime, flows, ops),
       { runnable, blocked } = dropSkippedProducers(ordered.runnable, operations),
-      sortKey = (binding) => {
-        return _.get(binding, 'producer.operation') || `~env ${_.get(binding, 'producer.environment', '')}`;
-      },
+      // Environment and constant producers first ('~' sorts before letters), then response producers by operation.
+      sortKey = (binding) => { return _.get(binding, 'producer.operation') || '~'; },
       placeholders = _(unresolved).groupBy(placeholderVariable).toPairs().sortBy(0).map(([variable, consumers]) => {
         return { variable: uniqueName(variable, taken), producer: null, consumers: consumers.map((consumer) => {
           return { operation: consumer.op.key, param: consumerParam(consumer) };
@@ -272,4 +324,4 @@ const _ = require('lodash'),
     };
   };
 
-module.exports = { readExclude, unresolvedRef, reconcile };
+module.exports = { versionError, readExclude, findDuplicateConsumer, unresolvedRef, reconcile };

@@ -4,6 +4,7 @@ const expect = require('chai').expect,
   yaml = require('js-yaml'),
   _ = require('lodash'),
   Converter = require('../../dist/index.js'),
+  scripts = require('../../libV2/SpecContractTesting/scripts'),
 
   FIXTURE_DIR = path.join(__dirname, '../data/specContractTesting'),
   fixture = (name) => { return yaml.load(fs.readFileSync(path.join(FIXTURE_DIR, `${name}.yaml`), 'utf8')); },
@@ -141,7 +142,7 @@ describe('buildContractTestCollection', function () {
     const result = await generate(NESTED),
       script = exec(request(result, '3. POST /specifications/{id}/files'), 'test');
 
-    expect(script).to.include('pm.response.code < 200 || pm.response.code >= 300')
+    expect(script).to.include('!(pm.response.code >= 200 && pm.response.code < 300)')
       .and.not.include('String(pm.response.code) !== save.status');
   });
 
@@ -255,6 +256,74 @@ describe('buildContractTestCollection', function () {
     expect(_.find(result.lock.bindings, { variable: 'type' }).producer).to.eql({ environment: 'taskType' });
   });
 
+  it('fills a value from a constant, keeps notes, and rejects a consumer listed under two bindings', async function () {
+    const lock = _.cloneDeep((await generate(NESTED)).lock),
+      type = _.find(lock.bindings, { variable: 'type' });
+
+    Object.assign(type, { note: 'tasks of this kind only', producer: { constant: 'collection-generation' } });
+
+    const result = await generate(NESTED, { lock }),
+      tasks = request(result, '5. GET /tasks'),
+      duplicated = _.cloneDeep(result.lock);
+
+    expect(_.find(tasks.request.url.query, { key: 'type' })).to.include({ value: '{{type}}', disabled: false });
+    expect(_.find(result.output[0].data.variable, { key: 'type' }).value).to.equal('collection-generation');
+    expect(_.find(result.lock.bindings, { variable: 'type' })).to.eql({ variable: 'type',
+      note: 'tasks of this kind only', producer: { constant: 'collection-generation' },
+      consumers: [{ operation: 'GET /tasks', param: { in: 'query', name: 'type' } }] });
+
+    _.find(duplicated.bindings, { variable: 'specification_id' }).consumers.push(type.consumers[0]);
+    expect(await generate(NESTED, { lock: duplicated })).to.eql({ result: false, reason:
+      'GET /tasks query:type is listed under bindings "type" and "specification_id": keep it in one' });
+  });
+
+  it('uses a producer\'s constant for every consumer, keeping the rest of the producer as a reference',
+    async function () {
+      const id = 'e43483a8-8e79-4f7f-b710-762ff4f7b4d0',
+        lock = _.cloneDeep((await generate(PETSTORE)).lock);
+
+      _.find(lock.bindings, { variable: 'pet_id' }).producer.constant = id;
+
+      const result = await generate(PETSTORE, { lock }),
+        withPhotos = await generate(_.set(_.cloneDeep(PETSTORE), ['paths', '/pets/{petId}/photos'], { get: {
+          parameters: [idParam('petId')], responses: { 200: { description: 'ok' } } } }), { lock }),
+        withoutCreate = await generate(_.omit(PETSTORE, ['paths./pets.post']), { lock });
+
+      expect(_.find(result.output[0].data.variable, { key: 'pet_id' }).value).to.equal(id);
+      expect(_.find(request(result, '5. GET /pets/{petId}').request.url.variable, { key: 'petId' }).value)
+        .to.equal('{{pet_id}}');
+      expect(exec(request(result, '3. POST /pets'), 'test')).to.not.include('"variable":"pet_id"');
+      expect(_.find(result.lock.bindings, { variable: 'pet_id' }).producer)
+        .to.eql({ operation: 'POST /pets', value: '$response.body#/id', constant: id });
+      expect(withPhotos.summary.extended).to.have.length(1);
+      expect(_.map(withoutCreate.summary.stale, 'variable')).to.not.include('pet_id');
+    });
+
+  it('saves a value from a response header, narrowed by a pattern', async function () {
+    const lock = _.cloneDeep((await generate(PETSTORE)).lock);
+
+    _.find(lock.bindings, { variable: 'pet_id' }).producer =
+      { operation: 'POST /pets', value: '$response.header.Location', pattern: '([^/]+)$' };
+
+    const result = await generate(PETSTORE, { lock }),
+      script = exec(request(result, '3. POST /pets'), 'test'),
+      saved = {};
+
+    expect(result.summary.stale).to.be.empty;
+    expect(script).to.include('"header":"Location","pattern":"([^/]+)$"');
+
+    // Run the save part of the generated script against a 201 with `Location: /pets/42`.
+    // eslint-disable-next-line no-new-func
+    new Function('pm', 'require', scripts.save(JSON.parse((/var contractSaves = (.*);/).exec(script)[1])).join('\n'))({
+      response: { code: 201, json: () => { return {}; }, headers: { get: () => { return '/pets/42'; } } },
+      expect: () => { return { to: { not: { be: { undefined: _.noop } } } }; },
+      test: (name, fn) => { fn(); },
+      collectionVariables: { set: (key, value) => { saved[key] = value; } }
+    }, () => { return _; });
+
+    expect(saved.pet_id).to.equal('42');
+  });
+
   it('reuses a saved lock, extends it with new consumers and marks broken links stale', async function () {
     const lock = (await generate(PETSTORE)).lock,
       withPhotos = _.set(_.cloneDeep(PETSTORE), ['paths', '/pets/{petId}/photos'], { get: {
@@ -296,6 +365,14 @@ describe('buildContractTestCollection', function () {
     expect(consumerExcluded.summary.stale).to.be.empty;
     expect(_.map(binding(consumerExcluded, 'pet_id').consumers, 'operation')).to.include('GET /pets/{petId}');
     expect(_.map(producerExcluded.summary.stale, 'staleReason')).to.eql(['producer POST /owners is excluded']);
+  });
+
+  it('reads a lock without lockfileVersion as version 1 and rejects any other version', async function () {
+    const lock = _.omit((await generate(PETSTORE)).lock, 'lockfileVersion');
+
+    expect(await generate(PETSTORE, { lock })).to.nested.include({ result: true, 'summary.unchanged': 2 });
+    expect(await generate(PETSTORE, { lock: Object.assign({}, lock, { lockfileVersion: 2 }) }))
+      .to.eql({ result: false, reason: 'Unsupported lockfileVersion 2: expected 1' });
   });
 
   it('rejects an invalid exclude entry', async function () {
@@ -390,7 +467,7 @@ describe('buildContractTestCollection', function () {
   });
 
   it('treats 0 as a saved value in the guard', function () {
-    const guard = require('../../libV2/SpecContractTesting/scripts').guard(['pet_id']).join('\n'),
+    const guard = scripts.guard(['pet_id']).join('\n'),
       run = (value) => {
         let skipped = false;
 

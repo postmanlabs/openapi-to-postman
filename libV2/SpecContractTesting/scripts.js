@@ -29,9 +29,10 @@ module.exports = {
 
   /**
    * Post-response: on any 2xx (a spec may declare several success codes with the same body), save
-   * each value into its collection variable.
+   * each value into its collection variable: a body field (`path`) or a header (`header`), optionally
+   * narrowed by `pattern` to its first capture group.
    *
-   * @param {Object[]} saves - { variable, path }
+   * @param {Object[]} saves - { variable, path | header, pattern? }
    * @returns {String[]} exec lines
    */
   save: (saves) => {
@@ -42,10 +43,17 @@ module.exports = {
       'var contractBody;',
       'try { contractBody = pm.response.json(); } catch (e) { contractBody = undefined; }',
       'contractSaves.forEach(function (save) {',
-      '  if (pm.response.code < 200 || pm.response.code >= 300) { return; }',
-      '  var value = require("lodash").get(contractBody, save.path);',
+      '  if (!(pm.response.code >= 200 && pm.response.code < 300)) { return; }',
+      '  var value = save.header ? pm.response.headers.get(save.header) :',
+      '    require("lodash").get(contractBody, save.path);',
+      '  if (save.pattern && value !== undefined && value !== null) {',
+      '    var match = new RegExp(save.pattern).exec(String(value));',
+      '',
+      '    value = match ? (match[1] !== undefined ? match[1] : match[0]) : undefined;',
+      '  }',
       '  pm.test("Flow | Saved " + save.variable + " from the response", function () {',
-      '    pm.expect(value, save.path + " not found in response").to.not.be.undefined;',
+      '    pm.expect(value, (save.header ? "header " + save.header : save.path) + " not found in response")',
+      '      .to.not.be.undefined;',
       '  });',
       '  if (value !== undefined && value !== null) { pm.collectionVariables.set(save.variable, value); }',
       '});'

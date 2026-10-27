@@ -151,7 +151,12 @@ const _ = require('lodash'),
 
       itemOf = (op) => { return items[requestKey(op.method, op.path)]; },
 
-      savePath = (binding) => { return toLodashPath(binding.producer.value.replace(/^\$response\.body#/, '')); },
+      // Lodash path of a `$response.body#` value, or null for a header value.
+      savePath = (binding) => {
+        const pointer = _.get((/^\$response\.body#(.*)$/).exec(binding.producer.value), 1);
+
+        return pointer === undefined ? null : toLodashPath(pointer);
+      },
 
       // The auth the request actually sends: its own, else the collection's.
       isSecured = (op) => {
@@ -209,7 +214,12 @@ const _ = require('lodash'),
 
       savesFor = (op) => {
         return bindings.filter((binding) => { return _.get(binding, 'producer.operation') === op.key; })
-          .map((binding) => { return { variable: binding.variable, path: savePath(binding) }; });
+          .map((binding) => {
+            const header = _.get((/^\$response\.header\.(\S+)$/).exec(binding.producer.value), 1);
+
+            return _.omitBy({ variable: binding.variable, path: savePath(binding) || undefined, header,
+              pattern: binding.producer.pattern }, _.isUndefined);
+          });
       },
 
       // The delete that removes what `op` creates, and where its id is in the create response.
@@ -221,7 +231,8 @@ const _ = require('lodash'),
             return isIdParam(del, param) && _.get(binding, 'producer.operation') === op.key;
           });
 
-        return use ? { op: del, variable: `leaked_${use.binding.variable}`, path: savePath(use.binding) } : null;
+        return use && savePath(use.binding) && !use.binding.producer.pattern ?
+          { op: del, variable: `leaked_${use.binding.variable}`, path: savePath(use.binding) } : null;
       },
 
       flowStep = (stepId) => {
@@ -309,7 +320,7 @@ const _ = require('lodash'),
       { requests, skipped, unapplied } = buildRequests({ collection: source, operations, bindings, flows }),
       variables = (source.variable || []).concat(bindings
         .filter((binding) => { return !_.get(binding, 'producer.environment'); })
-        .map((binding) => { return { key: binding.variable, value: '' }; })),
+        .map((binding) => { return { key: binding.variable, value: _.get(binding, 'producer.constant', '') }; })),
       info = Object.assign({}, source.info, { _postman_id: uuidFrom(seed) });
 
     return { collection: Object.assign({}, source, { info, item: requests, variable: _.uniqBy(variables, 'key') }),

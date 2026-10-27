@@ -7,7 +7,7 @@ const _ = require('lodash'),
   { hash, sortKeys, flattenItems } = require('./utils'),
   { CONTRACT_TEST_MARKER } = require('../CollectionGeneration/contractTests'),
   { listOperations } = require('./operations'),
-  { readExclude, unresolvedRef, reconcile } = require('./lock'),
+  { versionError, readExclude, findDuplicateConsumer, unresolvedRef, reconcile } = require('./lock'),
   { buildCollection } = require('./collection'),
 
   /**
@@ -20,7 +20,8 @@ const _ = require('lodash'),
    * @param {String} [options.authHeader] - header sent on every request, valued {{camelCase(header)}}
    * @returns {Object} { result, output: [{ type: 'collection', data }], lock, summary }, or
    *   { result: false, reason } when the input is not a convertV2WithTypes result made with
-   *   `generateContractTests: true`, or the lock's `exclude` section is invalid
+   *   `generateContractTests: true`, or the lock has an unsupported `lockfileVersion`, an invalid
+   *   `exclude` entry, or a consumer listed under two bindings
    */
   build = (conversion, options = {}) => {
     const converted = _.get(conversion, 'output[0].data');
@@ -37,9 +38,10 @@ const _ = require('lodash'),
       return { result: false, reason: 'Expected a convertV2WithTypes result made with generateContractTests: true' };
     }
 
-    const { isExcluded, error } = readExclude(options.lock);
+    const { isExcluded, error } = readExclude(options.lock),
+      lockError = versionError(options.lock) || error || findDuplicateConsumer(options.lock);
 
-    if (error) { return { result: false, reason: error }; }
+    if (lockError) { return { result: false, reason: lockError }; }
 
     const specHash = `sha256:${hash(sortKeys(conversion.extractedTypes), 16)}`,
       [excluded, operations] = _.partition(listOperations(conversion.extractedTypes, converted),
