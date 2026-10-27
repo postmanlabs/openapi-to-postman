@@ -45,8 +45,6 @@ const _ = require('lodash'),
       [excluded, operations] = _.partition(listOperations(conversion.extractedTypes, converted),
         (op) => { return isExcluded(op.key); }),
       { bindings, flows, lock, summary } = reconcile({
-        title: _.get(converted, 'info.name'),
-        specHash,
         operations,
         excluded: new Set(_.map(excluded, 'key')),
         lock: options.lock
@@ -61,7 +59,7 @@ const _ = require('lodash'),
       });
 
     // A linked value the request has no place for (e.g. an XML body) is as unresolved as one with no source.
-    lock.unresolved.push(...unapplied.map(({ operation, param }) => {
+    const unresolved = summary.unresolved.concat(unapplied.map(({ operation, param }) => {
       return unresolvedRef(operation, param, 'the request body format cannot take a linked value', true);
     }));
 
@@ -70,7 +68,7 @@ const _ = require('lodash'),
       output: [{ type: 'collection', data: collection }],
       lock,
       summary: Object.assign({}, summary,
-        { excluded: _.map(excluded, 'key').sort(), skipped, unresolved: lock.unresolved })
+        { excluded: _.map(excluded, 'key').sort(), skipped, unresolved })
     };
   };
 

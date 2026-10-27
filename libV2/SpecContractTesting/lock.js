@@ -1,9 +1,16 @@
-// Bindings lock: accepted producer -> consumer links. A saved link is reused as-is instead of being
-// inferred again, so a change elsewhere in the spec can't quietly change it. Reading and writing
-// the lock file is left to the caller; this module only works on the lock object.
+// Bindings lock: the links between requests, and the operations not to run. A saved link is reused
+// as-is instead of being inferred again, so a change elsewhere in the spec can't quietly change it.
+// Reading and writing the lock file is left to the caller; this module only works on the lock object.
+//
+//   lockfileVersion: 1
+//   exclude:  [{ operation: METHOD /path } | { pattern: regex on "METHOD /path" }]
+//   bindings: [{ variable, producer, consumers: [{ operation, param }] }]
+//
+// `producer` is `{ operation, value: $response.body#<pointer> }` or `{ environment: <variable> }`. A
+// binding with `producer: null` lists values nothing returns; filling in its producer resolves them.
 const _ = require('lodash'),
-  { producedFields, consumedValues, consumerParam, paramKey, consumerKey, fieldKey, fingerprintOf, inferBindings } =
-    require('./bindings'),
+  { typesMatch, producedFields, consumedValues, consumerParam, paramKey, consumerKey, fieldKey, describeParam,
+    placeholderVariable, inferBindings } = require('./bindings'),
   { buildFlows } = require('./order'),
 
   LOCK_VERSION = 1,
@@ -36,12 +43,17 @@ const _ = require('lodash'),
     };
   },
 
-  // Returns why a saved binding no longer fits the spec, or null if it still does. Consumers that
-  // are excluded are left alone: excluding a request doesn't break the link for the others.
-  staleReason = (binding, ops, fields, consumers, excluded) => {
-    const producer = binding.producer || {},
+  hasProducer = (binding) => {
+    return Boolean(_.get(binding, 'producer.operation') || _.get(binding, 'producer.environment'));
+  },
+
+  // Returns why a saved binding no longer fits the spec, or null if it still does. Consumers that are
+  // excluded are left alone, so excluding a request doesn't break the link for the others. Query,
+  // header and body values may target parameters the spec doesn't declare; a path id must exist.
+  staleReason = (binding, ops, fields, excluded) => {
+    const producer = binding.producer,
       pointer = _.get((/^\$response\.body#(.*)$/).exec(producer.value || ''), 1),
-      field = fields[fieldKey(producer.operation, producer.status, pointer)];
+      field = fields[fieldKey(producer.operation, pointer)];
 
     if (!producer.environment) {
       if (excluded.has(producer.operation)) { return `producer ${producer.operation} is excluded`; }
@@ -49,24 +61,45 @@ const _ = require('lodash'),
       if (!field) { return `${producer.operation} no longer returns ${producer.value}`; }
     }
 
-    for (const consumer of binding.consumers || []) {
-      const current = consumers[paramKey(consumer.operation, consumer.param)];
+    for (const { operation, param = {} } of binding.consumers || []) {
+      const declared = ops[operation] && describeParam(ops[operation], param),
+        name = param.name || param.path;
 
-      if (excluded.has(consumer.operation)) { continue; }
-
-      if (!current) { return `consumer ${paramKey(consumer.operation, consumer.param)} no longer exists`; }
-      if (field && binding.source !== 'user' && consumer.fingerprint &&
-          fingerprintOf(field, current) !== consumer.fingerprint) {
-        return `type of ${producer.value} or ${consumer.param.name || consumer.param.path} changed`;
-      }
+      if (excluded.has(operation)) { continue; }
+      if (!ops[operation]) { return `consumer ${operation} no longer exists`; }
+      if (param.in === 'path' && !declared) { return `${operation} no longer has path parameter ${name}`; }
+      if (field && declared && !typesMatch(field, declared)) { return `types of ${producer.value} and ${name} differ`; }
     }
 
     return null;
   },
 
+  // The lock-file form of a binding: only what a user reads or edits.
+  lockEntry = (binding) => {
+    return {
+      variable: binding.variable,
+      producer: binding.producer && (binding.producer.environment ? { environment: binding.producer.environment } :
+        { operation: binding.producer.operation, value: binding.producer.value }),
+      consumers: _.map(binding.consumers, (consumer) => {
+        return { operation: consumer.operation, param: consumer.param };
+      })
+    };
+  },
+
+  // A unique variable name, adding `_2`, `_3` on clashes.
+  uniqueName = (name, taken) => {
+    let candidate = name,
+      n = 2;
+
+    while (taken.has(candidate)) { candidate = `${name}_${n++}`; }
+    taken.add(candidate);
+
+    return candidate;
+  },
+
   /**
-   * Lock-file entry for a value that couldn't be linked. A missing path id skips the request; any
-   * other value is sent with the spec's example.
+   * Summary entry for a value that couldn't be linked. A missing path id skips the request; any other
+   * value is sent with the spec's example.
    *
    * @param {String} operation - operation key
    * @param {Object} param - parameter reference
@@ -121,7 +154,8 @@ const _ = require('lodash'),
 
     return new Set(operations.filter((op) => {
       return op.params.some((p) => {
-        return p.in === 'path' && !_.some(linked, (c) => { return c.operation === op.key && c.param.name === p.name; });
+        return p.in === 'path' &&
+          !_.some(linked, (c) => { return c.operation === op.key && _.get(c, 'param.name') === p.name; });
       });
     }).map((op) => { return op.key; }));
   },
@@ -155,42 +189,38 @@ const _ = require('lodash'),
   /**
    * Combines a saved lock with fresh inference for anything it doesn't cover.
    *
-   * Saved bindings that still fit are kept; those that don't are marked stale and their consumers
-   * are inferred again. A new consumer whose producer is already saved joins that binding.
+   * Saved bindings that still fit are kept; those that don't are dropped (reported in `stale`) and
+   * their consumers inferred again. A new consumer whose producer is already saved joins that binding.
+   * Values nothing returns are written as bindings with `producer: null`, grouped by variable name.
    *
    * @param {Object} options - options
-   * @param {String} options.title - API title, recorded in the lock
-   * @param {String} options.specHash - hash of the operations, recorded in the lock
    * @param {Object[]} options.operations - operations to run
    * @param {Set<String>} options.excluded - keys of the operations the lock excludes
    * @param {Object} [options.lock] - saved lock
    * @returns {Object} { bindings: the runnable part of the active bindings, flows, lock, summary }
    */
-  reconcile = ({ title, specHash, operations, excluded, lock }) => {
+  reconcile = ({ operations, excluded, lock }) => {
     if (lock && lock.lockfileVersion !== LOCK_VERSION) {
       throw new Error(`Unsupported lockfileVersion ${lock.lockfileVersion}`);
     }
 
     const ops = _.keyBy(operations, 'key'),
       fields = _.keyBy(_.flatMap(operations, producedFields), (field) => {
-        return fieldKey(field.op.key, field.status, field.pointer);
+        return fieldKey(field.op.key, field.pointer);
       }),
       allConsumers = _.flatMap(operations, consumedValues),
-      consumers = _.keyBy(allConsumers, consumerKey),
       covered = new Set(),
       kept = [],
       stale = [],
       added = [],
       extended = [];
 
-    _.cloneDeep(_.get(lock, 'bindings') || []).forEach((binding) => {
-      if (binding.status === 'stale') { return stale.push(binding); }
+    _.cloneDeep(_.filter(_.get(lock, 'bindings'), hasProducer)).forEach((binding) => {
+      const reason = staleReason(binding, ops, fields, excluded);
 
-      const reason = staleReason(binding, ops, fields, consumers, excluded);
+      if (reason) { return stale.push(Object.assign(lockEntry(binding), { staleReason: reason })); }
 
-      if (reason) { return stale.push(Object.assign({}, binding, { status: 'stale', staleReason: reason })); }
-
-      kept.push(binding);
+      kept.push(lockEntry(binding));
       binding.consumers.forEach((consumer) => { covered.add(paramKey(consumer.operation, consumer.param)); });
     });
 
@@ -200,23 +230,16 @@ const _ = require('lodash'),
 
     inferred.forEach((binding) => {
       const existing = _.find(kept, (candidate) => {
-        return candidate.producer.operation === binding.producer.operation &&
-          candidate.producer.value === binding.producer.value;
+        return _.isEqual(candidate.producer, binding.producer);
       });
 
       if (existing) {
-        return binding.consumers.forEach((consumer) => {
-          existing.consumers.push(Object.assign({}, consumer, { pending: true }));
-          extended.push({ variable: existing.variable, consumer });
-        });
+        existing.consumers.push(...binding.consumers);
+        binding.consumers.forEach((consumer) => { extended.push({ variable: existing.variable, consumer }); });
+
+        return;
       }
-
-      let name = binding.variable,
-        n = 2;
-
-      while (taken.has(name)) { name = `${binding.variable}_${n++}`; }
-      taken.add(name);
-      added.push(Object.assign({ id: name }, binding, { variable: name }));
+      added.push(Object.assign({}, binding, { variable: uniqueName(binding.variable, taken) }));
     });
 
     const active = kept.concat(added),
@@ -226,6 +249,11 @@ const _ = require('lodash'),
       sortKey = (binding) => {
         return _.get(binding, 'producer.operation') || `~env ${_.get(binding, 'producer.environment', '')}`;
       },
+      placeholders = _(unresolved).groupBy(placeholderVariable).toPairs().sortBy(0).map(([variable, consumers]) => {
+        return { variable: uniqueName(variable, taken), producer: null, consumers: consumers.map((consumer) => {
+          return { operation: consumer.op.key, param: consumerParam(consumer) };
+        }) };
+      }).value(),
       unresolvedRefs = unresolved.map((consumer) => {
         return unresolvedRef(consumer.op.key, consumerParam(consumer), 'no response returns a matching value');
       }).concat(ordered.blocked, blocked);
@@ -235,13 +263,10 @@ const _ = require('lodash'),
       flows,
       lock: {
         lockfileVersion: LOCK_VERSION,
-        spec: { title, hash: specHash },
         exclude: _.cloneDeep(_.get(lock, 'exclude') || []),
-        bindings: active.concat(stale).sort((a, b) => {
+        bindings: active.slice().sort((a, b) => {
           return sortKey(a).localeCompare(sortKey(b)) || a.variable.localeCompare(b.variable);
-        }),
-        flows,
-        unresolved: unresolvedRefs
+        }).map(lockEntry).concat(placeholders)
       },
       summary: { unchanged: kept.length, added, extended, stale, unresolved: unresolvedRefs }
     };

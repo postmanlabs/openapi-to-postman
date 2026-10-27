@@ -1,7 +1,6 @@
 // Producer -> consumer inference: which response field fills which parameter. Fixed, ranked rules
 // and alphabetical tie-breaks, so the same spec always gives the same bindings.
 const _ = require('lodash'),
-  { hash } = require('./utils'),
   { ROLE_RANK } = require('./operations'),
   { isContainer, normalizeName: normalize, singular, isIdField, normalizeType, isMap, unwrap } = require('./normalize'),
 
@@ -19,6 +18,13 @@ const _ = require('lodash'),
     return String(name).replace(/([a-z0-9])([A-Z])/g, '$1_$2').replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase();
   },
 
+  /**
+   * Whether a value of type `a` fits a parameter of type `b`. Missing types or formats always fit.
+   *
+   * @param {Object} a - { type, format }
+   * @param {Object} b - { type, format }
+   * @returns {Boolean} true when compatible
+   */
   typesMatch = (a, b) => {
     const [typeA, typeB] = [normalizeType(a.type), normalizeType(b.type)];
 
@@ -121,24 +127,54 @@ const _ = require('lodash'),
   consumerKey = (consumer) => { return paramKey(consumer.op.key, consumerParam(consumer)); },
 
   /**
-   * Stable key for a response field: `METHOD /path status pointer`.
+   * Stable key for a response field: `METHOD /path pointer` (any 2xx status).
    *
    * @param {String} operation - operation key
-   * @param {String} status - response status
    * @param {String} pointer - JSON pointer
    * @returns {String} key
    */
-  fieldKey = (operation, status, pointer) => { return `${operation} ${status} ${pointer}`; },
+  fieldKey = (operation, pointer) => { return `${operation} ${pointer}`; },
 
   /**
-   * Hash of the producer and consumer types, used to notice when a saved binding no longer fits.
+   * Type of any parameter of an operation, inferred or not: path, query, header (case-insensitive),
+   * or a body field at any depth (`/owner/id`, `/items/0/id`).
    *
-   * @param {Object} field - producer field
-   * @param {Object} consumer - consumer
-   * @returns {String} fingerprint
+   * @param {Object} op - operation
+   * @param {Object} param - parameter reference: { in, name } or { in: 'body', path }
+   * @returns {Object|null} { type, format }, or null when the operation doesn't declare it
    */
-  fingerprintOf = (field, consumer) => {
-    return `sha256:${hash({ p: [field.type, field.format], c: [consumer.type, consumer.format] })}`;
+  describeParam = (op, param) => {
+    let schema;
+
+    if (param.in === 'body') {
+      schema = _.reduce(String(param.path).split('/').filter(Boolean), (current, part) => {
+        return current && ((/^\d+$/).test(part) ? current.items : _.get(current, ['properties', part]));
+      }, op.requestBodySchema);
+    }
+    else {
+      const declared = _.find(op.params, (p) => {
+        return p.in === param.in &&
+          (param.in === 'header' ? p.name.toLowerCase() === String(param.name).toLowerCase() : p.name === param.name);
+      });
+
+      schema = declared && (declared.schema || {});
+    }
+
+    return schema ? { type: normalizeType(schema.type), format: schema.format } : null;
+  },
+
+  /**
+   * Default variable for a value nothing returns: `<resource>_id` for a path `{id}`, else the name in
+   * snake case. Consumers that get the same name share one entry in the lock.
+   *
+   * @param {Object} consumer - consumer from consumedValues
+   * @returns {String} variable name
+   */
+  placeholderVariable = (consumer) => {
+    const owner = consumer.in === 'path' && normalize(consumer.name) === 'id' &&
+      consumer.op.paramResources[consumer.name];
+
+    return owner ? `${snake(owner)}_id` : snake(consumer.name);
   },
 
   // `isReference`: the consumer is named `<x>Id` for a resource with a create, so a same-named field
@@ -208,7 +244,7 @@ const _ = require('lodash'),
    *
    * @param {Object[]} operations - all operations
    * @param {Object[]} consumers - consumers to resolve
-   * @returns {Object} { bindings, unresolved }
+   * @returns {Object} { bindings: [{ variable, producer, consumers, rule, score }], unresolved: consumers }
    */
   inferBindings = (operations, consumers) => {
     const fields = _.flatMap(operations, producedFields),
@@ -223,27 +259,24 @@ const _ = require('lodash'),
       if (!match) { return unresolved.push(consumer); }
 
       const { field } = match,
-        key = fieldKey(field.op.key, field.status, field.pointer);
+        key = fieldKey(field.op.key, field.pointer);
 
       if (!bindings.has(key)) {
         bindings.set(key, {
           variable: isIdField(field.name, field.op.resource) ? `${snake(field.op.resource)}_id` : snake(field.name),
-          producer: { operation: field.op.key, operationId: field.op.operationId, status: field.status,
-            value: `$response.body#${field.pointer}` },
+          producer: { operation: field.op.key, value: `$response.body#${field.pointer}` },
           consumers: [],
-          source: 'inferred',
           rule: match.rule,
-          score: match.score,
-          status: 'pending'
+          score: match.score
         });
       }
-      bindings.get(key).consumers.push({ operation: consumer.op.key, param: consumerParam(consumer),
-        fingerprint: fingerprintOf(field, consumer) });
+      bindings.get(key).consumers.push({ operation: consumer.op.key, param: consumerParam(consumer) });
     });
 
     return { bindings: [...bindings.values()], unresolved };
   };
 
 module.exports = {
-  producedFields, consumedValues, consumerParam, paramKey, consumerKey, fieldKey, fingerprintOf, inferBindings
+  typesMatch, producedFields, consumedValues, consumerParam, paramKey, consumerKey, fieldKey, describeParam,
+  placeholderVariable, inferBindings
 };

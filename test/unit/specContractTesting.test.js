@@ -29,7 +29,10 @@ const expect = require('chai').expect,
   requests = (result) => { return result.output[0].data.item; },
   request = (result, name) => { return _.find(requests(result), { name }); },
   exec = (item, listen) => { return _.get(_.find(item.event, { listen }), 'script.exec', []).join('\n'); },
-  binding = (result, variable) => { return _.find(result.lock.bindings, { variable }); },
+  // A new binding as the summary reports it (with rule and score), else the lock-file entry.
+  binding = (result, variable) => {
+    return _.find(result.summary.added, { variable }) || _.find(result.lock.bindings, { variable });
+  },
 
   // Seeded shuffle of path order and of the methods inside each path.
   shuffled = (spec, seed) => {
@@ -46,8 +49,7 @@ describe('buildContractTestCollection', function () {
   it('links each id to the request that creates it', async function () {
     const result = await generate(PETSTORE);
 
-    expect(_.pick(binding(result, 'owner_id'), ['rule', 'status', 'source'])).to.eql({
-      rule: 'same-resource-create', status: 'pending', source: 'inferred' });
+    expect(_.pick(binding(result, 'owner_id'), ['rule', 'score'])).to.eql({ rule: 'same-resource-create', score: 90 });
     expect(binding(result, 'owner_id').producer).to.include({ operation: 'POST /owners', value: '$response.body#/id' });
     expect(_.map(binding(result, 'owner_id').consumers, 'operation')).to.eql(['GET /owners/{ownerId}', 'POST /pets']);
     expect(binding(result, 'pet_id').producer.operation).to.equal('POST /pets');
@@ -99,7 +101,7 @@ describe('buildContractTestCollection', function () {
     ]);
     expect(result.summary.skipped).to.eql(['POST /specs/{id}/files', 'GET /tasks/{taskId}']);
     // Every skipped request has a path id listed as unresolved with `fallback: skip`.
-    expect(_(result.lock.unresolved).filter({ fallback: 'skip' }).map('operation').uniq().value())
+    expect(_(result.summary.unresolved).filter({ fallback: 'skip' }).map('operation').uniq().value())
       .to.have.members(result.summary.skipped);
   });
 
@@ -130,15 +132,15 @@ describe('buildContractTestCollection', function () {
     expect(_.find(request(result, '2. POST /pets').request.body.urlencoded, { key: 'ownerId' }).value)
       .to.equal('{{owner_id}}');
     expect(result.summary.skipped).to.eql(['POST /toys']);
-    expect(result.lock.unresolved).to.deep.include({ operation: 'POST /toys', param: { in: 'body', path: '/ownerId' },
-      reason: 'the request body format cannot take a linked value', fallback: 'skip' });
+    expect(result.summary.unresolved).to.deep.include({ operation: 'POST /toys',
+      param: { in: 'body', path: '/ownerId' }, fallback: 'skip',
+      reason: 'the request body format cannot take a linked value' });
   });
 
   it('saves a value from any 2xx when the spec declares several success codes', async function () {
     const result = await generate(NESTED),
       script = exec(request(result, '3. POST /specifications/{id}/files'), 'test');
 
-    expect(binding(result, 'file_id').producer.status).to.equal('200');
     expect(script).to.include('pm.response.code < 200 || pm.response.code >= 300')
       .and.not.include('String(pm.response.code) !== save.status');
   });
@@ -166,7 +168,7 @@ describe('buildContractTestCollection', function () {
 
     // GET /tasks needs `type`. POST /specifications returns an unrelated `type`, and GET /tasks/{taskId}
     // returns one but needs a task id first; neither may be linked.
-    expect(binding(result, 'type')).to.be.undefined;
+    expect(binding(result, 'type').producer).to.be.null;
     expect(result.summary.unresolved).to.deep.include({ operation: 'GET /tasks', param: { in: 'query', name: 'type' },
       reason: 'no response returns a matching value', fallback: 'example' });
   });
@@ -183,9 +185,11 @@ describe('buildContractTestCollection', function () {
     expect(binding(result, 'order_id').producer.value).to.equal('$response.body#/_embedded/orders/0/id');
 
     // `/archive` and `:verify` are actions on a person, not creates of their own resources.
-    expect(result.lock.flows.person)
-      .to.include.members(['post_people_personId_archive', 'post_people_personId_verify']);
-    expect(_.keys(result.lock.flows)).to.not.include.members(['archive', 'verify']);
+    // They run inside the person flow, right after its read and before the child addresses.
+    expect(_.map(requests(result), 'name').slice(2, 6)).to.eql([
+      '3. GET /people/{personId}', '4. POST /people/{personId}:verify',
+      '5. POST /people/{personId}/archive', '6. POST /people/{personId}/addresses'
+    ]);
     expect(verify.request.url.path).to.eql(['people', '{{person_id}}:verify']);
 
     // `/repos/{owner}/{repo}` has no producer; the `/stats` map produces nothing.
@@ -199,6 +203,56 @@ describe('buildContractTestCollection', function () {
 
     expect(binding(result, 'store_id').producer).to.include({ operation: 'POST /stores', value: '$response.body#/id' });
     expect(_.find(noToken.request.url.variable, { key: 'storeId' }).value).to.equal('{{store_id}}');
+  });
+
+  it('writes a minimal lock: links, and values nothing returns as bindings without a producer', async function () {
+    const result = await generate(NESTED);
+
+    expect(_.keys(result.lock)).to.eql(['lockfileVersion', 'exclude', 'bindings']);
+    result.lock.bindings.forEach((entry) => {
+      expect(_.keys(entry)).to.eql(['variable', 'producer', 'consumers']);
+      entry.consumers.forEach((consumer) => { expect(_.keys(consumer)).to.eql(['operation', 'param']); });
+    });
+    expect(binding(result, 'specification_id')).to.include({ rule: 'same-resource-create', score: 90 });
+    expect(_.find(result.lock.bindings, { variable: 'task_id' })).to.eql({ variable: 'task_id', producer: null,
+      consumers: [{ operation: 'GET /tasks/{taskId}', param: { in: 'path', name: 'taskId' } }] });
+  });
+
+  it('uses a written binding for any header, query or body field, and resolves a placeholder once filled in',
+    async function () {
+      const first = await generate(PETSTORE),
+        lock = _.cloneDeep(first.lock);
+
+      lock.bindings.push({ variable: 'traceId', producer: { environment: 'traceId' }, consumers: [
+        { operation: 'POST /pets', param: { in: 'header', name: 'x-trace-id' } },
+        { operation: 'GET /pets', param: { in: 'query', name: 'tag' } },
+        { operation: 'PUT /pets/{petId}', param: { in: 'body', path: '/meta/traceId' } }
+      ] });
+
+      const result = await generate(PETSTORE, { lock }),
+        createPet = request(result, '3. POST /pets'),
+        listPets = request(result, '4. GET /pets'),
+        updatePet = request(result, '6. PUT /pets/{petId}');
+
+      expect(result.summary.stale).to.be.empty;
+      expect(_.find(createPet.request.header, { key: 'x-trace-id' }).value).to.equal('{{traceId}}');
+      expect(_.find(listPets.request.url.query, { key: 'tag' })).to.include({ value: '{{traceId}}' })
+        .and.not.include({ disabled: true });
+      expect(JSON.parse(updatePet.request.body.raw).meta.traceId).to.equal('{{traceId}}');
+    });
+
+  it('fills a placeholder from the environment once its producer is set', async function () {
+    const first = await generate(NESTED),
+      lock = _.cloneDeep(first.lock);
+
+    _.find(lock.bindings, { variable: 'type' }).producer = { environment: 'taskType' };
+
+    const result = await generate(NESTED, { lock }),
+      tasks = request(result, '5. GET /tasks');
+
+    expect(_.find(tasks.request.url.query, { key: 'type' })).to.include({ value: '{{taskType}}', disabled: false });
+    expect(_.map(result.summary.unresolved, 'param.name')).to.not.include('type');
+    expect(_.find(result.lock.bindings, { variable: 'type' }).producer).to.eql({ environment: 'taskType' });
   });
 
   it('reuses a saved lock, extends it with new consumers and marks broken links stale', async function () {
@@ -297,7 +351,7 @@ describe('buildContractTestCollection', function () {
       } });
 
     expect(result.summary.skipped).to.have.members(['POST /groups/{groupId}/items', 'GET /items/{itemId}']);
-    expect(result.lock.unresolved).to.deep.include({ operation: 'GET /items/{itemId}',
+    expect(result.summary.unresolved).to.deep.include({ operation: 'GET /items/{itemId}',
       param: { in: 'path', name: 'itemId' }, fallback: 'skip',
       reason: 'POST /groups/{groupId}/items is skipped (it needs an unresolved value)' });
   });
@@ -414,10 +468,8 @@ describe('buildContractTestCollection invariants', function () {
           expect(violations(await generate(spec))).to.eql([]);
         });
 
-      it('gives the same run order and spec hash however the spec is laid out', async function () {
-        const shape = (result) => {
-            return [_.map(requests(result), 'name'), result.lock.spec.hash, result.output[0].data.info._postman_id];
-          },
+      it('gives the same run order and collection id however the spec is laid out', async function () {
+        const shape = (result) => { return [_.map(requests(result), 'name'), result.output[0].data.info._postman_id]; },
           expected = shape(await generate(spec));
 
         for (const seed of [1, 2, 3, 4, 5]) {
@@ -451,7 +503,7 @@ describe('buildContractTestCollection invariants', function () {
         const first = await generate(spec),
           second = await generate(spec, { lock: first.lock });
 
-        expect(second.summary).to.include({ unchanged: first.lock.bindings.length });
+        expect(second.summary).to.include({ unchanged: _.filter(first.lock.bindings, 'producer').length });
         expect(_.pick(second.summary, ['added', 'extended', 'stale'])).to.eql({ added: [], extended: [], stale: [] });
         expect(second.lock).to.eql(first.lock);
         expect(_.map(requests(second), 'name')).to.eql(_.map(requests(first), 'name'));

@@ -35,7 +35,11 @@ export interface CollectionResult extends BaseResult {
 
 export interface ContractTestResult extends CollectionResult {
 
-  /** Updated bindings lock: saved links kept, new ones `pending`, broken ones `stale`. */
+  /**
+   * Updated bindings lock: `{ lockfileVersion, exclude, bindings: [{ variable, producer, consumers }] }`.
+   * Saved links are kept, broken ones dropped (see `summary.stale`), new ones added, and values nothing
+   * returns listed with `producer: null`.
+   */
   lock?: object;
   summary?: {
 
