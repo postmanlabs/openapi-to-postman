@@ -1,4 +1,9 @@
 // Postman script bodies (`exec` line arrays) used by the contract flows.
+
+// Assertion message with what came back: "received 422 Unprocessable Entity: {"error":...}".
+const RECEIVED = '"received " + pm.response.code + " " + pm.response.status + ": " + ' +
+  'pm.response.text().replace(/\\s+/g, " ").slice(0, 300)';
+
 module.exports = {
   /**
    * Pre-request: skip the request when a variable it needs is empty, e.g. because the request
@@ -25,7 +30,7 @@ module.exports = {
   },
 
   expectSuccess: ['', 'pm.test("Flow | Succeeds (2xx)", function () {',
-    '  pm.expect(pm.response.code).to.be.within(200, 299);', '});'],
+    `  pm.expect(pm.response.code, ${RECEIVED}).to.be.within(200, 299);`, '});'],
 
   /**
    * Post-response: on any 2xx (a spec may declare several success codes with the same body), save
@@ -80,10 +85,10 @@ module.exports = {
   },
 
   expectGone: ['', 'pm.test("Flow | Deleted resource is gone (404)", function () {',
-    '  pm.response.to.have.status(404);', '});'],
+    `  pm.expect(pm.response.code, ${RECEIVED}).to.equal(404);`, '});'],
 
   expectNoTokenRejected: ['pm.test("Rejects requests without a token (401/403)", function () {',
-    '  pm.expect(pm.response.code).to.be.oneOf([401, 403]);', '});'],
+    `  pm.expect(pm.response.code, ${RECEIVED}).to.be.oneOf([401, 403]);`, '});'],
 
   /**
    * Test that a request missing a required body field is rejected.
@@ -93,7 +98,7 @@ module.exports = {
    */
   expectMissingFieldRejected: (field) => {
     return [`pm.test("Rejects a request without \\"${field}\\" (4xx)", function () {`,
-      '  pm.expect(pm.response.code).to.be.within(400, 499);', '});'];
+      `  pm.expect(pm.response.code, ${RECEIVED}).to.be.within(400, 499);`, '});'];
   },
 
   /**
