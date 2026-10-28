@@ -299,6 +299,22 @@ describe('buildContractTestCollection', function () {
       expect(_.map(withoutCreate.summary.warnings, 'variable')).to.not.include('pet_id');
     });
 
+  it('replaces the whole JSON body for a consumer with path /, and skips its missing-field checks', async function () {
+    const lock = _.cloneDeep((await generate(PETSTORE)).lock);
+
+    lock.bindings.push({ variable: 'pet_body', producer: { constant: '{"name":"Rex","ownerId":"o1"}' },
+      consumers: [{ operation: 'POST /pets', param: { in: 'body', path: '/' } }] });
+    _.find(lock.bindings, { variable: 'owner_id' }).consumers =
+      _.reject(_.find(lock.bindings, { variable: 'owner_id' }).consumers, { operation: 'POST /pets' });
+
+    const result = await generate(PETSTORE, { lock }),
+      labels = _.map(requests(result), 'name');
+
+    expect(request(result, '3. POST /pets').request.body.raw).to.equal('{{pet_body}}');
+    expect(_.find(result.output[0].data.variable, { key: 'pet_body' }).value).to.equal('{"name":"Rex","ownerId":"o1"}');
+    expect(labels.join()).to.not.include('POST /pets without');
+  });
+
   it('saves a value from a response header, narrowed by a pattern', async function () {
     const lock = _.cloneDeep((await generate(PETSTORE)).lock);
 

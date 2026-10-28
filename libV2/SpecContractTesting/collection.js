@@ -72,6 +72,13 @@ const _ = require('lodash'),
 
     const mode = _.get(request, 'body.mode');
 
+    // `path: /` is the whole body: a JSON body becomes the variable's value as written.
+    if (param.path === '/') {
+      if (mode !== 'raw') { return false; }
+      request.body.raw = value;
+
+      return true;
+    }
     if (mode === 'urlencoded' || mode === 'formdata') {
       setEntry(request.body[mode] = request.body[mode] || [], param.path.slice(1), value);
 
@@ -277,7 +284,11 @@ const _ = require('lodash'),
       // Before the teardown, so parent ids still exist. If the API wrongly creates the resource,
       // the next request deletes it.
       missingFieldChecks = (op) => {
-        const cleanup = cleanupFor(op);
+        const cleanup = cleanupFor(op),
+          // A body given whole by a binding has no field to leave out.
+          bodyIsLinked = _.some(usesOf(op), ({ param }) => { return param.in === 'body' && param.path === '/'; });
+
+        if (bodyIsLinked) { return; }
 
         _.get(op.requestBodySchema, 'required', []).forEach((field) => {
           const stepId = `${op.operationId}:missing-${field}`,
