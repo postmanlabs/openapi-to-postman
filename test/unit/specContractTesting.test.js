@@ -235,7 +235,7 @@ describe('buildContractTestCollection', function () {
         listPets = request(result, '4. GET /pets'),
         updatePet = request(result, '6. PUT /pets/{petId}');
 
-      expect(result.summary.stale).to.be.empty;
+      expect(result.summary.warnings).to.be.empty;
       expect(_.find(createPet.request.header, { key: 'x-trace-id' }).value).to.equal('{{traceId}}');
       expect(_.find(listPets.request.url.query, { key: 'tag' })).to.include({ value: '{{traceId}}' })
         .and.not.include({ disabled: true });
@@ -274,7 +274,7 @@ describe('buildContractTestCollection', function () {
 
     _.find(duplicated.bindings, { variable: 'specification_id' }).consumers.push(type.consumers[0]);
     expect(await generate(NESTED, { lock: duplicated })).to.eql({ result: false, reason:
-      'GET /tasks query:type is listed under bindings "type" and "specification_id": keep it in one' });
+      'GET /tasks query:type is listed under bindings "specification_id" and "type": keep it in one' });
   });
 
   it('uses a producer\'s constant for every consumer, keeping the rest of the producer as a reference',
@@ -296,7 +296,7 @@ describe('buildContractTestCollection', function () {
       expect(_.find(result.lock.bindings, { variable: 'pet_id' }).producer)
         .to.eql({ operation: 'POST /pets', value: '$response.body#/id', constant: id });
       expect(withPhotos.summary.extended).to.have.length(1);
-      expect(_.map(withoutCreate.summary.stale, 'variable')).to.not.include('pet_id');
+      expect(_.map(withoutCreate.summary.warnings, 'variable')).to.not.include('pet_id');
     });
 
   it('saves a value from a response header, narrowed by a pattern', async function () {
@@ -309,7 +309,7 @@ describe('buildContractTestCollection', function () {
       script = exec(request(result, '3. POST /pets'), 'test'),
       saved = {};
 
-    expect(result.summary.stale).to.be.empty;
+    expect(result.summary.warnings).to.be.empty;
     expect(script).to.include('"header":"Location","pattern":"([^/]+)$"');
 
     // Run the save part of the generated script against a 201 with `Location: /pets/42`.
@@ -324,18 +324,73 @@ describe('buildContractTestCollection', function () {
     expect(saved.pet_id).to.equal('42');
   });
 
-  it('reuses a saved lock, extends it with new consumers and marks broken links stale', async function () {
+  it('reuses a saved lock and extends it with new consumers', async function () {
     const lock = (await generate(PETSTORE)).lock,
       withPhotos = _.set(_.cloneDeep(PETSTORE), ['paths', '/pets/{petId}/photos'], { get: {
         parameters: [idParam('petId')], responses: { 200: { description: 'ok' } } } }),
-      reused = await generate(withPhotos, { lock }),
-      withoutOwners = await generate(_.omit(PETSTORE, ['paths./owners']), { lock });
+      reused = await generate(withPhotos, { lock });
 
     expect(reused.summary).to.include({ unchanged: 2 });
     expect(reused.summary.added).to.be.empty;
     expect(reused.summary.extended).to.have.length(1);
     expect(reused.summary.extended[0].variable).to.equal('pet_id');
-    expect(_.map(withoutOwners.summary.stale, 'staleReason')).to.eql(['producer POST /owners no longer exists']);
+    expect(_.last(_.find(reused.lock.bindings, { variable: 'pet_id' }).consumers).operation)
+      .to.equal('GET /pets/{petId}/photos');
+  });
+
+  it('keeps a binding whose requests left the spec, warns, and gives its consumers no value', async function () {
+    const lock = (await generate(PETSTORE)).lock,
+      withoutOwners = await generate(_.omit(PETSTORE, ['paths./owners', 'paths./owners/{ownerId}']), { lock });
+
+    expect(withoutOwners.lock.bindings).to.eql(lock.bindings);
+    expect(withoutOwners.summary.warnings).to.eql([
+      { variable: 'owner_id', reason: 'producer POST /owners is not in the spec' },
+      { variable: 'owner_id', reason: 'consumer GET /owners/{ownerId} is not in the spec' }
+    ]);
+    expect(withoutOwners.summary.unresolved).to.deep.include({ operation: 'POST /pets',
+      param: { in: 'body', path: '/ownerId' }, reason: 'binding owner_id: producer POST /owners is not in the spec',
+      fallback: 'example' });
+  });
+
+  it('keeps everything a user edited: entries, order, constants, notes and placeholders', async function () {
+    const first = await generate(NESTED),
+      lock = _.cloneDeep(first.lock),
+      edited = _.find(lock.bindings, { variable: 'type' }),
+      withTask = _.set(_.cloneDeep(NESTED), ['paths', '/tasks', 'post'], { responses: { 201: { description: 'ok',
+        content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'string' } } } } } } } });
+
+    lock.bindings.reverse();
+    edited.note = 'still unresolved on purpose';
+    _.find(lock.bindings, { variable: 'specification_id' }).producer.constant = 'spec-1';
+
+    const second = await generate(withTask, { lock });
+
+    expect(second.lock.bindings.slice(0, lock.bindings.length)).to.eql(lock.bindings);
+    expect(_.find(second.lock.bindings, { variable: 'task_id' })).to.include({ producer: null });
+    expect(second.summary.suggestions).to.deep.include({ variable: 'task_id',
+      consumer: { operation: 'GET /tasks/{taskId}', param: { in: 'path', name: 'taskId' } },
+      producer: { operation: 'POST /tasks', value: '$response.body#/id' } });
+  });
+
+  it('rejects bindings that would clash or that it cannot read', async function () {
+    const lock = (await generate(PETSTORE)).lock,
+      withBindings = (change) => { const copy = _.cloneDeep(lock); change(copy.bindings); return copy; },
+      cases = [
+        [(bindings) => { bindings[1].variable = bindings[0].variable; },
+          'Two bindings use the variable "owner_id": rename one'],
+        [(bindings) => { delete bindings[0].variable; }, 'Every binding needs a variable'],
+        [(bindings) => { bindings[0].producer = { pattern: 'x' }; }, 'has an invalid producer'],
+        [(bindings) => { bindings[0].producer = { operation: 'POST /owners' }; }, 'producer operation without a value'],
+        [(bindings) => { bindings[0].consumers[0].param = { in: 'cookie', name: 'id' }; }, 'has an invalid consumer'],
+        [(bindings) => { bindings[0].consumers[0].param = { in: 'body', name: 'id' }; }, 'has an invalid consumer']
+      ];
+
+    for (const [change, message] of cases) {
+      const result = await generate(PETSTORE, { lock: withBindings(change) });
+
+      expect(result.result).to.equal(false);
+      expect(result.reason).to.include(message);
+    }
   });
 
   it('adds header auth when asked', async function () {
@@ -355,16 +410,18 @@ describe('buildContractTestCollection', function () {
     expect(result.lock.exclude).to.eql(exclude);
   });
 
-  it('keeps a link when one of its consumers is excluded, and marks it stale when its producer is', async function () {
+  it('keeps a link when one of its requests is excluded, and warns when its producer is', async function () {
     const lock = (await generate(PETSTORE)).lock,
       withExclude = (operation) => { return Object.assign({}, lock, { exclude: [{ operation }] }); },
       consumerExcluded = await generate(PETSTORE, { lock: withExclude('GET /pets/{petId}') }),
       producerExcluded = await generate(PETSTORE, { lock: withExclude('POST /owners') });
 
     expect(consumerExcluded.summary).to.include({ unchanged: 2 });
-    expect(consumerExcluded.summary.stale).to.be.empty;
+    expect(consumerExcluded.summary.warnings).to.be.empty;
     expect(_.map(binding(consumerExcluded, 'pet_id').consumers, 'operation')).to.include('GET /pets/{petId}');
-    expect(_.map(producerExcluded.summary.stale, 'staleReason')).to.eql(['producer POST /owners is excluded']);
+    expect(producerExcluded.summary.warnings)
+      .to.eql([{ variable: 'owner_id', reason: 'producer POST /owners is excluded' }]);
+    expect(producerExcluded.lock.bindings).to.eql(lock.bindings);
   });
 
   it('reads a lock without lockfileVersion as version 1 and rejects any other version', async function () {
@@ -463,7 +520,7 @@ describe('buildContractTestCollection', function () {
       second = await generate(spec, { lock: first.lock });
 
     expect(binding(first, 'thing_id').consumers).to.have.length(2);
-    expect(second.summary.stale).to.be.empty;
+    expect(second.summary.warnings).to.be.empty;
   });
 
   it('treats 0 as a saved value in the guard', function () {
@@ -580,8 +637,9 @@ describe('buildContractTestCollection invariants', function () {
         const first = await generate(spec),
           second = await generate(spec, { lock: first.lock });
 
-        expect(second.summary).to.include({ unchanged: _.filter(first.lock.bindings, 'producer').length });
-        expect(_.pick(second.summary, ['added', 'extended', 'stale'])).to.eql({ added: [], extended: [], stale: [] });
+        expect(second.summary).to.include({ unchanged: first.lock.bindings.length });
+        expect(_.pick(second.summary, ['added', 'extended', 'warnings']))
+          .to.eql({ added: [], extended: [], warnings: [] });
         expect(second.lock).to.eql(first.lock);
         expect(_.map(requests(second), 'name')).to.eql(_.map(requests(first), 'name'));
       });

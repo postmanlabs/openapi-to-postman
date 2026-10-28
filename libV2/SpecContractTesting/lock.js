@@ -1,5 +1,5 @@
-// Bindings lock: the links between requests, and the operations not to run. A saved link is reused
-// as-is instead of being inferred again, so a change elsewhere in the spec can't quietly change it.
+// Bindings lock: the links between requests, and the operations not to run. Everything already in the
+// lock belongs to the user and is kept as written; a run only appends links for values no entry covers.
 // Reading and writing the lock file is left to the caller; this module only works on the lock object.
 //
 //   lockfileVersion: 1
@@ -66,71 +66,116 @@ const _ = require('lodash'),
       _.has(binding, 'producer.constant');
   },
 
-  /**
-   * A consumer listed under two saved bindings would get two values; the user has to keep one.
-   *
-   * @param {Object} [lock] - saved lock
-   * @returns {String|undefined} error naming the consumer and both bindings
-   */
-  findDuplicateConsumer = (lock) => {
-    const owners = {};
-    let error;
-
-    _.filter(_.get(lock, 'bindings'), hasProducer).forEach((binding) => {
-      _.forEach(binding.consumers, ({ operation, param = {} }) => {
-        const key = paramKey(operation, param);
-
-        if (owners[key] && owners[key] !== binding.variable && !error) {
-          error = `${key} is listed under bindings "${owners[key]}" and "${binding.variable}": keep it in one`;
-        }
-        owners[key] = owners[key] || binding.variable;
-      });
-    });
-
-    return error;
+  isValidParam = (param) => {
+    return ['path', 'query', 'header'].includes(_.get(param, 'in')) ?
+      _.isString(param.name) && Boolean(param.name) :
+      _.get(param, 'in') === 'body' && (/^\//).test(_.get(param, 'path'));
   },
 
-  // Returns why a saved binding no longer fits the spec, or null if it still does. Consumers that are
-  // excluded are left alone, so excluding a request doesn't break the link for the others. Query,
-  // header and body values may target parameters the spec doesn't declare; a path id must exist.
-  staleReason = (binding, ops, fields, excluded) => {
-    const producer = binding.producer,
+  /**
+   * Checks what a user may have edited in `bindings`. Each binding needs its own `variable`; a producer
+   * is null, a response value, an environment variable or a constant; each consumer is
+   * { operation, param: { in: path|query|header, name } | { in: body, path } } and belongs to one binding.
+   *
+   * @param {Object} [lock] - saved lock
+   * @returns {String|undefined} error describing the first problem
+   */
+  findBindingsError = (lock) => {
+    const bindings = _.get(lock, 'bindings') || [],
+      variables = new Set(),
+      owners = {};
+
+    if (!_.isArray(bindings)) { return 'bindings must be a list'; }
+
+    for (const binding of bindings) {
+      const variable = _.get(binding, 'variable'),
+        producer = _.get(binding, 'producer');
+
+      if (!_.isString(variable) || !variable) {
+        return `Every binding needs a variable: ${JSON.stringify(binding)}`;
+      }
+      if (variables.has(variable)) { return `Two bindings use the variable "${variable}": rename one`; }
+      variables.add(variable);
+
+      if (!_.isNil(producer) && !hasProducer(binding)) {
+        return `Binding "${variable}" has an invalid producer: use operation and value, environment, constant or null`;
+      }
+      if (_.get(producer, 'operation') && !_.has(producer, 'constant') && !_.get(producer, 'value')) {
+        return `Binding "${variable}" has a producer operation without a value`;
+      }
+
+      for (const consumer of _.get(binding, 'consumers') || []) {
+        const key = _.isString(_.get(consumer, 'operation')) && isValidParam(consumer.param) &&
+          paramKey(consumer.operation, consumer.param);
+
+        if (!key) {
+          return `Binding "${variable}" has an invalid consumer ${JSON.stringify(consumer)}: use operation and ` +
+            'param { in: path|query|header, name } or { in: body, path }';
+        }
+        if (owners[key] && owners[key] !== variable) {
+          return `${key} is listed under bindings "${owners[key]}" and "${variable}": keep it in one`;
+        }
+        owners[key] = variable;
+      }
+    }
+  },
+
+  /**
+   * Problems with a saved binding, reported as warnings; the binding stays in the lock. A producer
+   * problem means its consumers get no value this run. Excluded consumers are left alone, and query,
+   * header and body values may target parameters the spec doesn't declare; a path id must exist.
+   *
+   * @param {Object} binding - saved binding
+   * @param {Object} ops - operations by key
+   * @param {Object} fields - response fields by fieldKey
+   * @param {Set<String>} excluded - excluded operation keys
+   * @returns {Object} { producerProblem: String|null, problems: String[] }
+   */
+  bindingProblems = (binding, ops, fields, excluded) => {
+    const producer = binding.producer || {},
       pointer = _.get((/^\$response\.body#(.*)$/).exec(producer.value || ''), 1),
       field = fields[fieldKey(producer.operation, pointer)];
+    let producerProblem = null;
 
-    // Response headers aren't described by the converter's output, so only the operation is checked.
-    // A constant makes the rest of the producer a reference, so it isn't checked.
+    // A constant makes the rest of the producer a reference, so it isn't checked. Response headers
+    // aren't described by the converter's output, so for them only the operation is checked.
     if (producer.operation && !_.has(producer, 'constant')) {
-      if (excluded.has(producer.operation)) { return `producer ${producer.operation} is excluded`; }
-      if (!ops[producer.operation]) { return `producer ${producer.operation} no longer exists`; }
-      if (pointer === undefined && !(/^\$response\.header\.\S+$/).test(producer.value || '')) {
-        return `${producer.value} is not a $response.body# or $response.header. value`;
+      if (excluded.has(producer.operation)) { producerProblem = `producer ${producer.operation} is excluded`; }
+      else if (!ops[producer.operation]) { producerProblem = `producer ${producer.operation} is not in the spec`; }
+      else if (pointer === undefined && !(/^\$response\.header\.\S+$/).test(producer.value)) {
+        producerProblem = `${producer.value} is not a $response.body# or $response.header. value`;
       }
-      if (pointer !== undefined && !field) { return `${producer.operation} no longer returns ${producer.value}`; }
+      else if (pointer !== undefined && !field) {
+        producerProblem = `${producer.operation} does not return ${producer.value}`;
+      }
     }
 
-    for (const { operation, param = {} } of binding.consumers || []) {
-      const declared = ops[operation] && describeParam(ops[operation], param),
-        name = param.name || param.path;
+    const consumerProblems = binding.consumers.filter(({ operation }) => { return !excluded.has(operation); })
+      .map(({ operation, param }) => {
+        const declared = ops[operation] && describeParam(ops[operation], param),
+          name = param.name || param.path;
 
-      if (excluded.has(operation)) { continue; }
-      if (!ops[operation]) { return `consumer ${operation} no longer exists`; }
-      if (param.in === 'path' && !declared) { return `${operation} no longer has path parameter ${name}`; }
-      if (field && declared && !typesMatch(field, declared)) { return `types of ${producer.value} and ${name} differ`; }
-    }
+        if (!ops[operation]) { return `consumer ${operation} is not in the spec`; }
+        if (param.in === 'path' && !declared) { return `${operation} has no path parameter ${name}`; }
+        if (field && declared && !typesMatch(field, declared)) {
+          return `types of ${producer.value} and ${name} differ`;
+        }
 
-    return null;
+        return null;
+      });
+
+    return { producerProblem, problems: _.compact([producerProblem].concat(consumerProblems)) };
   },
 
   // The lock-file form of a binding: only what a user reads or edits.
   lockEntry = (binding) => {
-    const producer = binding.producer;
-
     return _.omitBy({
       variable: binding.variable,
       note: binding.note,
-      producer: producer && _.omitBy(_.pick(producer, ['operation', 'value', 'pattern', 'environment', 'constant']),
-        _.isUndefined),
+      producer: hasProducer(binding) ?
+        _.omitBy(_.pick(binding.producer, ['operation', 'value', 'pattern', 'environment', 'constant']),
+          _.isUndefined) :
+        null,
       consumers: _.map(binding.consumers, (consumer) => {
         return { operation: consumer.operation, param: consumer.param };
       })
@@ -238,17 +283,18 @@ const _ = require('lodash'),
   },
 
   /**
-   * Combines a saved lock with fresh inference for anything it doesn't cover.
+   * Combines a saved lock with fresh inference for values no saved entry covers.
    *
-   * Saved bindings that still fit are kept; those that don't are dropped (reported in `stale`) and
-   * their consumers inferred again. A new consumer whose producer is already saved joins that binding.
-   * Values nothing returns are written as bindings with `producer: null`, grouped by variable name.
+   * Saved bindings, placeholders included, are kept as written and in their order; problems with them
+   * are reported in `warnings`. A new consumer whose producer is already saved joins that binding, other
+   * new links are appended, and new values nothing returns join the placeholder of the same name or a
+   * new one. Consumers listed anywhere in the lock are never inferred again.
    *
    * @param {Object} options - options
    * @param {Object[]} options.operations - operations to run
    * @param {Set<String>} options.excluded - keys of the operations the lock excludes
-   * @param {Object} [options.lock] - saved lock
-   * @returns {Object} { bindings: the runnable part of the active bindings, flows, lock, summary }
+   * @param {Object} [options.lock] - saved lock, already checked by findBindingsError
+   * @returns {Object} { bindings: what the run uses, flows, lock, summary }
    */
   reconcile = ({ operations, excluded, lock }) => {
     const ops = _.keyBy(operations, 'key'),
@@ -256,59 +302,105 @@ const _ = require('lodash'),
         return fieldKey(field.op.key, field.pointer);
       }),
       allConsumers = _.flatMap(operations, consumedValues),
-      covered = new Set(),
-      kept = [],
-      stale = [],
+      saved = _.map(_.cloneDeep(_.get(lock, 'bindings') || []), lockEntry),
+      [linked, placeholders] = _.partition(saved, hasProducer),
+      listed = new Set(_.flatMap(saved, (binding) => {
+        return binding.consumers.map((consumer) => { return paramKey(consumer.operation, consumer.param); });
+      })),
+      taken = new Set(_.map(saved, 'variable')),
+      warnings = [],
+      brokenProducers = {},
       added = [],
-      extended = [];
+      extended = [],
+      unresolvedRefs = [];
 
-    _.cloneDeep(_.filter(_.get(lock, 'bindings'), hasProducer)).forEach((binding) => {
-      const reason = staleReason(binding, ops, fields, excluded);
+    saved.forEach((binding) => {
+      const { producerProblem, problems } = bindingProblems(binding, ops, fields, excluded);
 
-      if (reason) { return stale.push(Object.assign(lockEntry(binding), { staleReason: reason })); }
-
-      kept.push(lockEntry(binding));
-      binding.consumers.forEach((consumer) => { covered.add(paramKey(consumer.operation, consumer.param)); });
+      problems.forEach((reason) => { warnings.push({ variable: binding.variable, reason }); });
+      if (producerProblem) { brokenProducers[binding.variable] = producerProblem; }
     });
 
-    const { bindings: inferred, unresolved } = inferBindings(operations,
-        allConsumers.filter((consumer) => { return !covered.has(consumerKey(consumer)); })),
-      taken = new Set(_.map(kept, 'variable'));
+    // Placeholder values a response can now provide: the user decides, so only suggest the producer.
+    const placeholderOf = _.fromPairs(_.flatMap(placeholders, (binding) => {
+        return binding.consumers.map((ref) => { return [paramKey(ref.operation, ref.param), binding.variable]; });
+      })),
+      suggestions = inferBindings(operations, allConsumers.filter((consumer) => {
+        return placeholderOf[consumerKey(consumer)];
+      })).bindings.flatMap((binding) => {
+        return binding.consumers.map((consumer) => {
+          return { variable: placeholderOf[paramKey(consumer.operation, consumer.param)], consumer,
+            producer: binding.producer };
+        });
+      }),
+      { bindings: inferred, unresolved } = inferBindings(operations,
+        allConsumers.filter((consumer) => { return !listed.has(consumerKey(consumer)); }));
+
+    placeholders.forEach((binding) => {
+      binding.consumers.filter((ref) => { return ops[ref.operation]; }).forEach((ref) => {
+        unresolvedRefs.push(unresolvedRef(ref.operation, ref.param, 'no producer is set for this value'));
+      });
+    });
 
     inferred.forEach((binding) => {
-      const existing = _.find(kept, (candidate) => {
+      const existing = _.find(linked, (candidate) => {
         return candidate.producer.operation === binding.producer.operation &&
           candidate.producer.value === binding.producer.value;
       });
 
+      if (!existing) {
+        return added.push(Object.assign({}, binding, { variable: uniqueName(binding.variable, taken) }));
+      }
+
+      existing.consumers.push(...binding.consumers);
+      binding.consumers.forEach((consumer) => { extended.push({ variable: existing.variable, consumer }); });
+    });
+
+    const sortKey = (binding) => { return _.get(binding, 'producer.operation') || '~'; },
+      newLinks = added.slice().sort((a, b) => {
+        return sortKey(a).localeCompare(sortKey(b)) || a.variable.localeCompare(b.variable);
+      }),
+      newPlaceholders = [];
+
+    _(unresolved).groupBy(placeholderVariable).toPairs().sortBy(0).forEach(([variable, consumers]) => {
+      const refs = consumers.map((consumer) => {
+          return { operation: consumer.op.key, param: consumerParam(consumer) };
+        }),
+        existing = _.find(placeholders, { variable });
+
+      refs.forEach((ref) => {
+        unresolvedRefs.push(unresolvedRef(ref.operation, ref.param, 'no response returns a matching value'));
+      });
       if (existing) {
-        existing.consumers.push(...binding.consumers);
-        binding.consumers.forEach((consumer) => { extended.push({ variable: existing.variable, consumer }); });
+        existing.consumers.push(...refs);
+        refs.forEach((consumer) => { extended.push({ variable, consumer }); });
 
         return;
       }
-      added.push(Object.assign({}, binding, { variable: uniqueName(binding.variable, taken) }));
+
+      const placeholder = { variable: uniqueName(variable, taken), producer: null, consumers: refs };
+
+      newPlaceholders.push(placeholder);
+      added.push(placeholder);
     });
 
-    const active = kept.concat(added),
-      // What the run uses: a binding with a constant has no producer request to wait for or save from.
+    const active = linked.concat(newLinks),
+      // What the run uses: a constant needs no producer request; a broken producer gives its consumers nothing.
       runtime = active.map((binding) => {
-        return _.has(binding.producer, 'constant') ?
-          Object.assign({}, binding, { producer: { constant: binding.producer.constant } }) : binding;
+        if (_.has(binding.producer, 'constant')) {
+          return Object.assign({}, binding, { producer: { constant: binding.producer.constant } });
+        }
+        if (!brokenProducers[binding.variable]) { return binding; }
+        binding.consumers.filter((ref) => { return ops[ref.operation]; }).forEach((ref) => {
+          unresolvedRefs.push(unresolvedRef(ref.operation, ref.param,
+            `binding ${binding.variable}: ${brokenProducers[binding.variable]}`));
+        });
+
+        return Object.assign({}, binding, { consumers: [] });
       }),
       flows = buildFlows(operations, runtime),
       ordered = dropUnorderedConsumers(runtime, flows, ops),
-      { runnable, blocked } = dropSkippedProducers(ordered.runnable, operations),
-      // Environment and constant producers first ('~' sorts before letters), then response producers by operation.
-      sortKey = (binding) => { return _.get(binding, 'producer.operation') || '~'; },
-      placeholders = _(unresolved).groupBy(placeholderVariable).toPairs().sortBy(0).map(([variable, consumers]) => {
-        return { variable: uniqueName(variable, taken), producer: null, consumers: consumers.map((consumer) => {
-          return { operation: consumer.op.key, param: consumerParam(consumer) };
-        }) };
-      }).value(),
-      unresolvedRefs = unresolved.map((consumer) => {
-        return unresolvedRef(consumer.op.key, consumerParam(consumer), 'no response returns a matching value');
-      }).concat(ordered.blocked, blocked);
+      { runnable, blocked } = dropSkippedProducers(ordered.runnable, operations);
 
     return {
       bindings: runnable,
@@ -316,12 +408,17 @@ const _ = require('lodash'),
       lock: {
         lockfileVersion: LOCK_VERSION,
         exclude: _.cloneDeep(_.get(lock, 'exclude') || []),
-        bindings: active.slice().sort((a, b) => {
-          return sortKey(a).localeCompare(sortKey(b)) || a.variable.localeCompare(b.variable);
-        }).map(lockEntry).concat(placeholders)
+        bindings: saved.concat(newLinks.map(lockEntry), newPlaceholders)
       },
-      summary: { unchanged: kept.length, added, extended, stale, unresolved: unresolvedRefs }
+      summary: {
+        unchanged: saved.length,
+        added,
+        extended,
+        warnings,
+        suggestions,
+        unresolved: unresolvedRefs.concat(ordered.blocked, blocked)
+      }
     };
   };
 
-module.exports = { versionError, readExclude, findDuplicateConsumer, unresolvedRef, reconcile };
+module.exports = { versionError, readExclude, findBindingsError, unresolvedRef, reconcile };

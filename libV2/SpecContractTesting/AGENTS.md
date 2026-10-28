@@ -26,7 +26,7 @@ export. Collection generation itself is unchanged; this is a pure post-step.
 | `operations.js` | Lists operations from `extractedTypes` and classifies each by path shape |
 | `normalize.js` | Makes different spellings look alike: plurals, id names, wrappers, 3.1 types, maps, custom methods |
 | `bindings.js` | Response fields, consumed values, ranked rules, inference |
-| `lock.js` | `exclude`, reconciling a saved lock with fresh inference, stale reasons, unresolved values |
+| `lock.js` | `exclude`, checks on hand-edited bindings, reconciling a saved lock with fresh inference, warnings |
 | `order.js` | Run order: topological sort of resources, order within a resource, teardown |
 | `collection.js` | Copies and wires requests, adds scripts, numbers them, builds the output collection |
 | `scripts.js` | Postman script bodies (`exec` line arrays) |
@@ -224,46 +224,48 @@ bindings:
 
 **Producer forms:** `operation` + `value` (+ `pattern`), `environment`, or `null`. Any of them may add
 `constant`: every consumer then gets that value (a collection variable), the producer request doesn't save into
-the variable or affect run order, and the rest of the producer is a reference only (not checked for staleness).
+the variable or affect run order, and the rest of the producer is a reference only (not checked).
 `operation` and `environment` aren't combined. Header values are only checked for their operation, since the
 converter's output doesn't describe response headers.
 
 **Checked before generating** (each returns `{ result: false, reason }`):
 - `lockfileVersion` is not 1 (a missing version counts as 1): `Unsupported lockfileVersion 2: expected 1`
 - an `exclude` entry has both or neither of `operation`/`pattern`, or an invalid regex
-- a consumer is listed under two bindings that have a producer
+- a binding without a `variable`, or two bindings with the same `variable`
+- a producer that is not null, `operation` + `value`, `environment` or `constant`
+- a consumer that is not `{ operation, param: { in: path|query|header, name } | { in: body, path } }`, or one
+  listed under two bindings (placeholders included)
 
-**Reconcile:**
+**Reconcile.** Everything already in the lock belongs to the user: a run only appends.
 
-1. Saved bindings with a producer are checked. One that no longer fits is dropped from the lock and reported
-   in `summary.stale` with a reason; its consumers are inferred again:
-   - `producer X is excluded` / `producer X no longer exists`
-   - `X no longer returns <pointer>`
-   - `consumer X no longer exists` / `X no longer has path parameter Y`
-   - `types of <value> and Y differ` (the type compatibility check, re-run)
+1. Every saved binding, placeholders included, is kept as written and in its order. Comments and unknown keys
+   are dropped, and keys are written in a standard order.
+2. Problems with saved bindings are reported in `summary.warnings` and change nothing in the lock:
+   - `producer X is excluded` / `producer X is not in the spec` / `X does not return <pointer>`: the
+     binding's consumers get no value this run (a path id skips the request, other values use the example)
+   - `consumer X is not in the spec` / `X has no path parameter Y`: nothing to run for it
+   - `types of <value> and Y differ`: still used
 
-   Excluded consumers are ignored, so excluding one request doesn't break the link for the others. Query,
-   header and body consumers may target parameters the spec doesn't declare (a written binding can set any
-   header or body field); a path parameter must exist.
-2. Bindings with `producer: null` are ignored on input and recomputed, so a value that becomes returnable is
-   picked up automatically.
-3. Consumers covered by kept bindings aren't inferred again. The rest go through inference.
-4. An inferred binding with the same producer operation and value as a kept one joins it (reported in
-   `extended`), including one with a `constant`. Otherwise it's
-   added with a unique variable name (reported in `added`, with `rule` and `score`).
-5. Values nothing returns become `producer: null` bindings, grouped by variable name (`<resource>_id` for a
-   path `{id}`, else the parameter name in snake case), so one producer fills them all.
-6. Flows are built from kept + added bindings; consumers broken by a cycle or by a skipped producer are
-   reported in `summary.unresolved` (the lock keeps the link).
-7. Bindings without an `operation` producer come first, then by producer operation, then variable; placeholders
-   follow, sorted by variable.
+   Excluded consumers are ignored. Query, header and body consumers may target parameters the spec doesn't
+   declare; a path parameter must exist. A `constant` makes the rest of the producer a reference only.
+3. Consumers listed anywhere in the lock are never inferred again. Deleting a binding or a consumer is how a
+   user asks for a fresh link.
+4. New consumers are inferred. One whose producer (operation and value) matches a saved binding joins it
+   (`extended`); other links are appended, sorted by producer operation then variable (`added`, with `rule`
+   and `score`).
+5. New values nothing returns join the saved placeholder with the same variable name (`<resource>_id` for a
+   path `{id}`, else the parameter name in snake case), or become a new one appended at the end.
+6. A placeholder value that a response can now provide is reported in `summary.suggestions`; the user sets
+   the producer.
+7. Flows are built from the saved and added bindings; consumers broken by a cycle or by a skipped producer are
+   reported in `summary.unresolved`.
 
-Review happens on the lock file's diff; `--frozen-lockfile` stops CI when it would change. There are no
-per-entry statuses.
+Review happens on the lock file's diff; `--frozen-lockfile` stops CI when something would be added.
 
 **Unresolved reasons** (`summary.unresolved`, each with `fallback: skip` or `example`):
-`no response returns a matching value`, `X runs after this request (dependency cycle)`, `X is skipped (it
-needs an unresolved value)`, `the request body format cannot take a linked value`.
+`no response returns a matching value`, `no producer is set for this value`, `binding X: <producer problem>`,
+`X runs after this request (dependency cycle)`, `X is skipped (it needs an unresolved value)`,
+`the request body format cannot take a linked value`.
 
 ## API
 
@@ -284,10 +286,11 @@ Result: `{ result: true, output: [{ type: 'collection', data }], lock, summary }
 |---|---|
 | `excluded` | Operations left out by `exclude`, sorted |
 | `skipped` | Operations left out because a value they need is unresolved |
-| `unchanged` | Number of saved bindings kept |
-| `added` | New bindings, with `rule` and `score` |
+| `unchanged` | Number of saved bindings, placeholders included |
+| `added` | Bindings appended: new links (with `rule` and `score`) and new placeholders |
 | `extended` | `{ variable, consumer }` for consumers joined to a saved binding |
-| `stale` | Saved bindings dropped because they no longer fit, with `staleReason` |
+| `warnings` | `{ variable, reason }` for problems with saved bindings |
+| `suggestions` | `{ variable, consumer, producer }` for placeholder values a response can now provide |
 | `unresolved` | `{ operation, param, reason, fallback }` for every value that isn't linked |
 
 Types: `ContractTestOptions` and `ContractTestResult` in `types/index.ts`.
@@ -321,7 +324,7 @@ Types: `ContractTestOptions` and `ContractTestResult` in `types/index.ts`.
 | `--out <file>` | Where to write the collection (required) |
 | `--lock <file>` | Read a saved lock |
 | `--write-lock <file>` | Write the merged lock as expanded YAML, with a short comment header |
-| `--frozen-lockfile` | Exit 1 if any link is new, extended or stale |
+| `--frozen-lockfile` | Exit 1 if any link would be added |
 | `--auth-header <name>` | Passed as `authHeader` |
 
 Exit codes: 2 bad usage or spec that won't convert, 1 frozen-lockfile violation, 0 otherwise.

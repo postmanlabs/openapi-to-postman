@@ -36,9 +36,9 @@ export interface CollectionResult extends BaseResult {
 export interface ContractTestResult extends CollectionResult {
 
   /**
-   * Updated bindings lock: `{ lockfileVersion, exclude, bindings: [{ variable, producer, consumers }] }`.
-   * Saved links are kept, broken ones dropped (see `summary.stale`), new ones added, and values nothing
-   * returns listed with `producer: null`.
+   * Updated bindings lock: `{ lockfileVersion, exclude, bindings: [{ variable, note?, producer, consumers }] }`.
+   * Saved entries are kept as written and in order; new links and values nothing returns
+   * (`producer: null`) are appended.
    */
   lock?: object;
   summary?: {
@@ -48,10 +48,23 @@ export interface ContractTestResult extends CollectionResult {
 
     /** Operations left out because a value they need is unresolved (see `unresolved`). */
     skipped: string[];
+
+    /** Number of saved bindings, placeholders included. */
     unchanged: number;
+
+    /** Bindings appended to the lock: new links (with `rule` and `score`) and new placeholders. */
     added: object[];
+
+    /** `{ variable, consumer }` for consumers appended to a saved binding. */
     extended: object[];
-    stale: object[];
+
+    /** `{ variable, reason }` for problems with saved bindings, e.g. a request no longer in the spec. */
+    warnings: object[];
+
+    /** `{ variable, consumer, producer }` for placeholder values a response can now provide. */
+    suggestions: object[];
+
+    /** `{ operation, param, reason, fallback }` for every value that isn't linked. */
     unresolved: object[];
   };
 }
