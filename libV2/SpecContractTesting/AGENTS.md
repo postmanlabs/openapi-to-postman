@@ -142,8 +142,8 @@ link, or a linked value the request can't take (e.g. an XML body). Both are list
 lock's `exclude` section is the only other way a request is left out.
 
 **Wiring** (`useVariable`): path variables, or an inline `{{name}}` before a custom method; query and header
-entries (enabling the `<x>Type` sibling of a wired `<x>Id`); JSON bodies (non-string types unquoted); form
-bodies (`urlencoded`, `formdata`). Optional query and header parameters are disabled unless a binding fills
+entries (enabling the `<x>Type` sibling of a wired `<x>Id`); JSON body fields (non-string types unquoted), or the
+whole JSON body for `path: /` (its missing-field checks are skipped); form bodies (`urlencoded`, `formdata`). Optional query and header parameters are disabled unless a binding fills
 them.
 
 **Scripts** (`scripts.js`):
@@ -192,7 +192,7 @@ bindings:
           name: petId
       - operation: POST /visits
         param:
-          in: body                                 # also query, header; body paths may be nested
+          in: body                                 # also query, header; body paths may be nested, / is the whole body
           path: /petId
   - variable: photo_id
     producer:
