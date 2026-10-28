@@ -33,6 +33,42 @@ export interface CollectionResult extends BaseResult {
   name?: string;
 }
 
+export interface ContractTestResult extends CollectionResult {
+
+  /**
+   * Updated bindings lock: `{ lockfileVersion, exclude, bindings: [{ variable, note?, producer, consumers }] }`.
+   * Saved entries are kept as written and in order; new links and values nothing returns
+   * (`producer: null`) are appended.
+   */
+  lock?: object;
+  summary?: {
+
+    /** Operations left out by the lock's `exclude` section. */
+    excluded: string[];
+
+    /** Operations left out because a value they need is unresolved (see `unresolved`). */
+    skipped: string[];
+
+    /** Number of saved bindings, placeholders included. */
+    unchanged: number;
+
+    /** Bindings appended to the lock: new links (with `rule` and `score`) and new placeholders. */
+    added: object[];
+
+    /** `{ variable, consumer }` for consumers appended to a saved binding. */
+    extended: object[];
+
+    /** `{ variable, reason }` for problems with saved bindings, e.g. a request no longer in the spec. */
+    warnings: object[];
+
+    /** `{ variable, consumer, producer }` for placeholder values a response can now provide. */
+    suggestions: object[];
+
+    /** `{ operation, param, reason, fallback }` for every value that isn't linked. */
+    unresolved: object[];
+  };
+}
+
 export interface BundleResult extends BaseResult {
   output?: {
     type: string;
@@ -115,6 +151,9 @@ export interface Options {
   /** Enable nested folder hierarchy using tags */
   nestedFolderHierarchy?: boolean;
 
+  /** Add a contract test (status-code + response-schema assertions) to each generated request */
+  generateContractTests?: boolean;
+
   /** Whether or not schemas should be faked */
   schemaFaker?: boolean;
 
@@ -176,6 +215,21 @@ export interface Options {
 /**
  * Sync options for collection synchronization
  */
+/**
+ * Options for generating the spec contract-test collection
+ */
+export interface ContractTestOptions {
+
+  /**
+   * Bindings lock from a previous run: its links are reused instead of being inferred again, and the
+   * operations in its `exclude` section ({ operation } or { pattern } on "METHOD /path") are left out.
+   */
+  lock?: object | null;
+
+  /** Header sent on every request (e.g. "x-access-token"), valued {{camelCase(header)}}. */
+  authHeader?: string;
+}
+
 export interface SyncOptions {
 
   /** Whether to sync response examples from the OpenAPI specification */
