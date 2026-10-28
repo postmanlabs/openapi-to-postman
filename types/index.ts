@@ -226,8 +226,12 @@ export interface ContractTestOptions {
    */
   lock?: object | null;
 
-  /** Header sent on every request (e.g. "x-access-token"), valued {{camelCase(header)}}. */
-  authHeader?: string;
+  /**
+   * Headers sent on every request, replacing same-named headers from the spec. Without a value, the value is
+   * `{{camelCase(name)}}`. Credential headers (Authorization, Proxy-Authorization, Cookie, or a name with token,
+   * key, secret, session or auth) replace the spec's own auth and are left out of the no-token checks.
+   */
+  headers?: Array<{ name: string; value?: string }>;
 }
 
 export interface SyncOptions {
