@@ -84,7 +84,7 @@ describe('buildContractTestCollection', function () {
     expect(_.find(getPet.request.url.variable, { key: 'petId' }).value).to.equal('{{pet_id}}');
     expect(exec(getPet, 'prerequest')).to.include('["pet_id"]').and.include('pm.execution.skipRequest()');
     expect(_.find(gone.request.url.variable, { key: 'petId' }).value).to.equal('{{deleted_pet_id}}');
-    expect(exec(gone, 'test')).to.include('pm.response.to.have.status(404)').and.not.include('Succeeds (2xx)');
+    expect(exec(gone, 'test')).to.include('.to.equal(404)').and.not.include('Succeeds (2xx)');
     expect(exec(createPet, 'test')).to.include('Flow | Succeeds (2xx)');
     expect(noToken.request.auth).to.eql({ type: 'noauth' });
     expect(_.find(noToken.request.url.variable, { key: 'petId' }).value).to.equal('{{pet_id}}');
