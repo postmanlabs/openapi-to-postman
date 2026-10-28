@@ -10,6 +10,22 @@ const _ = require('lodash'),
   { versionError, readExclude, findBindingsError, unresolvedRef, reconcile } = require('./lock'),
   { buildCollection } = require('./collection'),
 
+  // Headers that carry credentials; the no-token checks leave them out.
+  CREDENTIAL_HEADER = /^(authorization|proxy-authorization|cookie)$|token|key|secret|session|auth/i,
+
+  // A caller's `{ name, value }`, with the default value and whether it carries a credential; null when invalid.
+  normalizeHeader = (header) => {
+    const name = _.isString(_.get(header, 'name')) ? header.name.trim() : '';
+
+    if (!name) { return null; }
+
+    return {
+      name,
+      value: _.isNil(header.value) || header.value === '' ? `{{${_.camelCase(name)}}}` : String(header.value),
+      credential: CREDENTIAL_HEADER.test(name)
+    };
+  },
+
   /**
    * Builds the contract-test collection from a convertV2WithTypes result.
    *
@@ -17,11 +33,13 @@ const _ = require('lodash'),
    * @param {Object} [options] - options
    * @param {Object} [options.lock] - previously saved lock; its bindings are reused and its `exclude`
    *   entries ({ operation } or { pattern } matched against "METHOD /path") are left out
-   * @param {String} [options.authHeader] - header sent on every request, valued {{camelCase(header)}}
+   * @param {Object[]} [options.headers] - { name, value } sent on every request; without a value, the value is
+   *   {{camelCase(name)}}. Credential headers (Authorization, Cookie, names with token, key, secret, session or
+   *   auth) are left out of the no-token checks and replace the spec's own auth
    * @returns {Object} { result, output: [{ type: 'collection', data }], lock, summary }, or
    *   { result: false, reason } when the input is not a convertV2WithTypes result made with
-   *   `generateContractTests: true`, or the lock has an unsupported `lockfileVersion` or an invalid
-   *   `exclude` or `bindings` entry
+   *   `generateContractTests: true`, `headers` is invalid, or the lock has an unsupported `lockfileVersion`
+   *   or an invalid `exclude` or `bindings` entry
    */
   build = (conversion, options = {}) => {
     const converted = _.get(conversion, 'output[0].data');
@@ -37,6 +55,10 @@ const _ = require('lodash'),
     if (!hasContractTests) {
       return { result: false, reason: 'Expected a convertV2WithTypes result made with generateContractTests: true' };
     }
+
+    const headers = _.map(options.headers, normalizeHeader);
+
+    if (!_.every(headers)) { return { result: false, reason: 'Each header needs a name: { name, value }' }; }
 
     const { isExcluded, error } = readExclude(options.lock),
       lockError = versionError(options.lock) || error || findBindingsError(options.lock);
@@ -57,7 +79,7 @@ const _ = require('lodash'),
         bindings,
         flows,
         seed: specHash,
-        authHeader: options.authHeader && { name: options.authHeader, variable: _.camelCase(options.authHeader) }
+        headers
       });
 
     // A linked value the request has no place for (e.g. an XML body) is as unresolved as one with no source.

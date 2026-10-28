@@ -127,8 +127,9 @@ Requests are emitted in four phases, numbered `1.`, `2.`, ... only once included
 
 1. **Flows**, every resource in order. Each step asserts `Flow | Succeeds (2xx)` and saves the values later
    steps need.
-2. **No-token checks**, for every `GET` whose effective auth isn't `noauth`, sorted by key: sent with
-   `noauth` and the real linked ids, expecting 401 or 403. They run while the resources still exist, so a
+2. **No-token checks**, for every `GET` whose effective auth isn't `noauth` (or every `GET` when credential
+   headers are given), sorted by key: sent with `noauth`, without credential headers and with the real linked
+   ids, expecting 401 or 403. They run while the resources still exist, so a
    rejection can only be about the token.
 3. **Missing-field checks**, for each create's required top-level body fields, sorted: the field is removed
    and a 4xx is expected. They run before the teardown, so parent ids still exist. If the resource has a
@@ -164,8 +165,8 @@ The converter's own contract test script (status declared, body matches schema) 
 from the schema (strings become `"string"`, numbers are random). This module only replaces linked values with
 `{{variable}}` and removes the field in missing-field checks.
 
-**Other output details:** `authHeader` sets collection-level API key auth, removes same-named request headers
-and request-level auth. Item ids are `ct-${hash(stepId)}`. `info._postman_id` is derived from the spec hash.
+**Other output details:** `headers` are sent on every request, replacing same-named spec headers; credential
+headers replace the spec's auth and are left out of the no-token checks. Item ids are `ct-${hash(stepId)}`. `info._postman_id` is derived from the spec hash.
 Request and response content is left exactly as the converter produced it. Binding variables are added as
 empty collection variables (environment-backed ones aren't).
 
@@ -271,14 +272,14 @@ Review happens on the lock file's diff; `--frozen-lockfile` stops CI when someth
 
 ```js
 convertV2WithTypes(spec, { generateContractTests: true, parametersResolution: 'Example' }, (err, conversion) => {
-  const result = buildContractTestCollection(conversion, { lock, authHeader: 'x-access-token' });
+  const result = buildContractTestCollection(conversion, { lock, headers: [{ name: 'X-Api-Key' }] });
 });
 ```
 
 | Option | Type | Effect |
 |---|---|---|
 | `lock` | object | Saved lock: bindings reused, placeholders recomputed, `exclude` applied |
-| `authHeader` | string | Header sent on every request, valued `{{camelCase(header)}}` (`x-access-token` -> `{{xAccessToken}}`) |
+| `headers` | `{ name, value? }[]` | Sent on every request; without a value, `{{camelCase(name)}}` (`X-Api-Key` -> `{{xApiKey}}`). Credential headers (Authorization, Proxy-Authorization, Cookie, or a name with token, key, secret, session or auth) replace the spec's auth and are left out of the no-token checks |
 
 Result: `{ result: true, output: [{ type: 'collection', data }], lock, summary }` or `{ result: false, reason }`.
 
@@ -322,7 +323,7 @@ or a spec's cloud ID; specifications that are not OpenAPI exit 2.
 | Flag | Effect |
 |---|---|
 | `-e, --environment`, `--env-var`, `--timeout-request` | As in `postman collection run` |
-| `-H, --header <header>` | `Name: value` sent on every request, as in `postman request`. The name is passed as `authHeader`; a given value replaces `{{camelCase(Name)}}`. Given once. |
+| `-H, --header <header>` | `Name: value` sent on every request, as in `postman request`; repeatable. Passed as `headers`. |
 | `--lock-file <path>` | Lock file to read and write; default `.postman/bindings/<spec file name or spec ID>.lock.yaml` |
 | `--frozen-lockfile` | Exit 8 without writing or running when links would be added |
 | `--export <path>` | Also write the collection |

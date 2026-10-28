@@ -95,11 +95,13 @@ const _ = require('lodash'),
     catch (e) { /* non-JSON body: nothing to remove */ }
   },
 
-  // Optional query and header parameters are not sent; wiring a binding re-enables one.
-  disableOptionalParams = (item, op) => {
+  // Optional query and header parameters are not sent; wiring a binding re-enables one. Headers the
+  // caller asked for (`keepHeaders`, lower case) are always sent.
+  disableOptionalParams = (item, op, keepHeaders) => {
     const optional = (location) => {
       const names = _(op.params).filter({ in: location, required: false })
-        .map((p) => { return p.name.toLowerCase(); }).value();
+        .map((p) => { return p.name.toLowerCase(); })
+        .filter((name) => { return location !== 'header' || !keepHeaders.includes(name); }).value();
 
       return (entry) => { return names.includes(entry.key.toLowerCase()); };
     };
@@ -109,20 +111,19 @@ const _ = require('lodash'),
       .forEach((entry) => { entry.disabled = true; });
   },
 
-  // Collection-level API key auth; drops same-named request headers the spec declares as placeholders.
-  applyAuthHeader = (collection, authHeader) => {
-    const result = _.cloneDeep(collection);
+  // Sends the caller's headers on every request, replacing same-named headers from the spec. Credential
+  // headers also replace the spec's own auth.
+  applyHeaders = (collection, headers) => {
+    const result = _.cloneDeep(collection),
+      names = headers.map((header) => { return header.name.toLowerCase(); }),
+      hasCredential = _.some(headers, 'credential');
 
-    result.auth = { type: 'apikey', apikey: [
-      { key: 'key', value: authHeader.name, type: 'string' },
-      { key: 'value', value: `{{${authHeader.variable}}}`, type: 'string' },
-      { key: 'in', value: 'header', type: 'string' }
-    ] };
+    if (hasCredential) { delete result.auth; }
     flattenItems(result.item).forEach((item) => {
-      item.request.header = _.reject(item.request.header, (h) => {
-        return h.key.toLowerCase() === authHeader.name.toLowerCase();
-      });
-      if (item.request.auth && item.request.auth.type !== 'noauth') { delete item.request.auth; }
+      item.request.header = _.reject(item.request.header, (entry) => {
+        return names.includes(entry.key.toLowerCase());
+      }).concat(headers.map((header) => { return { key: header.name, value: header.value }; }));
+      if (hasCredential && item.request.auth && item.request.auth.type !== 'noauth') { delete item.request.auth; }
     });
 
     return result;
@@ -135,7 +136,7 @@ const _ = require('lodash'),
     return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20)}`;
   },
 
-  buildRequests = ({ collection, operations, bindings, flows }) => {
+  buildRequests = ({ collection, operations, bindings, flows, headers }) => {
     const items = _.keyBy(flattenItems(collection.item), itemKey),
       opsById = _.keyBy(operations, 'operationId'),
       uses = _.groupBy(_.flatMap(bindings, (binding) => {
@@ -158,11 +159,14 @@ const _ = require('lodash'),
         return pointer === undefined ? null : toLodashPath(pointer);
       },
 
-      // The auth the request actually sends: its own, else the collection's.
+      headerNames = headers.map((header) => { return header.name.toLowerCase(); }),
+      credentialNames = _.filter(headers, 'credential').map((header) => { return header.name.toLowerCase(); }),
+
+      // The auth the request actually sends: its own, else the collection's, or a credential header.
       isSecured = (op) => {
         const auth = _.get(itemOf(op), 'request.auth') || collection.auth;
 
-        return Boolean(auth && auth.type !== 'noauth');
+        return Boolean(auth && auth.type !== 'noauth') || credentialNames.length > 0;
       },
 
       // A request whose path ids aren't all linked would use the spec's example ids: on a shared
@@ -189,7 +193,7 @@ const _ = require('lodash'),
 
         const item = _.cloneDeep(itemOf(op));
 
-        disableOptionalParams(item, op);
+        disableOptionalParams(item, op, headerNames);
         delete item.response;
 
         const wired = usesOf(op).map(({ binding, param }) => {
@@ -263,6 +267,9 @@ const _ = require('lodash'),
         if (!prepared) { return; }
 
         prepared.item.request.auth = { type: 'noauth' };
+        prepared.item.request.header = _.reject(prepared.item.request.header, (entry) => {
+          return credentialNames.includes(entry.key.toLowerCase());
+        });
         add(prepared, `${op.operationId}:no-auth`, `${op.method} ${op.path} without a token`,
           scripts.expectNoTokenRejected);
       },
@@ -310,14 +317,15 @@ const _ = require('lodash'),
    * @param {Object[]} options.bindings - active bindings
    * @param {Object} options.flows - run order from buildFlows
    * @param {String} options.seed - seed for the collection id (the spec hash)
-   * @param {Object} [options.authHeader] - { name, variable }: send this header on every request
+   * @param {Object[]} [options.headers] - { name, value, credential }: sent on every request; credential
+   *   headers are left out of the no-token checks
    * @returns {Object} { collection, skipped, unapplied }: skipped lists requests left out because a
    *   path id couldn't be linked or a linked value couldn't be put into the request; unapplied lists
    *   those values ({ operation, param })
    */
-  buildCollection = ({ collection, operations, bindings, flows, seed, authHeader }) => {
-    const source = authHeader ? applyAuthHeader(collection, authHeader) : collection,
-      { requests, skipped, unapplied } = buildRequests({ collection: source, operations, bindings, flows }),
+  buildCollection = ({ collection, operations, bindings, flows, seed, headers = [] }) => {
+    const source = headers.length ? applyHeaders(collection, headers) : collection,
+      { requests, skipped, unapplied } = buildRequests({ collection: source, operations, bindings, flows, headers }),
       variables = (source.variable || []).concat(bindings
         .filter((binding) => { return !_.get(binding, 'producer.environment'); })
         .map((binding) => { return { key: binding.variable, value: _.get(binding, 'producer.constant', '') }; })),

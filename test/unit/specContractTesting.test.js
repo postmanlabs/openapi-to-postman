@@ -393,11 +393,27 @@ describe('buildContractTestCollection', function () {
     }
   });
 
-  it('adds header auth when asked', async function () {
-    const result = await generate(PETSTORE, { authHeader: 'x-access-token' }),
-      auth = _.fromPairs(_.map(result.output[0].data.auth.apikey, (e) => { return [e.key, e.value]; }));
+  it('sends headers on every request and leaves credentials out of the no-token checks', async function () {
+    const headers = [{ name: 'Authorization', value: 'Bearer {{token}}' }, { name: 'X-Tenant-Id', value: 't1' },
+        { name: 'X-Api-Key' }],
+      result = await generate(PETSTORE, { headers }),
+      sent = (name) => {
+        return _.map(request(result, name).request.header, (h) => { return `${h.key}: ${h.value}`; });
+      };
 
-    expect(auth).to.eql({ key: 'x-access-token', value: '{{xAccessToken}}', in: 'header' });
+    expect(result.output[0].data.auth).to.be.undefined;
+    expect(sent('5. GET /pets/{petId}'))
+      .to.include.members(['Authorization: Bearer {{token}}', 'X-Tenant-Id: t1', 'X-Api-Key: {{xApiKey}}']);
+    expect(sent('9. GET /pets/{petId} without a token')).to.include('X-Tenant-Id: t1')
+      .and.not.include.members(['Authorization: Bearer {{token}}', 'X-Api-Key: {{xApiKey}}']);
+  });
+
+  it('keeps the spec\'s auth when only non-credential headers are given', async function () {
+    const result = await generate(PETSTORE, { headers: [{ name: 'X-Tenant-Id', value: 't1' }] });
+
+    expect(result.output[0].data.auth).to.include({ type: 'bearer' });
+    expect(_.map(requests(result), 'name')).to.include('9. GET /pets/{petId} without a token');
+    expect(await generate(PETSTORE, { headers: [{ value: 'x' }] })).to.include({ result: false });
   });
 
   it('leaves out the operations in the lock\'s exclude section, exactly or by pattern', async function () {
