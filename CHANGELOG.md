@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Fixed [#918](https://github.com/postmanlabs/openapi-to-postman/issues/918): updated `js-yaml` to v4.3.2 and `yaml` to v1.10.3 to address GHSA-2883-xcg3-v3hh and GHSA-48c2-rrv3-qjmp.
+
 ## [v6.4.2] - 2026-10-26
 
 ### Fixed
