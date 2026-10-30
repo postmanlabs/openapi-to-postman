@@ -123,7 +123,7 @@
     "async": "3.2.6",
     "commander": "2.20.3",
     "graphlib": "2.1.8",
-    "js-yaml": "4.3.0",
+    "js-yaml": "4.3.2",
     "json-pointer": "0.6.2",
     "json-schema-merge-allof": "0.8.1",
     "lodash": "4.18.1",
@@ -134,7 +134,7 @@
     "path-browserify": "1.0.1",
     "postman-collection": "^5.0.0",
     "swagger2openapi": "7.0.8",
-    "yaml": "1.10.2"
+    "yaml": "1.10.3"
   },
   "author": "Postman Labs <help@getpostman.com>",
   "license": "Apache-2.0",
