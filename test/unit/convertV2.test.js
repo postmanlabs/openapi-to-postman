@@ -4,6 +4,7 @@ const expect = require('chai').expect,
   fs = require('fs'),
   path = require('path'),
   _ = require('lodash'),
+  sdk = require('postman-collection'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
   INVALID_OPENAPI_PATH = '../data/invalid_openapi',
   SWAGGER_20_FOLDER_YAML = '../data/valid_swagger/yaml/',
@@ -554,6 +555,75 @@ describe('The convert v2 Function', function() {
           'GET /a': '{{baseUrl1}}',
           'GET /b': '{{baseUrl1}}',
           'GET /c': '{{baseUrl}}'
+        });
+        done();
+      });
+    });
+
+    it('should not produce a double slash for an operation-level server of `/`', function(done) {
+      const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Relative operation server', version: '1.0.0' },
+        servers: [{ url: 'https://root.example.com' }],
+        paths: {
+          '/pets': {
+            get: { servers: [{ url: '/' }], responses: { 200: { description: 'ok' } } }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data,
+          variables = new sdk.VariableList(null, collection.variable),
+          request = getRequests(collection.item)[0].request;
+
+        expect(request.url.host[0]).to.equal('{{baseUrl1}}');
+        expect(variables.replace(new sdk.Url(request.url).toString())).to.equal('/pets');
+        done();
+      });
+    });
+
+    it('should give conflicting server variables their own collection variables', function(done) {
+      const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Conflicting server variables', version: '1.0.0' },
+        servers: [{ url: 'https://api.example.com/{version}', variables: { version: { default: 'v1' } } }],
+        paths: {
+          '/pets': {
+            get: {
+              servers: [{ url: 'https://api.example.com/{version}', variables: { version: { default: 'v2' } } }],
+              responses: { 200: { description: 'ok' } }
+            }
+          },
+          '/users': {
+            get: {
+              servers: [{ url: 'https://users.example.com/{baseUrl}', variables: { baseUrl: { default: 'x' } } }],
+              responses: { 200: { description: 'ok' } }
+            }
+          },
+          '/me': { get: { responses: { 200: { description: 'ok' } } } }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data;
+
+        expect(getVariables(collection)).to.deep.equal({
+          version: 'v1',
+          baseUrl: 'https://api.example.com/{{version}}',
+          version1: 'v2',
+          baseUrl1: 'https://api.example.com/{{version1}}',
+          baseUrlVariable: 'x',
+          baseUrl2: 'https://users.example.com/{{baseUrlVariable}}'
+        });
+        expect(getHostByPath(collection)).to.deep.equal({
+          'GET /pets': '{{baseUrl1}}',
+          'GET /users': '{{baseUrl2}}',
+          'GET /me': '{{baseUrl}}'
         });
         done();
       });

@@ -6,7 +6,7 @@ import { mergeRequestData, mergeResponseData } from './merge';
 import { extractPostmanVariablesFromPathComponents } from './path';
 
 import { DEFAULT_SYNC_OPTIONS, getRequestIdentifier, SyncOptions } from '../shared';
-import { syncCollectionServerVariables } from '../servers';
+import { alignServerVariableKeys, syncCollectionServerVariables } from '../servers';
 import _ from 'lodash';
 
 /**
@@ -38,6 +38,10 @@ export function syncCollection(
   options: SyncOptions | null
 ): ItemGroup<Item> {
   const mergedOptions = { ...DEFAULT_SYNC_OPTIONS, ...(options ?? {}) };
+
+  if (latestCollectionState instanceof Collection && currentCollectionState instanceof Collection) {
+    alignServerVariableKeys(latestCollectionState, currentCollectionState);
+  }
 
   // Sync the state of the collection to be synced with the current collection
   latestCollectionState.items.each((item: Item | ItemGroup<Item>) => {

@@ -284,10 +284,25 @@ let QUERYPARAM = 'query',
     };
   },
 
+  /**
+   * Identifies a server for the `baseUrl*` collection variable registry: its URL (without trailing slash)
+   * and its variable defaults, since the same URL template with other defaults resolves differently.
+   *
+   * @param {Object} server Server object
+   * @returns {String} Server key
+   */
+  getServerKey = (server) => {
+    const url = utils.fixPathVariablesInUrl(_.get(server, 'url')).replace(/\/+$/, ''),
+      defaults = _.sortBy(_.map(_.get(server, 'variables'), (variable, name) => {
+        return [name, String(_.get(variable, 'default') || '')];
+      }), _.head);
+
+    return JSON.stringify([url, defaults]);
+  },
+
   resolveBaseUrlForPostmanRequest = (operation, pathItem, context) => {
     let servers = _.get(operation, 'servers'),
       serverObj,
-      varName = 'baseUrl',
       baseUrl = '{{baseUrl}}',
       pathVariables = [],
       collectionVariables = [];
@@ -302,15 +317,29 @@ let QUERYPARAM = 'query',
       return { collectionVariables, pathVariables, baseUrl, serverObj };
     }
 
-    varName = _.get(context, ['openapi', 'serverUrlToVariable', serverObj.url]) || 'baseUrl';
-    baseUrl = `{{${varName}}}`;
+    const registeredServer = _.get(context, ['openapi', 'serverVariableRegistry', getServerKey(serverObj)]);
 
+    if (registeredServer) {
+      baseUrl = `{{${registeredServer.key}}}`;
+      collectionVariables = _.map(registeredServer.variables, _.clone);
+
+      return { collectionVariables, pathVariables, baseUrl, serverObj };
+    }
+
+    // No `baseUrl*` variables were generated for this server (e.g. suggested fixes during validation, where
+    // the user's collection doesn't have them), so the server URL is written into the request instead.
+    // The request path always starts with `/`, so a trailing slash on the server URL would produce `//`.
+    const serverVariables = [];
+
+    baseUrl = sanitizeUrl(serverObj.url).replace(/\/+$/, '');
     _.forOwn(serverObj.variables, (value, key) => {
-      collectionVariables.push({
+      serverVariables.push({
         key,
         value: _.get(value, 'default') || ''
       });
     });
+
+    ({ collectionVariables, pathVariables } = filterCollectionAndPathVariables(baseUrl, serverVariables));
 
     return { collectionVariables, pathVariables, baseUrl, serverObj };
   },
@@ -3633,6 +3662,7 @@ module.exports = {
   resolveResponseForPostmanRequest,
   resolveRequestBodyForPostmanRequest,
   resolveRefFromSchema,
+  getServerKey,
   resolveSchema,
   recordConversionIssue,
   measureJsonLength,
