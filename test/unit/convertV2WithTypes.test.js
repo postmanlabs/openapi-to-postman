@@ -7,6 +7,7 @@
 
 const expect = require('chai').expect,
   Converter = require('../../dist/index.js'),
+  sdk = require('postman-collection'),
   fs = require('fs'),
   path = require('path'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
@@ -489,7 +490,7 @@ describe('convertV2WithTypes', function() {
             },
             'default': {
               'body': '{\n  "type": "object",\n  "properties": {\n    "code": {\n      "type": "integer",\n      "format": "int32"\n    },\n    "message": {\n      "type": "string"\n    }\n  },\n  "required": [\n    "code",\n    "message"\n  ]\n}',
-              'headers': '[]'
+              'headers': '[\n  {\n    "keyName": "X-Rate-Limit-Limit",\n    "properties": {\n      "type": "integer",\n      "default": "<integer>"\n    }\n  }\n]'
             }
           }
         },
@@ -606,6 +607,59 @@ describe('convertV2WithTypes', function() {
 
       expect(collection.item[0].item[0].request.url.host[0]).to.equal('{{baseUrl1}}');
       expect(baseUrl1.value).to.equal('http://petstore.swagger.io:{{port}}/{{basePath}}');
+      done();
+    });
+  });
+
+  it('should not produce a double slash when an operation-level server URL has a trailing slash', function(done) {
+    const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Operation level server with trailing slash', version: '1.0.0' },
+        paths: {
+          '/paymentus': {},
+          '/paymentus/healthcheck': {
+            get: {
+              servers: [{ url: 'https://localhost.com:9000/' }],
+              responses: { default: { description: 'Response' } }
+            }
+          },
+          '/accounts': {
+            get: {
+              servers: [{ url: 'https://api.example.com/v1/' }],
+              responses: { default: { description: 'Response' } }
+            }
+          }
+        }
+      },
+      requestUrls = [],
+      collectRequestUrls = (items, variables) => {
+        items.forEach((item) => {
+          if (item.item) {
+            return collectRequestUrls(item.item, variables);
+          }
+
+          requestUrls.push(variables.replace(new sdk.Url(item.request.url).toString()));
+        });
+      };
+
+    Converter.convertV2WithTypes({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      const collection = conversionResult.output[0].data;
+
+      collectRequestUrls(collection.item, new sdk.VariableList(null, collection.variable));
+
+      expect(requestUrls).to.have.members([
+        'https://localhost.com:9000/paymentus/healthcheck',
+        'https://api.example.com/v1/accounts'
+      ]);
+      // Operation-level servers are referenced through `baseUrl*` variables, so the type keys stay
+      // on the OpenAPI path.
+      expect(Object.keys(conversionResult.extractedTypes)).to.have.members([
+        'get/paymentus/healthcheck',
+        'get/accounts'
+      ]);
       done();
     });
   });

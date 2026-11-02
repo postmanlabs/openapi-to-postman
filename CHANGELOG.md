@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [v6.4.2] - 2026-10-26
+
+### Fixed
+
+-   Fixed an issue where an operation-level server URL with a trailing slash produced a double slash (`//`) in the generated request URL and its extracted-type key.
+
+## [v6.4.1] - 2026-10-21
+
 ## [v6.4.0] - 2026-10-07
 
 ### Added
@@ -717,7 +725,11 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.0...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.2...HEAD
+
+[v6.4.2]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.1...v6.4.2
+
+[v6.4.1]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.0...v6.4.1
 
 [v6.4.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.3.3...v6.4.0
 

@@ -8,11 +8,14 @@ on:
 jobs:
   Unit-Tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     strategy:
       matrix:
         node-version: [18.x, 20.x, 22.x]
     steps:
       - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
@@ -32,11 +35,14 @@ jobs:
   Regression:
     needs: Unit-Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     strategy:
       matrix:
         node-version: [18.x, 20.x, 22.x]
     steps:
       - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
