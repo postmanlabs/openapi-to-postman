@@ -233,4 +233,50 @@ describe('syncCollection', function () {
       { key: 'baseUrl1', value: 'https://staging.example.com' }
     ]);
   });
+
+  it('should add missing server variables referenced by baseUrl* without overwriting existing ones', function () {
+    const latest = new Collection({
+        item: [],
+        variable: [
+          { key: 'baseUrl', value: 'https://{{region}}.example.com' },
+          { key: 'region', value: 'us' },
+          { key: 'baseUrl1', value: 'https://path.example.com/{{version}}' },
+          { key: 'version', value: 'v2' }
+        ]
+      }),
+      current = new Collection({
+        item: [],
+        variable: [
+          { key: 'baseUrl', value: 'https://{{region}}.example.com' },
+          { key: 'region', value: 'eu' }
+        ]
+      }),
+      synced = syncCollection(latest, current);
+
+    expect(
+      synced.variables.all().map((variable) => {
+        return { key: variable.key, value: variable.value };
+      })
+    ).to.deep.equal([
+      { key: 'baseUrl', value: 'https://{{region}}.example.com' },
+      { key: 'region', value: 'eu' },
+      { key: 'baseUrl1', value: 'https://path.example.com/{{version}}' },
+      { key: 'version', value: 'v2' }
+    ]);
+  });
+
+  it('should keep baseUrl* variables when the latest collection has none', function () {
+    const latest = new Collection({ item: [], variable: [] }),
+      current = new Collection({
+        item: [],
+        variable: [
+          { key: 'baseUrl', value: 'https://api.example.com' },
+          { key: 'baseUrl1', value: 'https://staging.example.com' }
+        ]
+      }),
+      synced = syncCollection(latest, current);
+
+    expect(synced.variables.all().map((variable) => { return variable.key; }))
+      .to.deep.equal(['baseUrl', 'baseUrl1']);
+  });
 });

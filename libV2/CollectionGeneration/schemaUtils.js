@@ -3531,7 +3531,7 @@ module.exports = {
       } : pathItem;
 
     let url = resolveUrlForPostmanRequest(path),
-      baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[operationKey], operationItem, context),
+      baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[operationKey], pathItem, context),
       requestName = resolveNameForPostmanReqeust(context, operationItem[operationKey], url),
       { queryParamTypes, queryParams } = resolveQueryParamsForPostmanRequest(context, operationItem, operationKey),
       { headerTypes, headers } = resolveHeadersForPostmanRequest(context, operationItem, operationKey),

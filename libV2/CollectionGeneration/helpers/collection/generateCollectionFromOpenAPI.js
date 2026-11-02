@@ -1,6 +1,8 @@
 const _ = require('lodash'),
   utils = require('../../utils'),
   generateAuthrForCollectionFromOpenAPI = require('./generateAuthForCollectionFromOpenAPI'),
+  { resolveRefFromSchema } = require('../../schemaUtils'),
+  { isOpenApi32, getPathItemOperations } = require('../../../../lib/common/oas32Utils'),
 
   /**
    * Returns a description that's usable at the collection-level
@@ -56,38 +58,53 @@ const _ = require('lodash'),
     };
     return _.isString(url) ? url.replace(/(\{[^\/\{\}]+\})/g, replacer) : '';
   },
-  PATH_ITEM_OPERATIONS = [
-    'get',
-    'put',
-    'post',
-    'delete',
-    'options',
-    'head',
-    'patch',
-    'trace',
-    'query'
-  ],
+  // Every method a Path Item Object can carry as a fixed field (OAS 3.2 `query` and
+  // `additionalOperations` are handled by getPathItemOperations).
+  PATH_ITEM_METHODS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace', 'connect'],
   serverVariableName = (index) => {
     return index === 0 ? 'baseUrl' : `baseUrl${index}`;
   },
+
+  /**
+   * Value of the `baseUrl*` collection variable for a server URL. The request path always starts
+   * with `/`, so a trailing slash on the server URL would produce `//` in the resolved request URL.
+   *
+   * @param {String} url Server URL
+   * @returns {String} Collection variable value
+   */
+  resolveServerVariableValue = (url) => {
+    const value = fixPathVariablesInUrl(url);
+
+    return value.replace(/\/+$/, '') || value;
+  },
   addUniqueServers = (target, servers, seen) => {
     _.forEach(servers, (server) => {
-      if (!server || typeof server.url !== 'string' || seen.has(server.url)) {
+      if (!server || typeof server.url !== 'string') {
         return;
       }
 
-      seen.add(server.url);
-      target.push(server);
+      const value = resolveServerVariableValue(server.url);
+
+      if (!seen.has(value)) {
+        seen.set(value, []);
+        target.push(server);
+      }
+
+      seen.get(value).push(server.url);
     });
   },
-  visitPathItemServers = (pathItem, target, seen) => {
+  visitPathItemServers = (context, pathItem, target, seen) => {
+    if (pathItem && pathItem.$ref) {
+      pathItem = resolveRefFromSchema(context, pathItem.$ref);
+    }
+
     if (!pathItem || typeof pathItem !== 'object') {
       return;
     }
 
     addUniqueServers(target, pathItem.servers, seen);
-    _.forEach(PATH_ITEM_OPERATIONS, (method) => {
-      addUniqueServers(target, _.get(pathItem, [method, 'servers']), seen);
+    _.forEach(getPathItemOperations(pathItem, PATH_ITEM_METHODS, isOpenApi32(context.openapi)), ({ operation }) => {
+      addUniqueServers(target, _.get(operation, 'servers'), seen);
     });
   },
 
@@ -95,49 +112,52 @@ const _ = require('lodash'),
    * Unique servers in first-seen order: root, then path-item, then operation.
    * Used so every distinct URL becomes a collection variable (`baseUrl`, `baseUrl1`, …).
    *
-   * @param {Object} openapi OpenAPI document
-   * @returns {Array} Unique server objects
+   * @param {Object} context Conversion context
+   * @returns {Object} Unique server objects and, per unique server, every raw URL that maps to it
    */
-  collectUniqueServerObjects = (openapi) => {
-    const servers = [],
-      seen = new Set();
+  collectUniqueServerObjects = (context) => {
+    const { openapi } = context,
+      servers = [],
+      seen = new Map();
 
     addUniqueServers(servers, openapi.servers, seen);
     _.forEach(openapi.paths, (pathItem) => {
-      visitPathItemServers(pathItem, servers, seen);
+      visitPathItemServers(context, pathItem, servers, seen);
     });
     _.forEach(openapi.webhooks, (pathItem) => {
-      visitPathItemServers(pathItem, servers, seen);
+      visitPathItemServers(context, pathItem, servers, seen);
     });
 
-    return servers;
+    return { servers, seen };
   },
-  resolveCollectionVariablesFromServers = (serverObjects) => {
+  resolveCollectionVariablesFromServers = ({ servers, seen }) => {
     const collectionVariables = [],
       urlToVariable = {};
 
-    _.forEach(serverObjects, (serverObject, index) => {
-      const key = serverVariableName(index);
+    _.forEach(servers, (serverObject, index) => {
+      const key = serverVariableName(index),
+        value = resolveServerVariableValue(serverObject.url);
 
-      urlToVariable[serverObject.url] = key;
+      _.forEach(seen.get(value), (url) => {
+        urlToVariable[url] = key;
+      });
 
-      _.forOwn(serverObject.variables, (value, variableKey) => {
+      _.forOwn(serverObject.variables, (variable, variableKey) => {
         collectionVariables.push({
           key: variableKey,
-          value: value.default || ''
+          value: _.get(variable, 'default') || ''
         });
       });
 
-      collectionVariables.push({
-        key,
-        value: fixPathVariablesInUrl(serverObject.url)
-      });
+      collectionVariables.push({ key, value });
     });
 
     return { collectionVariables, urlToVariable };
   };
 
-module.exports = function ({ openapi }) {
+module.exports = function (context) {
+  const { openapi } = context;
+
   openapi.servers = _.isEmpty(openapi.servers) ?
     [{ url: '/' }] :
     openapi.servers;
@@ -153,9 +173,9 @@ module.exports = function ({ openapi }) {
     _.get(openapi, 'servers.0.url', '{{baseURL}}')
   );
 
-  const uniqueServers = collectUniqueServerObjects(openapi),
-    { collectionVariables, urlToVariable } =
-      resolveCollectionVariablesFromServers(uniqueServers);
+  const { collectionVariables, urlToVariable } = resolveCollectionVariablesFromServers(
+    collectUniqueServerObjects(context)
+  );
 
   openapi.serverUrlToVariable = urlToVariable;
 
