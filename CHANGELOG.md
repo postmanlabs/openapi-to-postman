@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Fixed an issue where extracted types dropped `enum`, `pattern`, `minLength`, `maxLength`, `minimum` and `maximum` from primitive schemas (such as array items), and `additionalProperties` and `propertyNames` from object schemas.
+
 ## [v6.4.2] - 2026-10-26
 
 ### Fixed

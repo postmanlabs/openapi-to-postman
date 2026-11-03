@@ -1273,6 +1273,28 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * Copies map-related keywords (additionalProperties, propertyNames) of an object schema
+   * to its processed type details, processing nested schemas recursively.
+   *
+   * @param {Object} source - The resolved object schema
+   * @param {Object} target - The processed schema details to add keywords to
+   * @returns {Object} The target with map-related keywords added
+   */
+  addObjectMapKeywords = (source, target) => {
+    if (source.hasOwnProperty('additionalProperties')) {
+      target.additionalProperties = _.isBoolean(source.additionalProperties) ?
+        source.additionalProperties :
+        processSchema(source.additionalProperties);
+    }
+
+    if (_.isPlainObject(source.propertyNames)) {
+      target.propertyNames = processSchema(source.propertyNames);
+    }
+
+    return target;
+  },
+
+  /**
  * Processes and resolves types from Nested JSON schema structure.
  *
  * @param {Object} resolvedSchema - The resolved JSON schema to process for type extraction.
@@ -1374,6 +1396,10 @@ let QUERYPARAM = 'query',
             propertyDetails.items = processSchema(propValue.items);
           }
 
+          if (propValue.type === 'object') {
+            addObjectMapKeywords(propValue, propertyDetails);
+          }
+
           schemaDetails.properties[propName] = propertyDetails;
         }
       }
@@ -1382,7 +1408,7 @@ let QUERYPARAM = 'query',
         schemaDetails.required = resolvedSchema.required;
       }
 
-      return schemaDetails;
+      return addObjectMapKeywords(resolvedSchema, schemaDetails);
     }
     else if (resolvedSchema.type === 'array' && resolvedSchema.items) {
       const arrayDetails = {
@@ -1401,7 +1427,13 @@ let QUERYPARAM = 'query',
       description: resolvedSchema.description,
       title: resolvedSchema.title,
       example: resolvedSchema.example,
-      format: resolvedSchema.format
+      format: resolvedSchema.format,
+      enum: resolvedSchema.enum,
+      minLength: resolvedSchema.minLength,
+      maxLength: resolvedSchema.maxLength,
+      minimum: resolvedSchema.minimum,
+      maximum: resolvedSchema.maximum,
+      pattern: resolvedSchema.pattern
     };
   },
 
