@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Added support for multiple servers in v2 collection generation and syncing. Every unique root, path-level and operation-level server is added as a `baseUrl`, `baseUrl1`, … collection variable, and each request uses the variable of its effective server (operation > path > root).
+
 ## [v6.4.2] - 2026-10-26
 
 ### Fixed
