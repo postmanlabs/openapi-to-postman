@@ -3460,7 +3460,7 @@ describe('convertV2WithTypes', function() {
   });
 
   describe('schema constraint preservation', function() {
-    const getRequestBodyType = (schema, openapi = '3.1.0') => {
+    const getRequestBodyType = (schema, openapi = '3.1.0', components) => {
       const oas = {
         openapi,
         info: { title: 'Test API', version: '1.0.0' },
@@ -3471,7 +3471,8 @@ describe('convertV2WithTypes', function() {
               responses: { '200': { description: 'OK' } }
             }
           }
-        }
+        },
+        components
       };
 
       return new Promise((resolve, reject) => {
@@ -3559,6 +3560,48 @@ describe('convertV2WithTypes', function() {
       const body = await getRequestBodyType({ type: 'integer', minimum: 1, maximum: 10 });
 
       expect(body).to.deep.equal({ type: 'integer', minimum: 1, maximum: 10 });
+    });
+
+    it('should resolve references in propertyNames', async function() {
+      const body = await getRequestBodyType({
+        type: 'object',
+        propertyNames: { $ref: '#/components/schemas/ProviderName' },
+        additionalProperties: { type: 'string' }
+      }, '3.1.0', {
+        schemas: { ProviderName: { type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] } }
+      });
+
+      expect(body.propertyNames).to.deep.equal({ type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] });
+    });
+
+    it('should preserve boolean propertyNames', async function() {
+      const body = await getRequestBodyType({ type: 'object', propertyNames: false });
+
+      expect(body).to.deep.equal({ type: 'object', propertyNames: false });
+    });
+
+    it('should keep untyped properties of closed objects', async function() {
+      const body = await getRequestBodyType({
+        type: 'object',
+        properties: {
+          id: {},
+          kind: { enum: ['a', 'b'] },
+          name: { type: 'string' },
+          meta: {
+            type: 'object',
+            properties: { extra: {} },
+            additionalProperties: false
+          }
+        },
+        additionalProperties: false
+      });
+
+      expect(body.additionalProperties).to.equal(false);
+      expect(body.properties.id).to.deep.equal({});
+      expect(body.properties.kind).to.deep.equal({ enum: ['a', 'b'] });
+      expect(body.properties.name).to.deep.equal({ type: 'string' });
+      expect(body.properties.meta.additionalProperties).to.equal(false);
+      expect(body.properties.meta.properties).to.deep.equal({ extra: {} });
     });
   });
 });

@@ -1249,6 +1249,12 @@ let QUERYPARAM = 'query',
       schema.type = schema.type || SCHEMA_TYPES.object;
     }
 
+    // propertyNames can be a boolean (left as is) or a schema that may contain references
+    if (_.isPlainObject(schema.propertyNames) && !_.isEmpty(schema.propertyNames)) {
+      schema.propertyNames = _resolveSchema(context, schema.propertyNames, stack, resolveFor,
+        seenRef, utils.addToJsonPath(currentPath, ['propertyNames']));
+    }
+
     // Resolve refs inside enums to value
     if (schema.hasOwnProperty('enum')) {
       _.forEach(schema.enum, (item, index) => {
@@ -1287,7 +1293,10 @@ let QUERYPARAM = 'query',
         processSchema(source.additionalProperties);
     }
 
-    if (_.isPlainObject(source.propertyNames)) {
+    if (_.isBoolean(source.propertyNames)) {
+      target.propertyNames = source.propertyNames;
+    }
+    else if (_.isPlainObject(source.propertyNames)) {
       target.propertyNames = processSchema(source.propertyNames);
     }
 
@@ -1351,7 +1360,9 @@ let QUERYPARAM = 'query',
         schemaDetails.properties = {};
 
         for (let [propName, propValue] of Object.entries(resolvedSchema.properties)) {
+          // Keep untyped properties (e.g. {} or enum-only) so closed objects still accept them
           if (!propValue.type && !propValue.anyOf && !propValue.oneOf && !propValue.allOf) {
+            schemaDetails.properties[propName] = processSchema(propValue);
             continue;
           }
           const propertyDetails = {
