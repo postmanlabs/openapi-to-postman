@@ -6,6 +6,10 @@
 
 -   Added support for multiple servers in v2 collection generation and syncing. Every unique root, path-level and operation-level server is added as a `baseUrl`, `baseUrl1`, … collection variable, and each request uses the variable of its effective server (operation > path > root).
 
+### Fixed
+
+-   Fixed [#918](https://github.com/postmanlabs/openapi-to-postman/issues/918): updated `js-yaml` to v4.3.2 and `yaml` to v1.10.3 to address GHSA-2883-xcg3-v3hh and GHSA-48c2-rrv3-qjmp.
+
 ## [v6.4.2] - 2026-10-26
 
 ### Fixed
