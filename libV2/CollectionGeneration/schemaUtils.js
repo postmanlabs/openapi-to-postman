@@ -1,6 +1,5 @@
 const generateAuthForCollectionFromOpenAPI = require('./helpers/collection/generateAuthForCollectionFromOpenAPI.js');
 const utils = require('./utils.js');
-const { Url } = require('postman-collection/lib/collection/url');
 
 const schemaFaker = require('../../assets/json-schema-faker.js'),
   _ = require('lodash'),
@@ -285,19 +284,53 @@ let QUERYPARAM = 'query',
     };
   },
 
-  resolveBaseUrlForPostmanRequest = (operationItem) => {
-    let serverObj = _.get(operationItem, 'servers.0'),
+  /**
+   * Identifies a server for the `baseUrl*` collection variable registry: its URL (without trailing slash)
+   * and its variable defaults, since the same URL template with other defaults resolves differently.
+   *
+   * @param {Object} server Server object
+   * @returns {String} Server key
+   */
+  getServerKey = (server) => {
+    const url = utils.fixPathVariablesInUrl(_.get(server, 'url')).replace(/\/+$/, ''),
+      defaults = _.sortBy(_.map(_.get(server, 'variables'), (variable, name) => {
+        return [name, String(_.get(variable, 'default') || '')];
+      }), _.head);
+
+    return JSON.stringify([url, defaults]);
+  },
+
+  resolveBaseUrlForPostmanRequest = (operation, pathItem, context) => {
+    let servers = _.get(operation, 'servers'),
+      serverObj,
       baseUrl = '{{baseUrl}}',
-      serverVariables = [],
       pathVariables = [],
       collectionVariables = [];
+
+    if (_.isEmpty(servers)) {
+      servers = _.get(pathItem, 'servers');
+    }
+
+    serverObj = _.get(servers, '0');
 
     if (!serverObj) {
       return { collectionVariables, pathVariables, baseUrl, serverObj };
     }
 
-    // The request path always starts with `/`, so a trailing slash on the server URL would produce
-    // `//` in the request URL (and in the extracted-type key derived from it).
+    const registeredServer = _.get(context, ['openapi', 'serverVariableRegistry', getServerKey(serverObj)]);
+
+    if (registeredServer) {
+      baseUrl = `{{${registeredServer.key}}}`;
+      collectionVariables = _.map(registeredServer.variables, _.clone);
+
+      return { collectionVariables, pathVariables, baseUrl, serverObj };
+    }
+
+    // No `baseUrl*` variables were generated for this server (e.g. suggested fixes during validation, where
+    // the user's collection doesn't have them), so the server URL is written into the request instead.
+    // The request path always starts with `/`, so a trailing slash on the server URL would produce `//`.
+    const serverVariables = [];
+
     baseUrl = sanitizeUrl(serverObj.url).replace(/\/+$/, '');
     _.forOwn(serverObj.variables, (value, key) => {
       serverVariables.push({
@@ -3570,7 +3603,7 @@ module.exports = {
       } : pathItem;
 
     let url = resolveUrlForPostmanRequest(path),
-      baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[operationKey]),
+      baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[operationKey], pathItem, context),
       requestName = resolveNameForPostmanReqeust(context, operationItem[operationKey], url),
       { queryParamTypes, queryParams } = resolveQueryParamsForPostmanRequest(context, operationItem, operationKey),
       { headerTypes, headers } = resolveHeadersForPostmanRequest(context, operationItem, operationKey),
@@ -3648,9 +3681,7 @@ module.exports = {
         resolveForKey: resolveParamsForExampleKey
       });
 
-    const overridesServer = Boolean(baseUrlData.serverObj);
-
-    requestIdentifier = overridesServer ? method + new Url(url).getPath(true) : method + path;
+    requestIdentifier = method + path;
     Object.assign(requestTypesObject,
       { [requestIdentifier]: { request: requestTypes, response: responseTypes } });
 
@@ -3674,6 +3705,7 @@ module.exports = {
   resolveResponseForPostmanRequest,
   resolveRequestBodyForPostmanRequest,
   resolveRefFromSchema,
+  getServerKey,
   resolveSchema,
   recordConversionIssue,
   measureJsonLength,

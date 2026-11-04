@@ -4,6 +4,7 @@ const expect = require('chai').expect,
   fs = require('fs'),
   path = require('path'),
   _ = require('lodash'),
+  sdk = require('postman-collection'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
   INVALID_OPENAPI_PATH = '../data/invalid_openapi',
   SWAGGER_20_FOLDER_YAML = '../data/valid_swagger/yaml/',
@@ -305,7 +306,14 @@ describe('The convert v2 Function', function() {
       expect(conversionResult.output[0].type).to.equal('collection');
       expect(conversionResult.output[0].data).to.have.property('info');
       expect(conversionResult.output[0].data).to.have.property('item');
-      expect(conversionResult.output[0].data.item[0].item[0].request.url.host[0]).to.equal('{{baseUrl}}');
+      // Path-level servers become a dedicated collection variable (`baseUrl1`); requests
+      // reference it instead of inlining the server URL into the host.
+      expect(conversionResult.output[0].data.item[0].item[0].request.url.host[0]).to.equal('{{baseUrl1}}');
+      expect(
+        conversionResult.output[0].data.variable.find((variable) => {
+          return variable.key === 'baseUrl1';
+        }).value
+      ).to.equal('http://petstore.swagger.io:{{port}}/{{basePath}}');
       done();
     });
   });
@@ -391,21 +399,301 @@ describe('The convert v2 Function', function() {
   serverOverRidingSpec, function(done) {
     Converter.convertV2({ type: 'file', data: serverOverRidingSpec }, { schemaFaker: true },
       (err, conversionResult) => {
-      // Combining protocol, host, path to create a request
-      // Ex https:// + example.com + /example = https://example.com/example
-        let request = conversionResult.output[0].data.item[1].item[0].item[0].request,
-          protocol = request.url.protocol,
-          host = request.url.host.join('.'),
-          port = request.url.port,
-          path = request.url.path.join('/'),
-          endPoint = protocol + '://' + host + ':' + port + '/' + path,
-          host1 = conversionResult.output[0].data.variable[0].value,
-          path1 = conversionResult.output[0].data.item[0].item[0].item[0].request.url.path.join('/'),
-          endPoint1 = host1 + '/' + path1;
-        expect(endPoint).to.equal('http://petstore.swagger.io:{{port}}/:basePath/secondary-domain/fails');
-        expect(endPoint1).to.equal('https://api.example.com/primary-domain/works');
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data,
+          variables = collection.variable,
+          baseUrl = variables.find((variable) => {
+            return variable.key === 'baseUrl';
+          }),
+          baseUrl1 = variables.find((variable) => {
+            return variable.key === 'baseUrl1';
+          }),
+          // Operation-level server override → dedicated `baseUrl1` collection variable
+          overrideRequest = collection.item[1].item[0].item[0].request,
+          // Root server → `baseUrl`
+          rootRequest = collection.item[0].item[0].item[0].request;
+
+        expect(overrideRequest.url.host[0]).to.equal('{{baseUrl1}}');
+        expect(overrideRequest.url.path.join('/')).to.equal('secondary-domain/fails');
+        expect(baseUrl1.value).to.equal('http://petstore.swagger.io:{{port}}/{{basePath}}');
+
+        expect(rootRequest.url.host[0]).to.equal('{{baseUrl}}');
+        expect(baseUrl.value + '/' + rootRequest.url.path.join('/'))
+          .to.equal('https://api.example.com/primary-domain/works');
         done();
       });
+  });
+
+  describe('servers as baseUrl* collection variables', function() {
+    const getRequests = (items, requests = []) => {
+        items.forEach((item) => {
+          item.item ? getRequests(item.item, requests) : requests.push(item);
+        });
+
+        return requests;
+      },
+      getHostByPath = (collection) => {
+        return getRequests(collection.item).reduce((acc, item) => {
+          acc[item.request.method + ' /' + item.request.url.path.join('/')] = item.request.url.host[0];
+
+          return acc;
+        }, {});
+      },
+      getVariables = (collection) => {
+        return collection.variable.reduce((acc, variable) => {
+          acc[variable.key] = variable.value;
+
+          return acc;
+        }, {});
+      };
+
+    it('should add every root server as a collection variable and use the first one for requests', function(done) {
+      const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Multiple root servers', version: '1.0.0' },
+        servers: [
+          { url: 'https://api.getpostman.com' },
+          { url: 'https://api.eu.postman.com' }
+        ],
+        paths: { '/me': { get: { responses: { 200: { description: 'ok' } } } } }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data;
+
+        expect(getVariables(collection)).to.deep.equal({
+          baseUrl: 'https://api.getpostman.com',
+          baseUrl1: 'https://api.eu.postman.com'
+        });
+        expect(getHostByPath(collection)).to.deep.equal({ 'GET /me': '{{baseUrl}}' });
+        done();
+      });
+    });
+
+    it('should resolve servers with operation > path > root precedence', function(done) {
+      const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Server precedence', version: '1.0.0' },
+        servers: [{ url: 'https://root.example.com' }],
+        paths: {
+          '/root': { get: { responses: { 200: { description: 'ok' } } } },
+          '/path': {
+            servers: [{ url: 'https://path.example.com/{version}', variables: { version: { default: 'v2' } } }],
+            get: { responses: { 200: { description: 'ok' } } },
+            post: {
+              servers: [{ url: 'https://operation.example.com' }],
+              responses: { 200: { description: 'ok' } }
+            },
+            put: {
+              // An empty operation-level list does not override the path-level servers
+              servers: [],
+              responses: { 200: { description: 'ok' } }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data;
+
+        expect(getVariables(collection)).to.deep.equal({
+          baseUrl: 'https://root.example.com',
+          version: 'v2',
+          baseUrl1: 'https://path.example.com/{{version}}',
+          baseUrl2: 'https://operation.example.com'
+        });
+        expect(getHostByPath(collection)).to.deep.equal({
+          'GET /root': '{{baseUrl}}',
+          'GET /path': '{{baseUrl1}}',
+          'POST /path': '{{baseUrl2}}',
+          'PUT /path': '{{baseUrl1}}'
+        });
+        done();
+      });
+    });
+
+    it('should reuse one variable for the same server URL and trim its trailing slash', function(done) {
+      const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Shared servers', version: '1.0.0' },
+        servers: [{ url: 'https://root.example.com' }],
+        paths: {
+          '/a': {
+            servers: [{ url: 'https://shared.example.com/v1/' }],
+            get: { responses: { 200: { description: 'ok' } } }
+          },
+          '/b': {
+            get: {
+              servers: [{ url: 'https://shared.example.com/v1' }],
+              responses: { 200: { description: 'ok' } }
+            }
+          },
+          '/c': {
+            get: {
+              servers: [{ url: 'https://root.example.com' }],
+              responses: { 200: { description: 'ok' } }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data;
+
+        expect(getVariables(collection)).to.deep.equal({
+          baseUrl: 'https://root.example.com',
+          baseUrl1: 'https://shared.example.com/v1'
+        });
+        expect(getHostByPath(collection)).to.deep.equal({
+          'GET /a': '{{baseUrl1}}',
+          'GET /b': '{{baseUrl1}}',
+          'GET /c': '{{baseUrl}}'
+        });
+        done();
+      });
+    });
+
+    it('should not produce a double slash for an operation-level server of `/`', function(done) {
+      const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Relative operation server', version: '1.0.0' },
+        servers: [{ url: 'https://root.example.com' }],
+        paths: {
+          '/pets': {
+            get: { servers: [{ url: '/' }], responses: { 200: { description: 'ok' } } }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data,
+          variables = new sdk.VariableList(null, collection.variable),
+          request = getRequests(collection.item)[0].request;
+
+        expect(request.url.host[0]).to.equal('{{baseUrl1}}');
+        expect(variables.replace(new sdk.Url(request.url).toString())).to.equal('/pets');
+        done();
+      });
+    });
+
+    it('should give conflicting server variables their own collection variables', function(done) {
+      const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Conflicting server variables', version: '1.0.0' },
+        servers: [{ url: 'https://api.example.com/{version}', variables: { version: { default: 'v1' } } }],
+        paths: {
+          '/pets': {
+            get: {
+              servers: [{ url: 'https://api.example.com/{version}', variables: { version: { default: 'v2' } } }],
+              responses: { 200: { description: 'ok' } }
+            }
+          },
+          '/users': {
+            get: {
+              servers: [{ url: 'https://users.example.com/{baseUrl}', variables: { baseUrl: { default: 'x' } } }],
+              responses: { 200: { description: 'ok' } }
+            }
+          },
+          '/me': { get: { responses: { 200: { description: 'ok' } } } }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data;
+
+        expect(getVariables(collection)).to.deep.equal({
+          version: 'v1',
+          baseUrl: 'https://api.example.com/{{version}}',
+          version1: 'v2',
+          baseUrl1: 'https://api.example.com/{{version1}}',
+          baseUrlVariable: 'x',
+          baseUrl2: 'https://users.example.com/{{baseUrlVariable}}'
+        });
+        expect(getHostByPath(collection)).to.deep.equal({
+          'GET /pets': '{{baseUrl1}}',
+          'GET /users': '{{baseUrl2}}',
+          'GET /me': '{{baseUrl}}'
+        });
+        done();
+      });
+    });
+
+    it('should honour servers of referenced path items', function(done) {
+      const openapi = {
+        openapi: '3.1.0',
+        info: { title: 'Referenced path item servers', version: '1.0.0' },
+        servers: [{ url: 'https://root.example.com' }],
+        paths: {
+          '/pets': { $ref: '#/components/pathItems/Pets' }
+        },
+        components: {
+          pathItems: {
+            Pets: {
+              servers: [{ url: 'https://pets.example.com' }],
+              get: { responses: { 200: { description: 'ok' } } }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data;
+
+        expect(getVariables(collection)).to.include({ baseUrl1: 'https://pets.example.com' });
+        expect(getHostByPath(collection)).to.deep.equal({ 'GET /pets': '{{baseUrl1}}' });
+        done();
+      });
+    });
+
+    it('should honour path and operation servers for OAS 3.2 additionalOperations', function(done) {
+      const openapi = {
+        openapi: '3.2.0',
+        info: { title: 'additionalOperations servers', version: '1.0.0' },
+        servers: [{ url: 'https://root.example.com' }],
+        paths: {
+          '/cache': {
+            servers: [{ url: 'https://path.example.com' }],
+            additionalOperations: {
+              PURGE: { responses: { 200: { description: 'ok' } } },
+              LINK: {
+                servers: [{ url: 'https://operation.example.com' }],
+                responses: { 200: { description: 'ok' } }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data;
+
+        expect(getVariables(collection)).to.deep.equal({
+          baseUrl: 'https://root.example.com',
+          baseUrl1: 'https://path.example.com',
+          baseUrl2: 'https://operation.example.com'
+        });
+        expect(getHostByPath(collection)).to.deep.equal({
+          'PURGE /cache': '{{baseUrl1}}',
+          'LINK /cache': '{{baseUrl2}}'
+        });
+        done();
+      });
+    });
   });
 
   // Need to handle xml body properly

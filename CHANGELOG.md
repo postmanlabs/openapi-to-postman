@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Added support for multiple servers in v2 collection generation and syncing. Every unique root, path-level and operation-level server is added as a `baseUrl`, `baseUrl1`, … collection variable, and each request uses the variable of its effective server (operation > path > root).
+
 ### Fixed
 
 -   Fixed an issue where extracted types dropped `enum`, `pattern`, `minLength`, `maxLength`, `minimum` and `maximum` from primitive schemas (such as array items), and `additionalProperties` and `propertyNames` from object schemas.
