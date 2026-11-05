@@ -245,6 +245,9 @@ export interface Options {
 
   /** Preferred request body type when multiple content-types exist */
   preferredRequestBodyType?: 'x-www-form-urlencoded' | 'form-data' | 'raw' | 'first-listed';
+
+  /** Reject the specification when "paths" is not an object or none of its paths are valid */
+  strictPathsValidation?: boolean;
 }
 
 /**

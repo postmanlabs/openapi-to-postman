@@ -29,3 +29,4 @@ includeDeprecated|boolean|-|true|Select whether to include deprecated operations
 alwaysInheritAuthentication|boolean|-|false|Whether authentication details should be included on every request, or always inherited from the collection.|CONVERSION|v2, v1
 nestedFolderHierarchy|boolean|-|false|Enable this option to create subfolders in the collection based on the order of tags.|CONVERSION|v2
 preferredRequestBodyType|enum|x-www-form-urlencoded, form-data, raw, first-listed|first-listed|When there are multiple content-types defined in the request body of OpenAPI, the conversion selects the preferred option content-type as request body.If "first-listed" is set, the first content-type defined in the OpenAPI spec will be selected.|CONVERSION|v2
+strictPathsValidation|boolean|-|false|Whether to reject the specification when "paths" is not an object, or when none of its paths are valid (malformed path keys or unresolved path item references).|CONVERSION|v2
