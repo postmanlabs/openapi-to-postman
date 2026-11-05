@@ -3025,6 +3025,192 @@ describe('bundle files method - 3.0', function () {
     });
 });
 
+describe('bundle files method - specification validation error codes', function () {
+  const INVALID_FORMAT_REASON = 'Invalid format. Input must be in YAML or JSON format.',
+    getVersionHeader = (version) => {
+      return version === '2.0' ? 'swagger: \'2.0\'\n' : `openapi: ${version}.0\n`;
+    },
+    getSpecContent = (header) => {
+      return header +
+        'info:\n' +
+        '  title: hello world\n' +
+        '  version: 0.1.1\n' +
+        'paths:\n' +
+        '  /hello:\n' +
+        '    get:\n' +
+        '      responses:\n' +
+        '        \'200\':\n' +
+        '          description: sample des\n';
+    },
+    getBundleInput = (rootContent, specificationVersion = '3.0', otherFiles = []) => {
+      return {
+        type: 'multiFile',
+        specificationVersion,
+        rootFiles: [{ path: '/root.yaml' }],
+        data: [{ path: '/root.yaml', content: rootContent }].concat(otherFiles),
+        options: {},
+        bundleFormat: 'JSON'
+      };
+    },
+    bundleAndCatch = async (input) => {
+      try {
+        await Converter.bundle(input);
+      }
+      catch (error) {
+        return error;
+      }
+
+      throw new Error('Expected bundle to throw');
+    },
+    versions = ['2.0', '3.0', '3.1', '3.2'];
+
+  describe('SPEC_EMPTY', function () {
+    [
+      { title: 'empty', content: '', reason: INVALID_FORMAT_REASON },
+      { title: 'spaces only', content: '   ', reason: INVALID_FORMAT_REASON },
+      { title: 'multi-line whitespace only', content: '  \n\t\n', reason: 'Empty input schema provided.' },
+      { title: 'comments only', content: '# just a comment\n# another one\n', reason: 'Empty input schema provided.' },
+      { title: '"~"', content: '~', reason: 'Empty input schema provided.' }
+    ].forEach(({ title, content, reason }) => {
+      it(`should throw a ParseError with SPEC_EMPTY when the root file is ${title}`, async function () {
+        const error = await bundleAndCatch(getBundleInput(content));
+
+        expect(error.name).to.equal('ParseError');
+        expect(error.message).to.equal(reason);
+        expect(error.code).to.equal('SPEC_EMPTY');
+        expect(error).to.not.have.property('meta');
+      });
+    });
+
+    it('should not apply SPEC_EMPTY to an empty referenced file', async function () {
+      const res = await Converter.bundle(getBundleInput(getSpecContent(getVersionHeader('3.0')), '3.0',
+        [{ path: '/empty.yaml', content: '' }]));
+
+      expect(res.result).to.be.true;
+      expect(res).to.not.have.property('code');
+    });
+  });
+
+  describe('SPEC_INVALID_FORMAT', function () {
+    it('should throw a ParseError with SPEC_INVALID_FORMAT for invalid YAML and keep the reason', async function () {
+      const error = await bundleAndCatch(getBundleInput('openapi: 3.0.0\ninfo:\n  title: a\n title: b\n'));
+
+      expect(error.name).to.equal('ParseError');
+      expect(error.message).to.have.string(INVALID_FORMAT_REASON);
+      expect(error.message).to.have.string('Specification is not a valid YAML.');
+      expect(error.code).to.equal('SPEC_INVALID_FORMAT');
+    });
+
+    it('should throw a ParseError with SPEC_INVALID_FORMAT for invalid JSON and keep the reason', async function () {
+      const error = await bundleAndCatch(getBundleInput('{ "openapi": "3.0.0", "info": '));
+
+      expect(error.name).to.equal('ParseError');
+      expect(error.message).to.have.string(INVALID_FORMAT_REASON);
+      expect(error.message).to.have.string('Specification is not a valid JSON.');
+      expect(error.code).to.equal('SPEC_INVALID_FORMAT');
+    });
+  });
+
+  describe('SPEC_VERSION_MISSING', function () {
+    versions.forEach((expected) => {
+      const expectedKey = expected === '2.0' ? 'swagger' : 'openapi';
+
+      it(`should return SPEC_VERSION_MISSING when the root has no version field (expected ${expected})`,
+        async function () {
+          const res = await Converter.bundle(getBundleInput(getSpecContent(''), expected));
+
+          expect(res.result).to.be.false;
+          expect(res.output.data).to.eql([]);
+          expect(res.code).to.equal('SPEC_VERSION_MISSING');
+          expect(res.meta).to.eql({ expected });
+          expect(res.reason).to.equal(`The root file must contain the "${expectedKey}" field for ` +
+            `specification version ${expected}`);
+        });
+    });
+
+    it('should return SPEC_VERSION_MISSING when the root is not an object', async function () {
+      const res = await Converter.bundle(getBundleInput('- openapi: 3.0.0\n', '3.0'));
+
+      expect(res.result).to.be.false;
+      expect(res.code).to.equal('SPEC_VERSION_MISSING');
+      expect(res.meta).to.eql({ expected: '3.0' });
+    });
+
+    it('should return SPEC_VERSION_MISSING when the version field is null', async function () {
+      const res = await Converter.bundle(getBundleInput(getSpecContent('openapi:\n'), '3.0'));
+
+      expect(res.result).to.be.false;
+      expect(res.code).to.equal('SPEC_VERSION_MISSING');
+    });
+  });
+
+  describe('SPEC_VERSION_MISMATCH', function () {
+    versions.forEach((expected) => {
+      versions.filter((found) => { return found !== expected; }).forEach((found) => {
+        const foundKey = found === '2.0' ? 'swagger' : 'openapi',
+          foundValue = found === '2.0' ? '2.0' : `${found}.0`;
+
+        it(`should return SPEC_VERSION_MISMATCH for a ${found} root when ${expected} is expected`, async function () {
+          const res = await Converter.bundle(getBundleInput(getSpecContent(getVersionHeader(found)), expected));
+
+          expect(res.result).to.be.false;
+          expect(res.output.data).to.eql([]);
+          expect(res.code).to.equal('SPEC_VERSION_MISMATCH');
+          expect(res.meta).to.eql({ expected, foundKey, found: foundValue });
+          expect(res.reason).to.equal(`The root file version does not match the specification version ${expected}`);
+        });
+      });
+    });
+
+    it('should report the expected key when both version fields are present', async function () {
+      const res = await Converter.bundle(getBundleInput(getSpecContent('swagger: \'2.0\'\nopenapi: 3.1.0\n'), '3.0'));
+
+      expect(res.code).to.equal('SPEC_VERSION_MISMATCH');
+      expect(res.meta).to.eql({ expected: '3.0', foundKey: 'openapi', found: '3.1.0' });
+    });
+
+    it('should stringify a non string version value', async function () {
+      const res = await Converter.bundle(getBundleInput(getSpecContent('openapi: 3.1\n'), '3.0'));
+
+      expect(res.code).to.equal('SPEC_VERSION_MISMATCH');
+      expect(res.meta).to.eql({ expected: '3.0', foundKey: 'openapi', found: '3.1' });
+    });
+
+    it('should return SPEC_VERSION_MISMATCH for a multi-file input', async function () {
+      const res = await Converter.bundle(getBundleInput(
+        getSpecContent(getVersionHeader('3.1')).replace('description: sample des',
+          'description: sample des\n          content:\n            application/json:\n' +
+          '              schema:\n                $ref: ./schemas/user.yaml'),
+        '3.0',
+        [{ path: '/schemas/user.yaml', content: 'type: object\n' }]
+      ));
+
+      expect(res.result).to.be.false;
+      expect(res.output.data).to.eql([]);
+      expect(res.code).to.equal('SPEC_VERSION_MISMATCH');
+      expect(res.meta).to.eql({ expected: '3.0', foundKey: 'openapi', found: '3.1.0' });
+    });
+
+    it('should default the expected version to 3.0 when none is provided', async function () {
+      const input = getBundleInput(getSpecContent(getVersionHeader('3.1')));
+
+      delete input.specificationVersion;
+
+      const res = await Converter.bundle(input);
+
+      expect(res.code).to.equal('SPEC_VERSION_MISMATCH');
+      expect(res.meta).to.eql({ expected: '3.0', foundKey: 'openapi', found: '3.1.0' });
+    });
+  });
+
+  it('should not add a code when the root matches the expected version', async function () {
+    const res = await Converter.bundle(getBundleInput(getSpecContent(getVersionHeader('3.0')), '3.0'));
+
+    expect(res.result).to.be.true;
+    expect(res).to.not.have.any.keys('code', 'meta', 'reason');
+  });
+});
+
 describe('getReferences method when node does not have any reference', function() {
   it('Should return reference data empty if there are not any reference', async function() {
     const userData = 'type: object\n' +

@@ -37,6 +37,7 @@ describe('parseSpec method (3.2)', function () {
       parsedSpec = concreteUtils.parseSpec(fileContent, { includeWebhooks: false });
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason).to.equal('Specification must contain an Info Object for the meta-data of the API');
+    expect(parsedSpec.code).to.equal('SPEC_INFO_MISSING');
   });
 
   it('Should return false and reason when info object is null', function () {
@@ -44,6 +45,7 @@ describe('parseSpec method (3.2)', function () {
       parsedSpec = concreteUtils.parseSpec(fileContent, { includeWebhooks: false });
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason).to.equal('Specification must contain an Info Object for the meta-data of the API');
+    expect(parsedSpec.code).to.equal('SPEC_INFO_MISSING');
   });
 
   it('Should return false when info.version is missing', function () {
@@ -52,6 +54,7 @@ describe('parseSpec method (3.2)', function () {
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason)
       .to.equal('Specification must contain a semantic version number of the API in the Info Object');
+    expect(parsedSpec.code).to.equal('SPEC_INFO_VERSION_MISSING');
   });
 
   it('Should return false when info.version is null', function () {
@@ -60,6 +63,7 @@ describe('parseSpec method (3.2)', function () {
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason)
       .to.equal('Specification must contain a semantic version number of the API in the Info Object');
+    expect(parsedSpec.code).to.equal('SPEC_INFO_VERSION_MISSING');
   });
 
   it('Should return false when info.title is missing', function () {
@@ -68,6 +72,7 @@ describe('parseSpec method (3.2)', function () {
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason)
       .to.equal('Specification must contain a title in order to generate a collection');
+    expect(parsedSpec.code).to.equal('SPEC_INFO_TITLE_MISSING');
   });
 
   it('Should return false when info.title is null', function () {
@@ -76,6 +81,7 @@ describe('parseSpec method (3.2)', function () {
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason)
       .to.equal('Specification must contain a title in order to generate a collection');
+    expect(parsedSpec.code).to.equal('SPEC_INFO_TITLE_MISSING');
   });
 });
 

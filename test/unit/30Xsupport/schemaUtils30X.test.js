@@ -24,8 +24,45 @@ describe('parseSpec method', function () {
     const parsedSpec = concreteUtils.parseSpec(fileContent);
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason).to.equal('Specification must contain an Info Object for the meta-data of the API');
+    expect(parsedSpec.code).to.equal('SPEC_INFO_MISSING');
   });
 
+  it('should return false with paths missing code when paths is missing', function () {
+    const parsedSpec = concreteUtils.parseSpec({ openapi: '3.0.0', info: { title: 'a', version: '1' } });
+    expect(parsedSpec.result).to.be.false;
+    expect(parsedSpec.reason).to.equal('Specification must contain Paths Object for the available operational paths');
+    expect(parsedSpec.code).to.equal('SPEC_PATHS_MISSING');
+  });
+
+  it('should return false with info title missing code when info title is missing', function () {
+    const parsedSpec = concreteUtils.parseSpec({ openapi: '3.0.0', info: { version: '1' }, paths: {} });
+    expect(parsedSpec.result).to.be.false;
+    expect(parsedSpec.reason).to.equal('Specification must contain a title in order to generate a collection');
+    expect(parsedSpec.code).to.equal('SPEC_INFO_TITLE_MISSING');
+  });
+
+  it('should return false with info version missing code when info version is missing', function () {
+    const parsedSpec = concreteUtils.parseSpec({ openapi: '3.0.0', info: { title: 'a' }, paths: {} });
+    expect(parsedSpec.result).to.be.false;
+    expect(parsedSpec.reason)
+      .to.equal('Specification must contain a semantic version number of the API in the Info Object');
+    expect(parsedSpec.code).to.equal('SPEC_INFO_VERSION_MISSING');
+  });
+
+  it('should return false with swagger version invalid code when openapi is missing and swagger is present',
+    function () {
+      const parsedSpec = concreteUtils.parseSpec({ swagger: 2, info: { title: 'a', version: '1' }, paths: {} });
+      expect(parsedSpec.result).to.be.false;
+      expect(parsedSpec.reason).to.equal('Specification must contain a semantic version number of the OAS specification');
+      expect(parsedSpec.code).to.equal('SPEC_SWAGGER_VERSION_INVALID');
+    });
+
+  it('should return false without a code when both openapi and swagger are missing', function () {
+    const parsedSpec = concreteUtils.parseSpec({ info: { title: 'a', version: '1' }, paths: {} });
+    expect(parsedSpec.result).to.be.false;
+    expect(parsedSpec.reason).to.equal('Specification must contain a semantic version number of the OAS specification');
+    expect(parsedSpec).to.not.have.property('code');
+  });
 });
 
 describe('getRequiredData method', function() {

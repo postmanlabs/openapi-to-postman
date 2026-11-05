@@ -19,6 +19,23 @@ describe('parseSpec method', function () {
 
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason).to.equal('Title, and version fields are required for the Info Object');
+    expect(parsedSpec.code).to.equal('SPEC_INFO_TITLE_MISSING');
+  });
+
+  it('should return false with info version missing code when only the version is missing', function () {
+    const parsedSpec = concreteUtils.parseSpec({ swagger: '2.0', info: { title: 'Petstore' }, paths: {} }, {});
+
+    expect(parsedSpec.result).to.be.false;
+    expect(parsedSpec.reason).to.equal('Title, and version fields are required for the Info Object');
+    expect(parsedSpec.code).to.equal('SPEC_INFO_VERSION_MISSING');
+  });
+
+  it('should return false with swagger version invalid code when swagger is a number', function () {
+    const parsedSpec = concreteUtils.parseSpec('swagger: 2.0\ninfo:\n  title: a\n  version: "1"\npaths: {}\n', {});
+
+    expect(parsedSpec.result).to.be.false;
+    expect(parsedSpec.reason).to.equal('The value of "swagger" field must be 2.0');
+    expect(parsedSpec.code).to.equal('SPEC_SWAGGER_VERSION_INVALID');
   });
 
   it('should return false and swagger must have info object message', function () {
@@ -27,6 +44,7 @@ describe('parseSpec method', function () {
 
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason).to.equal('The Swagger specification must have an \"info\" field');
+    expect(parsedSpec.code).to.equal('SPEC_INFO_MISSING');
   });
 
   it('should return false and invalid version message', function () {
@@ -35,6 +53,7 @@ describe('parseSpec method', function () {
 
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason).to.equal('The value of "swagger" field must be 2.0');
+    expect(parsedSpec.code).to.equal('SPEC_SWAGGER_VERSION_INVALID');
   });
 
   it('should return false and no paths message', function () {
@@ -43,5 +62,6 @@ describe('parseSpec method', function () {
 
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason).to.equal('The Swagger specification must have a "paths" field');
+    expect(parsedSpec.code).to.equal('SPEC_PATHS_MISSING');
   });
 });

@@ -3508,3 +3508,141 @@ describe('convertV2WithTypes', function() {
     });
   });
 });
+
+describe('convertV2WithTypes - specification validation error codes', function() {
+  const buildSpec = (versionFields, overrides = {}) => {
+      return Object.assign({
+        info: { title: 'Sample API', version: '1.0.0' },
+        paths: {
+          '/pets': { get: { responses: { 200: { description: 'OK' } } } }
+        }
+      }, versionFields, overrides);
+    },
+    convertSpec = (spec) => {
+      return new Promise((resolve) => {
+        Converter.convertV2WithTypes({ type: 'json', data: spec }, {}, (err, result) => {
+          resolve({ err, result });
+        });
+      });
+    },
+    openapiVersions = [
+      { label: '3.0', fields: { openapi: '3.0.3' } },
+      { label: '3.1', fields: { openapi: '3.1.0' } },
+      { label: '3.2', fields: { openapi: '3.2.0' } }
+    ];
+
+  openapiVersions.forEach(({ label, fields }) => {
+    describe(`OpenAPI ${label}`, function() {
+      [
+        {
+          code: 'SPEC_INFO_MISSING',
+          overrides: { info: undefined },
+          message: 'Specification must contain an Info Object for the meta-data of the API'
+        },
+        {
+          code: 'SPEC_INFO_TITLE_MISSING',
+          overrides: { info: { version: '1.0.0' } },
+          message: 'Specification must contain a title in order to generate a collection'
+        },
+        {
+          code: 'SPEC_INFO_VERSION_MISSING',
+          overrides: { info: { title: 'Sample API' } },
+          message: 'Specification must contain a semantic version number of the API in the Info Object'
+        },
+        {
+          code: 'SPEC_PATHS_MISSING',
+          overrides: { paths: undefined },
+          message: 'Specification must contain Paths Object for the available operational paths'
+        }
+      ].forEach(({ code, overrides, message }) => {
+        it(`should return a UserError with ${code}`, async function() {
+          const { err } = await convertSpec(buildSpec(fields, overrides));
+
+          expect(err.name).to.equal('UserError');
+          expect(err.message).to.equal(message);
+          expect(err.code).to.equal(code);
+          expect(err).to.not.have.property('meta');
+        });
+      });
+    });
+  });
+
+  it('should return SPEC_SWAGGER_VERSION_INVALID when a numeric "swagger" falls back to the 3.0 validator',
+    async function() {
+      const { err } = await convertSpec(buildSpec({ swagger: 2 }));
+
+      expect(err.name).to.equal('UserError');
+      expect(err.message).to.equal('Specification must contain a semantic version number of the OAS specification');
+      expect(err.code).to.equal('SPEC_SWAGGER_VERSION_INVALID');
+    });
+
+  describe('Swagger 2.0', function() {
+    [
+      {
+        code: 'SPEC_INFO_MISSING',
+        spec: buildSpec({ swagger: '2.0' }, { info: undefined }),
+        message: 'The Swagger specification must have an "info" field'
+      },
+      {
+        code: 'SPEC_INFO_TITLE_MISSING',
+        spec: buildSpec({ swagger: '2.0' }, { info: { version: '1.0.0' } }),
+        message: 'Title, and version fields are required for the Info Object'
+      },
+      {
+        code: 'SPEC_INFO_VERSION_MISSING',
+        spec: buildSpec({ swagger: '2.0' }, { info: { title: 'Sample API' } }),
+        message: 'Title, and version fields are required for the Info Object'
+      },
+      {
+        code: 'SPEC_PATHS_MISSING',
+        spec: buildSpec({ swagger: '2.0' }, { paths: undefined }),
+        message: 'The Swagger specification must have a "paths" field'
+      }
+    ].forEach(({ code, spec, message }) => {
+      it(`should return a UserError with ${code}`, async function() {
+        const err = await new Promise((resolve) => {
+          Converter.convertV2WithTypes({ type: 'string', data: JSON.stringify(spec) }, {}, resolve);
+        });
+
+        expect(err.name).to.equal('UserError');
+        expect(err.message).to.equal(message);
+        expect(err.code).to.equal(code);
+      });
+    });
+
+    it('should return SPEC_SWAGGER_VERSION_INVALID when "swagger: 2.0" is written as a number', async function() {
+      const spec = 'swagger: 2.0\ninfo:\n  title: Sample API\n  version: 1.0.0\npaths: {}\n',
+        err = await new Promise((resolve) => {
+          Converter.convertV2WithTypes({ type: 'string', data: spec }, {}, resolve);
+        });
+
+      expect(err.name).to.equal('UserError');
+      expect(err.message).to.equal('The value of "swagger" field must be 2.0');
+      expect(err.code).to.equal('SPEC_SWAGGER_VERSION_INVALID');
+    });
+
+    [
+      { kind: 'securityScheme', container: 'securityDefinitions', value: { type: 'basic' } },
+      { kind: 'parameter', container: 'parameters', value: { name: 'limit', in: 'query', type: 'integer' } },
+      { kind: 'response', container: 'responses', value: { description: 'OK' } }
+    ].forEach(({ kind, container, value }) => {
+      it(`should return SPEC_DUPLICATE_COMPONENT_NAME for duplicate sanitised ${kind} names`, async function() {
+        const spec = buildSpec({ swagger: '2.0' }, { [container]: { 'pet id': value, 'pet_id': value } }),
+          { err } = await convertSpec(spec);
+
+        expect(err.name).to.equal('S2OError');
+        expect(err.message).to.equal(`Duplicate sanitised ${kind} name pet_id`);
+        expect(err.code).to.equal('SPEC_DUPLICATE_COMPONENT_NAME');
+        expect(err.meta).to.eql({ kind, name: 'pet_id' });
+      });
+    });
+  });
+
+  it('should not add a code for an uncoded validation failure', async function() {
+    const { err } = await convertSpec(buildSpec({}));
+
+    expect(err.name).to.equal('UserError');
+    expect(err.message).to.equal('Specification must contain a semantic version number of the OAS specification');
+    expect(err).to.not.have.any.keys('code', 'meta');
+  });
+});
