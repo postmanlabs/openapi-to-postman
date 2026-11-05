@@ -6,11 +6,15 @@
 
 -   Added support for multiple servers in v2 collection generation and syncing. Every unique root, path-level and operation-level server is added as a `baseUrl`, `baseUrl1`, … collection variable, and each request uses the variable of its effective server (operation > path > root).
 -   Added `code` and `meta` to bundle results, validation results and errors for known specification authoring errors (e.g. `SPEC_VERSION_MISMATCH`, `SPEC_INFO_MISSING`, `SPEC_DUPLICATE_COMPONENT_NAME`), so consumers can show specific messages. Existing error names, messages and result shapes are unchanged.
--   Added the internal `strictPathsValidation` option, which rejects a specification whose `paths` is not an object (`SPEC_PATHS_INVALID`) or has no usable path (`SPEC_NO_VALID_PATHS`). Disabled by default.
 
 ### Changed
 
 -   A root file that parses to `null` (e.g. only comments or `~`) now fails bundling with a `ParseError` (code `SPEC_EMPTY`) instead of a generic error.
+-   Validation now rejects a specification whose `paths` is not an object (`SPEC_PATHS_INVALID`), or whose non-extension path keys all lack a leading `/` (`SPEC_NO_VALID_PATHS`). Such specs previously converted to unusable collections. Specs with at least one path starting with `/` convert as before.
+
+### Fixed
+
+-   Fixed the extracted-type key of path keys with a query string or fragment (e.g. `/pets?limit=1`), which now leaves them out (`get/pets`) to match the generated request. The generated collection is unchanged. If a spec has both `/pets` and `/pets?limit=1` for the same method, both get the same key and the types of the later one are kept.
 
 ## [v6.4.2] - 2026-10-26
 
