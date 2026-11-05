@@ -1282,6 +1282,12 @@ let QUERYPARAM = 'query',
       schema.type = schema.type || SCHEMA_TYPES.object;
     }
 
+    // propertyNames is only supported from OAS 3.1 (JSON Schema 2020-12) onwards
+    if (schema.hasOwnProperty('propertyNames') &&
+      !_.includes(['3.1.x', '3.2.x'], _.get(concreteUtils, 'version'))) {
+      delete schema.propertyNames;
+    }
+
     // propertyNames can be a boolean (left as is) or a schema that may contain references
     if (_.isPlainObject(schema.propertyNames) && !_.isEmpty(schema.propertyNames)) {
       schema.propertyNames = _resolveSchema(context, schema.propertyNames, stack, resolveFor,
@@ -1472,7 +1478,7 @@ let QUERYPARAM = 'query',
       title: resolvedSchema.title,
       example: resolvedSchema.example,
       format: resolvedSchema.format,
-      enum: resolvedSchema.enum,
+      enum: resolvedSchema.enum || undefined,
       minLength: resolvedSchema.minLength,
       maxLength: resolvedSchema.maxLength,
       minimum: resolvedSchema.minimum,

@@ -3629,6 +3629,16 @@ describe('convertV2WithTypes', function() {
       expect(body).to.deep.equal({ type: 'object', propertyNames: false });
     });
 
+    it('should not add propertyNames for OAS 3.0 specs', async function() {
+      const body = await getRequestBodyType({
+        type: 'object',
+        propertyNames: { type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] },
+        additionalProperties: { type: 'string' }
+      }, '3.0.0');
+
+      expect(body).to.deep.equal({ type: 'object', additionalProperties: { type: 'string' } });
+    });
+
     it('should keep untyped properties of closed objects', async function() {
       const body = await getRequestBodyType({
         type: 'object',
