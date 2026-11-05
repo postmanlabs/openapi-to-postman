@@ -19,11 +19,39 @@ export interface SpecificationInput {
 // Result Types
 // ============================================================================
 
+/**
+ * Codes for known specification authoring errors, attached to validation results and errors
+ */
+export type SpecValidationErrorCode =
+  | 'SPEC_EMPTY'
+  | 'SPEC_INVALID_FORMAT'
+  | 'SPEC_VERSION_MISSING'
+  | 'SPEC_VERSION_MISMATCH'
+  | 'SPEC_INFO_MISSING'
+  | 'SPEC_INFO_TITLE_MISSING'
+  | 'SPEC_INFO_VERSION_MISSING'
+  | 'SPEC_PATHS_MISSING'
+  | 'SPEC_PATHS_INVALID'
+  | 'SPEC_SWAGGER_VERSION_INVALID'
+  | 'SPEC_DUPLICATE_COMPONENT_NAME'
+  | 'SPEC_NO_VALID_PATHS';
+
+/**
+ * Additional details for a specification validation error code. Only some codes carry it:
+ * - SPEC_VERSION_MISSING: { expected }
+ * - SPEC_VERSION_MISMATCH: { expected, foundKey, found }
+ * - SPEC_DUPLICATE_COMPONENT_NAME: { kind, name }
+ * - SPEC_NO_VALID_PATHS: { reason, example }
+ */
+export type SpecValidationErrorMeta = Record<string, string>;
+
 // Base result fields
 interface BaseResult {
   result: boolean;
   reason?: string;
   error?: Error;
+  code?: SpecValidationErrorCode;
+  meta?: SpecValidationErrorMeta;
 }
 
 export interface ConversionIssue {
@@ -111,7 +139,7 @@ export interface ValidationResult extends BaseResult {
 }
 
 export type Callback<T extends BaseResult = CollectionResult> = (
-  err: { message: string; name?: string } | null,
+  err: { message: string; name?: string; code?: SpecValidationErrorCode; meta?: SpecValidationErrorMeta } | null,
   result?: T
 ) => void;
 
