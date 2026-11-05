@@ -3646,3 +3646,55 @@ describe('convertV2WithTypes - specification validation error codes', function()
     expect(err).to.not.have.any.keys('code', 'meta');
   });
 });
+
+describe('convertV2WithTypes - path keys with a query string or fragment', function() {
+  const operation = (method) => {
+      return { [method]: { responses: { 200: { description: 'OK' } } } };
+    },
+    paths = {
+      '/pets?limit=1': operation('get'),
+      '/pets/{id}?x=1': operation('get'),
+      '/pets#frag': operation('post')
+    },
+    // URLs of the generated requests, in the same order as the paths above
+    expectedUrls = [
+      { path: ['pets'], query: [{ key: 'limit', value: '1' }] },
+      { path: ['pets', '{{id}}'], query: [{ key: 'x', value: '1' }] },
+      { path: ['pets'], query: [], hash: 'frag' }
+    ];
+
+  [
+    { label: '2.0', fields: { swagger: '2.0' } },
+    { label: '3.0', fields: { openapi: '3.0.3' } },
+    { label: '3.1', fields: { openapi: '3.1.0' } },
+    { label: '3.2', fields: { openapi: '3.2.0' } }
+  ].forEach(({ label, fields }) => {
+    it(`should key the extracted types by the request path and keep the generated requests for OpenAPI ${label}`,
+      function(done) {
+        const spec = Object.assign({ info: { title: 'Sample API', version: '1.0.0' }, paths }, fields);
+
+        Converter.convertV2WithTypes({ type: 'json', data: spec }, {}, (err, conversionResult) => {
+          expect(err).to.be.null;
+          expect(conversionResult.result).to.be.true;
+          expect(Object.keys(conversionResult.extractedTypes)).to.have.members(['get/pets', 'get/pets/{id}', 'post/pets']);
+
+          const requests = [];
+
+          new sdk.Collection(conversionResult.output[0].data).forEachItem((item) => {
+            requests.push(item.request.toJSON());
+          });
+
+          expect(requests.map((request) => { return request.method; })).to.eql(['GET', 'GET', 'POST']);
+          requests.forEach((request, index) => {
+            const { path: urlPath, query, hash } = expectedUrls[index];
+
+            expect(request.url.host).to.eql(['{{baseUrl}}']);
+            expect(request.url.path).to.eql(urlPath);
+            expect(request.url.query).to.eql(query);
+            expect(request.url.hash).to.equal(hash);
+          });
+          done();
+        });
+      });
+  });
+});

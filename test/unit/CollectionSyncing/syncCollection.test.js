@@ -438,6 +438,16 @@ describe('syncCollection (index) - specification validation error codes', functi
           expect(result.result).to.be.true;
         });
       });
+
+      it('should key the type data of paths with a query string or fragment by the request path', async function () {
+        const { err, result } = await sync(buildSpec(fields, {
+          paths: { '/pets?limit=1': operation, '/pets/{id}?x=1': operation, '/owners#top': operation }
+        }));
+
+        expect(err).to.be.null;
+        expect(Object.keys(result.extractedTypes))
+          .to.have.members(['get/pets', 'get/pets/{id}', 'get/owners']);
+      });
     });
   });
 

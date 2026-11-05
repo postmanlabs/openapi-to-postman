@@ -3638,7 +3638,10 @@ module.exports = {
         resolveForKey: resolveParamsForExampleKey
       });
 
-    requestIdentifier = method + path;
+    // The request URL doesn't include the query string or fragment of the path key (e.g. "/pets?limit=1"),
+    // so they're left out of the identifier too. If a spec has both "/pets" and "/pets?limit=1" for the same
+    // method, both get the same identifier and the types of the later one are kept.
+    requestIdentifier = method + path.split(/[?#]/)[0];
     Object.assign(requestTypesObject,
       { [requestIdentifier]: { request: requestTypes, response: responseTypes } });
 
