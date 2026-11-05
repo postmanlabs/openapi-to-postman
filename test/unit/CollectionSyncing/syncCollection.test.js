@@ -401,35 +401,42 @@ describe('syncCollection (index) - specification validation error codes', functi
         });
       });
 
-      it('should return SPEC_NO_VALID_PATHS when strictPathsValidation is enabled', async function () {
-        const { err } = await sync(buildSpec(fields, { paths: { 'pets?id=1': operation } }),
-          { strictPathsValidation: true });
+      [
+        { paths: { 'pets?id=1': operation }, example: 'pets?id=1' },
+        { paths: { 'https://example.com/pets': operation }, example: 'https://example.com/pets' },
+        { paths: { '': operation }, example: '' }
+      ].forEach(({ paths, example }) => {
+        it(`should return SPEC_NO_VALID_PATHS for ${JSON.stringify(Object.keys(paths))}`, async function () {
+          const { err } = await sync(buildSpec(fields, { paths }));
 
-        expect(err.name).to.equal('UserError');
-        expect(err.code).to.equal('SPEC_NO_VALID_PATHS');
-        expect(err.meta).to.eql({ reason: 'QUERY_OR_FRAGMENT', example: 'pets?id=1' });
+          expect(err.name).to.equal('UserError');
+          expect(err.message).to.equal('Specification must contain at least one valid path');
+          expect(err.code).to.equal('SPEC_NO_VALID_PATHS');
+          expect(err.meta).to.eql({ example });
+        });
       });
 
-      it('should return SPEC_PATHS_INVALID when strictPathsValidation is enabled', async function () {
-        const { err } = await sync(buildSpec(fields, { paths: 'pets' }), { strictPathsValidation: true });
+      it('should return SPEC_PATHS_INVALID when paths is not an object', async function () {
+        const { err } = await sync(buildSpec(fields, { paths: 'pets' }));
 
         expect(err.name).to.equal('UserError');
+        expect(err.message).to.equal('Specification "paths" must be an object');
         expect(err.code).to.equal('SPEC_PATHS_INVALID');
       });
 
-      it('should sync the same spec when strictPathsValidation is disabled', async function () {
-        const { err, result } = await sync(buildSpec(fields, { paths: { 'pets?id=1': operation } }));
+      [
+        { title: 'a partially valid spec', paths: { 'pets?id=1': operation, '/pets': operation } },
+        { title: 'a spec with empty paths', paths: {} },
+        { title: 'a spec with only x- path keys', paths: { 'x-internal': {} } },
+        { title: 'a spec with a well-formed path without methods', paths: { '/pets': {} } },
+        { title: 'a spec with an unresolved path item reference', paths: { '/pets': { $ref: './pets.yaml' } } }
+      ].forEach(({ title, paths }) => {
+        it(`should sync ${title}`, async function () {
+          const { err, result } = await sync(buildSpec(fields, { paths }));
 
-        expect(err).to.be.null;
-        expect(result.result).to.be.true;
-      });
-
-      it('should sync a partially valid spec when strictPathsValidation is enabled', async function () {
-        const { err, result } = await sync(buildSpec(fields, { paths: { 'pets?id=1': operation, '/pets': operation } }),
-          { strictPathsValidation: true });
-
-        expect(err).to.be.null;
-        expect(result.result).to.be.true;
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+        });
       });
     });
   });

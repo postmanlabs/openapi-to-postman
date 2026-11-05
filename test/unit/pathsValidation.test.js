@@ -8,9 +8,9 @@ const { expect } = require('chai'),
   buildSpec = (paths, versionFields = { openapi: '3.0.3' }) => {
     return Object.assign({ info: { title: 'Sample API', version: '1.0.0' }, paths }, versionFields);
   },
-  convertSpec = (spec, options = {}) => {
+  convertSpec = (spec) => {
     return new Promise((resolve) => {
-      Converter.convertV2WithTypes({ type: 'json', data: spec }, options, (err, result) => {
+      Converter.convertV2WithTypes({ type: 'json', data: spec }, {}, (err, result) => {
         resolve({ err, result });
       });
     });
@@ -37,29 +37,17 @@ describe('validatePaths', function () {
   });
 
   [
-    {
-      reason: 'QUERY_OR_FRAGMENT',
-      paths: { '/pets?limit=1': operation, '/pets#top': operation },
-      example: '/pets?limit=1'
-    },
-    { reason: 'QUERY_OR_FRAGMENT', paths: { 'pets?limit=1': operation }, example: 'pets?limit=1' },
-    { reason: 'MISSING_LEADING_SLASH', paths: { pets: operation, 'pets/{id}': operation }, example: 'pets' },
-    {
-      reason: 'UNRESOLVED_REF',
-      paths: { '/pets': { $ref: './pets.yaml' }, '/owners': { $ref: '#/components/pathItems/Missing' } },
-      example: './pets.yaml'
-    },
-    { reason: 'UNRESOLVED_REF', paths: { '/pets': { $ref: 'https://example.com/pets.yaml' } },
-      example: 'https://example.com/pets.yaml' },
-    { reason: 'MIXED', paths: { pets: operation, '/owners?id=1': operation, '/toys': { $ref: './toys.yaml' } },
-      example: 'pets' }
-  ].forEach(({ reason, paths, example }) => {
-    it(`should return SPEC_NO_VALID_PATHS with reason ${reason} for ${Object.keys(paths).join(', ')}`, function () {
+    { paths: { pets: operation, 'pets/{id}': operation }, example: 'pets' },
+    { paths: { 'pets?x=1': operation }, example: 'pets?x=1' },
+    { paths: { 'https://example.com/pets': operation }, example: 'https://example.com/pets' },
+    { paths: { '': operation }, example: '' }
+  ].forEach(({ paths, example }) => {
+    it(`should return SPEC_NO_VALID_PATHS for ${JSON.stringify(Object.keys(paths))}`, function () {
       expect(validatePaths(buildSpec(paths))).to.eql({
         result: false,
         reason: 'Specification must contain at least one valid path',
         code: 'SPEC_NO_VALID_PATHS',
-        meta: { reason, example }
+        meta: { example }
       });
     });
   });
@@ -68,14 +56,14 @@ describe('validatePaths', function () {
     const longKey = 'p'.repeat(150),
       validationResult = validatePaths(buildSpec({ [longKey]: operation }));
 
-    expect(validationResult.meta).to.eql({ reason: 'MISSING_LEADING_SLASH', example: 'p'.repeat(100) });
+    expect(validationResult.meta).to.eql({ example: 'p'.repeat(100) });
   });
 
   it('should ignore x- keys when looking for invalid paths', function () {
     const validationResult = validatePaths(buildSpec({ 'x-internal': {}, pets: operation }));
 
     expect(validationResult.code).to.equal('SPEC_NO_VALID_PATHS');
-    expect(validationResult.meta).to.eql({ reason: 'MISSING_LEADING_SLASH', example: 'pets' });
+    expect(validationResult.meta).to.eql({ example: 'pets' });
   });
 
   [
@@ -84,28 +72,18 @@ describe('validatePaths', function () {
     { title: 'at least one path is valid', paths: { pets: operation, '/owners': operation } },
     { title: 'a well-formed path has no methods', paths: { pets: operation, '/owners': {} } },
     { title: 'a well-formed path item is null', paths: { pets: operation, '/owners': null } },
-    { title: 'a path item references an existing local pointer',
-      paths: { pets: operation, '/owners': { $ref: '#/components/pathItems/Owners' } } },
-    { title: 'a path item references an escaped local pointer',
-      paths: { pets: operation, '/owners': { $ref: '#/x-paths/~1owners~0all' } } }
+    { title: 'path keys have a query string or fragment',
+      paths: { '/pets?limit=1': operation, '/pets#top': operation } },
+    { title: 'path items have unresolved references',
+      paths: { '/pets': { $ref: './pets.yaml' }, '/owners': { $ref: '#/components/pathItems/Missing' } } }
   ].forEach(({ title, paths }) => {
     it(`should pass when ${title}`, function () {
-      const spec = buildSpec(paths);
-
-      spec.components = { pathItems: { Owners: operation } };
-      spec['x-paths'] = { '/owners~all': operation };
-
-      expect(validatePaths(spec)).to.eql({ result: true });
+      expect(validatePaths(buildSpec(paths))).to.eql({ result: true });
     });
-  });
-
-  it('should treat a local pointer with malformed URI encoding as unresolved', function () {
-    expect(validatePaths(buildSpec({ '/pets': { $ref: '#/components/%E0%A4%A' } })).meta)
-      .to.eql({ reason: 'UNRESOLVED_REF', example: '#/components/%E0%A4%A' });
   });
 });
 
-describe('strictPathsValidation option', function () {
+describe('paths validation during conversion', function () {
   [
     { label: '2.0', versionFields: { swagger: '2.0' } },
     { label: '3.0', versionFields: { openapi: '3.0.3' } },
@@ -113,61 +91,55 @@ describe('strictPathsValidation option', function () {
     { label: '3.2', versionFields: { openapi: '3.2.0' } }
   ].forEach(({ label, versionFields }) => {
     describe(`OpenAPI ${label}`, function () {
-      it('should return SPEC_NO_VALID_PATHS when enabled and no path is valid', async function () {
-        const { err } = await convertSpec(buildSpec({ pets: operation }, versionFields),
-          { strictPathsValidation: true });
+      [
+        { paths: { pets: operation }, example: 'pets' },
+        { paths: { 'pets?x=1': operation }, example: 'pets?x=1' },
+        { paths: { 'https://example.com/pets': operation }, example: 'https://example.com/pets' },
+        { paths: { '': operation }, example: '' }
+      ].forEach(({ paths, example }) => {
+        it(`should return SPEC_NO_VALID_PATHS for ${JSON.stringify(Object.keys(paths))}`, async function () {
+          const { err } = await convertSpec(buildSpec(paths, versionFields));
 
-        expect(err.name).to.equal('UserError');
-        expect(err.message).to.equal('Specification must contain at least one valid path');
-        expect(err.code).to.equal('SPEC_NO_VALID_PATHS');
-        expect(err.meta).to.eql({ reason: 'MISSING_LEADING_SLASH', example: 'pets' });
+          expect(err.name).to.equal('UserError');
+          expect(err.message).to.equal('Specification must contain at least one valid path');
+          expect(err.code).to.equal('SPEC_NO_VALID_PATHS');
+          expect(err.meta).to.eql({ example });
+        });
       });
 
-      it('should return SPEC_PATHS_INVALID when enabled and paths is an array', async function () {
-        const { err } = await convertSpec(buildSpec(['/pets'], versionFields), { strictPathsValidation: true });
+      [
+        { title: 'an array', paths: ['/pets'] },
+        { title: 'a string', paths: '/pets' },
+        { title: 'a number', paths: 1 },
+        { title: 'a boolean', paths: true }
+      ].forEach(({ title, paths }) => {
+        it(`should return SPEC_PATHS_INVALID when paths is ${title}`, async function () {
+          const { err } = await convertSpec(buildSpec(paths, versionFields));
 
-        expect(err.name).to.equal('UserError');
-        expect(err.message).to.equal('Specification "paths" must be an object');
-        expect(err.code).to.equal('SPEC_PATHS_INVALID');
-        expect(err).to.not.have.property('meta');
+          expect(err.name).to.equal('UserError');
+          expect(err.message).to.equal('Specification "paths" must be an object');
+          expect(err.code).to.equal('SPEC_PATHS_INVALID');
+          expect(err).to.not.have.property('meta');
+        });
       });
 
-      it('should convert the same spec as before when disabled', async function () {
-        const spec = buildSpec({ pets: operation }, versionFields),
-          withoutOption = await convertSpec(spec),
-          withOptionDisabled = await convertSpec(spec, { strictPathsValidation: false });
+      [
+        { title: 'a partially valid spec', paths: { pets: operation, '/owners': operation } },
+        { title: 'a spec with empty paths', paths: {} },
+        { title: 'a spec with only x- path keys', paths: { 'x-internal': { foo: 'bar' } } },
+        { title: 'a spec with a well-formed path without methods', paths: { '/owners': {} } },
+        { title: 'a spec with query strings and fragments in path keys',
+          paths: { '/pets?limit=1': operation, '/owners#top': operation } },
+        { title: 'a spec with an unresolved path item reference', paths: { '/pets': { $ref: './pets.yaml' } } }
+      ].forEach(({ title, paths }) => {
+        it(`should convert ${title}`, async function () {
+          const { err, result } = await convertSpec(buildSpec(paths, versionFields));
 
-        expect(withoutOption.err).to.be.null;
-        expect(withoutOption.result.result).to.be.true;
-        expect(withOptionDisabled.err).to.be.null;
-        expect(withOptionDisabled.result.output[0].data.item.length)
-          .to.equal(withoutOption.result.output[0].data.item.length);
-      });
-
-      it('should convert a partially valid spec when enabled', async function () {
-        const { err, result } = await convertSpec(buildSpec({ pets: operation, '/owners': operation }, versionFields),
-          { strictPathsValidation: true });
-
-        expect(err).to.be.null;
-        expect(result.result).to.be.true;
+          expect(err).to.be.null;
+          expect(result.result).to.be.true;
+        });
       });
     });
-  });
-
-  it('should convert a spec with empty paths when enabled', async function () {
-    const { err, result } = await convertSpec(buildSpec({}), { strictPathsValidation: true });
-
-    expect(err).to.be.null;
-    expect(result.result).to.be.true;
-  });
-
-  it('should be ignored by the v1 convert API', function (done) {
-    Converter.convert({ type: 'json', data: buildSpec({ pets: operation }) }, { strictPathsValidation: true },
-      (err, result) => {
-        expect(err).to.be.null;
-        expect(result.result).to.be.true;
-        done();
-      });
   });
 });
 
@@ -205,16 +177,14 @@ describe('index wrappers copy validation error codes', function () {
       });
     });
 
-    if (title !== 'convert') {
-      it(`${title} should return the validation meta`, function (done) {
-        invoke({ type: 'json', data: noValidPathsSpec }, { strictPathsValidation: true }, (err) => {
-          expect(err.name).to.equal('UserError');
-          expect(err.code).to.equal('SPEC_NO_VALID_PATHS');
-          expect(err.meta).to.eql({ reason: 'MISSING_LEADING_SLASH', example: 'pets' });
-          done();
-        });
+    it(`${title} should return the validation meta`, function (done) {
+      invoke({ type: 'json', data: noValidPathsSpec }, {}, (err) => {
+        expect(err.name).to.equal('UserError');
+        expect(err.code).to.equal('SPEC_NO_VALID_PATHS');
+        expect(err.meta).to.eql({ example: 'pets' });
+        done();
       });
-    }
+    });
   });
 });
 

@@ -32,8 +32,7 @@ const optionIds = [
     'parametersResolution',
     'disabledParametersValidation',
     'alwaysInheritAuthentication',
-    'preferredRequestBodyType',
-    'strictPathsValidation'
+    'preferredRequestBodyType'
   ],
   expectedOptions = {
     collapseFolders: {
@@ -250,15 +249,6 @@ const optionIds = [
       description: 'When there are multiple content-types defined in the request body of OpenAPI, the conversion ' +
         'selects the preferred option content-type as request body.If "first-listed" is set, the first ' +
         'content-type defined in the OpenAPI spec will be selected.',
-      external: false,
-      usage: ['CONVERSION']
-    },
-    strictPathsValidation: {
-      name: 'Strict paths validation',
-      type: 'boolean',
-      default: false,
-      description: 'Whether to reject the specification when "paths" is not an object, or when none of its ' +
-        'paths are valid (malformed path keys or unresolved path item references).',
       external: false,
       usage: ['CONVERSION']
     }
