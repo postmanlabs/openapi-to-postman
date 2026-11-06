@@ -3507,4 +3507,160 @@ describe('convertV2WithTypes', function() {
       });
     });
   });
+
+  describe('schema constraint preservation', function() {
+    const getRequestBodyType = (schema, openapi = '3.1.0', components) => {
+      const oas = {
+        openapi,
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/test': {
+            post: {
+              requestBody: { content: { 'application/json': { schema } } },
+              responses: { '200': { description: 'OK' } }
+            }
+          }
+        },
+        components
+      };
+
+      return new Promise((resolve, reject) => {
+        Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+          if (err) { return reject(err); }
+          resolve(JSON.parse(conversionResult.extractedTypes['post/test'].request.body));
+        });
+      });
+    };
+
+    it('should preserve enum of primitive array items', async function() {
+      const body = await getRequestBodyType({
+        type: 'array',
+        items: { type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] }
+      });
+
+      expect(body).to.deep.equal({
+        type: 'array',
+        items: { type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] }
+      });
+    });
+
+    it('should preserve propertyNames and additionalProperties of map schemas', async function() {
+      const body = await getRequestBodyType({
+        type: 'object',
+        propertyNames: { type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] },
+        additionalProperties: { type: 'string' }
+      });
+
+      expect(body).to.deep.equal({
+        type: 'object',
+        propertyNames: { type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] },
+        additionalProperties: { type: 'string' }
+      });
+    });
+
+    it('should preserve boolean additionalProperties', async function() {
+      const closedBody = await getRequestBodyType({
+          type: 'object',
+          properties: { id: { type: 'string' } },
+          additionalProperties: false
+        }, '3.0.0'),
+        openBody = await getRequestBodyType({ type: 'object', additionalProperties: true }, '3.0.0');
+
+      expect(closedBody).to.have.property('additionalProperties', false);
+      expect(closedBody.properties).to.have.property('id');
+      expect(openBody).to.deep.equal({ type: 'object', additionalProperties: true });
+    });
+
+    it('should preserve additionalProperties of nested object properties', async function() {
+      const body = await getRequestBodyType({
+        type: 'object',
+        properties: {
+          labels: {
+            type: 'object',
+            additionalProperties: { type: 'integer', minimum: 0 }
+          },
+          tags: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: { name: { type: 'string' } },
+              additionalProperties: false
+            }
+          }
+        }
+      });
+
+      expect(body.properties.labels).to.include({ type: 'object' });
+      expect(body.properties.labels.additionalProperties).to.deep.equal({ type: 'integer', minimum: 0 });
+      expect(body.properties.tags.items).to.have.property('additionalProperties', false);
+      expect(body.properties.tags.items.properties).to.have.property('name');
+    });
+
+    it('should preserve constraints of primitive schemas', async function() {
+      const body = await getRequestBodyType({
+        type: 'array',
+        items: { type: 'string', pattern: '^[A-Z]+$', minLength: 2, maxLength: 8 }
+      });
+
+      expect(body.items).to.deep.equal({ type: 'string', pattern: '^[A-Z]+$', minLength: 2, maxLength: 8 });
+    });
+
+    it('should preserve numeric range of primitive root schemas', async function() {
+      const body = await getRequestBodyType({ type: 'integer', minimum: 1, maximum: 10 });
+
+      expect(body).to.deep.equal({ type: 'integer', minimum: 1, maximum: 10 });
+    });
+
+    it('should resolve references in propertyNames', async function() {
+      const body = await getRequestBodyType({
+        type: 'object',
+        propertyNames: { $ref: '#/components/schemas/ProviderName' },
+        additionalProperties: { type: 'string' }
+      }, '3.1.0', {
+        schemas: { ProviderName: { type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] } }
+      });
+
+      expect(body.propertyNames).to.deep.equal({ type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] });
+    });
+
+    it('should preserve boolean propertyNames', async function() {
+      const body = await getRequestBodyType({ type: 'object', propertyNames: false });
+
+      expect(body).to.deep.equal({ type: 'object', propertyNames: false });
+    });
+
+    it('should not add propertyNames for OAS 3.0 specs', async function() {
+      const body = await getRequestBodyType({
+        type: 'object',
+        propertyNames: { type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] },
+        additionalProperties: { type: 'string' }
+      }, '3.0.0');
+
+      expect(body).to.deep.equal({ type: 'object', additionalProperties: { type: 'string' } });
+    });
+
+    it('should keep untyped properties of closed objects', async function() {
+      const body = await getRequestBodyType({
+        type: 'object',
+        properties: {
+          id: {},
+          kind: { enum: ['a', 'b'] },
+          name: { type: 'string' },
+          meta: {
+            type: 'object',
+            properties: { extra: {} },
+            additionalProperties: false
+          }
+        },
+        additionalProperties: false
+      });
+
+      expect(body.additionalProperties).to.equal(false);
+      expect(body.properties.id).to.deep.equal({});
+      expect(body.properties.kind).to.deep.equal({ enum: ['a', 'b'] });
+      expect(body.properties.name).to.deep.equal({ type: 'string' });
+      expect(body.properties.meta.additionalProperties).to.equal(false);
+      expect(body.properties.meta.properties).to.deep.equal({ extra: {} });
+    });
+  });
 });
