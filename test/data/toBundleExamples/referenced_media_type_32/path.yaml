@@ -1,0 +1,18 @@
+get:
+  responses:
+    '200':
+      description: Order list
+      content:
+        application/json:
+          $ref: './root.yaml#/components/mediaTypes/OrderJson'
+post:
+  requestBody:
+    content:
+      application/json:
+        $ref: './mediaType.yaml'
+      application/xml:
+        schema:
+          $ref: './order.yaml'
+  responses:
+    '201':
+      description: Created

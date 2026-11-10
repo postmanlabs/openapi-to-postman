@@ -1,0 +1,89 @@
+{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Media type references",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/orders": {
+      "$ref": "#/components/pathItems/_path.yaml"
+    }
+  },
+  "components": {
+    "mediaTypes": {
+      "OrderJson": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "_root.yaml-_components_mediaTypes_OrderJson": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "_mediaType.yaml": {
+        "schema": {
+          "$ref": "#/components/schemas/_order.yaml"
+        },
+        "example": {
+          "id": "ord_123"
+        }
+      }
+    },
+    "pathItems": {
+      "_path.yaml": {
+        "get": {
+          "responses": {
+            "200": {
+              "description": "Order list",
+              "content": {
+                "application/json": {
+                  "$ref": "#/components/mediaTypes/_root.yaml-_components_mediaTypes_OrderJson"
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "$ref": "#/components/mediaTypes/_mediaType.yaml"
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/_order.yaml"
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Created"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "_order.yaml": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

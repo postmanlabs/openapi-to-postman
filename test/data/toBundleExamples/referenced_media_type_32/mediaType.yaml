@@ -1,0 +1,4 @@
+schema:
+  $ref: './order.yaml'
+example:
+  id: ord_123
