@@ -1731,6 +1731,30 @@ describe('validateTransaction convert and validate schemas with allOf', function
 });
 
 describe('Bug fixes', function () {
+  it('should keep the operation-level server in the suggested fix for a missing endpoint', function (done) {
+    const spec = {
+        openapi: '3.0.0',
+        info: { title: 'Operation level servers', version: '1.0.0' },
+        servers: [{ url: 'https://root.example.com' }],
+        paths: {
+          '/pets': { get: { responses: { 200: { description: 'ok' } } } },
+          '/accounts': {
+            get: { servers: [{ url: 'https://api.example.com/v1/' }], responses: { 200: { description: 'ok' } } }
+          }
+        }
+      },
+      schemaPack = new Converter.SchemaPack({ type: 'json', data: spec }, { suggestAvailableFixes: true }),
+      transactions = [{ id: 'pets', request: { method: 'GET', url: 'https://root.example.com/pets' }, response: [] }];
+
+    schemaPack.validateTransactionV2(transactions, (err, result) => {
+      expect(err).to.be.null;
+      expect(result.missingEndpoints.map((endpoint) => {
+        return endpoint.suggestedFix.suggestedValue.request.request.url.raw;
+      })).to.deep.equal(['https://api.example.com/v1/accounts']);
+      done();
+    });
+  });
+
   it('should send correct transaction json path for invalid params when there are disabled query params ' +
   'in the request', function (done) {
     let collectionPath = path.join(__dirname, '../data/disabled_query_param_test_data/collection.json'),

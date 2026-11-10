@@ -1,6 +1,5 @@
 const generateAuthForCollectionFromOpenAPI = require('./helpers/collection/generateAuthForCollectionFromOpenAPI.js');
 const utils = require('./utils.js');
-const { Url } = require('postman-collection/lib/collection/url');
 
 const schemaFaker = require('../../assets/json-schema-faker.js'),
   _ = require('lodash'),
@@ -285,19 +284,53 @@ let QUERYPARAM = 'query',
     };
   },
 
-  resolveBaseUrlForPostmanRequest = (operationItem) => {
-    let serverObj = _.get(operationItem, 'servers.0'),
+  /**
+   * Identifies a server for the `baseUrl*` collection variable registry: its URL (without trailing slash)
+   * and its variable defaults, since the same URL template with other defaults resolves differently.
+   *
+   * @param {Object} server Server object
+   * @returns {String} Server key
+   */
+  getServerKey = (server) => {
+    const url = utils.fixPathVariablesInUrl(_.get(server, 'url')).replace(/\/+$/, ''),
+      defaults = _.sortBy(_.map(_.get(server, 'variables'), (variable, name) => {
+        return [name, String(_.get(variable, 'default') || '')];
+      }), _.head);
+
+    return JSON.stringify([url, defaults]);
+  },
+
+  resolveBaseUrlForPostmanRequest = (operation, pathItem, context) => {
+    let servers = _.get(operation, 'servers'),
+      serverObj,
       baseUrl = '{{baseUrl}}',
-      serverVariables = [],
       pathVariables = [],
       collectionVariables = [];
+
+    if (_.isEmpty(servers)) {
+      servers = _.get(pathItem, 'servers');
+    }
+
+    serverObj = _.get(servers, '0');
 
     if (!serverObj) {
       return { collectionVariables, pathVariables, baseUrl, serverObj };
     }
 
-    // The request path always starts with `/`, so a trailing slash on the server URL would produce
-    // `//` in the request URL (and in the extracted-type key derived from it).
+    const registeredServer = _.get(context, ['openapi', 'serverVariableRegistry', getServerKey(serverObj)]);
+
+    if (registeredServer) {
+      baseUrl = `{{${registeredServer.key}}}`;
+      collectionVariables = _.map(registeredServer.variables, _.clone);
+
+      return { collectionVariables, pathVariables, baseUrl, serverObj };
+    }
+
+    // No `baseUrl*` variables were generated for this server (e.g. suggested fixes during validation, where
+    // the user's collection doesn't have them), so the server URL is written into the request instead.
+    // The request path always starts with `/`, so a trailing slash on the server URL would produce `//`.
+    const serverVariables = [];
+
     baseUrl = sanitizeUrl(serverObj.url).replace(/\/+$/, '');
     _.forOwn(serverObj.variables, (value, key) => {
       serverVariables.push({
@@ -1249,6 +1282,18 @@ let QUERYPARAM = 'query',
       schema.type = schema.type || SCHEMA_TYPES.object;
     }
 
+    // propertyNames is only supported from OAS 3.1 (JSON Schema 2020-12) onwards
+    if (schema.hasOwnProperty('propertyNames') &&
+      !_.includes(['3.1.x', '3.2.x'], _.get(concreteUtils, 'version'))) {
+      delete schema.propertyNames;
+    }
+
+    // propertyNames can be a boolean (left as is) or a schema that may contain references
+    if (_.isPlainObject(schema.propertyNames) && !_.isEmpty(schema.propertyNames)) {
+      schema.propertyNames = _resolveSchema(context, schema.propertyNames, stack, resolveFor,
+        seenRef, utils.addToJsonPath(currentPath, ['propertyNames']));
+    }
+
     // Resolve refs inside enums to value
     if (schema.hasOwnProperty('enum')) {
       _.forEach(schema.enum, (item, index) => {
@@ -1270,6 +1315,31 @@ let QUERYPARAM = 'query',
     }
 
     return schema;
+  },
+
+  /**
+   * Copies map-related keywords (additionalProperties, propertyNames) of an object schema
+   * to its processed type details, processing nested schemas recursively.
+   *
+   * @param {Object} source - The resolved object schema
+   * @param {Object} target - The processed schema details to add keywords to
+   * @returns {Object} The target with map-related keywords added
+   */
+  addObjectMapKeywords = (source, target) => {
+    if (source.hasOwnProperty('additionalProperties')) {
+      target.additionalProperties = _.isBoolean(source.additionalProperties) ?
+        source.additionalProperties :
+        processSchema(source.additionalProperties);
+    }
+
+    if (_.isBoolean(source.propertyNames)) {
+      target.propertyNames = source.propertyNames;
+    }
+    else if (_.isPlainObject(source.propertyNames)) {
+      target.propertyNames = processSchema(source.propertyNames);
+    }
+
+    return target;
   },
 
   /**
@@ -1329,7 +1399,9 @@ let QUERYPARAM = 'query',
         schemaDetails.properties = {};
 
         for (let [propName, propValue] of Object.entries(resolvedSchema.properties)) {
+          // Keep untyped properties (e.g. {} or enum-only) so closed objects still accept them
           if (!propValue.type && !propValue.anyOf && !propValue.oneOf && !propValue.allOf) {
+            schemaDetails.properties[propName] = processSchema(propValue);
             continue;
           }
           const propertyDetails = {
@@ -1374,6 +1446,10 @@ let QUERYPARAM = 'query',
             propertyDetails.items = processSchema(propValue.items);
           }
 
+          if (propValue.type === 'object') {
+            addObjectMapKeywords(propValue, propertyDetails);
+          }
+
           schemaDetails.properties[propName] = propertyDetails;
         }
       }
@@ -1382,7 +1458,7 @@ let QUERYPARAM = 'query',
         schemaDetails.required = resolvedSchema.required;
       }
 
-      return schemaDetails;
+      return addObjectMapKeywords(resolvedSchema, schemaDetails);
     }
     else if (resolvedSchema.type === 'array' && resolvedSchema.items) {
       const arrayDetails = {
@@ -1401,7 +1477,13 @@ let QUERYPARAM = 'query',
       description: resolvedSchema.description,
       title: resolvedSchema.title,
       example: resolvedSchema.example,
-      format: resolvedSchema.format
+      format: resolvedSchema.format,
+      enum: resolvedSchema.enum || undefined,
+      minLength: resolvedSchema.minLength,
+      maxLength: resolvedSchema.maxLength,
+      minimum: resolvedSchema.minimum,
+      maximum: resolvedSchema.maximum,
+      pattern: resolvedSchema.pattern
     };
   },
 
@@ -3527,7 +3609,7 @@ module.exports = {
       } : pathItem;
 
     let url = resolveUrlForPostmanRequest(path),
-      baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[operationKey]),
+      baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[operationKey], pathItem, context),
       requestName = resolveNameForPostmanReqeust(context, operationItem[operationKey], url),
       { queryParamTypes, queryParams } = resolveQueryParamsForPostmanRequest(context, operationItem, operationKey),
       { headerTypes, headers } = resolveHeadersForPostmanRequest(context, operationItem, operationKey),
@@ -3605,9 +3687,7 @@ module.exports = {
         resolveForKey: resolveParamsForExampleKey
       });
 
-    const overridesServer = Boolean(baseUrlData.serverObj);
-
-    requestIdentifier = overridesServer ? method + new Url(url).getPath(true) : method + path;
+    requestIdentifier = method + path;
     Object.assign(requestTypesObject,
       { [requestIdentifier]: { request: requestTypes, response: responseTypes } });
 
@@ -3631,6 +3711,7 @@ module.exports = {
   resolveResponseForPostmanRequest,
   resolveRequestBodyForPostmanRequest,
   resolveRefFromSchema,
+  getServerKey,
   resolveSchema,
   recordConversionIssue,
   measureJsonLength,

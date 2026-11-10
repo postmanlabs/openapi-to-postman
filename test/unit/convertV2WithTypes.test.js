@@ -16,6 +16,8 @@ const expect = require('chai').expect,
   testSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/test.json'),
   testSpec1 = path.join(__dirname, VALID_OPENAPI_PATH + '/test1.json'),
   testSpec2 = path.join(__dirname, VALID_OPENAPI_PATH + '/test-title-description.json'),
+  issue160 = path.join(__dirname, VALID_OPENAPI_PATH, '/issue#160.json'),
+  serverOverRidingSpec = path.join(__dirname, VALID_OPENAPI_PATH + '/server_overriding.json'),
   readOnlyNestedSpec =
   path.join(__dirname, VALID_OPENAPI_PATH, '/readOnlyNested.json'),
   referencedPathItemsSpec =
@@ -457,9 +459,9 @@ describe('convertV2WithTypes', function() {
 
   it('should resolve extractedTypes into correct schema structure', function(done) {
     const expectedExtractedTypes = {
-        // `GET /pets` overrides the server URL with `http://petstore3.swagger.io/{v3}`, so its
-        // resolved request path (and therefore its type-data key) carries the `:v3` server segment.
-        'get/:v3/pets': {
+        // Operation-level servers become collection variables (`baseUrl*`), so the type-data key
+        // stays the OpenAPI path (`get/pets`) rather than inlining server path segments.
+        'get/pets': {
           'request': {
             'headers': '[\n  {\n    "keyName": "variable",\n    "properties": {\n      "type": "array"\n    }\n  }\n]',
             'pathParam': '[]',
@@ -543,10 +545,8 @@ describe('convertV2WithTypes', function() {
   });
 
   it('should key extractedTypes by the resolved request path when an operation overrides the server URL with path segments', function(done) {
-    // An operation-level server URL with path segments (e.g. `/eslsvc/api/v3`) gets resolved
-    // directly into the request URL, while a top-level server is surfaced via the `{{baseUrl}}`
-    // host. The extracted-type identifier must mirror the request's resolved path (Url#getPath) in
-    // both cases so consumers can map the types back to the generated requests.
+    // Operation/path-level servers become collection variables (`baseUrl*`). Type keys stay on the
+    // OpenAPI path so consumers can map types back to generated requests.
     const openapi = {
         openapi: '3.0.0',
         info: { title: 'Operation level servers', version: '1.0.0' },
@@ -583,12 +583,30 @@ describe('convertV2WithTypes', function() {
 
       const typeKeys = Object.keys(conversionResult.extractedTypes);
 
-      // Operation-level server path segments are part of the key (matches the request's getPath).
-      expect(typeKeys).to.include('get/eslsvc/api/v3/profile-preferences');
-      // Top-level server stays behind {{baseUrl}}, so its key is just the spec path.
+      // Operation-level servers are collection variables, so the type key stays the spec path.
+      expect(typeKeys).to.include('get/profile-preferences');
       expect(typeKeys).to.include('get/pets');
-      expect(typeKeys).to.not.include('get/profile-preferences');
+      expect(typeKeys).to.not.include('get/eslsvc/api/v3/profile-preferences');
 
+      done();
+    });
+  });
+
+  it('#GITHUB-160 should map path-level servers to baseUrl* collection variables via convertV2WithTypes' +
+  issue160, function(done) {
+    const openapi = fs.readFileSync(issue160, 'utf8');
+
+    Converter.convertV2WithTypes({ type: 'string', data: openapi }, {}, (err, conversionResult) => {
+      expect(err).to.be.null;
+      expect(conversionResult.result).to.equal(true);
+
+      const collection = conversionResult.output[0].data,
+        baseUrl1 = collection.variable.find((variable) => {
+          return variable.key === 'baseUrl1';
+        });
+
+      expect(collection.item[0].item[0].request.url.host[0]).to.equal('{{baseUrl1}}');
+      expect(baseUrl1.value).to.equal('http://petstore.swagger.io:{{port}}/{{basePath}}');
       done();
     });
   });
@@ -614,13 +632,13 @@ describe('convertV2WithTypes', function() {
         }
       },
       requestUrls = [],
-      collectRequestUrls = (items) => {
+      collectRequestUrls = (items, variables) => {
         items.forEach((item) => {
           if (item.item) {
-            return collectRequestUrls(item.item);
+            return collectRequestUrls(item.item, variables);
           }
 
-          requestUrls.push(new sdk.Url(item.request.url).toString());
+          requestUrls.push(variables.replace(new sdk.Url(item.request.url).toString()));
         });
       };
 
@@ -628,19 +646,50 @@ describe('convertV2WithTypes', function() {
       expect(err).to.be.null;
       expect(conversionResult.result).to.equal(true);
 
-      collectRequestUrls(conversionResult.output[0].data.item);
+      const collection = conversionResult.output[0].data;
+
+      collectRequestUrls(collection.item, new sdk.VariableList(null, collection.variable));
 
       expect(requestUrls).to.have.members([
         'https://localhost.com:9000/paymentus/healthcheck',
         'https://api.example.com/v1/accounts'
       ]);
+      // Operation-level servers are referenced through `baseUrl*` variables, so the type keys stay
+      // on the OpenAPI path.
       expect(Object.keys(conversionResult.extractedTypes)).to.have.members([
         'get/paymentus/healthcheck',
-        'get/v1/accounts'
+        'get/accounts'
       ]);
-
       done();
     });
+  });
+
+  it('[Github #90] should prefer operation-level server as baseUrl1 over root baseUrl via convertV2WithTypes' +
+  serverOverRidingSpec, function(done) {
+    Converter.convertV2WithTypes({ type: 'file', data: serverOverRidingSpec }, { schemaFaker: true },
+      (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data,
+          variables = collection.variable,
+          baseUrl = variables.find((variable) => {
+            return variable.key === 'baseUrl';
+          }),
+          baseUrl1 = variables.find((variable) => {
+            return variable.key === 'baseUrl1';
+          }),
+          overrideRequest = collection.item[1].item[0].item[0].request,
+          rootRequest = collection.item[0].item[0].item[0].request;
+
+        expect(overrideRequest.url.host[0]).to.equal('{{baseUrl1}}');
+        expect(overrideRequest.url.path.join('/')).to.equal('secondary-domain/fails');
+        expect(baseUrl1.value).to.equal('http://petstore.swagger.io:{{port}}/{{basePath}}');
+
+        expect(rootRequest.url.host[0]).to.equal('{{baseUrl}}');
+        expect(baseUrl.value + '/' + rootRequest.url.path.join('/'))
+          .to.equal('https://api.example.com/primary-domain/works');
+        done();
+      });
   });
 
   describe('composite schema support (anyOf, oneOf, allOf)', function() {
@@ -3456,6 +3505,162 @@ describe('convertV2WithTypes', function() {
 
         done();
       });
+    });
+  });
+
+  describe('schema constraint preservation', function() {
+    const getRequestBodyType = (schema, openapi = '3.1.0', components) => {
+      const oas = {
+        openapi,
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/test': {
+            post: {
+              requestBody: { content: { 'application/json': { schema } } },
+              responses: { '200': { description: 'OK' } }
+            }
+          }
+        },
+        components
+      };
+
+      return new Promise((resolve, reject) => {
+        Converter.convertV2WithTypes({ type: 'json', data: oas }, {}, (err, conversionResult) => {
+          if (err) { return reject(err); }
+          resolve(JSON.parse(conversionResult.extractedTypes['post/test'].request.body));
+        });
+      });
+    };
+
+    it('should preserve enum of primitive array items', async function() {
+      const body = await getRequestBodyType({
+        type: 'array',
+        items: { type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] }
+      });
+
+      expect(body).to.deep.equal({
+        type: 'array',
+        items: { type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] }
+      });
+    });
+
+    it('should preserve propertyNames and additionalProperties of map schemas', async function() {
+      const body = await getRequestBodyType({
+        type: 'object',
+        propertyNames: { type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] },
+        additionalProperties: { type: 'string' }
+      });
+
+      expect(body).to.deep.equal({
+        type: 'object',
+        propertyNames: { type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] },
+        additionalProperties: { type: 'string' }
+      });
+    });
+
+    it('should preserve boolean additionalProperties', async function() {
+      const closedBody = await getRequestBodyType({
+          type: 'object',
+          properties: { id: { type: 'string' } },
+          additionalProperties: false
+        }, '3.0.0'),
+        openBody = await getRequestBodyType({ type: 'object', additionalProperties: true }, '3.0.0');
+
+      expect(closedBody).to.have.property('additionalProperties', false);
+      expect(closedBody.properties).to.have.property('id');
+      expect(openBody).to.deep.equal({ type: 'object', additionalProperties: true });
+    });
+
+    it('should preserve additionalProperties of nested object properties', async function() {
+      const body = await getRequestBodyType({
+        type: 'object',
+        properties: {
+          labels: {
+            type: 'object',
+            additionalProperties: { type: 'integer', minimum: 0 }
+          },
+          tags: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: { name: { type: 'string' } },
+              additionalProperties: false
+            }
+          }
+        }
+      });
+
+      expect(body.properties.labels).to.include({ type: 'object' });
+      expect(body.properties.labels.additionalProperties).to.deep.equal({ type: 'integer', minimum: 0 });
+      expect(body.properties.tags.items).to.have.property('additionalProperties', false);
+      expect(body.properties.tags.items.properties).to.have.property('name');
+    });
+
+    it('should preserve constraints of primitive schemas', async function() {
+      const body = await getRequestBodyType({
+        type: 'array',
+        items: { type: 'string', pattern: '^[A-Z]+$', minLength: 2, maxLength: 8 }
+      });
+
+      expect(body.items).to.deep.equal({ type: 'string', pattern: '^[A-Z]+$', minLength: 2, maxLength: 8 });
+    });
+
+    it('should preserve numeric range of primitive root schemas', async function() {
+      const body = await getRequestBodyType({ type: 'integer', minimum: 1, maximum: 10 });
+
+      expect(body).to.deep.equal({ type: 'integer', minimum: 1, maximum: 10 });
+    });
+
+    it('should resolve references in propertyNames', async function() {
+      const body = await getRequestBodyType({
+        type: 'object',
+        propertyNames: { $ref: '#/components/schemas/ProviderName' },
+        additionalProperties: { type: 'string' }
+      }, '3.1.0', {
+        schemas: { ProviderName: { type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] } }
+      });
+
+      expect(body.propertyNames).to.deep.equal({ type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] });
+    });
+
+    it('should preserve boolean propertyNames', async function() {
+      const body = await getRequestBodyType({ type: 'object', propertyNames: false });
+
+      expect(body).to.deep.equal({ type: 'object', propertyNames: false });
+    });
+
+    it('should not add propertyNames for OAS 3.0 specs', async function() {
+      const body = await getRequestBodyType({
+        type: 'object',
+        propertyNames: { type: 'string', enum: ['PROVIDER_A', 'PROVIDER_B'] },
+        additionalProperties: { type: 'string' }
+      }, '3.0.0');
+
+      expect(body).to.deep.equal({ type: 'object', additionalProperties: { type: 'string' } });
+    });
+
+    it('should keep untyped properties of closed objects', async function() {
+      const body = await getRequestBodyType({
+        type: 'object',
+        properties: {
+          id: {},
+          kind: { enum: ['a', 'b'] },
+          name: { type: 'string' },
+          meta: {
+            type: 'object',
+            properties: { extra: {} },
+            additionalProperties: false
+          }
+        },
+        additionalProperties: false
+      });
+
+      expect(body.additionalProperties).to.equal(false);
+      expect(body.properties.id).to.deep.equal({});
+      expect(body.properties.kind).to.deep.equal({ enum: ['a', 'b'] });
+      expect(body.properties.name).to.deep.equal({ type: 'string' });
+      expect(body.properties.meta.additionalProperties).to.equal(false);
+      expect(body.properties.meta.properties).to.deep.equal({ extra: {} });
     });
   });
 });
