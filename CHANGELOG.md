@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v6.4.3] - 2026-11-10
+
 ### Added
 
 -   Added support for multiple servers in v2 collection generation and syncing. Every unique root, path-level and operation-level server is added as a `baseUrl`, `baseUrl1`, … collection variable, and each request uses the variable of its effective server (operation > path > root).
@@ -733,7 +735,9 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.2...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.3...HEAD
+
+[v6.4.3]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.2...v6.4.3
 
 [v6.4.2]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.1...v6.4.2
 
