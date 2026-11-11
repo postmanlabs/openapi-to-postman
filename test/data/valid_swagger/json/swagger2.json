@@ -14,7 +14,7 @@
     "http"
   ],
   "paths": {
-    "Authorization/LoginAPI": {
+    "/Authorization/LoginAPI": {
       "post": {
         "summary": "Authenticates you to the system and produces a session token that will be used for future calls",
         "description": "",
