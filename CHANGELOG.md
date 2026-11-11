@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Fixed an issue where OpenAPI 3.2 Example Objects that use `dataValue` or `serializedValue` instead of `value` produced the whole Example Object as the request body, response body or parameter value in v2 collections.
+
 ## [v6.4.3] - 2026-11-10
 
 ### Added

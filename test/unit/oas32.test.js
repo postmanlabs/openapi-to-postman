@@ -349,4 +349,86 @@ describe('OAS 3.2 conversion', function () {
     expect(await getExampleQueries(getSpec(false))).to.eql(['term=cats', 'term=dogs']);
     expect(await getExampleQueries(getSpec(true))).to.eql(['term=cats', 'term=dogs']);
   });
+
+  describe('v2 should use dataValue and serializedValue of Example Objects', function () {
+    const getRequest = async (operation) => {
+      const spec = spec32({ paths: { '/users': { post: operation } } }),
+        [request] = flattenItems((await convert('convertV2', spec, { parametersResolution: 'Example' })).item);
+
+      return request;
+    };
+
+    it('should use dataValue as the response body', async function () {
+      const request = await getRequest({
+        responses: {
+          '200': {
+            description: 'ok',
+            content: {
+              'application/json': {
+                schema: { type: 'object', properties: { id: { type: 'integer' }, name: { type: 'string' } } },
+                examples: { alice: { summary: 'Alice', dataValue: { id: 7, name: 'Alice' } } }
+              }
+            }
+          }
+        }
+      });
+
+      expect(JSON.parse(request.response[0].body)).to.eql({ id: 7, name: 'Alice' });
+    });
+
+    it('should use dataValue as the parameter value', async function () {
+      const request = await getRequest({
+        parameters: [{ name: 'limit', in: 'query', schema: { type: 'integer' }, examples: { ten: { dataValue: 10 } } }],
+        responses: OK_RESPONSES
+      });
+
+      expect(request.request.url.query.map(({ key, value }) => { return `${key}=${value}`; })).to.eql(['limit=10']);
+    });
+
+    it('should use serializedValue as the request body as is', async function () {
+      const request = await getRequest({
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: { type: 'object', properties: { sku: { type: 'string' } } },
+              examples: { raw: { serializedValue: '{"sku":"A1"}' } }
+            }
+          }
+        },
+        responses: OK_RESPONSES
+      });
+
+      expect(request.request.body.raw).to.equal('{"sku":"A1"}');
+    });
+
+    it('should use serializedValue as the XML request body', async function () {
+      const request = await getRequest({
+        requestBody: {
+          content: {
+            'application/xml': {
+              schema: { type: 'object' },
+              examples: { raw: { serializedValue: '<user><name>Bob</name></user>' } }
+            }
+          }
+        },
+        responses: OK_RESPONSES
+      });
+
+      expect(request.request.body.raw).to.include('<user><name>Bob</name></user>');
+      expect(request.request.body.raw).to.not.include('serializedValue');
+    });
+
+    it('should keep using value when the Example Object has no dataValue', async function () {
+      const request = await getRequest({
+        responses: {
+          '200': {
+            description: 'ok',
+            content: { 'application/json': { schema: { type: 'object' }, examples: { ok: { value: { ok: true } } } } }
+          }
+        }
+      });
+
+      expect(JSON.parse(request.response[0].body)).to.eql({ ok: true });
+    });
+  });
 });
