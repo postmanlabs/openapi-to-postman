@@ -931,8 +931,16 @@ let QUERYPARAM = 'query',
       example = resolveExampleData(context, example);
     }
 
-    if (_.get(example, 'value')) {
+    // OpenAPI 3.2 Example Objects carry the data in `dataValue`, or the already serialized
+    // body in `serializedValue`, instead of `value`.
+    if (_.has(example, 'dataValue')) {
+      example = resolveExampleData(context, example.dataValue);
+    }
+    else if (_.get(example, 'value')) {
       example = resolveExampleData(context, example.value);
+    }
+    else if (_.isString(_.get(example, 'serializedValue'))) {
+      example = example.serializedValue;
     }
 
     return example;
