@@ -1333,6 +1333,10 @@ var _ = require('lodash'),
     return clone;
   }
 
+  function safeGetProperty(object, property) {
+    return property === '__proto__' ? undefined : object[property];
+  }
+
   /**
    * Extening object that entered in first argument.
    *
@@ -1365,8 +1369,8 @@ var _ = require('lodash'),
       }
 
       Object.keys(obj).forEach(function (key) {
-        src = target[key]; // source value
-        val = obj[key]; // new value
+        src = safeGetProperty(target, key); // source value
+        val = safeGetProperty(obj, key); // new value
 
         // recursion prevention
         if (val === target) {
