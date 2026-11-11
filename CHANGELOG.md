@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+-   Fixed an issue where bundling a multi-file OpenAPI 3.2 spec put a Media Type Object referenced under `content/<media-type>` in `components.responses` instead of `components.mediaTypes`, which left a broken `$ref` and a "not found" example body in generated collections.
+
 ## [v6.4.3] - 2026-11-10
 
 ### Added
