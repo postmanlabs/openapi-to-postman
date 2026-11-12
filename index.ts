@@ -91,8 +91,8 @@ export function convertV2WithTypes(input: SpecificationInput, options: Options, 
  * negative checks. Convert with `generateContractTests: true` and `parametersResolution: 'Example'`
  * so every request carries the status and schema assertions and uses the spec's example values.
  * @param {CollectionResult} conversion - Result of convertV2WithTypes
- * @param {ContractTestOptions} [options] - Bindings lock, excluded operations and auth header
- * @returns {ContractTestResult} The collection, updated lock and summary
+ * @param {ContractTestOptions} [options] - Excluded operations and headers to send
+ * @returns {ContractTestResult} The collection and a summary of its links, inputs and errors
  */
 export function buildContractTestCollection(
   conversion: CollectionResult,

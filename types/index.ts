@@ -34,38 +34,29 @@ export interface CollectionResult extends BaseResult {
 }
 
 export interface ContractTestResult extends CollectionResult {
-
-  /**
-   * Updated bindings lock: `{ lockfileVersion, exclude, bindings: [{ variable, note?, producer, consumers }] }`.
-   * Saved entries are kept as written and in order; new links and values nothing returns
-   * (`producer: null`) are appended.
-   */
-  lock?: object;
   summary?: {
 
-    /** Operations left out by the lock's `exclude` section. */
+    /** Operations left out by `exclude`. */
     excluded: string[];
 
-    /** Operations left out because a value they need is unresolved (see `unresolved`). */
-    skipped: string[];
+    /**
+     * Values passed between requests: `{ variable, producer: { operation, value }, consumers }`, where
+     * `value` is a `$response.body#` pointer and each consumer is `{ operation, param }`.
+     */
+    links: object[];
 
-    /** Number of saved bindings, placeholders included. */
-    unchanged: number;
+    /**
+     * Values no response returns: `{ variable, consumers }`. Each is an empty collection variable the
+     * caller sets; requests that need an empty one are skipped at run time.
+     */
+    inputs: object[];
 
-    /** Bindings appended to the lock: new links (with `rule` and `score`) and new placeholders. */
-    added: object[];
-
-    /** `{ variable, consumer }` for consumers appended to a saved binding. */
-    extended: object[];
-
-    /** `{ variable, reason }` for problems with saved bindings, e.g. a request no longer in the spec. */
-    warnings: object[];
-
-    /** `{ variable, consumer, producer }` for placeholder values a response can now provide. */
-    suggestions: object[];
-
-    /** `{ operation, param, reason, fallback }` for every value that isn't linked. */
-    unresolved: object[];
+    /**
+     * What keeps the collection from running as generated: an `exclude` entry that matches nothing, a value
+     * whose producer cannot run before its consumer (a dependency cycle), or a value a request body has no
+     * place for.
+     */
+    errors: string[];
   };
 }
 
@@ -220,11 +211,8 @@ export interface Options {
  */
 export interface ContractTestOptions {
 
-  /**
-   * Bindings lock from a previous run: its links are reused instead of being inferred again, and the
-   * operations in its `exclude` section ({ operation } or { pattern } on "METHOD /path") are left out.
-   */
-  lock?: object | null;
+  /** Operations not to run, as `METHOD /path`, where `*` matches anything: `DELETE /pets/{petId}`, `* /x/*`. */
+  exclude?: string[];
 
   /**
    * Headers sent on every request, replacing same-named headers from the spec. Without a value, the value is

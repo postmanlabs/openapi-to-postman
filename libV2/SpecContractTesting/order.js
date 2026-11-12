@@ -13,7 +13,7 @@ const _ = require('lodash'),
    * Spec order is never used, so the same API always gives the same order.
    *
    * @param {Object[]} operations - operations
-   * @param {Object[]} bindings - active bindings
+   * @param {Object[]} bindings - links
    * @returns {Object} resource -> step ids (`operationId` or `operationId:expect-404`), plus `teardown`
    */
   buildFlows = (operations, bindings) => {
@@ -40,7 +40,8 @@ const _ = require('lodash'),
       remaining = resources.filter((resource) => { return linked.has(resource); }).sort();
 
     while (remaining.length) {
-      // First ready resource; on a cycle, the first remaining one (reconcile reports the links this breaks).
+      // First ready resource; on a cycle, the first remaining one (dropUnorderedConsumers reports the links
+      // this breaks).
       const next = remaining.find((resource) => {
         return [...deps[resource]].every((dep) => { return ordered.includes(dep); });
       }) || remaining[0];
@@ -66,6 +67,43 @@ const _ = require('lodash'),
     if (teardown.length) { flows.teardown = teardown; }
 
     return flows;
+  },
+
+  /**
+   * Drops consumers whose producer doesn't run before them, which only happens in a dependency cycle
+   * (A needs B's id and B needs A's), and reports each as an error.
+   *
+   * @param {Object[]} links - links
+   * @param {Object} flows - run order from buildFlows
+   * @param {Object[]} operations - operations
+   * @returns {Object} { runnable: links with only satisfiable consumers, errors: String[] }
+   */
+  dropUnorderedConsumers = (links, flows, operations) => {
+    const ops = _.keyBy(operations, 'key'),
+      position = {},
+      errors = [];
+
+    _.flatten(_.values(flows)).forEach((step, index) => {
+      const operationId = step.split(':')[0];
+
+      if (!_.has(position, operationId)) { position[operationId] = index; }
+    });
+
+    const at = (operation) => { return _.get(position, _.get(ops, [operation, 'operationId']), -1); },
+      runnable = links.map((link) => {
+        const producer = _.get(link, 'producer.operation'),
+          [ok, late] = _.partition(link.consumers, (consumer) => {
+            return !producer || at(producer) < at(consumer.operation);
+          });
+
+        late.forEach((consumer) => {
+          errors.push(`${consumer.operation} needs {{${link.variable}}} from ${producer}, which cannot run before it`);
+        });
+
+        return late.length ? Object.assign({}, link, { consumers: ok }) : link;
+      });
+
+    return { runnable, errors };
   };
 
-module.exports = { buildFlows };
+module.exports = { buildFlows, dropUnorderedConsumers };

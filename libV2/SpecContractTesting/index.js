@@ -1,13 +1,14 @@
 // Spec contract testing: rearranges the collection produced by convertV2WithTypes into one that
 // exercises the API in a valid order (create, read, update, child resources, teardown), keeping the
-// converter's status and schema checks. Links between requests are inferred from extractedTypes and
-// can be pinned with a lock. Every operation runs unless the lock excludes it or a value it needs
-// can't be resolved (listed under `unresolved`). Collection generation itself is unchanged.
+// converter's status and schema checks. Values are passed between requests by name (see links.js); values
+// no response returns become empty collection variables for the caller to set. Every operation runs unless
+// it is excluded. Collection generation itself is unchanged.
 const _ = require('lodash'),
   { hash, sortKeys, flattenItems } = require('./utils'),
   { CONTRACT_TEST_MARKER } = require('../CollectionGeneration/contractTests'),
   { listOperations } = require('./operations'),
-  { versionError, readExclude, findBindingsError, unresolvedRef, reconcile } = require('./lock'),
+  { link } = require('./links'),
+  { buildFlows, dropUnorderedConsumers } = require('./order'),
   { buildCollection } = require('./collection'),
 
   // Headers that carry credentials; the no-token checks leave them out.
@@ -26,20 +27,24 @@ const _ = require('lodash'),
     };
   },
 
+  // `METHOD /path`, where `*` matches anything: `DELETE /pets/{petId}`, `* /internal/*`.
+  toMatcher = (pattern) => {
+    return new RegExp(`^${_.escapeRegExp(pattern.trim()).replace(/\\\*/g, '.*')}$`, 'i');
+  },
+
   /**
    * Builds the contract-test collection from a convertV2WithTypes result.
    *
    * @param {Object} conversion - convertV2WithTypes result (with output and extractedTypes)
    * @param {Object} [options] - options
-   * @param {Object} [options.lock] - previously saved lock; its bindings are reused and its `exclude`
-   *   entries ({ operation } or { pattern } matched against "METHOD /path") are left out
+   * @param {String[]} [options.exclude] - operations not to run, as `METHOD /path`, where `*` matches anything
    * @param {Object[]} [options.headers] - { name, value } sent on every request; without a value, the value is
    *   {{camelCase(name)}}. Credential headers (Authorization, Cookie, names with token, key, secret, session or
    *   auth) are left out of the no-token checks and replace the spec's own auth
-   * @returns {Object} { result, output: [{ type: 'collection', data }], lock, summary }, or
-   *   { result: false, reason } when the input is not a convertV2WithTypes result made with
-   *   `generateContractTests: true`, `headers` is invalid, or the lock has an unsupported `lockfileVersion`
-   *   or an invalid `exclude` or `bindings` entry
+   * @returns {Object} { result, output: [{ type: 'collection', data }], summary }, or { result: false, reason }
+   *   when the input is not a convertV2WithTypes result made with `generateContractTests: true`, or `headers`
+   *   or `exclude` is invalid. summary: { excluded, links, inputs, errors }: `inputs` are the values no
+   *   response returns, `errors` what keeps the collection from running as generated
    */
   build = (conversion, options = {}) => {
     const converted = _.get(conversion, 'output[0].data');
@@ -56,43 +61,46 @@ const _ = require('lodash'),
       return { result: false, reason: 'Expected a convertV2WithTypes result made with generateContractTests: true' };
     }
 
-    const headers = _.map(options.headers, normalizeHeader);
+    const headers = _.map(options.headers, normalizeHeader),
+      exclude = options.exclude || [];
 
     if (!_.every(headers)) { return { result: false, reason: 'Each header needs a name: { name, value }' }; }
+    if (!_.isArray(exclude) || !_.every(exclude, (pattern) => { return _.isString(pattern) && pattern.trim(); })) {
+      return { result: false, reason: 'Each exclude entry is a string: "METHOD /path", where * matches anything' };
+    }
 
-    const { isExcluded, error } = readExclude(options.lock),
-      lockError = versionError(options.lock) || error || findBindingsError(options.lock);
-
-    if (lockError) { return { result: false, reason: lockError }; }
-
-    const specHash = `sha256:${hash(sortKeys(conversion.extractedTypes), 16)}`,
-      [excluded, operations] = _.partition(listOperations(conversion.extractedTypes, converted),
-        (op) => { return isExcluded(op.key); }),
-      { bindings, flows, lock, summary } = reconcile({
-        operations,
-        excluded: new Set(_.map(excluded, 'key')),
-        lock: options.lock
-      }),
-      { collection, skipped, unapplied } = buildCollection({
+    const matchers = exclude.map(toMatcher),
+      allOperations = listOperations(conversion.extractedTypes, converted),
+      isExcluded = (op) => { return matchers.some((matcher) => { return matcher.test(op.key); }); },
+      [excluded, operations] = _.partition(allOperations, isExcluded),
+      links = link(operations, headers.map((header) => { return header.name.toLowerCase(); })),
+      flows = buildFlows(operations, links),
+      { runnable, errors: orderErrors } = dropUnorderedConsumers(links, flows, operations),
+      { collection, unapplied } = buildCollection({
         collection: converted,
         operations,
-        bindings,
+        links: runnable,
         flows,
-        seed: specHash,
+        seed: `sha256:${hash(sortKeys(conversion.extractedTypes), 16)}`,
         headers
-      });
-
-    // A linked value the request has no place for (e.g. an XML body) is as unresolved as one with no source.
-    const unresolved = summary.unresolved.concat(unapplied.map(({ operation, param }) => {
-      return unresolvedRef(operation, param, 'the request body format cannot take a linked value', true);
-    }));
+      }),
+      [produced, inputs] = _.partition(links, 'producer'),
+      errors = exclude.filter((pattern, index) => {
+        return !allOperations.some((op) => { return matchers[index].test(op.key); });
+      }).map((pattern) => { return `exclude "${pattern}" matches no operation`; })
+        .concat(orderErrors, unapplied.map(({ operation, variable }) => {
+          return `${operation} has no place for {{${variable}}} in its request body`;
+        }));
 
     return {
       result: true,
       output: [{ type: 'collection', data: collection }],
-      lock,
-      summary: Object.assign({}, summary,
-        { excluded: _.map(excluded, 'key').sort(), skipped, unresolved })
+      summary: {
+        excluded: _.map(excluded, 'key').sort(),
+        links: produced,
+        inputs: inputs.map((input) => { return _.pick(input, ['variable', 'consumers']); }),
+        errors
+      }
     };
   };
 

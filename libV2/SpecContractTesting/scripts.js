@@ -7,26 +7,36 @@ const RECEIVED = '"received " + pm.response.code + " " + pm.response.status + ":
 module.exports = {
   /**
    * Pre-request: skip the request when a variable it needs is empty, e.g. because the request
-   * that saves it failed, instead of sending a bogus value.
+   * that saves it failed, instead of sending a bogus value. A missing input also fails a test: no
+   * earlier failure explains it.
    *
-   * @param {String[]} variables - variables the request uses
-   * @param {String} [reason] - why a variable would be empty, shown in the skip message
+   * @param {Object} needs - variable the request uses -> why it would be empty, shown in the skip message
+   * @param {String[]} [inputs] - the variables in `needs` that the caller sets
    * @returns {String[]} exec lines
    */
-  guard: (variables, reason = 'the request that saves it did not succeed') => {
-    return variables.length ? [
-      `var contractNeeds = ${JSON.stringify(variables)};`,
-      'var contractMissing = contractNeeds.filter(function (name) {',
+  guard: (needs, inputs = []) => {
+    return Object.keys(needs).length ? [
+      `var contractNeeds = ${JSON.stringify(needs)};`,
+      'var contractMissing = Object.keys(contractNeeds).filter(function (name) {',
       '  var value = pm.variables.get(name);',
       '',
       '  return value === undefined || value === null || value === "";',
       '});',
       'if (contractMissing.length) {',
-      `  console.warn("Skipping " + pm.info.requestName + ": missing " + contractMissing.join(", ") + ${
-        JSON.stringify(` (${reason})`)});`,
+      '  console.warn("Skipping " + pm.info.requestName + ": missing " + contractMissing.map(function (name) {',
+      '    return name + " (" + contractNeeds[name] + ")";',
+      '  }).join(", "));'
+    ].concat(inputs.length ? [
+      `  ${JSON.stringify(inputs)}.filter(function (name) { return contractMissing.indexOf(name) !== -1; })`,
+      '    .forEach(function (name) {',
+      '      pm.test("Flow | " + name + " is set", function () {',
+      '        pm.expect.fail(name + " is empty: " + contractNeeds[name]);',
+      '      });',
+      '    });'
+    ] : [], [
       '  pm.execution.skipRequest();',
       '}'
-    ] : [];
+    ]) : [];
   },
 
   expectSuccess: ['', 'pm.test("Flow | Succeeds (2xx)", function () {',
@@ -34,10 +44,9 @@ module.exports = {
 
   /**
    * Post-response: on any 2xx (a spec may declare several success codes with the same body), save
-   * each value into its collection variable: a body field (`path`) or a header (`header`), optionally
-   * narrowed by `pattern` to its first capture group.
+   * each value from the response body into its collection variable.
    *
-   * @param {Object[]} saves - { variable, path | header, pattern? }
+   * @param {Object[]} saves - { variable, path }: path is a lodash path into the body
    * @returns {String[]} exec lines
    */
   save: (saves) => {
@@ -49,16 +58,10 @@ module.exports = {
       'try { contractBody = pm.response.json(); } catch (e) { contractBody = undefined; }',
       'contractSaves.forEach(function (save) {',
       '  if (!(pm.response.code >= 200 && pm.response.code < 300)) { return; }',
-      '  var value = save.header ? pm.response.headers.get(save.header) :',
-      '    require("lodash").get(contractBody, save.path);',
-      '  if (save.pattern && value !== undefined && value !== null) {',
-      '    var match = new RegExp(save.pattern).exec(String(value));',
+      '  var value = require("lodash").get(contractBody, save.path);',
       '',
-      '    value = match ? (match[1] !== undefined ? match[1] : match[0]) : undefined;',
-      '  }',
       '  pm.test("Flow | Saved " + save.variable + " from the response", function () {',
-      '    pm.expect(value, (save.header ? "header " + save.header : save.path) + " not found in response")',
-      '      .to.not.be.undefined;',
+      '    pm.expect(value, save.path + " not found in response").to.not.be.undefined;',
       '  });',
       '  if (value !== undefined && value !== null) { pm.collectionVariables.set(save.variable, value); }',
       '});'
