@@ -4,6 +4,7 @@ const expect = require('chai').expect,
   fs = require('fs'),
   path = require('path'),
   _ = require('lodash'),
+  sdk = require('postman-collection'),
   VALID_OPENAPI_PATH = '../data/valid_openapi',
   INVALID_OPENAPI_PATH = '../data/invalid_openapi',
   SWAGGER_20_FOLDER_YAML = '../data/valid_swagger/yaml/',
@@ -305,7 +306,14 @@ describe('The convert v2 Function', function() {
       expect(conversionResult.output[0].type).to.equal('collection');
       expect(conversionResult.output[0].data).to.have.property('info');
       expect(conversionResult.output[0].data).to.have.property('item');
-      expect(conversionResult.output[0].data.item[0].item[0].request.url.host[0]).to.equal('{{baseUrl}}');
+      // Path-level servers become a dedicated collection variable (`baseUrl1`); requests
+      // reference it instead of inlining the server URL into the host.
+      expect(conversionResult.output[0].data.item[0].item[0].request.url.host[0]).to.equal('{{baseUrl1}}');
+      expect(
+        conversionResult.output[0].data.variable.find((variable) => {
+          return variable.key === 'baseUrl1';
+        }).value
+      ).to.equal('http://petstore.swagger.io:{{port}}/{{basePath}}');
       done();
     });
   });
@@ -391,21 +399,301 @@ describe('The convert v2 Function', function() {
   serverOverRidingSpec, function(done) {
     Converter.convertV2({ type: 'file', data: serverOverRidingSpec }, { schemaFaker: true },
       (err, conversionResult) => {
-      // Combining protocol, host, path to create a request
-      // Ex https:// + example.com + /example = https://example.com/example
-        let request = conversionResult.output[0].data.item[1].item[0].item[0].request,
-          protocol = request.url.protocol,
-          host = request.url.host.join('.'),
-          port = request.url.port,
-          path = request.url.path.join('/'),
-          endPoint = protocol + '://' + host + ':' + port + '/' + path,
-          host1 = conversionResult.output[0].data.variable[0].value,
-          path1 = conversionResult.output[0].data.item[0].item[0].item[0].request.url.path.join('/'),
-          endPoint1 = host1 + '/' + path1;
-        expect(endPoint).to.equal('http://petstore.swagger.io:{{port}}/:basePath/secondary-domain/fails');
-        expect(endPoint1).to.equal('https://api.example.com/primary-domain/works');
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data,
+          variables = collection.variable,
+          baseUrl = variables.find((variable) => {
+            return variable.key === 'baseUrl';
+          }),
+          baseUrl1 = variables.find((variable) => {
+            return variable.key === 'baseUrl1';
+          }),
+          // Operation-level server override → dedicated `baseUrl1` collection variable
+          overrideRequest = collection.item[1].item[0].item[0].request,
+          // Root server → `baseUrl`
+          rootRequest = collection.item[0].item[0].item[0].request;
+
+        expect(overrideRequest.url.host[0]).to.equal('{{baseUrl1}}');
+        expect(overrideRequest.url.path.join('/')).to.equal('secondary-domain/fails');
+        expect(baseUrl1.value).to.equal('http://petstore.swagger.io:{{port}}/{{basePath}}');
+
+        expect(rootRequest.url.host[0]).to.equal('{{baseUrl}}');
+        expect(baseUrl.value + '/' + rootRequest.url.path.join('/'))
+          .to.equal('https://api.example.com/primary-domain/works');
         done();
       });
+  });
+
+  describe('servers as baseUrl* collection variables', function() {
+    const getRequests = (items, requests = []) => {
+        items.forEach((item) => {
+          item.item ? getRequests(item.item, requests) : requests.push(item);
+        });
+
+        return requests;
+      },
+      getHostByPath = (collection) => {
+        return getRequests(collection.item).reduce((acc, item) => {
+          acc[item.request.method + ' /' + item.request.url.path.join('/')] = item.request.url.host[0];
+
+          return acc;
+        }, {});
+      },
+      getVariables = (collection) => {
+        return collection.variable.reduce((acc, variable) => {
+          acc[variable.key] = variable.value;
+
+          return acc;
+        }, {});
+      };
+
+    it('should add every root server as a collection variable and use the first one for requests', function(done) {
+      const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Multiple root servers', version: '1.0.0' },
+        servers: [
+          { url: 'https://api.getpostman.com' },
+          { url: 'https://api.eu.postman.com' }
+        ],
+        paths: { '/me': { get: { responses: { 200: { description: 'ok' } } } } }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data;
+
+        expect(getVariables(collection)).to.deep.equal({
+          baseUrl: 'https://api.getpostman.com',
+          baseUrl1: 'https://api.eu.postman.com'
+        });
+        expect(getHostByPath(collection)).to.deep.equal({ 'GET /me': '{{baseUrl}}' });
+        done();
+      });
+    });
+
+    it('should resolve servers with operation > path > root precedence', function(done) {
+      const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Server precedence', version: '1.0.0' },
+        servers: [{ url: 'https://root.example.com' }],
+        paths: {
+          '/root': { get: { responses: { 200: { description: 'ok' } } } },
+          '/path': {
+            servers: [{ url: 'https://path.example.com/{version}', variables: { version: { default: 'v2' } } }],
+            get: { responses: { 200: { description: 'ok' } } },
+            post: {
+              servers: [{ url: 'https://operation.example.com' }],
+              responses: { 200: { description: 'ok' } }
+            },
+            put: {
+              // An empty operation-level list does not override the path-level servers
+              servers: [],
+              responses: { 200: { description: 'ok' } }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data;
+
+        expect(getVariables(collection)).to.deep.equal({
+          baseUrl: 'https://root.example.com',
+          version: 'v2',
+          baseUrl1: 'https://path.example.com/{{version}}',
+          baseUrl2: 'https://operation.example.com'
+        });
+        expect(getHostByPath(collection)).to.deep.equal({
+          'GET /root': '{{baseUrl}}',
+          'GET /path': '{{baseUrl1}}',
+          'POST /path': '{{baseUrl2}}',
+          'PUT /path': '{{baseUrl1}}'
+        });
+        done();
+      });
+    });
+
+    it('should reuse one variable for the same server URL and trim its trailing slash', function(done) {
+      const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Shared servers', version: '1.0.0' },
+        servers: [{ url: 'https://root.example.com' }],
+        paths: {
+          '/a': {
+            servers: [{ url: 'https://shared.example.com/v1/' }],
+            get: { responses: { 200: { description: 'ok' } } }
+          },
+          '/b': {
+            get: {
+              servers: [{ url: 'https://shared.example.com/v1' }],
+              responses: { 200: { description: 'ok' } }
+            }
+          },
+          '/c': {
+            get: {
+              servers: [{ url: 'https://root.example.com' }],
+              responses: { 200: { description: 'ok' } }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data;
+
+        expect(getVariables(collection)).to.deep.equal({
+          baseUrl: 'https://root.example.com',
+          baseUrl1: 'https://shared.example.com/v1'
+        });
+        expect(getHostByPath(collection)).to.deep.equal({
+          'GET /a': '{{baseUrl1}}',
+          'GET /b': '{{baseUrl1}}',
+          'GET /c': '{{baseUrl}}'
+        });
+        done();
+      });
+    });
+
+    it('should not produce a double slash for an operation-level server of `/`', function(done) {
+      const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Relative operation server', version: '1.0.0' },
+        servers: [{ url: 'https://root.example.com' }],
+        paths: {
+          '/pets': {
+            get: { servers: [{ url: '/' }], responses: { 200: { description: 'ok' } } }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data,
+          variables = new sdk.VariableList(null, collection.variable),
+          request = getRequests(collection.item)[0].request;
+
+        expect(request.url.host[0]).to.equal('{{baseUrl1}}');
+        expect(variables.replace(new sdk.Url(request.url).toString())).to.equal('/pets');
+        done();
+      });
+    });
+
+    it('should give conflicting server variables their own collection variables', function(done) {
+      const openapi = {
+        openapi: '3.0.0',
+        info: { title: 'Conflicting server variables', version: '1.0.0' },
+        servers: [{ url: 'https://api.example.com/{version}', variables: { version: { default: 'v1' } } }],
+        paths: {
+          '/pets': {
+            get: {
+              servers: [{ url: 'https://api.example.com/{version}', variables: { version: { default: 'v2' } } }],
+              responses: { 200: { description: 'ok' } }
+            }
+          },
+          '/users': {
+            get: {
+              servers: [{ url: 'https://users.example.com/{baseUrl}', variables: { baseUrl: { default: 'x' } } }],
+              responses: { 200: { description: 'ok' } }
+            }
+          },
+          '/me': { get: { responses: { 200: { description: 'ok' } } } }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data;
+
+        expect(getVariables(collection)).to.deep.equal({
+          version: 'v1',
+          baseUrl: 'https://api.example.com/{{version}}',
+          version1: 'v2',
+          baseUrl1: 'https://api.example.com/{{version1}}',
+          baseUrlVariable: 'x',
+          baseUrl2: 'https://users.example.com/{{baseUrlVariable}}'
+        });
+        expect(getHostByPath(collection)).to.deep.equal({
+          'GET /pets': '{{baseUrl1}}',
+          'GET /users': '{{baseUrl2}}',
+          'GET /me': '{{baseUrl}}'
+        });
+        done();
+      });
+    });
+
+    it('should honour servers of referenced path items', function(done) {
+      const openapi = {
+        openapi: '3.1.0',
+        info: { title: 'Referenced path item servers', version: '1.0.0' },
+        servers: [{ url: 'https://root.example.com' }],
+        paths: {
+          '/pets': { $ref: '#/components/pathItems/Pets' }
+        },
+        components: {
+          pathItems: {
+            Pets: {
+              servers: [{ url: 'https://pets.example.com' }],
+              get: { responses: { 200: { description: 'ok' } } }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data;
+
+        expect(getVariables(collection)).to.include({ baseUrl1: 'https://pets.example.com' });
+        expect(getHostByPath(collection)).to.deep.equal({ 'GET /pets': '{{baseUrl1}}' });
+        done();
+      });
+    });
+
+    it('should honour path and operation servers for OAS 3.2 additionalOperations', function(done) {
+      const openapi = {
+        openapi: '3.2.0',
+        info: { title: 'additionalOperations servers', version: '1.0.0' },
+        servers: [{ url: 'https://root.example.com' }],
+        paths: {
+          '/cache': {
+            servers: [{ url: 'https://path.example.com' }],
+            additionalOperations: {
+              PURGE: { responses: { 200: { description: 'ok' } } },
+              LINK: {
+                servers: [{ url: 'https://operation.example.com' }],
+                responses: { 200: { description: 'ok' } }
+              }
+            }
+          }
+        }
+      };
+
+      Converter.convertV2({ type: 'json', data: openapi }, {}, (err, conversionResult) => {
+        expect(err).to.be.null;
+
+        const collection = conversionResult.output[0].data;
+
+        expect(getVariables(collection)).to.deep.equal({
+          baseUrl: 'https://root.example.com',
+          baseUrl1: 'https://path.example.com',
+          baseUrl2: 'https://operation.example.com'
+        });
+        expect(getHostByPath(collection)).to.deep.equal({
+          'PURGE /cache': '{{baseUrl1}}',
+          'LINK /cache': '{{baseUrl2}}'
+        });
+        done();
+      });
+    });
   });
 
   // Need to handle xml body properly
@@ -417,6 +705,68 @@ describe('The convert v2 Function', function() {
       expect(conversionResult.output[0].data.item[0].item[0].item[0].response[0].header[0].value)
         .to.equal('application/vnd.retailer.v3+xml');
       done();
+    });
+  });
+
+  describe('convertor should resolve response headers defined via $ref', function() {
+    const getSpec = (version) => {
+      return {
+        openapi: version,
+        info: { title: 'Response header $ref', version: '1.0.0' },
+        paths: {
+          '/transactions': {
+            post: {
+              responses: {
+                201: {
+                  description: 'Transaction created',
+                  headers: {
+                    'X-Inline-Header': { schema: { type: 'boolean' }, example: false },
+                    'X-Ref-Header': { $ref: '#/components/headers/RefHeader' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        components: {
+          headers: {
+            RefHeader: {
+              description: 'Header defined via $ref',
+              schema: { type: 'boolean' },
+              example: false
+            }
+          }
+        }
+      };
+    };
+
+    ['3.0.3', '3.1.0'].forEach((version) => {
+      [
+        { parametersResolution: 'Schema', expectedValue: '<boolean>' },
+        { parametersResolution: 'Example', expectedValue: 'false' }
+      ].forEach(({ parametersResolution, expectedValue }) => {
+        it(`for OpenAPI ${version} with parametersResolution: ${parametersResolution}`, function(done) {
+          Converter.convertV2WithTypes({ type: 'json', data: getSpec(version) }, { parametersResolution },
+            (err, conversionResult) => {
+              expect(err).to.be.null;
+              const headers = conversionResult.output[0].data.item[0].item[0].response[0].header,
+                inlineHeader = _.find(headers, { key: 'X-Inline-Header' }),
+                refHeader = _.find(headers, { key: 'X-Ref-Header' }),
+                headerTypes = JSON.parse(conversionResult.extractedTypes['post/transactions'].response['201'].headers),
+                refHeaderType = _.find(headerTypes, { keyName: 'X-Ref-Header' });
+
+              expect(inlineHeader).to.exist;
+              expect(refHeader).to.exist;
+              expect(inlineHeader.value).to.equal(expectedValue);
+              expect(refHeader.value).to.equal(expectedValue);
+              expect(refHeader.description.content).to.equal('Header defined via $ref');
+
+              expect(refHeaderType).to.exist;
+              expect(refHeaderType.properties.type).to.equal('boolean');
+              done();
+            });
+        });
+      });
     });
   });
 
@@ -2528,6 +2878,333 @@ describe('The convert v2 Function', function() {
       expect(result.output[0].data).to.have.property('item');
       done();
     });
+  });
+
+  it('should preserve OAS 3.2 custom method casing and gate query/webhook operations by version', function(done) {
+    const spec32 = {
+        openapi: '3.2.0',
+        info: { title: 'OAS 3.2 operations', version: '1.0.0' },
+        paths: {
+          '/search': {
+            query: {
+              parameters: [{
+                in: 'querystring',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: { term: { type: 'string' } }
+                    },
+                    example: { term: 'cats' }
+                  }
+                }
+              }],
+              responses: { '200': { description: 'ok' } }
+            },
+            additionalOperations: {
+              Foo: { responses: { '204': { description: 'ok' } } }
+            }
+          },
+          '/events': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'stream',
+                  content: {
+                    'text/event-stream': {
+                      schema: { type: 'array', items: { type: 'string' } },
+                      itemSchema: {
+                        type: 'object',
+                        properties: {
+                          event: { type: 'string', default: 'update' },
+                          id: { type: 'string', default: '7' },
+                          retry: { type: 'integer', default: 20 },
+                          data: { type: 'string', default: 'first\nsecond' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '/full-stream': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'complete stream example',
+                  content: {
+                    'text/event-stream': {
+                      itemSchema: {
+                        type: 'object',
+                        properties: { data: { type: 'string' } }
+                      },
+                      example: 'event: supplied\ndata: complete stream\n\n'
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '/pets': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'pet',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Pet' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        webhooks: {
+          notify: {
+            additionalOperations: {
+              Bar: { responses: { '200': { description: 'ok' } } }
+            }
+          }
+        },
+        components: {
+          schemas: {
+            Pet: {
+              oneOf: [
+                { $ref: '#/components/schemas/Cat' },
+                { $ref: '#/components/schemas/Dog' }
+              ],
+              discriminator: { propertyName: 'kind', defaultMapping: 'OtherPet' }
+            },
+            Cat: { type: 'object', properties: { cat: { type: 'string', default: 'cat' } } },
+            Dog: { type: 'object', properties: { dog: { type: 'string', default: 'dog' } } },
+            OtherPet: { type: 'object', properties: { other: { type: 'string', default: 'other' } } }
+          }
+        }
+      },
+      spec31 = {
+        openapi: '3.1.0',
+        info: { title: 'OAS 3.1 operations', version: '1.0.0' },
+        paths: {
+          '/search': {
+            query: { responses: { '200': { description: 'invalid in 3.1' } } }
+          }
+        }
+      },
+      collectRequests = (items, result = []) => {
+        _.forEach(items, (item) => {
+          item.request && result.push(item);
+          item.item && collectRequests(item.item, result);
+        });
+        return result;
+      };
+
+    Converter.convertV2({ type: 'string', data: JSON.stringify(spec32) },
+      { includeWebhooks: true, parametersResolution: 'Example' }, (err, converted32) => {
+        expect(err).to.be.null;
+        const requests = collectRequests(converted32.output[0].data.item);
+        expect(requests.map(({ request }) => { return request.method; })).to.include.members(['QUERY', 'Foo', 'Bar']);
+        const queryRequest = requests.find(({ request }) => { return request.method === 'QUERY'; });
+        expect(queryRequest.request.url.query[0]).to.include({ key: 'term', value: 'cats' });
+        expect(requests.find(({ request }) => { return request.method === 'GET'; }).response[0].body).to.equal(
+          'event: update\nid: 7\nretry: 20\ndata: first\ndata: second\n\n');
+        expect(requests.find(({ response }) => {
+          return response && response[0] &&
+            response[0].body === 'event: supplied\ndata: complete stream\n\n';
+        }).response[0].body)
+          .to.equal('event: supplied\ndata: complete stream\n\n');
+        expect(JSON.parse(requests.find(({ response }) => {
+          return response && response[0] && _.isString(response[0].body) &&
+            response[0].body.includes('"other"');
+        }).response[0].body)).to.eql({ other: 'other' });
+
+        Converter.convert({ type: 'string', data: JSON.stringify(spec32) }, {}, (v1Error, convertedV1) => {
+          expect(v1Error).to.be.null;
+          const v1Requests = collectRequests(convertedV1.output[0].data.item);
+          expect(v1Requests.map(({ request }) => { return request.method; })).to.include.members(['QUERY', 'Foo']);
+          expect(v1Requests.find(({ request }) => { return request.method === 'GET'; }).response[0].body).to.equal(
+            'event: update\nid: 7\nretry: 20\ndata: first\ndata: second\n\n');
+          expect(JSON.parse(v1Requests.find(({ response }) => {
+            return response && response[0] && _.isString(response[0].body) &&
+              response[0].body.includes('"other"');
+          }).response[0].body)).to.eql({ other: 'other' });
+
+          Converter.convertV2({ type: 'string', data: JSON.stringify(spec31) }, {}, (v2Error, converted31) => {
+            expect(v2Error).to.be.null;
+            expect(collectRequests(converted31.output[0].data.item)).to.be.empty;
+            done();
+          });
+        });
+      });
+  });
+
+  it('should frame sequential and multipart itemSchema response bodies', function(done) {
+    const spec = {
+        openapi: '3.2.0',
+        info: { title: 'Streaming responses', version: '1.0.0' },
+        paths: {
+          '/lines': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'lines',
+                  content: {
+                    'application/x-ndjson': {
+                      itemSchema: {
+                        type: 'object',
+                        properties: { value: { type: 'integer', default: 1 } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '/sequence': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'sequence',
+                  content: {
+                    'application/json-seq': {
+                      itemSchema: { type: 'string', default: 'frame' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '/multipart': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'multipart',
+                  content: {
+                    'multipart/form-data; boundary=frame': {
+                      itemSchema: {
+                        type: 'object',
+                        properties: { value: { type: 'string', default: 'part' } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      collectRequests = (items, result = []) => {
+        _.forEach(items, (item) => {
+          item.request && result.push(item);
+          item.item && collectRequests(item.item, result);
+        });
+        return result;
+      };
+
+    Converter.convertV2({ type: 'string', data: JSON.stringify(spec) }, {}, (err, converted) => {
+      expect(err).to.be.null;
+      const requests = collectRequests(converted.output[0].data.item),
+        responseFor = (path) => {
+          return requests.find(({ request }) => {
+            return request.url.path.join('/') === path;
+          }).response[0];
+        };
+
+      expect(responseFor('lines').body).to.equal('{"value":1}\n');
+      expect(responseFor('sequence').body).to.equal('\x1e"frame"\n');
+      expect(responseFor('multipart').body).to.contain(
+        '--frame\r\nContent-Disposition: form-data; name="item"\r\nContent-Type: application/json\r\n\r\n');
+      expect(responseFor('multipart').header[0].value).to.equal('multipart/form-data; boundary=frame');
+      done();
+    });
+  });
+
+  it('should resolve $ref path items, querystring params, and self defaultMapping names', function(done) {
+    const spec = {
+        openapi: '3.2.0',
+        info: { title: 'OAS 3.2 refs', version: '1.0.0' },
+        paths: {
+          '/purge': { $ref: '#/components/pathItems/PurgeItem' },
+          '/search': {
+            get: {
+              parameters: [{ $ref: '#/components/parameters/SearchQuery' }],
+              responses: { '200': { description: 'ok' } }
+            }
+          },
+          '/pets': {
+            get: {
+              responses: {
+                '200': {
+                  description: 'pet',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Pet' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        components: {
+          pathItems: {
+            PurgeItem: {
+              additionalOperations: {
+                Purge: { responses: { '204': { description: 'purged' } } }
+              }
+            }
+          },
+          parameters: {
+            SearchQuery: {
+              in: 'querystring',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: { q: { type: 'string' } }
+                  },
+                  example: { q: 'ref-term' }
+                }
+              }
+            }
+          },
+          schemas: {
+            Pet: {
+              oneOf: [
+                { $ref: '#/components/schemas/Cat' }
+              ],
+              discriminator: { propertyName: 'kind', defaultMapping: 'Pet' }
+            },
+            Cat: { type: 'object', properties: { cat: { type: 'string', default: 'cat' } } }
+          }
+        }
+      },
+      collectRequests = (items, result = []) => {
+        _.forEach(items, (item) => {
+          item.request && result.push(item);
+          item.item && collectRequests(item.item, result);
+        });
+        return result;
+      };
+
+    Converter.convertV2({ type: 'string', data: JSON.stringify(spec) },
+      { parametersResolution: 'Example' }, (err, converted) => {
+        expect(err).to.be.null;
+        const requests = collectRequests(converted.output[0].data.item),
+          purgeRequest = requests.find(({ request }) => { return request.method === 'Purge'; }),
+          searchRequest = requests.find(({ request }) => {
+            return request.url.path && request.url.path[request.url.path.length - 1] === 'search';
+          }),
+          petBody = JSON.parse(requests.find(({ request }) => {
+            return request.url.path && request.url.path[request.url.path.length - 1] === 'pets';
+          }).response[0].body);
+
+        expect(purgeRequest).to.not.equal(undefined);
+        expect(searchRequest.request.url.query[0]).to.include({ key: 'q', value: 'ref-term' });
+        expect(petBody).to.eql({ cat: 'cat' });
+        done();
+      });
   });
 
   describe('Should pair examples by matching key (and fall back to first example otherwise) when', function() {

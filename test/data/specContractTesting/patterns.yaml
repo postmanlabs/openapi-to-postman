@@ -1,0 +1,141 @@
+openapi: 3.1.0
+info:
+  title: Naming and shape patterns
+  version: 1.0.0
+servers:
+  - url: http://localhost:4010
+paths:
+  # Irregular plural, `uuid` id field, OpenAPI 3.1 nullable type, `items` list wrapper.
+  /people:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, example: Ada }
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uuid: { type: [string, 'null'] }
+                  name: { type: string }
+    get:
+      responses:
+        '200':
+          description: list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        uuid: { type: string }
+                  total: { type: integer }
+  /people/{personId}:
+    parameters:
+      - { name: personId, in: path, required: true, schema: { type: string } }
+    get:
+      responses:
+        '200': { description: ok }
+    delete:
+      responses:
+        '204': { description: deleted }
+  # Child resource whose id is `<resource>_id` inside a `result` wrapper.
+  /people/{personId}/addresses:
+    parameters:
+      - { name: personId, in: path, required: true, schema: { type: string } }
+    post:
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      address_id: { type: string }
+  /people/{personId}/addresses/{addressId}:
+    parameters:
+      - { name: personId, in: path, required: true, schema: { type: string } }
+      - { name: addressId, in: path, required: true, schema: { type: string } }
+    get:
+      responses:
+        '200': { description: ok }
+    delete:
+      responses:
+        '204': { description: deleted }
+  # Actions on an item: a non-plural trailing segment and a custom method.
+  /people/{personId}/archive:
+    parameters:
+      - { name: personId, in: path, required: true, schema: { type: string } }
+    post:
+      responses:
+        '200': { description: archived }
+  /people/{personId}:verify:
+    parameters:
+      - { name: personId, in: path, required: true, schema: { type: string } }
+    post:
+      responses:
+        '200': { description: verified }
+  # HAL list with no create: ids come from the list.
+  /orders:
+    get:
+      responses:
+        '200':
+          description: list
+          content:
+            application/hal+json:
+              schema:
+                type: object
+                properties:
+                  _embedded:
+                    type: object
+                    properties:
+                      orders:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: string }
+                  _links: { type: object }
+  /orders/{orderId}:
+    parameters:
+      - { name: orderId, in: path, required: true, schema: { type: string } }
+    get:
+      responses:
+        '200': { description: ok }
+  # Composite key with nothing that produces it.
+  /repos/{owner}/{repo}:
+    parameters:
+      - { name: owner, in: path, required: true, schema: { type: string } }
+      - { name: repo, in: path, required: true, schema: { type: string } }
+    get:
+      responses:
+        '200': { description: ok }
+  # A map keyed by ids: must not produce anything.
+  /stats:
+    get:
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: { type: integer }

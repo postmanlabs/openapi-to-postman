@@ -134,6 +134,40 @@ describe('generateContractTests option', function () {
       }
     );
   });
+
+  it('should show the received value next to each schema error', function (done) {
+    const options = { generateContractTests: true };
+
+    Converter.convertV2WithTypes({ type: 'json', data: specWithResponses }, options, (err, result) => {
+      const exec = getContractTestEvent(collectRequestItems(result.output[0].data.item)[0]).script.exec.join('\n'),
+        failures = [],
+        // The parts of `pm` the script uses; jsonSchema fails the way Postman's does.
+        pm = {
+          response: {
+            code: 200,
+            json: () => { return { id: 'p1', name: 42 }; },
+            to: { have: { jsonSchema: () => {
+              throw new Error('expected data to satisfy schema but found following errors: \n' +
+                'data.name should be string, data should have required property \'owner\'');
+            } } }
+          },
+          expect: () => { return { to: { include: () => { return undefined; } } }; },
+          test: (name, run) => {
+            try { run(); }
+            catch (e) { failures.push(e.message); }
+          }
+        };
+
+      // eslint-disable-next-line no-new-func
+      new Function('pm', 'require', exec)(pm, require);
+
+      expect(err).to.be.null;
+      expect(failures).to.eql(['expected data to satisfy schema but found following errors:\n' +
+        'data.name should be string (received 42)\n' +
+        'data should have required property \'owner\' (received {"id":"p1","name":42})']);
+      done();
+    });
+  });
 });
 
 describe('generateContractTests — embedded schema is JSON-Schema compliant', function () {

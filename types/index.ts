@@ -26,11 +26,84 @@ interface BaseResult {
   error?: Error;
 }
 
+export interface ConversionIssue {
+
+  /**
+   * What went wrong: a dropped request, a body that breached the size ceiling, or a marker
+   * saying the issue list itself was capped.
+   */
+  type: 'REQUEST_GENERATION_FAILED' | 'BODY_TOO_LARGE' | 'ISSUE_LIMIT_REACHED';
+
+  /** Human readable explanation */
+  reason: string;
+
+  /** Path of the operation the issue belongs to */
+  path?: string;
+
+  /** Webhook name, when the issue belongs to a webhook rather than a path */
+  webhook?: string;
+
+  /** HTTP method of the operation */
+  method?: string;
+
+  /** Which part of the operation was affected */
+  in?: 'request' | 'response' | 'response~request';
+
+  /** Response code, for response bodies. Null when the body is not tied to a response. */
+  responseCode?: string | null;
+
+  /** Name of the saved example the body belongs to, when there is one */
+  exampleName?: string;
+
+  /** Media type of the affected body */
+  contentType?: string;
+
+  /** Length the generated body would have had, for BODY_TOO_LARGE */
+  generatedBodyLength?: number;
+
+  /** Ceiling that was breached, for BODY_TOO_LARGE */
+  maxBodyLength?: number;
+}
+
 export interface CollectionResult extends BaseResult {
   output?: { type: string; data: object; name?: string }[];
   analytics?: Record<string, number>;
   extractedTypes?: Record<string, object>;
   name?: string;
+
+  /**
+   * Non-fatal problems encountered while generating the collection: requests that could not be
+   * generated and were left out, and bodies that were truncated for exceeding the size ceiling.
+   * Absent when the conversion had no such problems.
+   */
+  conversionIssues?: ConversionIssue[];
+}
+
+export interface ContractTestResult extends CollectionResult {
+  summary?: {
+
+    /** Operations left out by `exclude`. */
+    excluded: string[];
+
+    /**
+     * Values passed between requests: `{ variable, producer: { operation, value }, consumers }`, where
+     * `value` is a `$response.body#` pointer and each consumer is `{ operation, param }`.
+     */
+    links: object[];
+
+    /**
+     * Values no response returns: `{ variable, consumers }`. Each is an empty collection variable the
+     * caller sets; requests that need an empty one are skipped at run time.
+     */
+    inputs: object[];
+
+    /**
+     * What keeps the collection from running as generated: an `exclude` entry that matches nothing, a value
+     * whose producer cannot run before its consumer (a dependency cycle), or a value a request body has no
+     * place for.
+     */
+    errors: string[];
+  };
 }
 
 export interface BundleResult extends BaseResult {
@@ -179,6 +252,22 @@ export interface Options {
 /**
  * Sync options for collection synchronization
  */
+/**
+ * Options for generating the spec contract-test collection
+ */
+export interface ContractTestOptions {
+
+  /** Operations not to run, as `METHOD /path`, where `*` matches anything: `DELETE /pets/{petId}`, `* /x/*`. */
+  exclude?: string[];
+
+  /**
+   * Headers sent on every request, replacing same-named headers from the spec. Without a value, the value is
+   * `{{camelCase(name)}}`. Credential headers (Authorization, Proxy-Authorization, Cookie, or a name with token,
+   * key, secret, session or auth) replace the spec's own auth and are left out of the no-token checks.
+   */
+  headers?: Array<{ name: string; value?: string }>;
+}
+
 export interface SyncOptions {
 
   /** Whether to sync response examples from the OpenAPI specification */

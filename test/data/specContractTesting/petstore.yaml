@@ -1,0 +1,227 @@
+openapi: 3.0.3
+info:
+  title: Pet Store API
+  version: 1.0.0
+servers:
+  - url: http://localhost:4010
+security:
+  - bearerAuth: []
+paths:
+  /owners:
+    post:
+      operationId: createOwner
+      summary: Create an owner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewOwner'
+      responses:
+        '201':
+          description: Owner created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Owner'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /owners/{ownerId}:
+    get:
+      operationId: getOwner
+      summary: Get an owner
+      parameters:
+        - name: ownerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Owner'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /pets:
+    get:
+      operationId: listPets
+      summary: List pets
+      responses:
+        '200':
+          description: All pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createPet
+      summary: Create a pet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewPet'
+      responses:
+        '201':
+          description: Pet created
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /pets/{petId}:
+    parameters:
+      - name: petId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getPet
+      summary: Get a pet
+      responses:
+        '200':
+          description: The pet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: updatePet
+      summary: Update a pet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetUpdate'
+      responses:
+        '200':
+          description: The updated pet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deletePet
+      summary: Delete a pet
+      responses:
+        '204':
+          description: Pet deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  responses:
+    BadRequest:
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    NewOwner:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: Alice
+    Owner:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    NewPet:
+      type: object
+      required: [name, ownerId]
+      properties:
+        name:
+          type: string
+          example: Rex
+        type:
+          type: string
+          enum: [dog, cat]
+          example: dog
+        ownerId:
+          type: string
+          format: uuid
+    PetUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Max
+        type:
+          type: string
+          enum: [dog, cat]
+          example: dog
+    Pet:
+      type: object
+      required: [id, name, ownerId]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+          enum: [dog, cat]
+        ownerId:
+          type: string
+          format: uuid
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
