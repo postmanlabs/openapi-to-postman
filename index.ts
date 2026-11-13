@@ -23,6 +23,7 @@ export type {
   CollectionResult,
   ContractTestOptions,
   ContractTestResult,
+  ConversionIssue,
   BundleResult,
   FilesResult,
   ValidationResult

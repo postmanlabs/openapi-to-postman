@@ -3,7 +3,13 @@ const _ = require('lodash'),
     authorizationCode: 'authorization_code',
     implicit: 'implicit',
     password: 'password_credentials',
-    clientCredentials: 'client_credentials'
+    clientCredentials: 'client_credentials',
+    // OAS 3.2 introduces the OAuth 2.0 Device Authorization Flow alongside
+    // the existing four flows. The Postman OAuth2 helper accepts custom
+    // `grant_type` values, so we map it through verbatim.
+    // See https://spec.openapis.org/oas/v3.2.0.html (OAuth Flows Object)
+    // and RFC 8628 (OAuth 2.0 Device Authorization Grant).
+    deviceAuthorization: 'device_authorization'
   };
 
 /**
@@ -136,14 +142,32 @@ module.exports = function (openapi, securitySet) {
           }
         }
 
-        // Fields supported by all flows all except password, clientCredentials -> authorizationUrl
-        if (currentFlowType !== FLOW_TYPE.password && currentFlowType !== FLOW_TYPE.clientCredentials) {
+        // Fields supported by all flows all except password, clientCredentials,
+        // deviceAuthorization -> authorizationUrl (deviceAuthorization uses
+        // `deviceAuthorizationUrl` instead of `authorizationUrl`).
+        if (
+          currentFlowType !== FLOW_TYPE.password &&
+          currentFlowType !== FLOW_TYPE.clientCredentials &&
+          currentFlowType !== FLOW_TYPE.deviceAuthorization
+        ) {
           if (!_.isEmpty(flowObj.authorizationUrl)) {
             helper.oauth2.push({
               key: 'authUrl',
               value: _.isString(flowObj.authorizationUrl) ? flowObj.authorizationUrl : '{{oAuth2AuthURL}}'
             });
           }
+        }
+
+        // OAS 3.2 deviceAuthorization flow exposes `deviceAuthorizationUrl`
+        // (the device-code endpoint) alongside `tokenUrl`. Emit it under the
+        // same key the Postman OAuth2 helper recognises for device flow.
+        if (currentFlowType === FLOW_TYPE.deviceAuthorization && !_.isEmpty(flowObj.deviceAuthorizationUrl)) {
+          helper.oauth2.push({
+            key: 'deviceAuthorizationUrl',
+            value: _.isString(flowObj.deviceAuthorizationUrl) ?
+              flowObj.deviceAuthorizationUrl :
+              '{{oAuth2DeviceAuthorizationURL}}'
+          });
         }
 
         helper.oauth2.push({

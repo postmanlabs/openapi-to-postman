@@ -1,7 +1,6 @@
 const generateAuthForCollectionFromOpenAPI = require('./helpers/collection/generateAuthForCollectionFromOpenAPI.js');
 const utils = require('./utils.js');
 const { buildContractTestEvent } = require('./contractTests.js');
-const { Url } = require('postman-collection/lib/collection/url');
 
 const schemaFaker = require('../../assets/json-schema-faker.js'),
   _ = require('lodash'),
@@ -9,6 +8,9 @@ const schemaFaker = require('../../assets/json-schema-faker.js'),
   xmlFaker = require('../xmlSchemaFaker.js'),
   URLENCODED = 'application/x-www-form-urlencoded',
   { DEFAULT_RESPONSE_CODE_IN_OAS } = require('../../lib/common/schemaUtilsCommon.js'),
+  { isOpenApi32, getDefaultMappingRedirect, getPathItemOperation, formatServerSentEvent,
+    getQuerystringMediaType, getQuerystringExamples, expandQuerystringParameter: expandQuerystringSchema } =
+    require('../../lib/common/oas32Utils.js'),
   APP_JSON = 'application/json',
   APP_JS = 'application/javascript',
   TEXT_XML = 'text/xml',
@@ -84,8 +86,60 @@ const schemaFaker = require('../../assets/json-schema-faker.js'),
   // Maximum size of schema till whch we generate 2 elements per array (50 KB)
   SCHEMA_SIZE_OPTIMIZATION_THRESHOLD = 50 * 1024,
 
+  // Global json-schema-faker array cap applied when no tighter budget is in force.
+  DEFAULT_ARRAY_MAX_ITEMS = 20,
+
+  /**
+   * json-schema-faker's own defaults for `defaultMinItems` / `defaultMaxItems`, used to restore
+   * them after a body-specific fan-out tier. Both are process-wide options: leaving a tier's
+   * values in place let them leak into whatever was faked next -- parameters, headers, or the
+   * next body -- so what a parameter got depended on which body happened to be faked before it.
+   */
+  FAKER_DEFAULT_MIN_ITEMS = 2,
+  FAKER_DEFAULT_MAX_ITEMS = 2,
+
+  /**
+   * Hard ceiling on the length of a single generated request/response body, in characters.
+   *
+   * V8 cannot represent a string longer than `MAX_STRING_LENGTH` (536,870,888 on 64-bit), so
+   * `JSON.stringify` throws `RangeError: Invalid string length` past that point. We stay well
+   * below it: a body this large is unusable in a collection anyway.
+   */
+  MAX_GENERATED_BODY_LENGTH = 100 * 1024 * 1024,
+
+  /**
+   * Bodies above this projected length are serialised compactly (no indentation) because
+   * indentation can multiply the serialised length several times over. Bodies at or below it
+   * take the historical indented path, so ordinary specs are byte-for-byte unchanged.
+   */
+  COMPACT_SERIALIZATION_THRESHOLD = 8 * 1024 * 1024,
+
+  /**
+   * Strings at or below this length are measured with `JSON.stringify`. JSON escaping expands a
+   * string by at most six times, so the serialised form stays far below V8's string limit and the
+   * call cannot throw; longer strings are measured character by character instead.
+   */
+  SAFE_NATIVE_STRINGIFY_LENGTH = 8 * 1024 * 1024,
+
+  // Placeholder used in place of a body that breached MAX_GENERATED_BODY_LENGTH.
+  ERR_BODY_TOO_LARGE = '<Error: The generated body was too large to be included in the collection>',
+
+  // Upper bound on how many conversion issues we accumulate, so a pathological spec
+  // cannot turn the issue list itself into a memory problem.
+  MAX_CONVERSION_ISSUES = 1000,
+
+  CONVERSION_ISSUE_TYPES = {
+    REQUEST_GENERATION_FAILED: 'REQUEST_GENERATION_FAILED',
+    BODY_TOO_LARGE: 'BODY_TOO_LARGE',
+    ISSUE_LIMIT_REACHED: 'ISSUE_LIMIT_REACHED'
+  },
+
   PROPERTIES_TO_ASSIGN_ON_CASCADE = ['type', 'nullable', 'properties'],
   crypto = require('crypto'),
+
+  // Key under which an OAS 3.2 `additionalOperations` entry is exposed on the
+  // operation view used by resolvePostmanRequest. It can't clash with any Path Item field.
+  ADDITIONAL_OPERATION_VIEW_KEY = '__postmanAdditionalOperation',
 
   /**
    * @param {*} rootObject - the object from which you're trying to read a property
@@ -127,7 +181,7 @@ schemaFaker.option({
   optionalsProbability: 1.0, // always add optional fields
   maxLength: 256,
   minItems: 1, // for arrays
-  maxItems: 20, // limit on maximum number of items faked for (type: arrray)
+  maxItems: DEFAULT_ARRAY_MAX_ITEMS, // limit on maximum number of items faked for (type: arrray)
   useDefaultValue: true,
   ignoreMissingRefs: true,
   avoidExampleItemsLength: true, // option to avoid validating type array schema example's minItems and maxItems props.
@@ -135,6 +189,12 @@ schemaFaker.option({
 });
 
 let QUERYPARAM = 'query',
+  // OAS 3.2 introduces `in: 'querystring'` as a Parameter Object location
+  // describing the ENTIRE query string with one Schema Object. We expand
+  // those parameters into per-property `in: 'query'` synthetic parameters
+  // before the standard query-param pipeline runs.
+  // See https://spec.openapis.org/oas/v3.2.0.html (Parameter Object).
+  QUERYSTRING_PARAM = 'querystring',
   CONVERSION = 'conversion',
   TYPES_GENERATION = 'typesGeneration',
   HEADER = 'header',
@@ -225,18 +285,54 @@ let QUERYPARAM = 'query',
     };
   },
 
-  resolveBaseUrlForPostmanRequest = (operationItem) => {
-    let serverObj = _.get(operationItem, 'servers.0'),
+  /**
+   * Identifies a server for the `baseUrl*` collection variable registry: its URL (without trailing slash)
+   * and its variable defaults, since the same URL template with other defaults resolves differently.
+   *
+   * @param {Object} server Server object
+   * @returns {String} Server key
+   */
+  getServerKey = (server) => {
+    const url = utils.fixPathVariablesInUrl(_.get(server, 'url')).replace(/\/+$/, ''),
+      defaults = _.sortBy(_.map(_.get(server, 'variables'), (variable, name) => {
+        return [name, String(_.get(variable, 'default') || '')];
+      }), _.head);
+
+    return JSON.stringify([url, defaults]);
+  },
+
+  resolveBaseUrlForPostmanRequest = (operation, pathItem, context) => {
+    let servers = _.get(operation, 'servers'),
+      serverObj,
       baseUrl = '{{baseUrl}}',
-      serverVariables = [],
       pathVariables = [],
       collectionVariables = [];
+
+    if (_.isEmpty(servers)) {
+      servers = _.get(pathItem, 'servers');
+    }
+
+    serverObj = _.get(servers, '0');
 
     if (!serverObj) {
       return { collectionVariables, pathVariables, baseUrl, serverObj };
     }
 
-    baseUrl = sanitizeUrl(serverObj.url);
+    const registeredServer = _.get(context, ['openapi', 'serverVariableRegistry', getServerKey(serverObj)]);
+
+    if (registeredServer) {
+      baseUrl = `{{${registeredServer.key}}}`;
+      collectionVariables = _.map(registeredServer.variables, _.clone);
+
+      return { collectionVariables, pathVariables, baseUrl, serverObj };
+    }
+
+    // No `baseUrl*` variables were generated for this server (e.g. suggested fixes during validation, where
+    // the user's collection doesn't have them), so the server URL is written into the request instead.
+    // The request path always starts with `/`, so a trailing slash on the server URL would produce `//`.
+    const serverVariables = [];
+
+    baseUrl = sanitizeUrl(serverObj.url).replace(/\/+$/, '');
     _.forOwn(serverObj.variables, (value, key) => {
       serverVariables.push({
         key,
@@ -250,16 +346,303 @@ let QUERYPARAM = 'query',
   },
 
   /**
-   * Provides ref stack limit for current instance
-   * @param {*} stackLimit - Defined stackLimit in options
-   *
-   * @returns {Number} Returns the stackLimit to be used
+   * @param {Number} stackLimit - Nesting limit the caller asked for
+   * @returns {Number} Effective ref resolution depth
    */
   getRefStackLimit = (stackLimit) => {
     if (typeof stackLimit === 'number' && stackLimit > REF_STACK_LIMIT) {
       return stackLimit;
     }
     return REF_STACK_LIMIT;
+  },
+
+  /**
+   * Records a non-fatal conversion issue on the shared context so that it can be surfaced
+   * in the conversion result instead of being silently swallowed.
+   *
+   * @param {Object} context - Global context object
+   * @param {Object} issue - Issue descriptor ({ type, reason, ... })
+   * @returns {void}
+   */
+  recordConversionIssue = (context, issue) => {
+    if (!_.isObject(context)) {
+      return;
+    }
+
+    if (!_.isArray(context.conversionIssues)) {
+      context.conversionIssues = [];
+    }
+
+    if (context.conversionIssues.length >= MAX_CONVERSION_ISSUES) {
+      /**
+       * Replace the last entry with a marker the first time we overflow, so a caller can tell
+       * "this many failed" from "at least this many failed".
+       */
+      const last = context.conversionIssues[MAX_CONVERSION_ISSUES - 1];
+
+      if (!last || last.type !== CONVERSION_ISSUE_TYPES.ISSUE_LIMIT_REACHED) {
+        context.conversionIssues[MAX_CONVERSION_ISSUES - 1] = {
+          type: CONVERSION_ISSUE_TYPES.ISSUE_LIMIT_REACHED,
+          reason: 'More than ' + MAX_CONVERSION_ISSUES + ' issues were found; the rest are not listed.'
+        };
+      }
+
+      return;
+    }
+
+    context.conversionIssues.push(Object.assign({}, context.currentOperation, issue));
+  },
+
+  /**
+   * Computes the length `JSON.stringify(value)` would produce for a string, without building it.
+   *
+   * A string leaf can on its own be long enough that serialising it overflows V8's string limit,
+   * and JSON escaping only makes it longer (a control character costs six characters as `\u00xx`).
+   * Measuring by character code keeps the check allocation free, so the measurement itself cannot
+   * throw the `RangeError` it exists to predict.
+   *
+   * @param {String} value - String about to be serialised
+   * @returns {Number} Length `JSON.stringify(value)` would return
+   */
+  measureJsonStringLength = (value) => {
+    // Escaping expands a string by at most 6x, so below this length the serialised form is
+    // nowhere near V8's limit and the native call cannot throw. It is also much faster, which
+    // matters because every object key comes through here.
+    if (value.length <= SAFE_NATIVE_STRINGIFY_LENGTH) {
+      return JSON.stringify(value).length;
+    }
+
+    let total = 2; // surrounding quotes
+
+    for (let index = 0; index < value.length; index++) {
+      const code = value.charCodeAt(index);
+
+      // `"` and `\` take a backslash, as do the five characters with short escapes.
+      if (code === 0x22 || code === 0x5c || code === 0x08 || code === 0x09 ||
+        code === 0x0a || code === 0x0c || code === 0x0d) {
+        total += 2;
+      }
+      else if (code < 0x20) {
+        total += 6; // \u00xx
+      }
+      else if (code >= 0xd800 && code <= 0xdbff) {
+        // High surrogate. Paired with a low surrogate it serialises as the two code units it
+        // already is; unpaired it is escaped as `\udXXX`.
+        const next = index + 1 < value.length ? value.charCodeAt(index + 1) : 0;
+
+        if (next >= 0xdc00 && next <= 0xdfff) {
+          total += 2;
+          index++;
+        }
+        else {
+          total += 6;
+        }
+      }
+      else if (code >= 0xdc00 && code <= 0xdfff) {
+        total += 6; // lone low surrogate
+      }
+      else {
+        total += 1;
+      }
+    }
+
+    return total;
+  },
+
+  /**
+   * Computes what `JSON.stringify` would produce for `value`, both compactly and indented, in a
+   * single walk. Bails out as soon as the compact total passes `budget`, because that alone
+   * decides whether the body is served at all.
+   *
+   * This lets callers apply a size budget *before* attempting the serialisation, instead of
+   * discovering the problem as a `RangeError` thrown from deep inside `JSON.stringify`.
+   *
+   * @param {*} value - Value that is about to be serialised
+   * @param {Number} budget - Compact length past which the exact totals stop mattering
+   * @param {Number} indentLength - Width of one indentation level
+   * @returns {Object} `compact` and `indented` lengths
+   */
+  measureJson = (value, budget, indentLength) => {
+    let compact = 0,
+      // Everything indentation adds on top of the compact form: the newlines, the leading
+      // indent on each member or element, and the space after each object key's colon.
+      surcharge = 0;
+
+    // Depths are tracked alongside the values rather than as objects on the stack, because
+    // indentation cost depends on how deeply nested each value is.
+    const stack = [value],
+      depths = [0],
+      measureIndent = indentLength > 0;
+
+    while (stack.length > 0) {
+      if (compact > budget) {
+        break;
+      }
+
+      const current = stack.pop(),
+        depth = depths.pop(),
+        type = typeof current;
+
+      if (current === null) {
+        compact += 4; // null
+        continue;
+      }
+
+      if (type === 'string') {
+        compact += measureJsonStringLength(current);
+        continue;
+      }
+
+      if (type === 'number') {
+        compact += Number.isFinite(current) ? String(current).length : 4;
+        continue;
+      }
+
+      if (type === 'boolean') {
+        compact += current ? 4 : 5;
+        continue;
+      }
+
+      // undefined / function / symbol serialise as `null` inside an array and are dropped as
+      // object members (handled below), anything exotic is counted as a short literal.
+      if (type !== 'object') {
+        compact += 4;
+        continue;
+      }
+
+      // Dates and anything else with a custom serialisation are small leaves - measure directly.
+      // `JSON.stringify` already returns the quoted JSON literal here, so its length is the
+      // serialised length; a `toJSON` returning `undefined` makes the member disappear instead.
+      if (_.isFunction(current.toJSON)) {
+        const serialised = JSON.stringify(current);
+
+        compact += _.isUndefined(serialised) ? 0 : serialised.length;
+        continue;
+      }
+
+      if (_.isArray(current)) {
+        if (current.length === 0) {
+          compact += 2; // [] is unchanged by indentation
+          continue;
+        }
+
+        compact += 2 + (current.length - 1); // brackets + separating commas
+
+        if (measureIndent) {
+          // A newline and one indent per element, plus the newline and indent before `]`.
+          surcharge += current.length * (1 + indentLength * (depth + 1)) + 1 + indentLength * depth;
+        }
+
+        for (let index = 0; index < current.length; index++) {
+          stack.push(current[index]);
+          depths.push(depth + 1);
+        }
+
+        continue;
+      }
+
+      const keys = Object.keys(current);
+      let members = 0;
+
+      compact += 2; // braces
+
+      for (let index = 0; index < keys.length; index++) {
+        const memberValue = current[keys[index]],
+          memberType = typeof memberValue;
+
+        if (memberType === 'undefined' || memberType === 'function' || memberType === 'symbol') {
+          continue;
+        }
+
+        members++;
+        compact += measureJsonStringLength(keys[index]) + 1; // "key":
+        stack.push(memberValue);
+        depths.push(depth + 1);
+      }
+
+      compact += Math.max(members - 1, 0); // separating commas
+
+      if (measureIndent && members > 0) {
+        // A newline, one indent and the space after each colon, plus the newline and indent
+        // before `}`.
+        surcharge += members * (2 + indentLength * (depth + 1)) + 1 + indentLength * depth;
+      }
+    }
+
+    return { compact: compact, indented: compact + surcharge };
+  },
+
+  /**
+   * Length `JSON.stringify` would produce for `value`, compact when `indentLength` is 0.
+   *
+   * @param {*} value - Value that is about to be serialised
+   * @param {Number} budget - Compact length past which the exact total stops mattering
+   * @param {Number} indentLength - Width of one indentation level; 0 measures the compact form
+   * @returns {Number} Serialised length, or some value greater than `budget`
+   */
+  measureJsonLength = (value, budget, indentLength = 0) => {
+    const measured = measureJson(value, budget, indentLength);
+
+    return indentLength > 0 ? measured.indented : measured.compact;
+  },
+
+  /**
+   * Serialises a generated body, applying MAX_GENERATED_BODY_LENGTH as a hard ceiling.
+   *
+   * The budget is evaluated from the already generated object, before any `JSON.stringify` call,
+   * so an oversized body yields a clear sentinel rather than a `RangeError`.
+   *
+   * @param {Object} context - Global context object
+   * @param {*} bodyData - Generated body
+   * @param {String} indentCharacter - Indentation to apply
+   * @param {Object} issueMeta - Extra metadata recorded if the body is dropped
+   * @returns {String|undefined} Serialised body
+   */
+  serialiseGeneratedBody = (context, bodyData, indentCharacter, issueMeta = {}) => {
+    const tooLarge = (length) => {
+      recordConversionIssue(context, Object.assign({
+        type: CONVERSION_ISSUE_TYPES.BODY_TOO_LARGE,
+        reason: 'Generated body of ' + length + ' characters exceeded the maximum ' +
+          'supported body size of ' + MAX_GENERATED_BODY_LENGTH + ' characters and was omitted.',
+        generatedBodyLength: length,
+        maxBodyLength: MAX_GENERATED_BODY_LENGTH
+      }, issueMeta));
+
+      return ERR_BODY_TOO_LARGE;
+    };
+
+    // Raw bodies - XML, and text examples taken verbatim from the spec - are already strings and
+    // are never serialised below, so the ceiling has to be applied to them here too.
+    if (!_.isObject(bodyData) && _.isFunction(_.get(bodyData, 'toString'))) {
+      const rawBody = bodyData.toString();
+
+      return rawBody.length > MAX_GENERATED_BODY_LENGTH ? tooLarge(rawBody.length) : rawBody;
+    }
+
+    const indentLength = _.isString(indentCharacter) ? indentCharacter.length : 0,
+      // Both forms come out of one walk; the indented length is what the ceiling has to be
+      // judged against when we are about to indent.
+      projected = measureJson(bodyData, MAX_GENERATED_BODY_LENGTH, indentLength);
+
+    if (projected.compact > MAX_GENERATED_BODY_LENGTH) {
+      return tooLarge(projected.compact);
+    }
+
+    // Indentation can multiply the serialised length several times over, so anything already
+    // this large is serialised compactly. Everything below the threshold - i.e. every body an
+    // ordinary spec produces - takes the original indented path untouched.
+    if (projected.compact > COMPACT_SERIALIZATION_THRESHOLD) {
+      return JSON.stringify(bodyData);
+    }
+
+    // Indenting a deeply nested body can cost tens of times its compact length, so a body that
+    // is comfortably small compactly can still breach the ceiling once indented. Dropping the
+    // indentation is safe here: the compact form is known to be under the compact threshold.
+    if (projected.indented > MAX_GENERATED_BODY_LENGTH) {
+      return JSON.stringify(bodyData);
+    }
+
+    return JSON.stringify(bodyData, null, indentCharacter);
   },
 
   /**
@@ -293,15 +676,61 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * Normalises the seenRef argument of the public resolveSchema() into a Set.
+   *
+   * Internally seenRef is a Set maintained with add-before-recurse / delete-after-return, but the
+   * parameter used to be a plain string -> bool map, so one may still be handed in from outside.
+   *
+   * @param {Object|Set} seenRef - References already seen, as a Set or as a legacy map
+   * @returns {Set} Set of seen references
+   */
+  toSeenRefSet = (seenRef) => {
+    if (seenRef instanceof Set) {
+      return seenRef;
+    }
+
+    return new Set(_.isObject(seenRef) ? _.keys(seenRef) : []);
+  },
+
+  /**
+   * Looks up a $ref directly in `context.specComponents` without going
+   * through the schema cache. Used by OAS 3.2 features that need to read
+   * raw spec metadata (e.g. `discriminator.defaultMapping`) which can be
+   * stripped from cached resolutions during composite-schema flattening.
+   * Returns `undefined` when the path can't be resolved -- callers must
+   * tolerate that.
+   *
+   * @param {Object} context - Global context object
+   * @param {String} $ref - Ref that is to be resolved
+   * @returns {Object|undefined} The raw schema fragment from the spec
+   */
+  lookupSchemaInSpecComponents = (context, $ref) => {
+    const { specComponents } = context;
+    if (typeof $ref !== 'string' || !_.isObject(specComponents)) {
+      return undefined;
+    }
+    const splitRef = $ref.split('/');
+    if (splitRef.length < 4) {
+      return undefined;
+    }
+    const decoded = splitRef.slice(1).map((elem) => {
+      return decodeURIComponent(elem.replace(/~1/g, '/').replace(/~0/g, '~'));
+    });
+    return _getEscaped(specComponents, decoded);
+  },
+
+  /**
    * Resolve a given ref from the schema
    * @param {Object} context - Global context object
    * @param {Object} $ref - Ref that is to be resolved
    * @param {Number} stackDepth - Depth of the current stack for Ref resolution
-   * @param {Object} seenRef - Seen Reference map
+   * @param {Set} seenRef - Set of references seen on the current resolution path
    *
    * @returns {Object} Returns the object that satisfies the schema
    */
-  resolveRefFromSchema = (context, $ref, stackDepth = 0, seenRef = {}) => {
+  // seenRef is a Set (path-scoped cycle detection, no clone per branch); the ref-stack
+  // limit now comes from the whole options object so the governor can lower it.
+  resolveRefFromSchema = (context, $ref, stackDepth = 0, seenRef = new Set()) => {
     const { specComponents } = context,
       { stackLimit } = context.computedOptions;
 
@@ -312,7 +741,13 @@ let QUERYPARAM = 'query',
     }
 
     stackDepth++;
-    seenRef[$ref] = true;
+
+    /**
+     * `seenRef` is deliberately NOT mutated here. The mark for `$ref` is only ever consumed by
+     * the nested resolution at the bottom of this function, which gets its own branch-scoped
+     * copy -- exactly what the `_.cloneDeep(seenRef)` that used to be passed down provided.
+     * Leaving the caller's set untouched is what lets it be shared instead of cloned.
+     */
 
     if (context.schemaCache[$ref]) {
       // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
@@ -357,12 +792,17 @@ let QUERYPARAM = 'query',
     }
 
     if (_.get(resolvedSchema, '$ref')) {
-      if (seenRef[resolvedSchema.$ref]) {
+      // Branch-scoped copy, taken only on this rare nested-$ref path
+      const branchSeenRef = new Set(seenRef);
+
+      branchSeenRef.add($ref);
+
+      if (branchSeenRef.has(resolvedSchema.$ref)) {
         return {
           value: '<Circular reference to ' + resolvedSchema.$ref + ' detected>'
         };
       }
-      return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth, _.cloneDeep(seenRef));
+      return resolveRefFromSchema(context, resolvedSchema.$ref, stackDepth, branchSeenRef);
     }
 
     return resolvedSchema;
@@ -373,11 +813,13 @@ let QUERYPARAM = 'query',
    * @param {Object} context - Global context object
    * @param {Object} $ref - Ref that is to be resolved
    * @param {Number} stackDepth - Depth of the current stack for Ref resolution
-   * @param {Object} seenRef - Seen Reference map
+   * @param {Set} seenRef - Set of references seen on the current resolution path
    *
    * @returns {Object} Returns the object that satisfies the schema
    */
-  resolveRefForExamples = (context, $ref, stackDepth = 0, seenRef = {}) => {
+  // seenRef is a Set (path-scoped cycle detection, no clone per branch); the ref-stack
+  // limit now comes from the whole options object so the governor can lower it.
+  resolveRefForExamples = (context, $ref, stackDepth = 0, seenRef = new Set()) => {
     const { specComponents } = context,
       { stackLimit } = context.computedOptions;
 
@@ -386,7 +828,8 @@ let QUERYPARAM = 'query',
     }
 
     stackDepth++;
-    seenRef[$ref] = true;
+
+    // See the note in resolveRefFromSchema: the caller's set is left untouched.
 
     if (context.schemaCache[$ref]) {
       // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
@@ -431,12 +874,17 @@ let QUERYPARAM = 'query',
     }
 
     if (_.has(resolvedExample, '$ref')) {
-      if (seenRef[resolvedExample.$ref]) {
+      // Branch-scoped copy, taken only on this rare nested-$ref path
+      const branchSeenRef = new Set(seenRef);
+
+      branchSeenRef.add($ref);
+
+      if (branchSeenRef.has(resolvedExample.$ref)) {
         return {
           value: `<Circular reference to ${resolvedExample.$ref} detected>`
         };
       }
-      return resolveRefFromSchema(context, resolvedExample.$ref, stackDepth, _.cloneDeep(seenRef));
+      return resolveRefFromSchema(context, resolvedExample.$ref, stackDepth, branchSeenRef);
     }
 
     // Add the resolved schema to the global schema cache
@@ -498,12 +946,13 @@ let QUERYPARAM = 'query',
    * @param {Object} schema - Schema to be resolved
    * @param {Number} [stack] - Current recursion depth
    * @param {*} resolveFor - resolve refs for flow validation/conversion (value to be one of VALIDATION/CONVERSION)
-   * @param {Object} seenRef - Map of all the references that have been resolved
+   * @param {Set} seenRef - Set of references seen on the current resolution path
    * @param {String} currentPath - Current path (json-pointer) being resolved relative to original schema
    *
    * @returns {Object} Resolved schema
    */
-  resolveAllOfSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}, currentPath = '') => {
+  resolveAllOfSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = new Set(),
+    currentPath = '') => {
     /*
       For TYPES_GENERATION, we do not want to merge the allOf schemas
       instead we want to keep them separate so that we can generate types like:
@@ -523,7 +972,7 @@ let QUERYPARAM = 'query',
       const result = {
         allOf: _.map(schema.allOf, (schema) => {
           // eslint-disable-next-line no-use-before-define
-          return _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+          return _resolveSchema(context, schema, stack, resolveFor, seenRef, currentPath);
         })
       };
       if (schema.title !== undefined) {
@@ -542,7 +991,7 @@ let QUERYPARAM = 'query',
       return mergeAllOf(_.assign(schema, {
         allOf: _.map(schema.allOf, (schema) => {
           // eslint-disable-next-line no-use-before-define
-          return _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+          return _resolveSchema(context, schema, stack, resolveFor, seenRef, currentPath);
         })
       }), {
         // below option is required to make sure schemas with additionalProperties set to false are resolved correctly
@@ -569,13 +1018,16 @@ let QUERYPARAM = 'query',
    * @param {Object} schema - Schema that is to be resolved
    * @param {Number} [stack] - Current recursion depth
    * @param {String} resolveFor - For which action this resolution is to be done
-   * @param {Object} seenRef - Map of all the references that have been resolved
+   * @param {Set} seenRef - Set of references seen on the current resolution path, maintained with
+   *   add-before-recurse / delete-after-return. That gives each branch exactly the path-scoped
+   *   visibility a cloned map gave it, without cloning once per branch.
    * @param {String} currentPath - Current path (json-pointer) being resolved relative to original schema
    * @todo: Explore using a directed graph/tree for maintaining seen ref
    *
    * @returns {Object} Returns the object that satisfies the schema
    */
-  _resolveSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = {}, currentPath = '') => {
+  _resolveSchema = (context, schema, stack = 0, resolveFor = CONVERSION, seenRef = new Set(),
+    currentPath = '') => {
     if (!schema) {
       return new Error('Schema is empty');
     }
@@ -611,12 +1063,27 @@ let QUERYPARAM = 'query',
       });
 
       if (resolveFor === CONVERSION) {
-        return _resolveSchema(context, compositeSchema[0], stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+        // OAS 3.2 introduces `discriminator.defaultMapping` -- a $ref-style
+        // pointer to the schema that should be used as the fallback when no
+        // explicit discriminator mapping matches. For collection generation
+        // there's no concrete discriminator value to dispatch on, so the
+        // declared "unknown / catch-all" branch is the most representative
+        // shape to fake. Prefer it when present.
+        // See https://spec.openapis.org/oas/v3.2.0.html (Discriminator
+        // Object, `defaultMapping` field).
+        // Redirect is skipped if the target is already being resolved (e.g. a bare component
+        // name pointing back to this schema); the first union member is faked instead.
+        const defaultMappingRedirect = getDefaultMappingRedirect(schema, isOpenApi32(context.openapi), seenRef);
+        if (defaultMappingRedirect) {
+          return _resolveSchema(context, { $ref: defaultMappingRedirect }, stack, resolveFor,
+            seenRef, currentPath);
+        }
+        return _resolveSchema(context, compositeSchema[0], stack, resolveFor, seenRef, currentPath);
       }
 
       const result = {
         [compositeKeyword]: _.map(compositeSchema, (schemaElement, index) => {
-          return _resolveSchema(context, schemaElement, stack, resolveFor, _.cloneDeep(seenRef),
+          return _resolveSchema(context, schemaElement, stack, resolveFor, seenRef,
             utils.addToJsonPath(currentPath, [compositeKeyword, index]));
         })
       };
@@ -635,57 +1102,92 @@ let QUERYPARAM = 'query',
     }
 
     if (schema.allOf) {
-      return resolveAllOfSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), currentPath);
+      return resolveAllOfSchema(context, schema, stack, resolveFor, seenRef, currentPath);
     }
 
     if (schema.$ref) {
       const schemaRef = schema.$ref;
 
-      if (seenRef[schemaRef]) {
+      if (seenRef.has(schemaRef)) {
         return {
           value: '<Circular reference to ' + schemaRef + ' detected>'
         };
       }
 
-      seenRef[schemaRef] = true;
+      /**
+       * Mark this ref for the duration of the branch below and unwind it on the way out, which
+       * gives siblings exactly the view a freshly cloned map used to give them. The unwind is in a
+       * `finally` so a throw from deeper down (which resolveAllOfSchema catches and continues past)
+       * cannot leave a stale mark behind and make a later, legitimate reference look circular.
+       */
+      seenRef.add(schemaRef);
 
-      if (context.schemaCache[schemaRef]) {
-        // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
-        mergeReadWritePropCache(context, context.schemaCache[schemaRef].readOnlyPropCache,
-          context.schemaCache[schemaRef].writeOnlyPropCache, currentPath);
+      try {
+        // OAS 3.2: if the referenced schema is a discriminated polymorphic
+        // schema with a `defaultMapping` fallback, redirect to that fallback
+        // before consulting the cache. The cache may otherwise return a
+        // schema that's already been collapsed for `typesGeneration`
+        // (oneOf array preserved without `discriminator`), masking the
+        // 3.2 fallback intent during a subsequent CONVERSION resolution.
+        // We have to peek at the *original* spec rather than the cached
+        // resolution because the cached schema may have been stripped of
+        // its `discriminator` field by a prior TYPES_GENERATION pass.
+        // See https://spec.openapis.org/oas/v3.2.0.html (Discriminator
+        // Object, `defaultMapping` field).
+        // Same decision as the oneOf/anyOf branch above; seenRef already holds schemaRef here,
+        // and the `finally` below unwinds it once the redirected resolution has returned.
+        if (resolveFor === CONVERSION && isOpenApi32(context.openapi)) {
+          const defaultMappingRedirect = getDefaultMappingRedirect(
+            lookupSchemaInSpecComponents(context, schemaRef), true, seenRef);
 
-        schema = context.schemaCache[schemaRef].schema;
+          if (defaultMappingRedirect) {
+            return _resolveSchema(context, { $ref: defaultMappingRedirect }, stack, resolveFor,
+              seenRef, currentPath);
+          }
+        }
+
+        if (context.schemaCache[schemaRef]) {
+          // Also merge readOnly and writeOnly prop cache from schemaCache to global context cache
+          mergeReadWritePropCache(context, context.schemaCache[schemaRef].readOnlyPropCache,
+            context.schemaCache[schemaRef].writeOnlyPropCache, currentPath);
+
+          schema = context.schemaCache[schemaRef].schema;
+        }
+        else {
+          const existingReadPropCache = context.readOnlyPropCache,
+            existingWritePropCache = context.writeOnlyPropCache;
+
+          schema = resolveRefFromSchema(context, schemaRef, stack, seenRef);
+
+          /**
+           * Reset readOnly and writeOnly prop cache before resolving schema to make sure
+           * we have fresh cache for $ref resolution which will be stored as part of schemaCache
+           */
+          resetReadWritePropCache(context);
+          schema = _resolveSchema(context, schema, stack, resolveFor, seenRef, '');
+
+          // Add the resolved schema to the global schema cache
+          context.schemaCache[schemaRef] = {
+            schema,
+            readOnlyPropCache: context.readOnlyPropCache,
+            writeOnlyPropCache: context.writeOnlyPropCache
+          };
+
+          const newReadPropCache = context.readOnlyPropCache,
+            newWritePropCache = context.writeOnlyPropCache;
+
+          // Assign existing readOnly and writeOnly prop cache back to global context cache
+          context.readOnlyPropCache = existingReadPropCache;
+          context.writeOnlyPropCache = existingWritePropCache;
+
+          // Merge existing and current cache to make sure we have all the properties in cache
+          mergeReadWritePropCache(context, newReadPropCache, newWritePropCache, currentPath);
+        }
       }
-      else {
-        const existingReadPropCache = context.readOnlyPropCache,
-          existingWritePropCache = context.writeOnlyPropCache;
-
-        schema = resolveRefFromSchema(context, schemaRef, stack, _.cloneDeep(seenRef));
-
-        /**
-         * Reset readOnly and writeOnly prop cache before resolving schema to make sure
-         * we have fresh cache for $ref resolution which will be stored as part of schemaCache
-         */
-        resetReadWritePropCache(context);
-        schema = _resolveSchema(context, schema, stack, resolveFor, _.cloneDeep(seenRef), '');
-
-        // Add the resolved schema to the global schema cache
-        context.schemaCache[schemaRef] = {
-          schema,
-          readOnlyPropCache: context.readOnlyPropCache,
-          writeOnlyPropCache: context.writeOnlyPropCache
-        };
-
-        const newReadPropCache = context.readOnlyPropCache,
-          newWritePropCache = context.writeOnlyPropCache;
-
-        // Assign existing readOnly and writeOnly prop cache back to global context cache
-        context.readOnlyPropCache = existingReadPropCache;
-        context.writeOnlyPropCache = existingWritePropCache;
-
-        // Merge existing and current cache to make sure we have all the properties in cache
-        mergeReadWritePropCache(context, newReadPropCache, newWritePropCache, currentPath);
+      finally {
+        seenRef.delete(schemaRef);
       }
+
       return schema;
     }
 
@@ -726,7 +1228,7 @@ let QUERYPARAM = 'query',
           const currentPropPath = utils.addToJsonPath(currentPath, ['properties', propertyName]);
 
           resolvedSchemaProps[propertyName] = _resolveSchema(context, property, stack, resolveFor,
-            _.cloneDeep(seenRef), currentPropPath);
+            seenRef, currentPropPath);
         });
 
         schema.properties = resolvedSchemaProps;
@@ -736,7 +1238,7 @@ let QUERYPARAM = 'query',
     }
     // If schema is of type array
     else if (concreteUtils.compareTypes(schema.type, SCHEMA_TYPES.array) && schema.items) {
-      schema.items = _resolveSchema(context, schema.items, stack, resolveFor, _.cloneDeep(seenRef),
+      schema.items = _resolveSchema(context, schema.items, stack, resolveFor, seenRef,
         utils.addToJsonPath(currentPath, ['items']));
     }
     // Any properties to ignored should not be available in schema
@@ -775,10 +1277,22 @@ let QUERYPARAM = 'query',
       }
       else {
         schema.additionalProperties = _resolveSchema(context, schema.additionalProperties, stack, resolveFor,
-          _.cloneDeep(seenRef), utils.addToJsonPath(currentPath, ['additionalProperties']));
+          seenRef, utils.addToJsonPath(currentPath, ['additionalProperties']));
       }
 
       schema.type = schema.type || SCHEMA_TYPES.object;
+    }
+
+    // propertyNames is only supported from OAS 3.1 (JSON Schema 2020-12) onwards
+    if (schema.hasOwnProperty('propertyNames') &&
+      !_.includes(['3.1.x', '3.2.x'], _.get(concreteUtils, 'version'))) {
+      delete schema.propertyNames;
+    }
+
+    // propertyNames can be a boolean (left as is) or a schema that may contain references
+    if (_.isPlainObject(schema.propertyNames) && !_.isEmpty(schema.propertyNames)) {
+      schema.propertyNames = _resolveSchema(context, schema.propertyNames, stack, resolveFor,
+        seenRef, utils.addToJsonPath(currentPath, ['propertyNames']));
     }
 
     // Resolve refs inside enums to value
@@ -786,7 +1300,7 @@ let QUERYPARAM = 'query',
       _.forEach(schema.enum, (item, index) => {
         if (item && item.hasOwnProperty('$ref')) {
           schema.enum[index] = resolveRefFromSchema(
-            context, item.$ref, stack, _.cloneDeep(seenRef)
+            context, item.$ref, stack, seenRef
           );
         }
       });
@@ -802,6 +1316,31 @@ let QUERYPARAM = 'query',
     }
 
     return schema;
+  },
+
+  /**
+   * Copies map-related keywords (additionalProperties, propertyNames) of an object schema
+   * to its processed type details, processing nested schemas recursively.
+   *
+   * @param {Object} source - The resolved object schema
+   * @param {Object} target - The processed schema details to add keywords to
+   * @returns {Object} The target with map-related keywords added
+   */
+  addObjectMapKeywords = (source, target) => {
+    if (source.hasOwnProperty('additionalProperties')) {
+      target.additionalProperties = _.isBoolean(source.additionalProperties) ?
+        source.additionalProperties :
+        processSchema(source.additionalProperties);
+    }
+
+    if (_.isBoolean(source.propertyNames)) {
+      target.propertyNames = source.propertyNames;
+    }
+    else if (_.isPlainObject(source.propertyNames)) {
+      target.propertyNames = processSchema(source.propertyNames);
+    }
+
+    return target;
   },
 
   /**
@@ -861,7 +1400,9 @@ let QUERYPARAM = 'query',
         schemaDetails.properties = {};
 
         for (let [propName, propValue] of Object.entries(resolvedSchema.properties)) {
+          // Keep untyped properties (e.g. {} or enum-only) so closed objects still accept them
           if (!propValue.type && !propValue.anyOf && !propValue.oneOf && !propValue.allOf) {
+            schemaDetails.properties[propName] = processSchema(propValue);
             continue;
           }
           const propertyDetails = {
@@ -906,6 +1447,10 @@ let QUERYPARAM = 'query',
             propertyDetails.items = processSchema(propValue.items);
           }
 
+          if (propValue.type === 'object') {
+            addObjectMapKeywords(propValue, propertyDetails);
+          }
+
           schemaDetails.properties[propName] = propertyDetails;
         }
       }
@@ -914,7 +1459,7 @@ let QUERYPARAM = 'query',
         schemaDetails.required = resolvedSchema.required;
       }
 
-      return schemaDetails;
+      return addObjectMapKeywords(resolvedSchema, schemaDetails);
     }
     else if (resolvedSchema.type === 'array' && resolvedSchema.items) {
       const arrayDetails = {
@@ -933,7 +1478,13 @@ let QUERYPARAM = 'query',
       description: resolvedSchema.description,
       title: resolvedSchema.title,
       example: resolvedSchema.example,
-      format: resolvedSchema.format
+      format: resolvedSchema.format,
+      enum: resolvedSchema.enum || undefined,
+      minLength: resolvedSchema.minLength,
+      maxLength: resolvedSchema.maxLength,
+      minimum: resolvedSchema.minimum,
+      maximum: resolvedSchema.maximum,
+      pattern: resolvedSchema.pattern
     };
   },
 
@@ -945,18 +1496,19 @@ let QUERYPARAM = 'query',
    * @param {Object} resolutionMeta - Metadata of resolution taking place
    * @param {Number} resolutionMeta.stack - Current recursion depth
    * @param {String} resolutionMeta.resolveFor - For which action this resolution is to be done
-   * @param {Object} resolutionMeta.seenRef - Map of all the references that have been resolved
+   * @param {Object|Set} resolutionMeta.seenRef - References already seen. A plain string -> bool
+   *   map is still accepted for backwards compatibility and converted to a Set.
    * @param {Boolean} resolutionMeta.isResponseSchema - Whether schema is from response or not
    *
    * @returns {Object} Returns the object that satisfies the schema
    */
   resolveSchema = (context, schema,
-    { stack = 0, resolveFor = CONVERSION, seenRef = {}, isResponseSchema = false } = {}
+    { stack = 0, resolveFor = CONVERSION, seenRef, isResponseSchema = false } = {}
   ) => {
     // reset readOnly and writeOnly prop cache before resolving schema to make sure we have fresh cache
     resetReadWritePropCache(context);
 
-    let resolvedSchema = _resolveSchema(context, schema, stack, resolveFor, seenRef);
+    let resolvedSchema = _resolveSchema(context, schema, stack, resolveFor, toSeenRefSet(seenRef));
 
     /**
      * If readOnly or writeOnly properties are present in the schema, we need to clone original schema first.
@@ -1110,10 +1662,35 @@ let QUERYPARAM = 'query',
       schemaFaker.option({
         useExamplesValue: shouldGenerateFromExample,
         defaultMinItems: restrictArrayItems ? 1 : 2,
-        defaultMaxItems: restrictArrayItems ? 1 : 2
+        defaultMaxItems: restrictArrayItems ? 1 : 2,
+
+        /**
+         * Gated on the same 50 KB threshold as `restrictArrayItems`, which already trades
+         * example fidelity for size above that line. Below it, generation is fast and every
+         * occurrence of a repeated sub-schema keeps its own independently faked value.
+         *
+         * IMPORTANT: when this is on, the returned value graph is ALIASED. A sub-schema reached
+         * from several places yields the same object in all of them, so mutating a generated
+         * body in place would change every occurrence at once. Callers must treat the result as
+         * read-only and serialise it, which is all they do today.
+         */
+        reuseIdenticalSubSchemas: restrictArrayItems
       });
 
-      fakedSchema = schemaFaker(schema, null, context.schemaValidationCache || {});
+      try {
+        fakedSchema = schemaFaker(schema, null, context.schemaValidationCache || {});
+      }
+      finally {
+        /**
+         * These are process-wide json-schema-faker options, shared with the V1 conversion path.
+         * Restore every one this call set, so they cannot leak into whatever is faked next.
+         */
+        schemaFaker.option({
+          defaultMinItems: FAKER_DEFAULT_MIN_ITEMS,
+          defaultMaxItems: FAKER_DEFAULT_MAX_ITEMS,
+          reuseIdenticalSubSchemas: false
+        });
+      }
 
       context.schemaFakerCache[key] = fakedSchema;
 
@@ -1191,8 +1768,15 @@ let QUERYPARAM = 'query',
       return example;
     }
 
+    /**
+     * State the array bounds explicitly rather than inheriting whatever the last `fakeSchema`
+     * call happened to leave behind.
+     */
     schemaFaker.option({
-      useExamplesValue: true
+      useExamplesValue: true,
+      defaultMinItems: FAKER_DEFAULT_MIN_ITEMS,
+      defaultMaxItems: FAKER_DEFAULT_MAX_ITEMS,
+      maxItems: DEFAULT_ARRAY_MAX_ITEMS
     });
 
     if (resolvedSchema.properties) {
@@ -1543,6 +2127,9 @@ let QUERYPARAM = 'query',
           request: requestExample ?
             getExampleData(context, { [requestExample.key]: requestExample.value }) :
             undefined,
+          // The request example is paired by key and may well be declared under a different
+          // content type than the response, so record its own rather than inferring it later.
+          requestContentType: _.get(requestExample, 'contentType'),
           response: responseExampleData,
           name: getResponseExampleName(responseExample) || 'Example',
           // carries the OAS example key so callers can resolve per-key parameter values for the
@@ -1578,6 +2165,7 @@ let QUERYPARAM = 'query',
       if (firstRequestExample) {
         firstExample.request = getExampleData(context,
           { [firstRequestExample.key]: firstRequestExample.value });
+        firstExample.requestContentType = _.get(firstRequestExample, 'contentType');
       }
 
       pmExamples.push(firstExample);
@@ -2029,9 +2617,10 @@ let QUERYPARAM = 'query',
       }
 
       const { indentCharacter } = context.computedOptions,
-        rawModeData = !_.isObject(bodyData) && _.isFunction(_.get(bodyData, 'toString')) ?
-          bodyData.toString() :
-          JSON.stringify(bodyData, null, indentCharacter);
+        rawModeData = serialiseGeneratedBody(context, bodyData, indentCharacter, {
+          in: 'request',
+          contentType: bodyType
+        });
 
       dataToBeReturned = {
         mode: 'raw',
@@ -2203,8 +2792,57 @@ let QUERYPARAM = 'query',
     };
   },
 
+  /**
+   * Expands an OAS 3.2 `in: 'querystring'` Parameter Object into synthetic
+   * per-property Parameter Objects (`in: 'query'`), so the rest of the
+   * query-param pipeline can treat them like ordinary 3.0/3.1 query
+   * parameters. The querystring parameter describes the ENTIRE query string
+   * as a single Schema Object; each top-level property of that schema
+   * becomes one Postman query row.
+   *
+   * Returns an array (possibly empty) of expanded query params. Returns the
+   * original parameter back unchanged when it isn't a querystring parameter
+   * or when its schema isn't expandable (no `properties`).
+   *
+   * See https://spec.openapis.org/oas/v3.2.0.html (Parameter Object,
+   * `in: querystring` value).
+   */
+  expandQuerystringParameter = (context, param) => {
+    if (!_.isObject(param)) {
+      return [param];
+    }
+
+    if (_.has(param, '$ref')) {
+      param = resolveSchema(context, param);
+    }
+
+    if (!_.isObject(param) || param.in !== QUERYSTRING_PARAM) {
+      return [param];
+    }
+
+    if (!isOpenApi32(context.openapi)) {
+      return [];
+    }
+
+    let schema = getQuerystringMediaType(param).schema;
+    if (_.isObject(schema) && (_.has(schema, '$ref') || _.has(schema, 'anyOf') ||
+        _.has(schema, 'oneOf') || _.has(schema, 'allOf'))) {
+      schema = resolveSchema(context, schema);
+    }
+
+    // Without a `properties` object on the schema there's nothing to enumerate, so the
+    // parameter is dropped rather than emitting a single row for the whole query string.
+    return expandQuerystringSchema(param, schema);
+  },
+
   resolveQueryParamsForPostmanRequest = (context, operationItem, method, { exampleKey } = {}) => {
-    const params = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
+    const rawParams = resolvePathItemParams(context, operationItem[method].parameters, operationItem.parameters),
+      // Expand OAS 3.2 `in: 'querystring'` parameters into per-property
+      // synthetic `in: 'query'` parameters so the rest of the pipeline
+      // doesn't need to know about querystring.
+      params = _.flatMap(rawParams, (param) => {
+        return expandQuerystringParameter(context, param);
+      }),
       pmParams = [],
       queryParamTypes = [],
       { includeDeprecated } = context.computedOptions;
@@ -2396,6 +3034,52 @@ let QUERYPARAM = 'query',
   },
 
   /**
+   * Frames a single faked response body as one chunk of an OAS 3.2 streaming
+   * response. SSE fields (`event`, `id`, `retry`, `data`) are serialized
+   * separately, JSON Lines/NDJSON get a compact value plus newline,
+   * `application/json-seq` uses record-separator framing, and multipart
+   * streams get a single boundary-delimited part. Other media types keep
+   * the original raw body.
+   *
+   * See https://spec.openapis.org/oas/v3.2.0.html (Media Type Object,
+   * `itemSchema` field) and https://html.spec.whatwg.org/multipage/server-sent-events.html
+   * for SSE framing rules.
+   *
+   * @param {String} bodyType - The Media Type (Content-Type) of the response
+   * @param {*} responseBodyData - Faked body before stringification (object/string)
+   * @param {String} responseRawModeData - Stringified faked body
+   * @returns {String} Streaming-framed body
+   */
+  wrapStreamingItemBody = (bodyType, responseBodyData, responseRawModeData) => {
+    const mediaType = bodyType.split(';')[0].trim().toLowerCase(),
+      compactJson = JSON.stringify(responseBodyData) || 'null';
+    if (mediaType === 'application/jsonl' || mediaType === 'application/x-ndjson' ||
+        mediaType === 'application/ndjson') {
+      return { body: compactJson + '\n', contentType: bodyType };
+    }
+    if (mediaType === 'application/json-seq') {
+      return { body: '\x1e' + compactJson + '\n', contentType: bodyType };
+    }
+    if (mediaType.startsWith('multipart/')) {
+      const boundaryMatch = (/(?:^|;)\s*boundary="?([^";]+)"?/i).exec(bodyType),
+        boundary = boundaryMatch ? boundaryMatch[1] : 'postman-openapi-stream',
+        contentType = boundaryMatch ? bodyType : bodyType + '; boundary=' + boundary;
+      return {
+        body: '--' + boundary + '\r\n' +
+          (mediaType === 'multipart/form-data' ? 'Content-Disposition: form-data; name="item"\r\n' : '') +
+          'Content-Type: application/json\r\n\r\n' +
+          compactJson + '\r\n--' + boundary + '--\r\n',
+        contentType
+      };
+    }
+    if (mediaType !== 'text/event-stream') {
+      return { body: responseRawModeData, contentType: bodyType };
+    }
+
+    return { body: formatServerSentEvent(responseBodyData), contentType: bodyType };
+  },
+
+  /**
    * Collects the union of plural `examples` keys defined across an operation's query, path and
    * header parameters (set P in the matching-key model). These keys participate in the
    * response<->request example pairing: M = R ∩ (B ∪ P).
@@ -2421,12 +3105,15 @@ let QUERYPARAM = 'query',
         param = resolveSchema(context, param);
       }
 
-      if (param.in !== QUERYPARAM && param.in !== PATHPARAM && param.in !== HEADER) {
+      if (param.in !== QUERYPARAM && param.in !== PATHPARAM && param.in !== HEADER &&
+          param.in !== QUERYSTRING_PARAM) {
         return;
       }
 
-      if (_.isObject(param.examples)) {
-        keys.push(...Object.keys(param.examples));
+      // Use the same example lookup as expandQuerystringParameter so that keys match
+      const examples = param.in === QUERYSTRING_PARAM ? getQuerystringExamples(param) : param.examples;
+      if (_.isObject(examples)) {
+        keys.push(...Object.keys(examples));
       }
     });
 
@@ -2474,8 +3161,30 @@ let QUERYPARAM = 'query',
     bodyType = getRawBodyType(responseContent);
     headerFamily = getHeaderFamily(bodyType);
 
+    // OAS 3.2: Media Type Object may declare `itemSchema` (the shape of one
+    // frame in a streaming sequence) instead of `schema` (the shape of the
+    // entire body). For collection-generation faking purposes there's no
+    // meaningful "entire stream" body to emit, so we treat the itemSchema as
+    // a single-item schema for the purposes of producing one example frame.
+    // The streaming-format wrapping (e.g. SSE `event:`/`data:` framing) is
+    // applied after the body is generated, below.
+    // See https://spec.openapis.org/oas/v3.2.0.html (Media Type Object,
+    // `itemSchema` field).
+    const mediaTypeObject = responseContent[bodyType];
+    let responseMediaTypeObject = mediaTypeObject,
+      usingItemSchema = false;
+    if (
+      isOpenApi32(context.openapi) &&
+      _.isObject(mediaTypeObject) &&
+      _.isObject(mediaTypeObject.itemSchema)
+    ) {
+      responseMediaTypeObject = Object.assign({}, mediaTypeObject, { schema: mediaTypeObject.itemSchema });
+      usingItemSchema = !(context.computedOptions.parametersResolution === 'example' &&
+        (mediaTypeObject.example !== undefined || !_.isEmpty(mediaTypeObject.examples)));
+    }
+
     resolvedResponseBodyResult = resolveBodyData(
-      context, responseContent[bodyType], bodyType, true, code, requestBodyExamples, parameterExampleKeys);
+      context, responseMediaTypeObject, bodyType, true, code, requestBodyExamples, parameterExampleKeys);
     allBodyData = resolvedResponseBodyResult.generatedBody;
     resolvedResponseBodyTypes = resolvedResponseBodyResult.resolvedSchemaType;
 
@@ -2490,14 +3199,31 @@ let QUERYPARAM = 'query',
       }
 
       const { indentCharacter } = context.computedOptions,
-        getRawModeData = (bodyData) => {
-          return !_.isObject(bodyData) && _.isFunction(_.get(bodyData, 'toString')) ?
-            bodyData.toString() :
-            JSON.stringify(bodyData, null, indentCharacter);
+        getRawModeData = (data, position, contentType) => {
+          return serialiseGeneratedBody(context, data, indentCharacter, {
+            in: position,
+            responseCode: code,
+            exampleName,
+            contentType
+          });
         },
-        requestRawModeData = getRawModeData(requestBodyData),
-        responseRawModeData = getRawModeData(responseBodyData),
-        responseMediaTypes = _.keys(responseContent);
+        // `bodyType` is the response's content type; the paired request body may have been
+        // declared under a different one, so report whichever actually produced each body.
+        requestRawModeData = getRawModeData(requestBodyData, 'response~request',
+          bodyData.requestContentType || bodyType);
+
+      // Reassigned by the streaming wrap below, so these cannot join the `const` list above.
+      let responseRawModeData = getRawModeData(responseBodyData, 'response', bodyType);
+      const responseMediaTypes = _.keys(responseContent);
+
+      // OAS 3.2 streaming wrap: when the response body was faked from
+      // `itemSchema`, frame it according to the media type so the example
+      // body looks like an actual stream chunk a client would receive.
+      if (usingItemSchema && responseRawModeData) {
+        const framedBody = wrapStreamingItemBody(bodyType, responseBodyData, responseRawModeData);
+        responseRawModeData = framedBody.body;
+        bodyType = framedBody.contentType;
+      }
 
       if (responseMediaTypes.length > 0) {
         acceptHeader = [{
@@ -2534,6 +3260,10 @@ let QUERYPARAM = 'query',
     }
 
     _.forOwn(responseHeaders, (value, headerName) => {
+      if (_.has(value, '$ref')) {
+        value = resolveSchema(context, value, { isResponseSchema: true });
+      }
+
       if (!_.isObject(value)) {
         return;
       }
@@ -2818,18 +3548,23 @@ let QUERYPARAM = 'query',
           params: _.assign({}, request.params, { queryParams: reqQueryParams, pathParams: basePathParams })
         }, requestBodyObj);
 
-        const responseDescription = _.get(responseSchema, 'description'),
+        const responseSummary = _.get(responseSchema, 'summary'),
+          responseSummaryTrimmed = _.isString(responseSummary) ? responseSummary.trim() : '',
+          responseDescription = _.get(responseSchema, 'description'),
           responseDescriptionTrimmed = _.isString(responseDescription) ? responseDescription.trim() : '',
           codeName = String(!_.isNil(code) ? code : DEFAULT_RESPONSE_CODE_IN_OAS);
 
         // response-name priority (unchanged from legacy, including for matching-key multi-example):
-        // 1) response-level description
-        // 2) example-level description/summary/key (baked into `name` by generateExamples)
-        // 3) response code
+        // 1) response-level summary, OAS 3.2 only (short label, see
+        //    https://spec.openapis.org/oas/v3.2.0.html Response Object)
+        // 2) response-level description
+        // 3) example-level description/summary/key (baked into `name` by generateExamples)
+        // 4) response code
         // The saved-response name maps back to the OAS response `description` during
-        // collection -> spec sync, so it MUST stay tied to the response description to keep
+        // collection -> spec sync, so for 3.0/3.1 it MUST stay tied to the response description to keep
         // two-way sync deterministic. Per-example identity is carried by the example key, not the name.
-        name = responseDescriptionTrimmed || name || codeName;
+        name = (isOpenApi32(context.openapi) && responseSummaryTrimmed) || responseDescriptionTrimmed ||
+          name || codeName;
 
         // set accept header value as first found response content's media type
         if (_.isEmpty(requestAcceptHeader)) {
@@ -2856,7 +3591,7 @@ let QUERYPARAM = 'query',
   };
 
 module.exports = {
-  resolvePostmanRequest: function (context, operationItem, path, method) {
+  resolvePostmanRequest: function (context, pathItem, path, method, requestMethod) {
     /**
      * schemaCache object will be used to cache the already resolved refs
      * in the schema.
@@ -2864,17 +3599,27 @@ module.exports = {
     context.schemaCache = context.schemaCache || {};
     context.schemaFakerCache = context.schemaFakerCache || {};
 
+    // OAS 3.2 `additionalOperations` entries are identified by `requestMethod` (the exact map key).
+    // They are exposed under a reserved key on a read-only view instead of being added to the path item,
+    // so that custom method names can't clash with Path Item fields (e.g. `parameters`).
+    const isAdditionalOperation = Boolean(requestMethod) && isOpenApi32(context.openapi),
+      operationKey = isAdditionalOperation ? ADDITIONAL_OPERATION_VIEW_KEY : method,
+      operationItem = isAdditionalOperation ? {
+        parameters: pathItem.parameters,
+        [ADDITIONAL_OPERATION_VIEW_KEY]: getPathItemOperation(pathItem, method, requestMethod)
+      } : pathItem;
+
     let url = resolveUrlForPostmanRequest(path),
-      baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[method]),
-      requestName = resolveNameForPostmanReqeust(context, operationItem[method], url),
-      { queryParamTypes, queryParams } = resolveQueryParamsForPostmanRequest(context, operationItem, method),
-      { headerTypes, headers } = resolveHeadersForPostmanRequest(context, operationItem, method),
-      { pathParamTypes, pathParams } = resolvePathParamsForPostmanRequest(context, operationItem, method),
+      baseUrlData = resolveBaseUrlForPostmanRequest(operationItem[operationKey], pathItem, context),
+      requestName = resolveNameForPostmanReqeust(context, operationItem[operationKey], url),
+      { queryParamTypes, queryParams } = resolveQueryParamsForPostmanRequest(context, operationItem, operationKey),
+      { headerTypes, headers } = resolveHeadersForPostmanRequest(context, operationItem, operationKey),
+      { pathParamTypes, pathParams } = resolvePathParamsForPostmanRequest(context, operationItem, operationKey),
       { pathVariables, collectionVariables } = filterCollectionAndPathVariables(url, pathParams),
-      requestBody = resolveRequestBodyForPostmanRequest(context, operationItem[method]),
+      requestBody = resolveRequestBodyForPostmanRequest(context, operationItem[operationKey]),
       requestBodyTypes = requestBody && requestBody.resolvedSchemaTypeObject,
       request,
-      securitySchema = _.get(operationItem, [method, 'security']),
+      securitySchema = _.get(operationItem, [operationKey, 'security']),
       authHelper = generateAuthForCollectionFromOpenAPI(context.openapi, securitySchema),
       { alwaysInheritAuthentication } = context.computedOptions,
       requestIdentifier,
@@ -2893,14 +3638,14 @@ module.exports = {
     // pairing. The resolver mirrors the base query/path/header resolution above but resolves each
     // parameter's value for a specific example key (fallback: examples[key] -> example ->
     // examples[firstKey] -> schema default).
-    const parameterExampleKeys = getParameterExampleKeys(context, operationItem, method),
+    const parameterExampleKeys = getParameterExampleKeys(context, operationItem, operationKey),
       resolveParamsForExampleKey = (exampleKey) => {
         const keyedQueryParams = resolveQueryParamsForPostmanRequest(
-            context, operationItem, method, { exampleKey }).queryParams,
+            context, operationItem, operationKey, { exampleKey }).queryParams,
           keyedHeaders = resolveHeadersForPostmanRequest(
-            context, operationItem, method, { exampleKey }).headers,
+            context, operationItem, operationKey, { exampleKey }).headers,
           keyedPathParams = resolvePathParamsForPostmanRequest(
-            context, operationItem, method, { exampleKey }).pathParams,
+            context, operationItem, operationKey, { exampleKey }).pathParams,
           { pathVariables: keyedPathVariables } = filterCollectionAndPathVariables(preBaseUrl, keyedPathParams);
 
         keyedHeaders.push(..._.get(requestBody, 'headers', []));
@@ -2914,10 +3659,10 @@ module.exports = {
       };
 
     request = {
-      description: operationItem[method].description,
+      description: operationItem[operationKey].description,
       url,
       name: requestName,
-      method: method.toUpperCase(),
+      method: requestMethod || method.toUpperCase(),
       params: {
         queryParams,
         pathParams: pathVariables
@@ -2938,14 +3683,12 @@ module.exports = {
         responses,
         acceptHeader,
         responseTypes
-      } = resolveResponseForPostmanRequest(context, operationItem[method], request, {
+      } = resolveResponseForPostmanRequest(context, operationItem[operationKey], request, {
         keys: parameterExampleKeys,
         resolveForKey: resolveParamsForExampleKey
       });
 
-    const overridesServer = Boolean(baseUrlData.serverObj);
-
-    requestIdentifier = overridesServer ? method + new Url(url).getPath(true) : method + path;
+    requestIdentifier = method + path;
     Object.assign(requestTypesObject,
       { [requestIdentifier]: { request: requestTypes, response: responseTypes } });
 
@@ -2974,5 +3717,14 @@ module.exports = {
   resolveResponseForPostmanRequest,
   resolveRequestBodyForPostmanRequest,
   resolveRefFromSchema,
-  resolveSchema
+  getServerKey,
+  resolveSchema,
+  recordConversionIssue,
+  measureJsonLength,
+  serialiseGeneratedBody,
+  CONVERSION_ISSUE_TYPES,
+  MAX_CONVERSION_ISSUES,
+  MAX_GENERATED_BODY_LENGTH,
+  COMPACT_SERIALIZATION_THRESHOLD,
+  ERR_BODY_TOO_LARGE
 };

@@ -328,7 +328,7 @@ describe('buildContractTestCollection', function () {
     expect(Converter.default.buildContractTestCollection).to.equal(Converter.buildContractTestCollection);
   });
 
-  it('keeps server-template segments, spec example UUIDs and distinct paths that read alike', async function () {
+  it('keeps an operation\'s own server, spec example UUIDs and distinct paths that read alike', async function () {
     const uuid = '3fa85f64-5717-4562-b3fc-2c963f66afa6',
       ok = { 200: { description: 'ok' } },
       result = await generate({ openapi: '3.0.0', info: { title: 'Paths', version: '1' }, paths: {
@@ -339,9 +339,11 @@ describe('buildContractTestCollection', function () {
         '/things': { post: { responses: ok, requestBody: { content: { 'application/json': {
           schema: { type: 'object', properties: { ref: { type: 'string', example: uuid } } } } } } } }
       } }),
-      things = requests(result)[labels(result).indexOf('POST /things')];
+      things = requests(result)[labels(result).indexOf('POST /things')],
+      pets = requests(result)[labels(result).indexOf('GET /pets')];
 
-    expect(labels(result)).to.include.members(['GET /:version/pets', 'GET /foo-bar', 'GET /foo_bar', 'POST /things']);
+    expect(labels(result)).to.include.members(['GET /pets', 'GET /foo-bar', 'GET /foo_bar', 'POST /things']);
+    expect(pets.request.url.host).to.eql(['{{baseUrl1}}']);
     expect(JSON.parse(things.request.body.raw).ref).to.equal(uuid);
   });
 
