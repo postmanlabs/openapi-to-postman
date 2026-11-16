@@ -229,7 +229,7 @@ or a spec's cloud ID; specifications that are not OpenAPI exit 2.
 | Flag | Effect |
 |---|---|
 | `-e, --environment`, `--env-var`, `--timeout-request` | As in `postman collection run` |
-| `-H, --header <header>` | `Name: value` sent on every request, as in `postman request`; repeatable. Passed as `headers`. |
+| `-H, --header <header>` | `Name: value` sent on every request, as in `postman request`; repeatable. Passed as `headers` by name only, so the saved collection uses `{{camelCase(Name)}}`; the value goes to the run as a variable and is never saved. |
 | `--exclude <operation>` | Repeatable; passed as `exclude` |
 | `-n, --name <name>` | Collection name; default `<spec title> Contract Tests` |
 | `--no-run` | Save the collection and list missing inputs only |
