@@ -9,10 +9,15 @@ const _ = require('lodash'),
 
   isIdParam = (op, param) => { return param.in === 'path' && param.name === op.idParam; },
 
+  pathParts = (pointer) => { return String(pointer).split('/').filter(Boolean); },
+
+  // A parameter's schema type; for a body field at any depth, `*` being every item of an array.
   typeOf = (op, param) => {
-    return param.in === 'body' ?
-      _.get(op.requestBodySchema, ['properties', param.path.slice(1), 'type']) :
-      _.get(_.find(op.params, { in: param.in, name: param.name }), 'schema.type');
+    if (param.in !== 'body') { return _.get(_.find(op.params, { in: param.in, name: param.name }), 'schema.type'); }
+
+    return _.get(_.reduce(pathParts(param.path), (schema, part) => {
+      return schema && (part === '*' ? schema.items : _.get(schema, ['properties', part]));
+    }, op.requestBodySchema), 'type');
   },
 
   withEvents = (item, prerequest, test) => {
@@ -34,8 +39,8 @@ const _ = require('lodash'),
     else { list.push({ key, value }); }
   },
 
-  // Points a path, query, header or top-level body parameter at `{{variable}}`. Returns false when
-  // the request has no place for it (e.g. an XML body), so the example value would be sent instead.
+  // Points a path, query, header or body parameter at `{{variable}}`. Returns false when the request has no
+  // place for it (e.g. an XML body), and null when the example has no value there to replace.
   useVariable = (request, param, variable, type) => {
     const value = `{{${variable}}}`;
 
@@ -70,24 +75,41 @@ const _ = require('lodash'),
       return true;
     }
 
-    const mode = _.get(request, 'body.mode');
+    const mode = _.get(request, 'body.mode'),
+      parts = pathParts(param.path),
+      isTopLevel = parts.length === 1;
 
     if (mode === 'urlencoded' || mode === 'formdata') {
-      setEntry(request.body[mode] = request.body[mode] || [], param.path.slice(1), value);
+      if (!isTopLevel) { return null; }
+      setEntry(request.body[mode] = request.body[mode] || [], parts[0], value);
 
       return true;
     }
     if (mode !== 'raw') { return false; }
 
-    const placeholder = `__CT_VAR__${variable}__`;
+    const placeholder = `__CT_VAR__${variable}__`,
+      body = _.attempt(JSON.parse, request.body.raw);
+    let placed = 0;
 
-    try {
-      request.body.raw = JSON.stringify(_.set(JSON.parse(request.body.raw), toLodashPath(param.path), placeholder),
-        null, 2).replace(`"${placeholder}"`, !type || type === 'string' ? `"${value}"` : value);
+    // A top-level field is added if missing. A nested one is filled only where the example has its parent,
+    // in every item of an array.
+    const fill = (node, [part, ...rest]) => {
+      if (part === '*') { return _.isArray(node) && node.forEach((item) => { fill(item, rest); }); }
+      if (!_.isPlainObject(node)) { return; }
+      if (rest.length) { return fill(node[part], rest); }
+      if (isTopLevel || _.has(node, part)) {
+        node[part] = placeholder;
+        placed += 1;
+      }
+    };
 
-      return true;
-    }
-    catch (e) { return false; }
+    if (_.isError(body)) { return false; }
+    fill(body, parts);
+    if (!placed) { return isTopLevel ? false : null; }
+    request.body.raw = JSON.stringify(body, null, 2).split(`"${placeholder}"`)
+      .join(!type || type === 'string' ? `"${value}"` : value);
+
+    return true;
   },
 
   removeBodyField = (request, field) => {
@@ -178,8 +200,10 @@ const _ = require('lodash'),
         const wired = usesOf(op).map(({ link, param }) => {
           const variable = variableFor(link, param);
 
-          if (!variable) { return null; }
-          if (useVariable(item.request, param, variable, typeOf(op, param))) { return variable; }
+          const placed = variable && useVariable(item.request, param, variable, typeOf(op, param));
+
+          if (!variable || placed === null) { return null; }
+          if (placed) { return variable; }
           unapplied.push({ operation: op.key, param, variable });
 
           return false;

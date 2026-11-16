@@ -85,7 +85,9 @@ export. Collection generation itself is unchanged; this is a pure post-step.
 
 **Consumed values:** path parameters; required query and header parameters with an identifier-like name
 (ending in `id`, `key`, `uuid`, `ref`, `slug`, `code` or `handle`), except headers the caller sends with
-`headers`; top-level request body fields ending in `id`. Other parameters keep the spec's example.
+`headers`; request body fields ending in `id` at any depth, as pointers where a `*` segment is every item of an
+array (`/ownerId`, `/owner/accountId`, `/*/collectionId`). A nested bare `id` is left out, since its name doesn't
+say what it identifies. Other parameters keep the spec's example.
 
 **Variable names:** the parameter's name as written. A bare `{id}` is named after the resource it belongs to
 (`/specifications/{id}` -> `specificationId`), headers are camel-cased (`X-Tenant-Id` -> `xTenantId`).
@@ -151,8 +153,9 @@ which is reported in `errors`. Every path parameter is linked or an input, so no
 made-up id.
 
 **Wiring** (`useVariable`): path variables, or an inline `{{name}}` before a custom method; query and header
-entries (enabling the `<x>Type` sibling of a wired `<x>Id`); JSON body fields (non-string types unquoted);
-form bodies (`urlencoded`, `formdata`). Optional query and header parameters are disabled unless a link fills
+entries (enabling the `<x>Type` sibling of a wired `<x>Id`); JSON body fields (non-string types unquoted): a
+top-level field is added if the example lacks it, a nested one is filled only where the example has its parent,
+in every item of an array; form bodies (`urlencoded`, `formdata`), top-level fields only. Optional query and header parameters are disabled unless a link fills
 them.
 
 **Scripts** (`scripts.js`):

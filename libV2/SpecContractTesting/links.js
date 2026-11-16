@@ -46,8 +46,29 @@ const _ = require('lodash'),
   },
 
   /**
+   * Request body fields ending in `id`, at any depth, as JSON pointers where a `*` segment is every item of an
+   * array: `/ownerId`, `/owner/accountId`, and for an array of `{ collectionId }` objects, `*` then `collectionId`.
+   * A nested bare `id` is left out: its name doesn't say what it identifies.
+   *
+   * @param {Object} schema - request body schema
+   * @param {String} [pointer] - pointer of `schema`
+   * @param {Number} [depth] - nesting depth of `schema`
+   * @returns {Object[]} fields: { name, path }
+   */
+  bodyIdFields = (schema, pointer = '', depth = 0) => {
+    if (!schema || depth > 4 || isMap(schema)) { return []; }
+    if (schema.type === 'array' || schema.items) { return bodyIdFields(schema.items, `${pointer}/*`, depth + 1); }
+
+    return _.flatMap(schema.properties, (child, name) => {
+      if (isContainer(child)) { return bodyIdFields(child, `${pointer}/${name}`, depth + 1); }
+
+      return (/id$/i).test(name) && (!pointer || normalize(name) !== 'id') ? [{ name, path: `${pointer}/${name}` }] : [];
+    });
+  },
+
+  /**
    * Values an operation needs: path parameters, identifier-like required query and header parameters, and
-   * top-level body fields ending in `id`. Other parameters keep the spec's example, and headers the caller
+   * body fields ending in `id` at any depth. Other parameters keep the spec's example, and headers the caller
    * sends itself are left out.
    *
    * @param {Object} op - operation
@@ -63,8 +84,9 @@ const _ = require('lodash'),
       }).map((param) => {
         return { op, variable: variableName(op, param.in, param.name), param: { in: param.in, name: param.name } };
       }),
-      bodyIds = _.keys(_.get(op.requestBodySchema, 'properties')).filter((name) => { return (/id$/i).test(name); })
-        .map((name) => { return { op, variable: name, param: { in: 'body', path: `/${name}` } }; });
+      bodyIds = bodyIdFields(op.requestBodySchema).map(({ name, path }) => {
+        return { op, variable: name, param: { in: 'body', path } };
+      });
 
     return params.concat(bodyIds);
   },

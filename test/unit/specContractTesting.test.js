@@ -162,6 +162,33 @@ describe('buildContractTestCollection', function () {
     expect(exec(cleanup, 'test')).to.equal('pm.collectionVariables.unset("leaked_petId");');
   });
 
+  it('fills an id field at any depth of a body, in every array item, where the example has it', async function () {
+    const json = (schema, example) => { return { content: { 'application/json': { schema, example } } }; },
+      object = (properties) => { return { type: 'object', properties }; },
+      str = { type: 'string' },
+      result = await generate({ openapi: '3.0.0', info: { title: 'Nested', version: '1' }, paths: {
+        '/owners': { post: { responses: created({ id: 'string' }) } },
+        '/links': { put: { responses: { 200: { description: 'ok' } }, requestBody: json(
+          { type: 'array', items: object({ ownerId: str, id: str }) },
+          [{ ownerId: 'a', id: 'x' }, { ownerId: 'b' }]) } },
+        '/pets': { post: { responses: created({}), requestBody: json(
+          object({ name: str, owner: object({ ownerId: str }), vet: object({ ownerId: str }) }),
+          { name: 'Rex', owner: { ownerId: 'a' } }) } }
+      } }),
+      body = (name) => { return JSON.parse(request(result, name).request.body.raw); };
+
+    expect(link(result, 'ownerId').consumers).to.deep.include.members([
+      { operation: 'PUT /links', param: { in: 'body', path: '/*/ownerId' } },
+      { operation: 'POST /pets', param: { in: 'body', path: '/owner/ownerId' } },
+      { operation: 'POST /pets', param: { in: 'body', path: '/vet/ownerId' } }
+    ]);
+    // Every item gets the value; a nested bare `id` says nothing about what it identifies, so it stays.
+    expect(body('2. PUT /links')).to.eql([{ ownerId: '{{ownerId}}', id: 'x' }, { ownerId: '{{ownerId}}' }]);
+    // The example has no `vet`, so nothing is added there.
+    expect(body('3. POST /pets')).to.eql({ name: 'Rex', owner: { ownerId: '{{ownerId}}' } });
+    expect(result.summary.errors).to.be.empty;
+  });
+
   it('reports a linked value a request body has no place for, and leaves the request out', async function () {
     const body = (type) => {
         return { content: { [type]: { schema: { type: 'object', properties: { ownerId: { type: 'string' } } } } } };
