@@ -1,4 +1,4 @@
-import { Collection, ItemGroup, Item, Variable, Response, HeaderList, Header } from 'postman-collection';
+import { Collection, ItemGroup, Item, Response, HeaderList, Header } from 'postman-collection';
 
 import { mergeAuth, mergeAuthParams } from './auth';
 import { findFolderItemByName, findRequestItemByPathAndMethod } from './collection';
@@ -6,6 +6,7 @@ import { mergeRequestData, mergeResponseData } from './merge';
 import { extractPostmanVariablesFromPathComponents } from './path';
 
 import { DEFAULT_SYNC_OPTIONS, getRequestIdentifier, SyncOptions } from '../shared';
+import { alignServerVariableKeys, syncCollectionServerVariables } from '../servers';
 import _ from 'lodash';
 
 /**
@@ -37,6 +38,10 @@ export function syncCollection(
   options: SyncOptions | null
 ): ItemGroup<Item> {
   const mergedOptions = { ...DEFAULT_SYNC_OPTIONS, ...(options ?? {}) };
+
+  if (latestCollectionState instanceof Collection && currentCollectionState instanceof Collection) {
+    alignServerVariableKeys(latestCollectionState, currentCollectionState);
+  }
 
   // Sync the state of the collection to be synced with the current collection
   latestCollectionState.items.each((item: Item | ItemGroup<Item>) => {
@@ -199,22 +204,7 @@ export function syncCollection(
   }
 
   if (latestCollectionState instanceof Collection && currentCollectionState instanceof Collection) {
-    const latestCollectionBaseUrlVar = latestCollectionState.variables.one('baseUrl'),
-      currentCollectionBaseUrlVar = currentCollectionState.variables.one('baseUrl');
-
-    if (latestCollectionBaseUrlVar) {
-      if (currentCollectionBaseUrlVar) {
-        currentCollectionBaseUrlVar.value = latestCollectionBaseUrlVar.value;
-      }
-      else {
-        currentCollectionState.variables.add(
-          new Variable({
-            key: 'baseUrl',
-            value: latestCollectionBaseUrlVar.value
-          })
-        );
-      }
-    }
+    syncCollectionServerVariables(latestCollectionState, currentCollectionState);
   }
 
   return currentCollectionState;

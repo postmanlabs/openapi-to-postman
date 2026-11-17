@@ -17,6 +17,7 @@ env:
 jobs:
   track-unit-test-coverage:
     runs-on: ubuntu-latest
+    timeout-minutes: 13
     steps:
       - name: Track unit-test coverage
         uses: postmanlabs/test-infra-scripts/.github/actions/coverage-pr-comment-action@main
@@ -35,6 +36,7 @@ jobs:
 
   track-integration-test-coverage:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Track integration-test coverage
         uses: postmanlabs/test-infra-scripts/.github/actions/coverage-pr-comment-action@main

@@ -2,6 +2,34 @@
 
 ## [Unreleased]
 
+## [v6.4.3] - 2026-11-10
+
+### Added
+
+-   Added support for multiple servers in v2 collection generation and syncing. Every unique root, path-level and operation-level server is added as a `baseUrl`, `baseUrl1`, … collection variable, and each request uses the variable of its effective server (operation > path > root).
+
+### Fixed
+
+-   Fixed an issue where extracted types dropped `enum`, `pattern`, `minLength`, `maxLength`, `minimum` and `maximum` from primitive schemas (such as array items), and `additionalProperties` and `propertyNames` from object schemas.
+
+## [v6.4.2] - 2026-10-26
+
+### Fixed
+
+-   Fixed an issue where an operation-level server URL with a trailing slash produced a double slash (`//`) in the generated request URL and its extracted-type key.
+
+## [v6.4.1] - 2026-10-21
+
+## [v6.4.0] - 2026-10-07
+
+### Added
+
+-   Added support for OpenAPI 3.2 specifications (`query` and `additionalOperations` operations, `querystring` parameters, hierarchical tags, `itemSchema` streaming responses, response `summary`, `discriminator.defaultMapping` and OAuth 2.0 Device Authorization flow).
+
+### Fixed
+
+-   Fixed an issue where non-operation fields of a webhook Path Item (e.g. `summary`, `description`) were converted into requests by the v2 converter.
+
 ## [v6.3.3] - 2026-08-11
 
 ## [v6.3.2] - 2026-07-31
@@ -707,7 +735,15 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.3.3...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.3...HEAD
+
+[v6.4.3]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.2...v6.4.3
+
+[v6.4.2]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.1...v6.4.2
+
+[v6.4.1]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.0...v6.4.1
+
+[v6.4.0]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.3.3...v6.4.0
 
 [v6.3.3]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.3.2...v6.3.3
 
