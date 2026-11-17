@@ -86,7 +86,7 @@ describe('buildContractTestCollection', function () {
 
     expect(JSON.parse(createPet.request.body.raw).ownerId).to.equal('{{ownerId}}');
     expect(exec(createPet, 'test')).to.include('"variable":"petId"').and.include('@postman-contract-test')
-      .and.include('Flow | Succeeds (2xx)');
+      .and.include('Request | Succeeds (2xx)');
     expect(_.find(getPet.request.url.variable, { key: 'petId' }).value).to.equal('{{petId}}');
     expect(exec(getPet, 'prerequest')).to.include('{"petId":"the request that saves it did not succeed"}')
       .and.include('pm.execution.skipRequest()');
@@ -390,7 +390,7 @@ describe('buildContractTestCollection', function () {
       return run(scripts.guard({ petId: 'reason' }), { petId: value }).skipped;
     })).to.eql([false, false, true, true, true]);
     expect(run(scripts.guard({ petId: 'saved', tenantId: 'set it' }, ['tenantId']), {}))
-      .to.eql({ skipped: true, tests: ['Flow | tenantId is set'] });
+      .to.eql({ skipped: true, tests: ['Request | tenantId is set'] });
     expect(run(scripts.guard({ petId: 'saved', tenantId: 'set it' }, ['tenantId']), { tenantId: 't1' }))
       .to.eql({ skipped: true, tests: [] });
   });

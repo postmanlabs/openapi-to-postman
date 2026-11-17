@@ -29,7 +29,7 @@ module.exports = {
     ].concat(inputs.length ? [
       `  ${JSON.stringify(inputs)}.filter(function (name) { return contractMissing.indexOf(name) !== -1; })`,
       '    .forEach(function (name) {',
-      '      pm.test("Flow | " + name + " is set", function () {',
+      '      pm.test("Request | " + name + " is set", function () {',
       '        pm.expect.fail(name + " is empty: " + contractNeeds[name]);',
       '      });',
       '    });'
@@ -39,7 +39,7 @@ module.exports = {
     ]) : [];
   },
 
-  expectSuccess: ['', 'pm.test("Flow | Succeeds (2xx)", function () {',
+  expectSuccess: ['', 'pm.test("Request | Succeeds (2xx)", function () {',
     `  pm.expect(pm.response.code, ${RECEIVED}).to.be.within(200, 299);`, '});'],
 
   /**
@@ -60,7 +60,7 @@ module.exports = {
       '  if (!(pm.response.code >= 200 && pm.response.code < 300)) { return; }',
       '  var value = require("lodash").get(contractBody, save.path);',
       '',
-      '  pm.test("Flow | Saved " + save.variable + " from the response", function () {',
+      '  pm.test("Request | Saved " + save.variable + " from the response", function () {',
       '    pm.expect(value, save.path + " not found in response").to.not.be.undefined;',
       '  });',
       '  if (value !== undefined && value !== null) { pm.collectionVariables.set(save.variable, value); }',
@@ -87,7 +87,7 @@ module.exports = {
     ] : [];
   },
 
-  expectGone: ['', 'pm.test("Flow | Deleted resource is gone (404)", function () {',
+  expectGone: ['', 'pm.test("Request | Deleted resource is gone (404)", function () {',
     `  pm.expect(pm.response.code, ${RECEIVED}).to.equal(404);`, '});'],
 
   expectNoTokenRejected: ['pm.test("Rejects requests without a token (401/403)", function () {',
