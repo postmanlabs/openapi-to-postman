@@ -160,9 +160,16 @@ describe('validateSpec method (3.2)', function () {
       expect(validationResult.code).to.equal('SPEC_SWAGGER_VERSION_INVALID');
     });
 
-  it('should return false without a code when openapi and swagger are missing', function () {
+  it('should return false with version missing code when openapi and swagger are missing', function () {
     const validationResult = validateSpec(incorrectMockedEntryNoOpenapi, { includeWebhooks: true });
     expect(validationResult.result).to.be.false;
-    expect(validationResult).to.not.have.property('code');
+    expect(validationResult.code).to.equal('SPEC_VERSION_MISSING');
+  });
+
+  it('should return false with empty code for a null specification', function () {
+    const validationResult = validateSpec(null, { includeWebhooks: true });
+    expect(validationResult.result).to.be.false;
+    expect(validationResult.reason).to.equal('The Specification is null or undefined');
+    expect(validationResult.code).to.equal('SPEC_EMPTY');
   });
 });

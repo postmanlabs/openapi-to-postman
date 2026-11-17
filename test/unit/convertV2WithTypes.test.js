@@ -3638,12 +3638,22 @@ describe('convertV2WithTypes - specification validation error codes', function()
     });
   });
 
-  it('should not add a code for an uncoded validation failure', async function() {
+  it('should return SPEC_VERSION_MISSING when both "openapi" and "swagger" are missing', async function() {
     const { err } = await convertSpec(buildSpec({}));
 
     expect(err.name).to.equal('UserError');
     expect(err.message).to.equal('Specification must contain a semantic version number of the OAS specification');
-    expect(err).to.not.have.any.keys('code', 'meta');
+    expect(err.code).to.equal('SPEC_VERSION_MISSING');
+    expect(err).to.not.have.property('meta');
+  });
+
+  it('should not add a code for an uncoded validation failure', function(done) {
+    Converter.convertV2WithTypes({ type: 'unsupported', data: 'openapi: 3.0.3' }, {}, (err) => {
+      expect(err.name).to.equal('UserError');
+      expect(err.message).to.equal('Invalid input type (unsupported). type must be one of file/json/string.');
+      expect(err).to.not.have.any.keys('code', 'meta');
+      done();
+    });
   });
 });
 

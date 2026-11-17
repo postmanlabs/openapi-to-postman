@@ -143,6 +143,50 @@ describe('paths validation during conversion', function () {
   });
 });
 
+// Inputs that fail before the spec can be read. Bundle reports the same codes for them.
+const unreadableInputs = [
+  { input: 'an empty string', data: '', code: 'SPEC_EMPTY', reason: 'Empty input schema provided.' },
+  {
+    input: 'whitespace only',
+    data: '   \n',
+    code: 'SPEC_EMPTY',
+    reason: 'Invalid format. Input must be in YAML or JSON format.'
+  },
+  { input: 'only a comment', data: '# hi\n', code: 'SPEC_EMPTY', reason: 'The Specification is null or undefined' },
+  { input: 'only "~"', data: '~\n', code: 'SPEC_EMPTY', reason: 'The Specification is null or undefined' },
+  {
+    input: 'broken YAML',
+    data: 'openapi: 3.0.3\ninfo: [\n',
+    code: 'SPEC_INVALID_FORMAT',
+    reason: 'Invalid format. Input must be in YAML or JSON format.'
+  },
+  {
+    input: 'broken JSON',
+    data: '{"openapi": "3.0.3",',
+    code: 'SPEC_INVALID_FORMAT',
+    reason: 'Invalid format. Input must be in YAML or JSON format.'
+  },
+  {
+    input: 'a spec without an "openapi" field',
+    data: 'info:\n  title: Pets\n  version: 1.0.0\npaths: {}\n',
+    code: 'SPEC_VERSION_MISSING',
+    reason: 'Specification must contain a semantic version number of the OAS specification'
+  }
+];
+
+describe('validate returns validation error codes', function () {
+  unreadableInputs.forEach(({ input, data, code, reason }) => {
+    it(`should return ${code} for ${input}`, function () {
+      const result = Converter.validate({ type: 'string', data });
+
+      expect(result.result).to.be.false;
+      expect(result.reason).to.include(reason);
+      expect(result.code).to.equal(code);
+      expect(result).to.not.have.property('meta');
+    });
+  });
+});
+
 describe('index wrappers copy validation error codes', function () {
   const invalidSpec = buildSpec({ pets: operation }, { openapi: '3.0.3', info: undefined }),
     noValidPathsSpec = buildSpec({ pets: operation });
@@ -168,10 +212,22 @@ describe('index wrappers copy validation error codes', function () {
       });
     });
 
+    unreadableInputs.forEach(({ input, data, code, reason }) => {
+      it(`${title} should return a UserError with ${code} for ${input}`, function (done) {
+        invoke({ type: 'string', data }, {}, (err) => {
+          expect(err.name).to.equal('UserError');
+          expect(err.message).to.include(reason);
+          expect(err.code).to.equal(code);
+          expect(err).to.not.have.property('meta');
+          done();
+        });
+      });
+    });
+
     it(`${title} should return a UserError without a code for uncoded failures`, function (done) {
-      invoke({ type: 'string', data: '' }, {}, (err) => {
+      invoke({ type: 'unsupported', data: 'openapi: 3.0.3' }, {}, (err) => {
         expect(err.name).to.equal('UserError');
-        expect(err.message).to.equal('Empty input schema provided.');
+        expect(err.message).to.equal('Invalid input type (unsupported). type must be one of file/json/string.');
         expect(err).to.not.have.any.keys('code', 'meta');
         done();
       });

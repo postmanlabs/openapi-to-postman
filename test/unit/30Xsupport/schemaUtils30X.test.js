@@ -17,6 +17,14 @@ describe('parseSpec method', function () {
     const parsedSpec = concreteUtils.parseSpec(fileContent);
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason).to.equal('Invalid format. Input must be in YAML or JSON format.');
+    expect(parsedSpec.code).to.equal('SPEC_EMPTY');
+  });
+
+  it('should return false with invalid format code when the content is not valid YAML or JSON', function () {
+    const parsedSpec = concreteUtils.parseSpec('openapi: 3.0.3\ninfo: [\n');
+    expect(parsedSpec.result).to.be.false;
+    expect(parsedSpec.reason).to.include('Invalid format. Input must be in YAML or JSON format.');
+    expect(parsedSpec.code).to.equal('SPEC_INVALID_FORMAT');
   });
 
   it('should return false and Spec must contain info object', function () {
@@ -57,11 +65,11 @@ describe('parseSpec method', function () {
       expect(parsedSpec.code).to.equal('SPEC_SWAGGER_VERSION_INVALID');
     });
 
-  it('should return false without a code when both openapi and swagger are missing', function () {
+  it('should return false with version missing code when both openapi and swagger are missing', function () {
     const parsedSpec = concreteUtils.parseSpec({ info: { title: 'a', version: '1' }, paths: {} });
     expect(parsedSpec.result).to.be.false;
     expect(parsedSpec.reason).to.equal('Specification must contain a semantic version number of the OAS specification');
-    expect(parsedSpec).to.not.have.property('code');
+    expect(parsedSpec.code).to.equal('SPEC_VERSION_MISSING');
   });
 });
 
