@@ -187,6 +187,28 @@ describe('validate returns validation error codes', function () {
   });
 });
 
+describe('path validation runs on conversion only', function () {
+  [
+    { title: 'path keys without a leading slash', spec: buildSpec({ pets: operation }), code: 'SPEC_NO_VALID_PATHS' },
+    { title: 'paths that is not an object', spec: buildSpec([operation]), code: 'SPEC_PATHS_INVALID' }
+  ].forEach(({ title, spec, code }) => {
+    it(`validate should accept a spec with ${title}, so it is still detected as OpenAPI`, function () {
+      const result = Converter.validate({ type: 'json', data: spec });
+
+      expect(result.result).to.be.true;
+      expect(result).to.not.have.property('code');
+    });
+
+    it(`convertV2WithTypes should reject the same spec with ${code}`, function (done) {
+      Converter.convertV2WithTypes({ type: 'json', data: spec }, {}, (err) => {
+        expect(err.name).to.equal('UserError');
+        expect(err.code).to.equal(code);
+        done();
+      });
+    });
+  });
+});
+
 describe('index wrappers copy validation error codes', function () {
   const invalidSpec = buildSpec({ pets: operation }, { openapi: '3.0.3', info: undefined }),
     noValidPathsSpec = buildSpec({ pets: operation });

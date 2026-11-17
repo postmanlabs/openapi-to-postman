@@ -10,7 +10,7 @@
 ### Changed
 
 -   A root file that parses to `null` (e.g. only comments or `~`) now fails bundling with a `ParseError` (code `SPEC_EMPTY`) instead of a generic error.
--   Validation now rejects a specification whose `paths` is not an object (`SPEC_PATHS_INVALID`), or whose non-extension path keys all lack a leading `/` (`SPEC_NO_VALID_PATHS`). Such specs previously converted to unusable collections. Specs with at least one path starting with `/` convert as before.
+-   Conversion and sync now reject a specification whose `paths` is not an object (`SPEC_PATHS_INVALID`), or whose non-extension path keys all lack a leading `/` (`SPEC_NO_VALID_PATHS`). Such specs previously converted to unusable collections. `validate()` still accepts them, so they are still detected as OpenAPI. Specs with at least one path starting with `/` convert as before.
 
 ### Fixed
 
