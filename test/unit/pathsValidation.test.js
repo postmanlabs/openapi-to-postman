@@ -269,13 +269,27 @@ describe('index wrappers copy validation error codes', function () {
 describe('generateError with coded errors', function () {
   const invalidDefinition = { openapi: '3.0.3', info: {}, paths: [] };
 
-  it('should return a coded error unchanged instead of wrapping it', function () {
-    const error = new Error('Duplicate sanitised parameter name pet_id');
+  [
+    { title: 'an invalid definition', definition: invalidDefinition },
+    { title: 'a valid definition', definition: { openapi: '3.0.3', info: { title: 't', version: '1' }, paths: {} } }
+  ].forEach(({ title, definition }) => {
+    it(`should return a coded error of another class as a UserError for ${title}`, function () {
+      const error = new Error('Duplicate sanitised parameter name pet_id');
 
-    error.code = 'SPEC_DUPLICATE_COMPONENT_NAME';
-    error.meta = { kind: 'parameter', name: 'pet_id' };
+      error.name = 'S2OError';
+      error.options = { resolver: () => { return null; } };
+      error.code = 'SPEC_DUPLICATE_COMPONENT_NAME';
+      error.meta = { kind: 'parameter', name: 'pet_id' };
 
-    expect(generateError(invalidDefinition, '3.0.x', error)).to.equal(error);
+      const generatedError = generateError(definition, '3.0.x', error);
+
+      expect(generatedError).to.be.instanceOf(UserError);
+      expect(generatedError.message).to.equal('Duplicate sanitised parameter name pet_id');
+      expect(generatedError.code).to.equal('SPEC_DUPLICATE_COMPONENT_NAME');
+      expect(generatedError.meta).to.eql({ kind: 'parameter', name: 'pet_id' });
+      // The original error, with the converter's options, is not attached
+      expect(generatedError.data).to.eql({});
+    });
   });
 
   it('should return coded UserError and ParseError unchanged', function () {

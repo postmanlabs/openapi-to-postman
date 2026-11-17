@@ -10,6 +10,7 @@
 ### Changed
 
 -   A root file that parses to `null` (e.g. only comments or `~`) now fails bundling with a `ParseError` (code `SPEC_EMPTY`) instead of a generic error.
+-   Duplicate sanitised component names in a Swagger 2.0 specification are now reported as a `UserError` (code `SPEC_DUPLICATE_COMPONENT_NAME`) instead of the raw `S2OError`, also when the specification fails schema validation as well.
 -   Conversion and sync now reject a specification whose `paths` is not an object (`SPEC_PATHS_INVALID`), or whose non-extension path keys all lack a leading `/` (`SPEC_NO_VALID_PATHS`). Such specs previously converted to unusable collections. `validate()` still accepts them, so they are still detected as OpenAPI. Specs with at least one path starting with `/` convert as before.
 
 ### Fixed

@@ -3630,12 +3630,27 @@ describe('convertV2WithTypes - specification validation error codes', function()
         const spec = buildSpec({ swagger: '2.0' }, { [container]: { 'pet id': value, 'pet_id': value } }),
           { err } = await convertSpec(spec);
 
-        expect(err.name).to.equal('S2OError');
+        expect(err.name).to.equal('UserError');
         expect(err.message).to.equal(`Duplicate sanitised ${kind} name pet_id`);
         expect(err.code).to.equal('SPEC_DUPLICATE_COMPONENT_NAME');
         expect(err.meta).to.eql({ kind, name: 'pet_id' });
+        expect(err.data).to.eql({});
       });
     });
+
+    it('should return the duplicate name error, not a schema error, when the spec also fails schema validation',
+      async function() {
+        const spec = buildSpec({ swagger: '2.0' }, {
+            info: { title: 1, version: '1.0.0' },
+            securityDefinitions: { 'pet id': { type: 'basic' }, 'pet_id': { type: 'basic' } }
+          }),
+          { err } = await convertSpec(spec);
+
+        expect(err.name).to.equal('UserError');
+        expect(err.message).to.equal('Duplicate sanitised securityScheme name pet_id');
+        expect(err.code).to.equal('SPEC_DUPLICATE_COMPONENT_NAME');
+        expect(err.meta).to.eql({ kind: 'securityScheme', name: 'pet_id' });
+      });
   });
 
   it('should return SPEC_VERSION_MISSING when both "openapi" and "swagger" are missing', async function() {

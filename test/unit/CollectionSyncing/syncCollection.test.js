@@ -463,7 +463,7 @@ describe('syncCollection (index) - specification validation error codes', functi
       responses: { 'not found': { description: 'Not found' }, 'not_found': { description: 'Not found' } }
     }));
 
-    expect(err.name).to.equal('S2OError');
+    expect(err.name).to.equal('UserError');
     expect(err.message).to.equal('Duplicate sanitised response name not_found');
     expect(err.code).to.equal('SPEC_DUPLICATE_COMPONENT_NAME');
     expect(err.meta).to.eql({ kind: 'response', name: 'not_found' });
