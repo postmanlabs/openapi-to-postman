@@ -21,14 +21,28 @@ export type {
   ConversionIssue,
   BundleResult,
   FilesResult,
-  ValidationResult
+  ValidationResult,
+  SpecValidationErrorCode,
+  SpecValidationErrorMeta
 } from './types';
 
 const { MODULE_VERSION } = require('../lib/schemapack.js');
 const SchemaPack = require('../lib/schemapack.js').SchemaPack;
 const UserError = require('../lib/common/UserError');
+const { assignErrorCode } = require('../lib/common/specValidationErrors.js');
 
 const DEFAULT_INVALID_ERROR = 'Provided definition is invalid';
+
+/**
+ * Creates the error returned when the specification fails validation, carrying the validation code and meta if any
+ * @param {object} schema - The SchemaPack instance that failed validation
+ * @returns {Error} UserError with the validation reason
+ */
+function createValidationError(schema: { validationResult?: ValidationResult | null }): Error {
+  const error = new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR));
+
+  return assignErrorCode(error, schema.validationResult);
+}
 
 /**
  * Converts an OpenAPI specification to a Postman Collection (v1 API)
@@ -43,7 +57,7 @@ export function convert(input: SpecificationInput, options: Options, cb: Callbac
   if (schema.validated) {
     return schema.convert(cb);
   }
-  return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
+  return cb(createValidationError(schema));
 }
 
 /**
@@ -60,7 +74,7 @@ export function convertV2(input: SpecificationInput, options: Options, cb: Callb
     return schema.convertV2(cb);
   }
 
-  return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
+  return cb(createValidationError(schema));
 }
 
 /**
@@ -78,7 +92,7 @@ export function convertV2WithTypes(input: SpecificationInput, options: Options, 
     return schema.convertV2(cb);
   }
 
-  return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
+  return cb(createValidationError(schema));
 }
 
 /**
@@ -185,7 +199,7 @@ export function syncCollection(
     return schema.syncCollection(currentCollection, syncOptions, cb);
   }
 
-  return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
+  return cb(createValidationError(schema));
 }
 
 export { SchemaPack };
