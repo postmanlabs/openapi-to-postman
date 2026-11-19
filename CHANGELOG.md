@@ -2,11 +2,24 @@
 
 ## [Unreleased]
 
+## [v6.4.4] - 2026-11-19
+
 ## [v6.4.3] - 2026-11-10
 
 ### Added
 
 -   Added support for multiple servers in v2 collection generation and syncing. Every unique root, path-level and operation-level server is added as a `baseUrl`, `baseUrl1`, … collection variable, and each request uses the variable of its effective server (operation > path > root).
+-   Added `code` and `meta` to bundle results, validation results and errors for known specification authoring errors (e.g. `SPEC_VERSION_MISMATCH`, `SPEC_INFO_MISSING`, `SPEC_DUPLICATE_COMPONENT_NAME`), so consumers can show specific messages. Existing error names, messages and result shapes are unchanged.
+
+### Changed
+
+-   A root file that parses to `null` (e.g. only comments or `~`) now fails bundling with a `ParseError` (code `SPEC_EMPTY`) instead of a generic error.
+-   Duplicate sanitised component names in a Swagger 2.0 specification are now reported as a `UserError` (code `SPEC_DUPLICATE_COMPONENT_NAME`) instead of the raw `S2OError`, also when the specification fails schema validation as well.
+-   Conversion and sync now reject a specification whose `paths` is not an object (`SPEC_PATHS_INVALID`), or whose non-extension path keys all lack a leading `/` (`SPEC_NO_VALID_PATHS`). Such specs previously converted to unusable collections. `validate()` still accepts them, so they are still detected as OpenAPI. Specs with at least one path starting with `/` convert as before.
+
+### Fixed
+
+-   Fixed the extracted-type key of path keys with a query string or fragment (e.g. `/pets?limit=1`), which now leaves them out (`get/pets`) to match the generated request. The generated collection is unchanged. If a spec has both `/pets` and `/pets?limit=1` for the same method, both get the same key and the types of the later one are kept.
 
 ### Fixed
 
@@ -735,7 +748,9 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.3...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.4...HEAD
+
+[v6.4.4]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.3...v6.4.4
 
 [v6.4.3]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.2...v6.4.3
 

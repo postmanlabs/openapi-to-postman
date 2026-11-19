@@ -1007,3 +1007,93 @@ describe('bundle files method - 2.0', function() {
     expect(JSON.stringify(JSON.parse(res.output.data[0].bundledContent), null, 2)).to.be.equal(expected);
   });
 });
+
+describe('bundle files method - 2.0 specification validation error codes', function() {
+  it('Should return SPEC_VERSION_MISMATCH for a multi-file OpenAPI 3.0 root when 2.0 is expected', async function() {
+    const rootContent = fs.readFileSync(basicExample + '/index.yaml', 'utf8')
+        .replace(/swagger: ['"]?2\.0['"]?/, 'openapi: 3.0.3'),
+      input = {
+        type: 'multiFile',
+        specificationVersion: '2.0',
+        rootFiles: [{ path: '/index.yaml' }],
+        data: [
+          { path: '/index.yaml', content: rootContent },
+          { path: '/info.yaml', content: fs.readFileSync(basicExample + '/info.yaml', 'utf8') },
+          { path: '/paths.yaml', content: fs.readFileSync(basicExample + '/paths.yaml', 'utf8') }
+        ],
+        options: {},
+        bundleFormat: 'JSON'
+      },
+      res = await Converter.bundle(input);
+
+    expect(res.result).to.be.false;
+    expect(res.output.data).to.eql([]);
+    expect(res.code).to.equal('SPEC_VERSION_MISMATCH');
+    expect(res.meta).to.eql({ expected: '2.0', foundKey: 'openapi', found: '3.0.3' });
+  });
+
+  it('Should return SPEC_VERSION_MISMATCH when "swagger" is not 2.x', async function() {
+    const res = await Converter.bundle({
+      type: 'multiFile',
+      specificationVersion: '2.0',
+      rootFiles: [{ path: '/index.yaml' }],
+      data: [{ path: '/index.yaml', content: 'swagger: "3.0"\ninfo:\n  title: a\n  version: "1"\npaths: {}\n' }],
+      options: {},
+      bundleFormat: 'JSON'
+    });
+
+    expect(res.code).to.equal('SPEC_VERSION_MISMATCH');
+    expect(res.meta).to.eql({ expected: '2.0', foundKey: 'swagger', found: '3.0' });
+  });
+
+  it('Should return SPEC_VERSION_MISSING when no "swagger" field is present', async function() {
+    const res = await Converter.bundle({
+      type: 'multiFile',
+      specificationVersion: '2.0',
+      rootFiles: [{ path: '/index.yaml' }],
+      data: [{ path: '/index.yaml', content: 'info:\n  title: a\n  version: "1"\npaths: {}\n' }],
+      options: {},
+      bundleFormat: 'JSON'
+    });
+
+    expect(res.result).to.be.false;
+    expect(res.code).to.equal('SPEC_VERSION_MISSING');
+    expect(res.meta).to.eql({ expected: '2.0' });
+  });
+
+  it('Should bundle a numeric "swagger: 2.0" without a version code', async function() {
+    const res = await Converter.bundle({
+      type: 'multiFile',
+      specificationVersion: '2.0',
+      rootFiles: [{ path: '/index.yaml' }],
+      data: [{ path: '/index.yaml', content: 'swagger: 2.0\ninfo:\n  title: a\n  version: "1"\npaths: {}\n' }],
+      options: {},
+      bundleFormat: 'JSON'
+    });
+
+    expect(res.result).to.be.true;
+    expect(res).to.not.have.property('code');
+  });
+
+  it('Should throw a ParseError with SPEC_EMPTY when the root file is empty', async function() {
+    let error;
+
+    try {
+      await Converter.bundle({
+        type: 'multiFile',
+        specificationVersion: '2.0',
+        rootFiles: [{ path: '/index.yaml' }],
+        data: [{ path: '/index.yaml', content: '' }],
+        options: {},
+        bundleFormat: 'JSON'
+      });
+    }
+    catch (err) {
+      error = err;
+    }
+
+    expect(error.name).to.equal('ParseError');
+    expect(error.code).to.equal('SPEC_EMPTY');
+  });
+});
+
