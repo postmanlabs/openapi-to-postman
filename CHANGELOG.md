@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v6.4.4] - 2026-11-19
+
 ## [v6.4.3] - 2026-11-10
 
 ### Added
@@ -746,7 +748,9 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.3...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.4...HEAD
+
+[v6.4.4]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.3...v6.4.4
 
 [v6.4.3]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.2...v6.4.3
 
