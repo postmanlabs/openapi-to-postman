@@ -853,6 +853,11 @@
       , defaultsHash = {}
       , customRules = [];
 
+    function patternCode(i, patterns) {
+      var regExpCode = opts.regExp ? 'regExp' : 'new RegExp';
+      return 'var pattern' + i + ' = ' + regExpCode + '(' + util.toQuotedString(patterns[i]) + ');';
+    }
+
     root = root || { schema: schema, refVal: refVal, refs: refs };
 
     var c = checkCompiling.call(this, schema, root, baseId);
@@ -939,6 +944,7 @@
           'equal',
           'ucs2length',
           'ValidationError',
+          'regExp',
           sourceCode
         );
 
@@ -952,7 +958,8 @@
           customRules,
           equal,
           ucs2length,
-          ValidationError
+          ValidationError,
+          opts.regExp
         );
 
         refVal[0] = validate;
@@ -1166,11 +1173,6 @@
       if (c.schema == schema && c.root == root && c.baseId == baseId) return i;
     }
     return -1;
-  }
-
-
-  function patternCode(i, patterns) {
-    return 'var pattern' + i + ' = new RegExp(' + util.toQuotedString(patterns[i]) + ');';
   }
 
 
@@ -3749,6 +3751,7 @@
     var $errSchemaPath = it.errSchemaPath + '/' + $keyword;
     var $breakOnError = !it.opts.allErrors;
     var $data = 'data' + ($dataLvl || '');
+    var $valid = 'valid' + $lvl;
     var $isData = it.opts.$data && $schema && $schema.$data,
       $schemaValue;
     if ($isData) {
@@ -3757,12 +3760,21 @@
     } else {
       $schemaValue = $schema;
     }
-    var $regexp = $isData ? '(new RegExp(' + $schemaValue + '))' : it.usePattern($schema);
-    out += 'if ( ';
+    var $regExpCode = it.opts.regExp ? 'regExp' : 'new RegExp';
     if ($isData) {
-      out += ' (' + ($schemaValue) + ' !== undefined && typeof ' + ($schemaValue) + ' != \'string\') || ';
+      out += ' var ' + ($valid) + ' = true; try { ' + ($valid) + ' = ' + ($regExpCode) + '(' + ($schemaValue) + ').test(' + ($data) + '); } catch(e) { ' + ($valid) + ' = false; } if ( ';
+      if ($isData) {
+        out += ' (' + ($schemaValue) + ' !== undefined && typeof ' + ($schemaValue) + ' != \'string\') || ';
+      }
+      out += ' !' + ($valid) + ') {';
+    } else {
+      var $regexp = it.usePattern($schema);
+      out += ' if ( ';
+      if ($isData) {
+        out += ' (' + ($schemaValue) + ' !== undefined && typeof ' + ($schemaValue) + ' != \'string\') || ';
+      }
+      out += ' !' + ($regexp) + '.test(' + ($data) + ') ) {';
     }
-    out += ' !' + ($regexp) + '.test(' + ($data) + ') ) {   ';
     var $$outStack = $$outStack || [];
     $$outStack.push(out);
     out = ''; /* istanbul ignore else */
