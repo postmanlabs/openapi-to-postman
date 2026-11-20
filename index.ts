@@ -10,7 +10,8 @@ import type {
   OptionsRecord,
   BundleResult,
   FilesResult,
-  ValidationResult
+  ValidationResult,
+  SpecValidationErrorCode
 } from './types';
 
 export type {
@@ -29,7 +30,30 @@ export type {
 const { MODULE_VERSION } = require('../lib/schemapack.js');
 const SchemaPack = require('../lib/schemapack.js').SchemaPack;
 const UserError = require('../lib/common/UserError');
-const { assignErrorCode } = require('../lib/common/specValidationErrors.js');
+const specValidationErrors = require('../lib/common/specValidationErrors.js');
+const { assignErrorCode } = specValidationErrors;
+
+/**
+ * Codes for known specification authoring errors, attached as `code` to validation results and errors
+ */
+export const SPEC_VALIDATION_ERROR_CODES: Readonly<Record<SpecValidationErrorCode, SpecValidationErrorCode>> =
+  specValidationErrors.SPEC_VALIDATION_ERROR_CODES;
+
+/**
+ * Returns the user-facing message for a specification validation error code
+ * @param {unknown} code - Validation error code, as attached to validation results and errors
+ * @param {unknown} [meta] - Details reported along with the code
+ * @param {string} [expectedVersion] - Version the specification is set up as (2.0, 3.0, 3.1 or 3.2), used when meta
+ * doesn't carry it
+ * @returns {string | undefined} The message, or undefined for an unknown code or incomplete meta
+ */
+export function getSpecValidationErrorMessage(
+  code: unknown,
+  meta?: unknown,
+  expectedVersion?: string
+): string | undefined {
+  return specValidationErrors.getSpecValidationErrorMessage(code, meta, expectedVersion);
+}
 
 const DEFAULT_INVALID_ERROR = 'Provided definition is invalid';
 
@@ -217,5 +241,7 @@ export default {
   detectRelatedFiles,
   bundle,
   syncCollection,
+  getSpecValidationErrorMessage,
+  SPEC_VALIDATION_ERROR_CODES,
   SchemaPack
 };
