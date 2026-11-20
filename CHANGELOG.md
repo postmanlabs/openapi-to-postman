@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Added `getSpecValidationErrorMessage(code, meta, expectedVersion)` and `SPEC_VALIDATION_ERROR_CODES` exports, which return the user-facing message for a specification validation error code. They can also be imported without loading the converter from `openapi-to-postmanv2/lib/common/specValidationErrors`, which ships with its own type declarations.
+
 ## [v6.4.4] - 2026-11-19
 
 ## [v6.4.3] - 2026-11-10
