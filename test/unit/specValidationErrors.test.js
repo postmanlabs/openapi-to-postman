@@ -79,6 +79,15 @@ describe('getSpecValidationErrorMessage', function () {
       );
     });
 
+    ['3.0.0', '3', ''].forEach((expected) => {
+      it(`should fall back to the expected version argument when meta has the unknown version "${expected}"`,
+        function () {
+          expect(getSpecValidationErrorMessage('SPEC_VERSION_MISSING', { expected }, '3.0')).to.equal(
+            'Add the "openapi" field with a version, for example "3.0.3".'
+          );
+        });
+    });
+
     it('should return undefined for an unknown expected version', function () {
       expect(getSpecValidationErrorMessage('SPEC_VERSION_MISSING', { expected: '4.0' })).to.be.undefined;
       expect(getSpecValidationErrorMessage('SPEC_VERSION_MISSING', {})).to.be.undefined;
@@ -113,6 +122,27 @@ describe('getSpecValidationErrorMessage', function () {
       })).to.equal(
         'This spec is set up as OpenAPI 3.2, but it\'s written as Swagger 2.0. ' +
         'Use an "openapi" field with a 3.2.x version.'
+      );
+    });
+
+    it('should describe a 3.x spec written with another swagger version', function () {
+      expect(getSpecValidationErrorMessage('SPEC_VERSION_MISMATCH', {
+        expected: '3.0',
+        foundKey: 'swagger',
+        found: '1.2'
+      })).to.equal(
+        'This spec is set up as OpenAPI 3.0, but it\'s written as Swagger 1.2. ' +
+        'Use an "openapi" field with a 3.0.x version.'
+      );
+    });
+
+    it('should fall back to the expected version argument when meta has an unknown version', function () {
+      expect(getSpecValidationErrorMessage('SPEC_VERSION_MISMATCH', {
+        expected: '3.0.0',
+        foundKey: 'openapi',
+        found: '3.1.0'
+      }, '3.0')).to.equal(
+        'This spec is set up as OpenAPI 3.0, but its "openapi" field is "3.1.0". Change it to a 3.0.x version.'
       );
     });
 
@@ -277,6 +307,16 @@ describe('specification validation error messages for real conversions', functio
       'Add the "swagger" field with the value "2.0".');
   });
 
+  it('should give a message for SPEC_VERSION_MISSING from bundle given an unnormalized version', async function () {
+    const res = await bundleRoot(getRootContent(''), '3.0.0');
+
+    expect(res.code).to.equal('SPEC_VERSION_MISSING');
+    expect(res.meta).to.eql({ expected: '3.0.0' });
+    expect(getSpecValidationErrorMessage(res.code, res.meta, '3.0')).to.equal(
+      'Add the "openapi" field with a version, for example "3.0.3".'
+    );
+  });
+
   [
     {
       header: 'openapi: 3.1.0\n',
@@ -288,6 +328,12 @@ describe('specification validation error messages for real conversions', functio
       expected: '3.2',
       message: 'This spec is set up as OpenAPI 3.2, but it\'s written as Swagger 2.0. ' +
         'Use an "openapi" field with a 3.2.x version.'
+    },
+    {
+      header: 'swagger: \'1.2\'\n',
+      expected: '3.0',
+      message: 'This spec is set up as OpenAPI 3.0, but it\'s written as Swagger 1.2. ' +
+        'Use an "openapi" field with a 3.0.x version.'
     },
     {
       header: 'openapi: 3.0.3\n',

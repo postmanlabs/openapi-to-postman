@@ -36,7 +36,7 @@ const { assignErrorCode } = specValidationErrors;
 /**
  * Codes for known specification authoring errors, attached as `code` to validation results and errors
  */
-export const SPEC_VALIDATION_ERROR_CODES: Readonly<Record<SpecValidationErrorCode, SpecValidationErrorCode>> =
+export const SPEC_VALIDATION_ERROR_CODES: { readonly [Code in SpecValidationErrorCode]: Code } =
   specValidationErrors.SPEC_VALIDATION_ERROR_CODES;
 
 /**
