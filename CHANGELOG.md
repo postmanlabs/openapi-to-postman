@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v6.4.5] - 2026-11-23
+
 ### Added
 
 -   Added `getSpecValidationErrorMessage(code, meta, expectedVersion)` and `SPEC_VALIDATION_ERROR_CODES` exports, which return the user-facing message for a specification validation error code. They can also be imported without loading the converter from `openapi-to-postmanv2/lib/common/specValidationErrors`, which ships with its own type declarations.
@@ -752,7 +754,9 @@ Newer releases follow the [Keep a Changelog](https://keepachangelog.com/en/1.0.0
 
 -   Base release
 
-[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.4...HEAD
+[Unreleased]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.5...HEAD
+
+[v6.4.5]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.4...v6.4.5
 
 [v6.4.4]: https://github.com/postmanlabs/openapi-to-postman/compare/v6.4.3...v6.4.4
 
