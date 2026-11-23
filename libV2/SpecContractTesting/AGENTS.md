@@ -248,20 +248,23 @@ was run (`errors` or missing inputs).
 > **Status:** agreed design, not implemented. Today the environment only fills `{{variables}}` the requests already
 > use: linked values, inputs, `baseUrl`, auth and `-H` headers.
 
-- **Rule:** a value set in the environment replaces every value with that name in the requests: path, query and
-  header parameters, body fields at any depth, values the run would chain, and spec examples. Names follow the
-  variable names above (`containerId`, `specificationId` for a bare `{id}`, `xTenantId` for `X-Tenant-Id`).
+- **Rule:** a value set in the environment replaces every value whose name is exactly the key, as written in the
+  request: a path, query or header parameter name (`id`, `containerId`, `X-Tenant-Id`) or a body field name at any
+  depth (`ownerId`). Matching never uses the derived variable names from linking: `id` is not `specificationId`
+  and `X-Tenant-Id` is not `xTenantId`. So `id` overrides every path parameter named `id`, whatever its resource.
+- **Variables the requests already use** (`{{specificationId}}`, `{{baseUrl}}`, `{{xAccessToken}}`) keep being
+  filled from the environment by their own names: ordinary variable resolution, as today.
 - **One environment at a time:** the default file, or `-e` instead of it; `--env-var` applies on top and wins.
   Precedence: `--env-var`, then the environment, then values saved during the run, then the request's spec example.
 - **Notice, in `spec contract-test` only:** before the run, the command lists the values the environment overrides,
   and says explicitly when one replaces a chained value, e.g.
-  `specificationId: the environment's value replaces the one POST /specifications returns (24 requests)`.
+  `id: replaces the value POST /specifications returns in GET /specifications/{id} and 23 other requests`.
 - **Without an override,** nothing changes: values are chained as usual, and inputs still block the run until
   they are set in the environment.
 - **Not part of this:** sending optional parameters. An override only applies to values a request already sends.
-- **What it means for this module:** every value a request sends becomes a `{{name}}` placeholder, defaulting to
-  that request's own spec example when the environment has no value (a pre-request script sets it only then), so
-  the override works for cloud environments too.
+- **What it means for this module:** requests stay as generated; a pre-request script replaces each value whose
+  exact name has an environment value, read from the environment the run resolved, so it works for cloud
+  environments too. The script runs before the guard, so an overridden chained value doesn't need its producer.
 
 ## Tests
 
