@@ -243,6 +243,26 @@ An environment value for a linked variable wins over the one the run saves. Exit
 1 a check failed or an error, 2 not OpenAPI, a bad flag or a `--spec-ref` problem, 3 auth failure, 8 nothing
 was run (`errors` or missing inputs).
 
+## Decided, not built yet: overriding values from the environment
+
+> **Status:** agreed design, not implemented. Today the environment only fills `{{variables}}` the requests already
+> use: linked values, inputs, `baseUrl`, auth and `-H` headers.
+
+- **Rule:** a value set in the environment replaces every value with that name in the requests: path, query and
+  header parameters, body fields at any depth, values the run would chain, and spec examples. Names follow the
+  variable names above (`containerId`, `specificationId` for a bare `{id}`, `xTenantId` for `X-Tenant-Id`).
+- **One environment at a time:** the default file, or `-e` instead of it; `--env-var` applies on top and wins.
+  Precedence: `--env-var`, then the environment, then values saved during the run, then the request's spec example.
+- **Notice, in `spec contract-test` only:** before the run, the command lists the values the environment overrides,
+  and says explicitly when one replaces a chained value, e.g.
+  `specificationId: the environment's value replaces the one POST /specifications returns (24 requests)`.
+- **Without an override,** nothing changes: values are chained as usual, and inputs still block the run until
+  they are set in the environment.
+- **Not part of this:** sending optional parameters. An override only applies to values a request already sends.
+- **What it means for this module:** every value a request sends becomes a `{{name}}` placeholder, defaulting to
+  that request's own spec example when the environment has no value (a pre-request script sets it only then), so
+  the override works for cloud environments too.
+
 ## Tests
 
 - `test/unit/specContractTesting.test.js`, fixtures in `test/data/specContractTesting/` (`petstore`, `nested`,
