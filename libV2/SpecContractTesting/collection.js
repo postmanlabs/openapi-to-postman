@@ -5,7 +5,7 @@ const _ = require('lodash'),
   scripts = require('./scripts'),
 
   SAVED_REASON = 'the request that saves it did not succeed',
-  INPUT_REASON = 'no request returns it: set it as a collection variable',
+  INPUT_REASON = 'no request returns it: set it in the environment',
 
   isIdParam = (op, param) => { return param.in === 'path' && param.name === op.idParam; },
 
@@ -313,8 +313,8 @@ const _ = require('lodash'),
    * @param {Object} options - options
    * @param {Object} options.collection - converter output
    * @param {Object[]} options.operations - operations
-   * @param {Object[]} options.links - links; one with a null producer is an input, declared as an empty
-   *   collection variable
+   * @param {Object[]} options.links - links; one with a null producer is an input, which the caller supplies,
+   *   e.g. as an environment variable
    * @param {Object} options.flows - run order from buildFlows
    * @param {String} options.seed - seed for the collection id (the spec hash)
    * @param {Object[]} [options.headers] - { name, value, credential }: sent on every request; credential
@@ -325,12 +325,9 @@ const _ = require('lodash'),
   buildCollection = ({ collection, operations, links, flows, seed, headers = [] }) => {
     const source = headers.length ? applyHeaders(collection, headers) : collection,
       { requests, unapplied } = buildRequests({ collection: source, operations, links, flows, headers }),
-      variables = (source.variable || []).concat(_.filter(links, { producer: null })
-        .map((link) => { return { key: link.variable, value: '' }; })),
       info = Object.assign({}, source.info, { _postman_id: uuidFrom(seed) });
 
-    return { collection: Object.assign({}, source, { info, item: requests, variable: _.uniqBy(variables, 'key') }),
-      unapplied };
+    return { collection: Object.assign({}, source, { info, item: requests }), unapplied };
   };
 
 module.exports = { buildCollection };

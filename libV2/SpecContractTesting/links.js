@@ -1,6 +1,6 @@
 // Producer -> consumer links by name. A value's variable is named after the parameter that needs it. It is
 // filled from a response field with the same name, else from the `id` returned by the request that creates
-// the resource it identifies. Values nothing fills are inputs: collection variables the caller sets.
+// the resource it identifies. Values nothing fills are inputs the caller supplies, e.g. as environment variables.
 const _ = require('lodash'),
   { ROLE_RANK } = require('./operations'),
   { isContainer, normalizeName: normalize, isIdField, isMap, unwrap } = require('./normalize'),

@@ -3,8 +3,8 @@
 Turns the output of `convertV2WithTypes` into a contract-test collection: requests in a valid run order,
 ids passed from one request to the next, a children-first teardown, and negative checks. Works from an
 unmodified OpenAPI 3.x or Swagger 2.0 spec: no `links`, no chaining extensions, no spec order required.
-Values are linked by name; a value no response returns becomes an empty collection variable for the caller
-to set.
+Values are linked by name; a value no response returns is an input the caller supplies, e.g. as an
+environment variable.
 
 Public entry point: `buildContractTestCollection(conversion, options)` in `index.ts`, also on the default
 export. Collection generation itself is unchanged; this is a pure post-step.
@@ -13,9 +13,8 @@ export. Collection generation itself is unchanged; this is a pure post-step.
 
 - openapi-to-postman takes the conversion result plus options and returns a collection and a summary. It
   does no file I/O.
-- The caller (postman-cli's `postman spec contract-test`) owns the command and its flags, reading the spec, saving the
-  collection and keeping its variable values, checking that inputs are set, CI exit codes and running the
-  collection.
+- The caller (postman-cli's `postman spec contract-test`) owns the command and its flags, reading the spec,
+  supplying inputs from the environment and checking they are set, CI exit codes and running the collection.
 - The input must come from `convertV2WithTypes(spec, { generateContractTests: true, parametersResolution:
   'Example' })`. A conversion without contract tests (no `CONTRACT_TEST_MARKER` in any test script) is
   rejected.
@@ -44,8 +43,7 @@ export. Collection generation itself is unchanged; this is a pure post-step.
 5. **Order.** `buildFlows` builds the run order from the links.
 6. **Drop unordered consumers.** A consumer whose producer runs after it is unwired and reported in
    `errors`.
-7. **Collection.** Requests are copied, wired, given scripts and numbered in run order; inputs are declared
-   as empty collection variables.
+7. **Collection.** Requests are copied, wired, given scripts and numbered in run order.
 
 ## Operations and classification (`operations.js`)
 
@@ -114,8 +112,8 @@ one missing value becomes an input: one that unblocks a request on its own, else
 create returns, then alphabetically. Then each variable takes its best candidate that doesn't need it. So
 `ownerId` comes from `POST /owners`, not from `GET /pets/{petId}`, which echoes it but needs `petId`.
 
-A link with `producer: null` is an **input**: the collection declares it as an empty collection variable and
-the summary lists it with its consumers.
+A link with `producer: null` is an **input**: the summary lists it with its consumers, and the caller supplies
+its value, e.g. as an environment variable. It isn't declared in the collection.
 
 ## Run order (`order.js`)
 
@@ -179,8 +177,8 @@ from the schema (strings become `"string"`, numbers are random). This module onl
 
 **Other output details:** `headers` are sent on every request, replacing same-named spec headers; credential
 headers replace the spec's auth and are left out of the no-token checks. Item ids are `ct-${hash(stepId)}`. `info._postman_id` is derived from the spec hash.
-Request and response content is left exactly as the converter produced it. Inputs are added as empty
-collection variables; values saved during the run are not declared.
+Request and response content is left exactly as the converter produced it. Neither inputs nor values saved
+during the run are declared as collection variables.
 
 ## API
 
@@ -201,7 +199,7 @@ Result: `{ result: true, output: [{ type: 'collection', data }], summary }` or `
 |---|---|
 | `excluded` | Operations left out by `exclude`, sorted |
 | `links` | `{ variable, producer: { operation, value: $response.body#<pointer> }, consumers: [{ operation, param }] }` |
-| `inputs` | `{ variable, consumers }` for values no response returns: empty collection variables to set |
+| `inputs` | `{ variable, consumers }` for values no response returns, which the caller supplies |
 | `errors` | Strings: an `exclude` entry matching nothing, a producer that can't run before its consumer, a value a request body has no place for |
 
 Types: `ContractTestOptions` and `ContractTestResult` in `types/index.ts`.
@@ -209,7 +207,7 @@ Types: `ContractTestOptions` and `ContractTestResult` in `types/index.ts`.
 ## Key decisions
 
 - **No spec edits, no config file.** Values are linked by name, assuming the spec names them consistently.
-  What can't be linked is an input: a collection variable the user sets.
+  What can't be linked is an input the user supplies, e.g. in an environment.
 - **Two rules, no scores.** Same name, else create id. A wrong link can't be overridden; renaming in the
   spec or excluding the operation are the ways out.
 - **Deterministic.** Fixed rules, fixed tie-breaks, alphabetical ordering, spec hash over sorted keys: the
@@ -232,26 +230,26 @@ or a spec's cloud ID; specifications that are not OpenAPI exit 2.
 | Flag | Effect |
 |---|---|
 | `-e, --environment`, `--env-var`, `--timeout-request` | As in `postman collection run` |
-| `-H, --header <header>` | `Name: value` sent on every request, as in `postman request`; repeatable. Passed as `headers` by name only, so the saved collection uses `{{camelCase(Name)}}`; the value goes to the run as a variable and is never saved. |
+| `-H, --header <header>` | `Name: value` sent on every request, as in `postman request`; repeatable. Passed as `headers` by name only, so requests use `{{camelCase(Name)}}`; the value goes to the run as a variable. |
 | `--exclude <operation>` | Repeatable; passed as `exclude` |
-| `-n, --name <name>` | Collection name; default `<spec title> Contract Tests` |
-| `--no-run` | Save the collection and list missing inputs only |
+| `--spec-ref <ref>` | Read the spec as it is at a git ref (e.g. `origin/develop`), from a temporary worktree, fetching the branch if missing; the checkout and the code under test stay on the current branch. Local specs only. |
+| `--no-run` | Generate, create the environment if needed, and list missing inputs only |
 | `--api-key <key>` | Postman API key for a cloud spec or environment |
 
-The collection is saved to `postman/collections/<name>` (`lib/commands/spec/contract-collection.ts`) and
-regenerated on every run; only its variables are kept from the previous copy: all of them, with a user's edits, while a value
-still as last generated (recorded in `.resources/generated-variables.yaml`) follows the spec. Its description marks
-it as generated, and a directory without that mark is never overwritten. Before running, inputs still empty
-in the collection, `--env-var` and a local `-e` file are listed with the requests that need them. The run
-uses the saved copy. Exit codes: 0 passed or `--no-run`, 1 a check failed or an error, 2 not OpenAPI or a
-bad flag, 3 auth failure, 8 nothing was run (`errors`, missing inputs, or a directory it didn't generate).
+The collection is built and run in memory; nothing is saved. Inputs come from the environment: `-e`, or without
+it `postman/environments/<spec title> Contract Tests.environment.yaml` (`lib/commands/spec/contract-environment.ts`),
+created with the inputs left empty when missing and never changed afterwards, plus `--env-var`. Before running,
+inputs still empty there are listed with the requests that need them; a cloud `-e` is only checked by the run.
+An environment value for a linked variable wins over the one the run saves. Exit codes: 0 passed or `--no-run`,
+1 a check failed or an error, 2 not OpenAPI, a bad flag or a `--spec-ref` problem, 3 auth failure, 8 nothing
+was run (`errors` or missing inputs).
 
 ## Tests
 
 - `test/unit/specContractTesting.test.js`, fixtures in `test/data/specContractTesting/` (`petstore`, `nested`,
   `patterns` for OpenAPI 3.1 naming and shape patterns, `swagger2`).
 - **Invariants run on every fixture in that folder**, so a new fixture is covered automatically:
-  - every linked value is saved before it's used, every input is declared, and both are guarded
+  - every linked value is saved before it's used, no input is declared as a collection variable, and both are guarded
   - every path id is linked
   - no-token and missing-field checks run before any teardown delete; no-token checks send no auth
   - each 404 check follows a delete of the same resource; children are deleted before parents

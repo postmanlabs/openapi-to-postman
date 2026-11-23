@@ -117,7 +117,7 @@ describe('buildContractTestCollection', function () {
     ]);
   });
 
-  it('makes a value no response returns an empty collection variable, guarded with how to set it', async function () {
+  it('lists a value no response returns as an input, guarded with how to set it', async function () {
     const result = await generate(NESTED),
       task = request(result, '7. GET /tasks/{taskId}');
 
@@ -126,11 +126,11 @@ describe('buildContractTestCollection', function () {
       { variable: 'specId', consumers: [{ operation: 'POST /specs/{id}/files', param: { in: 'path', name: 'id' } }] },
       { variable: 'taskId', consumers: [{ operation: 'GET /tasks/{taskId}', param: { in: 'path', name: 'taskId' } }] }
     ]);
-    expect(result.output[0].data.variable).to.deep.include.members([{ key: 'specId', value: '' },
-      { key: 'taskId', value: '' }]);
+    // Not a collection variable: the caller supplies it, e.g. from the environment.
+    expect(_.map(result.output[0].data.variable, 'key')).to.not.include.members(['specId', 'taskId']);
     expect(_.find(task.request.url.variable, { key: 'taskId' }).value).to.equal('{{taskId}}');
     expect(exec(task, 'prerequest'))
-      .to.include('{"taskId":"no request returns it: set it as a collection variable"}');
+      .to.include('{"taskId":"no request returns it: set it in the environment"}');
     expect(result.summary.errors).to.be.empty;
   });
 
@@ -294,7 +294,7 @@ describe('buildContractTestCollection', function () {
     expect(result.summary.errors).to.be.empty;
   });
 
-  it('turns a value into a collection variable to set when its producer is excluded', async function () {
+  it('turns a value into an input when its producer is excluded', async function () {
     const result = await generate(PETSTORE, { exclude: ['POST /owners'] });
 
     expect(inputNames(result)).to.eql(['ownerId']);
@@ -423,8 +423,8 @@ describe('buildContractTestCollection invariants', function () {
           if (!saved.has(v) && !inputs.includes(v)) {
             problems.push(`${item.name}: uses {{${v}}} before any request saves it`);
           }
-          if (inputs.includes(v) && !declared.includes(v)) {
-            problems.push(`${item.name}: uses {{${v}}}, which is not a collection variable`);
+          if (inputs.includes(v) && declared.includes(v)) {
+            problems.push(`${item.name}: input {{${v}}} is declared as a collection variable`);
           }
           if (!guard.includes(`"${v}"`)) { problems.push(`${item.name}: uses {{${v}}} without a guard`); }
         });
@@ -457,7 +457,7 @@ describe('buildContractTestCollection invariants', function () {
 
   FIXTURES.forEach(([file, spec]) => {
     describe(file, function () {
-      it('saves or declares every value before using it, guards it, links every path id, tears down children first',
+      it('saves every linked value before using it, guards it, links every path id, tears down children first',
         async function () {
           expect(violations(await generate(spec))).to.eql([]);
         });

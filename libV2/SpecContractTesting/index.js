@@ -1,8 +1,8 @@
 // Spec contract testing: rearranges the collection produced by convertV2WithTypes into one that
 // exercises the API in a valid order (create, read, update, child resources, teardown), keeping the
 // converter's status and schema checks. Values are passed between requests by name (see links.js); values
-// no response returns become empty collection variables for the caller to set. Every operation runs unless
-// it is excluded. Collection generation itself is unchanged.
+// no response returns are inputs the caller supplies, e.g. as environment variables. Every operation runs
+// unless it is excluded. Collection generation itself is unchanged.
 const _ = require('lodash'),
   { hash, sortKeys, flattenItems } = require('./utils'),
   { CONTRACT_TEST_MARKER } = require('../CollectionGeneration/contractTests'),

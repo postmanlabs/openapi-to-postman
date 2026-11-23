@@ -92,8 +92,8 @@ export interface ContractTestResult extends CollectionResult {
     links: object[];
 
     /**
-     * Values no response returns: `{ variable, consumers }`. Each is an empty collection variable the
-     * caller sets; requests that need an empty one are skipped at run time.
+     * Values no response returns: `{ variable, consumers }`. The caller supplies them, e.g. as environment
+     * variables; a request that needs a missing one is skipped at run time and fails a check.
      */
     inputs: object[];
 
