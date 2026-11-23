@@ -233,14 +233,13 @@ or a spec's cloud ID; specifications that are not OpenAPI exit 2.
 | `-H, --header <header>` | `Name: value` sent on every request, as in `postman request`; repeatable. Passed as `headers` by name only, so requests use `{{camelCase(Name)}}`; the value goes to the run as a variable. |
 | `--exclude <operation>` | Repeatable; passed as `exclude` |
 | `--spec-ref <ref>` | Read the spec as it is at a git ref (e.g. `origin/develop`), from a temporary worktree, fetching the branch if missing; the checkout and the code under test stay on the current branch. Local specs only. |
-| `--no-run` | Generate, create the environment if needed, and list missing inputs only |
 | `--api-key <key>` | Postman API key for a cloud spec or environment |
 
 The collection is built and run in memory; nothing is saved. Inputs come from the environment: `-e`, or without
 it `postman/environments/<spec title> Contract Tests.environment.yaml` (`lib/commands/spec/contract-environment.ts`),
 created with the inputs left empty when missing and never changed afterwards, plus `--env-var`. Before running,
 inputs still empty there are listed with the requests that need them; a cloud `-e` is only checked by the run.
-An environment value for a linked variable wins over the one the run saves. Exit codes: 0 passed or `--no-run`,
+An environment value for a linked variable wins over the one the run saves. Exit codes: 0 passed,
 1 a check failed or an error, 2 not OpenAPI, a bad flag or a `--spec-ref` problem, 3 auth failure, 8 nothing
 was run (`errors` or missing inputs).
 
