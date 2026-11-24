@@ -240,7 +240,7 @@ The collection is built and run in memory; nothing is saved. Inputs come from th
 it `postman/environments/<spec title> Contract Tests.environment.yaml` (`lib/commands/spec/contract-environment.ts`),
 created with the inputs left empty when missing and never changed afterwards, plus `--env-var`. Before running,
 inputs still empty there are listed with the requests that need them; a cloud `-e` is only checked by the run.
-Environment values override what's sent by exact name (below); the command lists those overrides before the run.
+Environment values override what's sent by exact name (below); the command lists the chained values they replace.
 Exit codes: 0 passed,
 1 a check failed or an error, 2 not OpenAPI, a bad flag or a `--spec-ref` problem, 3 auth failure, 8 nothing
 was run (`errors` or missing inputs).
@@ -264,8 +264,9 @@ chained or sent as the spec's example.
   producer to succeed. A cleanup step (`… (clean up if created)`) stays strict and runs only when its variable is
   set.
 - **Order,** highest first: `--env-var`, the environment, values saved during the run, the request's spec example.
-- **In postman-cli,** `spec contract-test` lists the overrides from a local environment file and `--env-var` before
-  the run, calling out the ones that replace a chained value. A cloud environment's overrides apply but can't be
+- **In postman-cli,** `spec contract-test` lists, before the run, the environment keys that replace a chained value,
+  as the exact parameter name (`id`) or as the chained variable's own name (`specificationId`), from a local
+  environment file and `--env-var`. Overrides of values that aren't chained aren't listed. A cloud environment's overrides apply but can't be
   listed beforehand. An input also counts as set when every parameter that needs it is overridden.
 - **Not part of this:** sending optional parameters.
 
