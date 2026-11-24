@@ -160,7 +160,8 @@ them.
 
 | Script | Where | Does |
 |---|---|---|
-| `guard` | pre-request | Skips the request with a reason if a variable it needs is undefined, null or empty (`0` counts as set); a missing input also fails `Request | <variable> is set` |
+| `overrideFromEnvironment` | collection pre-request | Replaces every value a request sends whose exact name has a non-empty environment value (see Environment overrides) |
+| `guard` | pre-request | Skips the request with a reason if a variable it still uses is undefined, null or empty (`0` counts as set); a missing input also fails `Request | <variable> is set`. A cleanup step checks its variable even if an override replaced it |
 | `save` | test | On any 2xx, saves each value from the body and asserts `Request | Saved <variable> from the response` |
 | `expectSuccess` | test | `Request | Succeeds (2xx)` |
 | `markDeleted` | test | On 2xx, keeps the ids as `deleted_<variable>` and clears the originals |
@@ -239,32 +240,34 @@ The collection is built and run in memory; nothing is saved. Inputs come from th
 it `postman/environments/<spec title> Contract Tests.environment.yaml` (`lib/commands/spec/contract-environment.ts`),
 created with the inputs left empty when missing and never changed afterwards, plus `--env-var`. Before running,
 inputs still empty there are listed with the requests that need them; a cloud `-e` is only checked by the run.
-An environment value for a linked variable wins over the one the run saves. Exit codes: 0 passed,
+Environment values override what's sent by exact name (below); the command lists those overrides before the run.
+Exit codes: 0 passed,
 1 a check failed or an error, 2 not OpenAPI, a bad flag or a `--spec-ref` problem, 3 auth failure, 8 nothing
 was run (`errors` or missing inputs).
 
-## Decided, not built yet: overriding values from the environment
+## Environment overrides
 
-> **Status:** agreed design, not implemented. Today the environment only fills `{{variables}}` the requests already
-> use: linked values, inputs, `baseUrl`, auth and `-H` headers.
+A value set in the environment replaces every value a request sends whose name is exactly the variable's, as written
+in the request: a path variable (`id`), an enabled query parameter or header (`containerId`, `X-Tenant-Id`, case
+included), a form field, or a JSON body field at any depth (`ownerId`). It applies whether the value would be
+chained or sent as the spec's example.
 
-- **Rule:** a value set in the environment replaces every value whose name is exactly the key, as written in the
-  request: a path, query or header parameter name (`id`, `containerId`, `X-Tenant-Id`) or a body field name at any
-  depth (`ownerId`). Matching never uses the derived variable names from linking: `id` is not `specificationId`
-  and `X-Tenant-Id` is not `xTenantId`. So `id` overrides every path parameter named `id`, whatever its resource.
-- **Variables the requests already use** (`{{specificationId}}`, `{{baseUrl}}`, `{{xAccessToken}}`) keep being
-  filled from the environment by their own names: ordinary variable resolution, as today.
-- **One environment at a time:** the default file, or `-e` instead of it; `--env-var` applies on top and wins.
-  Precedence: `--env-var`, then the environment, then values saved during the run, then the request's spec example.
-- **Notice, in `spec contract-test` only:** before the run, the command lists the values the environment overrides,
-  and says explicitly when one replaces a chained value, e.g.
-  `id: replaces the value POST /specifications returns in GET /specifications/{id} and 23 other requests`.
-- **Without an override,** nothing changes: values are chained as usual, and inputs still block the run until
-  they are set in the environment.
-- **Not part of this:** sending optional parameters. An override only applies to values a request already sends.
-- **What it means for this module:** requests stay as generated; a pre-request script replaces each value whose
-  exact name has an environment value, read from the environment the run resolved, so it works for cloud
-  environments too. The script runs before the guard, so an overridden chained value doesn't need its producer.
+- **Exact names only,** never the derived names linking uses: `id` is not `specificationId`, and `X-Tenant-Id` is not
+  `xTenantId`. So `id` overrides every path variable named `id`, whatever its resource. Variables the requests
+  already use (`{{specificationId}}`, `{{baseUrl}}`, `{{xAccessToken}}`) are still filled by their own names, as
+  ordinary variable resolution.
+- **How:** the collection's own pre-request (`overrideFromEnvironment`) runs before each request's scripts and edits
+  the request in place, reading `pm.environment`, so cloud environments and `--env-var` work too. JSON numbers,
+  booleans and JSON values stay typed; unquoted `{{placeholders}}` for non-string values are preserved. Empty
+  environment values replace nothing. Disabled parameters aren't sent, so they aren't overridden.
+- **The guard then only checks variables still in the request,** so an overridden chained value doesn't need its
+  producer to succeed. A cleanup step (`… (clean up if created)`) stays strict and runs only when its variable is
+  set.
+- **Order,** highest first: `--env-var`, the environment, values saved during the run, the request's spec example.
+- **In postman-cli,** `spec contract-test` lists the overrides from a local environment file and `--env-var` before
+  the run, calling out the ones that replace a chained value. A cloud environment's overrides apply but can't be
+  listed beforehand. An input also counts as set when every parameter that needs it is overridden.
+- **Not part of this:** sending optional parameters.
 
 ## Tests
 

@@ -216,9 +216,10 @@ const _ = require('lodash'),
       add = ({ item, needs }, stepId, label, test, skipReason) => {
         item.id = `ct-${hash(stepId)}`;
         item.name = `${requests.length + 1}. ${label}`;
+        // A cleanup (it has its own skip reason) only runs when its variable was really set.
         requests.push(withEvents(item, scripts.guard(_.zipObject(needs, needs.map((variable) => {
           return skipReason || (inputs.has(variable) ? INPUT_REASON : SAVED_REASON);
-        })), needs.filter((variable) => { return inputs.has(variable); })), test));
+        })), needs.filter((variable) => { return inputs.has(variable); }), Boolean(skipReason)), test));
       },
 
       savesFor = (op) => {
@@ -319,15 +320,18 @@ const _ = require('lodash'),
    * @param {String} options.seed - seed for the collection id (the spec hash)
    * @param {Object[]} [options.headers] - { name, value, credential }: sent on every request; credential
    *   headers are left out of the no-token checks
-   * @returns {Object} { collection, unapplied }: unapplied lists linked values a request has no place for
+   * @returns {Object} { collection, unapplied }: the collection's own pre-request applies environment
+   *   overrides (see scripts.overrideFromEnvironment); unapplied lists linked values a request has no place for
    *   ({ operation, param, variable }); those requests are left out
    */
   buildCollection = ({ collection, operations, links, flows, seed, headers = [] }) => {
     const source = headers.length ? applyHeaders(collection, headers) : collection,
       { requests, unapplied } = buildRequests({ collection: source, operations, links, flows, headers }),
-      info = Object.assign({}, source.info, { _postman_id: uuidFrom(seed) });
+      info = Object.assign({}, source.info, { _postman_id: uuidFrom(seed) }),
+      event = [{ listen: 'prerequest', script: { type: 'text/javascript', exec: scripts.overrideFromEnvironment } }]
+        .concat(source.event || []);
 
-    return { collection: Object.assign({}, source, { info, item: requests }), unapplied };
+    return { collection: Object.assign({}, source, { info, event, item: requests }), unapplied };
   };
 
 module.exports = { buildCollection };

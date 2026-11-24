@@ -375,28 +375,71 @@ describe('buildContractTestCollection', function () {
   });
 
   it('skips a request whose value is missing, treating 0 as set, and fails a test for a missing input', function () {
-    const run = (guard, values) => {
-      const outcome = { skipped: false, tests: [] };
+    const sdk = require('postman-collection'),
+      requestUsing = (name) => {
+        return new sdk.Request({ method: 'GET', url: `https://api.example.com/pets/{{${name}}}` });
+      },
+      run = (guard, values, request) => {
+        const outcome = { skipped: false, tests: [] };
 
-      // eslint-disable-next-line no-new-func
-      new Function('pm', 'console', guard.join('\n'))({ variables: { get: (name) => { return values[name]; } },
-        info: { requestName: 'r' }, execution: { skipRequest: () => { outcome.skipped = true; } },
-        test: (name) => { outcome.tests.push(name); } }, { warn: _.noop });
+        // eslint-disable-next-line no-new-func
+        new Function('pm', 'console', guard.join('\n'))({ variables: { get: (name) => { return values[name]; } },
+          request, info: { requestName: 'r' }, execution: { skipRequest: () => { outcome.skipped = true; } },
+          test: (name) => { outcome.tests.push(name); } }, { warn: _.noop });
 
-      return outcome;
-    };
+        return outcome;
+      };
 
     expect([0, 'abc', undefined, null, ''].map((value) => {
-      return run(scripts.guard({ petId: 'reason' }), { petId: value }).skipped;
+      return run(scripts.guard({ petId: 'reason' }), { petId: value }, requestUsing('petId')).skipped;
     })).to.eql([false, false, true, true, true]);
-    expect(run(scripts.guard({ petId: 'saved', tenantId: 'set it' }, ['tenantId']), {}))
+    expect(run(scripts.guard({ petId: 'saved', tenantId: 'set it' }, ['tenantId']), {}, requestUsing('tenantId')))
       .to.eql({ skipped: true, tests: ['Request | tenantId is set'] });
-    expect(run(scripts.guard({ petId: 'saved', tenantId: 'set it' }, ['tenantId']), { tenantId: 't1' }))
-      .to.eql({ skipped: true, tests: [] });
+    // An environment override replaced {{petId}}, so the request no longer needs it; a cleanup still does.
+    expect(run(scripts.guard({ petId: 'saved' }), {}, requestUsing('other')).skipped).to.equal(false);
+    expect(run(scripts.guard({ petId: 'nothing was created' }, [], true), {}, requestUsing('other')).skipped)
+      .to.equal(true);
+  });
+
+  it('replaces every sent value whose exact name is set in the environment', function () {
+    const sdk = require('postman-collection'),
+      request = new sdk.Request({
+        method: 'POST',
+        url: { host: ['{{baseUrl}}'], path: ['specifications', ':id'],
+          query: [{ key: 'containerId', value: '{{containerId}}' }, { key: 'limit', value: '10', disabled: true }],
+          variable: [{ key: 'id', value: '{{specificationId}}' }] },
+        header: [{ key: 'X-Tenant-Id', value: 'example' }, { key: 'x-tenant-id', value: 'lower' }],
+        body: { mode: 'raw', options: { raw: { language: 'json' } }, raw: JSON.stringify({ name: 'Rex',
+          owner: { ownerId: 'a' }, items: [{ ownerId: 'b' }], count: '__COUNT__', size: 3, other: '__OTHER__' })
+          .replace('"__COUNT__"', '{{count}}').replace('"__OTHER__"', '{{other}}') }
+      }),
+      environment = { id: 'spec-1', containerId: 'ws-1', limit: '5', 'X-Tenant-Id': 'acme', ownerId: 'o-1',
+        count: '7', size: '4', name: '' };
+
+    // eslint-disable-next-line no-new-func
+    new Function('pm', scripts.overrideFromEnvironment.join('\n'))({ request,
+      environment: { get: (name) => { return environment[name]; } } });
+
+    expect(request.url.variables.get('id')).to.equal('spec-1');
+    // A disabled parameter isn't sent, so it isn't overridden; header names match exactly.
+    expect(request.url.query.all().map((param) => { return [param.key, param.value]; }))
+      .to.eql([['containerId', 'ws-1'], ['limit', '10']]);
+    expect(request.headers.all().map((header) => { return [header.key, header.value]; }))
+      .to.eql([['X-Tenant-Id', 'acme'], ['x-tenant-id', 'lower']]);
+    // Types are kept, an empty value replaces nothing, and an unrelated placeholder stays.
+    expect(request.body.raw).to.include('"other": {{other}}');
+    expect(JSON.parse(request.body.raw.replace('{{other}}', 'null'))).to.eql({ name: 'Rex',
+      owner: { ownerId: 'o-1' }, items: [{ ownerId: 'o-1' }], count: 7, size: 4, other: null });
+  });
+
+  it('applies environment overrides in the collection\'s pre-request, before request scripts', async function () {
+    const collection = (await generate(PETSTORE)).output[0].data;
+
+    expect(collection.event[0]).to.eql({ listen: 'prerequest',
+      script: { type: 'text/javascript', exec: scripts.overrideFromEnvironment } });
   });
 });
 
-// Properties that must hold for every spec. Each fixture in test/data/specContractTesting is checked.
 describe('buildContractTestCollection invariants', function () {
   const pathOf = (item) => { return item.name.split(' ')[2]; },
     linkShape = (result) => { return _.pick(result.summary, ['links', 'inputs']); },

@@ -6,37 +6,119 @@ const RECEIVED = '"received " + pm.response.code + " " + pm.response.status + ":
 
 module.exports = {
   /**
-   * Pre-request: skip the request when a variable it needs is empty, e.g. because the request
+   * Collection-level pre-request, so it runs before each request's own scripts: a value set in the
+   * environment replaces every value the request sends whose name is exactly the variable's: path
+   * variables, enabled query parameters and headers, form fields, and JSON body fields at any depth (keeping
+   * numbers, booleans and JSON values typed). Empty environment values replace nothing.
+   */
+  overrideFromEnvironment: [
+    '// Contract tests: a value set in the environment replaces every value with exactly that name.',
+    'var contractOverride = function (name) {',
+    '  var value = pm.environment.get(name);',
+    '',
+    '  return value === undefined || value === null || value === "" ? undefined : String(value);',
+    '};',
+    'var contractReplace = function (entry) {',
+    '  var value = entry.disabled ? undefined : contractOverride(entry.key);',
+    '',
+    '  if (value !== undefined) { entry.value = value; }',
+    '};',
+    'pm.request.url.variables.each(function (variable) {',
+    '  var value = contractOverride(variable.key);',
+    '',
+    '  if (value !== undefined) { variable.set(value); }',
+    '});',
+    'pm.request.url.query.each(contractReplace);',
+    'pm.request.headers.each(contractReplace);',
+    'var contractBody = pm.request.body;',
+    '',
+    'if (contractBody && (contractBody.mode === "urlencoded" || contractBody.mode === "formdata")) {',
+    '  contractBody[contractBody.mode].each(contractReplace);',
+    '}',
+    'if (contractBody && contractBody.mode === "raw" && contractBody.raw) {',
+    '  var contractReplaced = false,',
+    '    contractJson;',
+    '  // Placeholders for non-string values are unquoted: quote them so the body parses.',
+    '  var contractRaw = contractBody.raw.replace(/([:\\[,]\\s*)\\{\\{([^{}]+)\\}\\}/g, function (match, before, name) {',
+    '    return before + JSON.stringify("__contract_var__" + name);',
+    '  });',
+    '  var contractTyped = function (current, value) {',
+    '    var unquoted = typeof current === "string" && current.indexOf("__contract_var__") === 0;',
+    '',
+    '    if (unquoted || (current !== null && typeof current === "object")) {',
+    '      try { return JSON.parse(value); } catch (e) { return value; }',
+    '    }',
+    '    if (typeof current === "number" && value.trim() !== "" && !isNaN(Number(value))) { return Number(value); }',
+    '    if (typeof current === "boolean" && (value === "true" || value === "false")) { return value === "true"; }',
+    '',
+    '    return value;',
+    '  };',
+    '  var contractWalk = function (node) {',
+    '    if (Array.isArray(node)) { return node.forEach(contractWalk); }',
+    '    if (node === null || typeof node !== "object") { return; }',
+    '    Object.keys(node).forEach(function (key) {',
+    '      var value = contractOverride(key);',
+    '',
+    '      if (value === undefined) { return contractWalk(node[key]); }',
+    '      node[key] = contractTyped(node[key], value);',
+    '      contractReplaced = true;',
+    '    });',
+    '  };',
+    '',
+    '  try { contractJson = JSON.parse(contractRaw); } catch (e) { contractJson = undefined; }',
+    '  contractWalk(contractJson);',
+    '  if (contractReplaced) {',
+    '    contractBody.update({ mode: "raw", options: contractBody.options,',
+    '      raw: JSON.stringify(contractJson, null, 2).replace(/"__contract_var__([^"]+)"/g, "{{$1}}") });',
+    '  }',
+    '}'
+  ],
+
+  /**
+   * Pre-request: skip the request when a variable it still uses is empty, e.g. because the request
    * that saves it failed, instead of sending a bogus value. A missing input also fails a test: no
    * earlier failure explains it.
    *
    * @param {Object} needs - variable the request uses -> why it would be empty, shown in the skip message
    * @param {String[]} [inputs] - the variables in `needs` that the caller sets
+   * @param {Boolean} [strict] - check every variable in `needs`, even one an environment override replaced
+   *   (a cleanup that must only run when its variable was set)
    * @returns {String[]} exec lines
    */
-  guard: (needs, inputs = []) => {
-    return Object.keys(needs).length ? [
-      `var contractNeeds = ${JSON.stringify(needs)};`,
-      'var contractMissing = Object.keys(contractNeeds).filter(function (name) {',
-      '  var value = pm.variables.get(name);',
-      '',
-      '  return value === undefined || value === null || value === "";',
-      '});',
-      'if (contractMissing.length) {',
-      '  console.warn("Skipping " + pm.info.requestName + ": missing " + contractMissing.map(function (name) {',
-      '    return name + " (" + contractNeeds[name] + ")";',
-      '  }).join(", "));'
-    ].concat(inputs.length ? [
-      `  ${JSON.stringify(inputs)}.filter(function (name) { return contractMissing.indexOf(name) !== -1; })`,
-      '    .forEach(function (name) {',
-      '      pm.test("Request | " + name + " is set", function () {',
-      '        pm.expect.fail(name + " is empty: " + contractNeeds[name]);',
-      '      });',
-      '    });'
-    ] : [], [
-      '  pm.execution.skipRequest();',
-      '}'
-    ]) : [];
+  guard: (needs, inputs = [], strict = false) => {
+    if (!Object.keys(needs).length) { return []; }
+
+    const isMissing = strict ?
+        ['  return value === undefined || value === null || value === "";'] :
+        ['  return (value === undefined || value === null || value === "") &&',
+          '    contractRequest.indexOf("{{" + name + "}}") !== -1;'],
+      failInputs = inputs.length ? [
+        `  ${JSON.stringify(inputs)}.filter(function (name) { return contractMissing.indexOf(name) !== -1; })`,
+        '    .forEach(function (name) {',
+        '      pm.test("Request | " + name + " is set", function () {',
+        '        pm.expect.fail(name + " is empty: " + contractNeeds[name]);',
+        '      });',
+        '    });'
+      ] : [];
+
+    return [`var contractNeeds = ${JSON.stringify(needs)};`].concat(
+      strict ? [] : [
+        '// An environment override may have replaced a variable; only the ones still in the request matter.',
+        'var contractRequest = JSON.stringify(pm.request.toJSON());'
+      ],
+      ['var contractMissing = Object.keys(contractNeeds).filter(function (name) {', '  var value = pm.variables.get(name);',
+        ''],
+      isMissing,
+      [
+        '});',
+        'if (contractMissing.length) {',
+        '  console.warn("Skipping " + pm.info.requestName + ": missing " + contractMissing.map(function (name) {',
+        '    return name + " (" + contractNeeds[name] + ")";',
+        '  }).join(", "));'
+      ],
+      failInputs,
+      ['  pm.execution.skipRequest();', '}']
+    );
   },
 
   expectSuccess: ['', 'pm.test("Request | Succeeds (2xx)", function () {',
