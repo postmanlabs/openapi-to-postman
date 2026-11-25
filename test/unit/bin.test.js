@@ -32,6 +32,16 @@ describe('openapi2postmanv2 ', function() {
     });
   });
 
+  it('should use v1 options when the interface flag follows the options', function () {
+    const args = ['bin/openapi2postmanv2.js', '-O', 'requestParametersResolution=Example', '-i', 'v1',
+      '-s', 'test/data/valid_openapi/example_in_schema.json', '-o', tempOutputFile];
+
+    require('child_process').execFileSync(process.execPath, args);
+    const output = JSON.parse(fs.readFileSync(tempOutputFile, 'utf8'));
+
+    expect(JSON.parse(output.item[0].request.body.raw)).to.deep.equal({ a: 'example-a', b: 'example-b' });
+  });
+
   it('should show appropriate messages for invalid input', function (done) {
     exec('./bin/openapi2postmanv2.js -s test/data/invalid_openapi/multiple-components.yaml',
       function(err, stdout, stderr) {
