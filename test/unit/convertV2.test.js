@@ -127,6 +127,23 @@ const expect = require('chai').expect,
 
 describe('The convert v2 Function', function() {
 
+  it('should omit absent request bodies from requests and saved examples', function(done) {
+    const spec = {
+      openapi: '3.0.0',
+      info: { title: 'Users', version: '1' },
+      paths: { '/users': { get: { responses: { 200: { description: 'OK' } } } } }
+    };
+
+    Converter.convertV2({ type: 'json', data: spec }, {}, (err, result) => {
+      expect(err).to.be.null;
+      const item = result.output[0].data.item[0].item[0];
+
+      expect(item.request).not.to.have.property('body');
+      expect(item.response[0].originalRequest).not.to.have.property('body');
+      done();
+    });
+  });
+
   it('Should explicitly set auth when specified on a request ' +
   securityTestInheritance, function(done) {
     var openapi = fs.readFileSync(securityTestInheritance, 'utf8');
@@ -409,9 +426,9 @@ describe('The convert v2 Function', function() {
           baseUrl1 = variables.find((variable) => {
             return variable.key === 'baseUrl1';
           }),
-          // Operation-level server override → dedicated `baseUrl1` collection variable
+          // Operation-level server override â†’ dedicated `baseUrl1` collection variable
           overrideRequest = collection.item[1].item[0].item[0].request,
-          // Root server → `baseUrl`
+          // Root server â†’ `baseUrl`
           rootRequest = collection.item[0].item[0].item[0].request;
 
         expect(overrideRequest.url.host[0]).to.equal('{{baseUrl1}}');
@@ -3572,7 +3589,7 @@ describe('The convert v2 Function', function() {
     it('response examples pair with matching QUERY + HEADER parameter examples (no request body)', function (done) {
       // Headline case: GET /users?role=admin|user. Parameter example keys (role, X-Trace) match the
       // response example keys, so two saved responses are generated, each carrying the paired
-      // query/header value in its originalRequest. M = R ∩ (B ∪ P) = {admin, user}, B = ∅.
+      // query/header value in its originalRequest. M = R âˆ© (B âˆª P) = {admin, user}, B = âˆ….
       const spec = {
         openapi: '3.0.0',
         info: { title: 'param examples', version: '1.0.0' },

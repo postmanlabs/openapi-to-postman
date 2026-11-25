@@ -3081,7 +3081,7 @@ let QUERYPARAM = 'query',
   /**
    * Collects the union of plural `examples` keys defined across an operation's query, path and
    * header parameters (set P in the matching-key model). These keys participate in the
-   * response<->request example pairing: M = R ∩ (B ∪ P).
+   * response<->request example pairing: M = R âˆ© (B âˆª P).
    *
    * Only the parameter-level plural `examples` map contributes keys; a singular `example` (or a
    * JSON-schema `examples` array) has no stable key and is only used as a fallback value.
@@ -3667,9 +3667,12 @@ module.exports = {
         pathParams: pathVariables
       },
       headers,
-      body: _.get(requestBody, 'body'),
       auth: alwaysInheritAuthentication ? undefined : authHelper
     };
+
+    if (_.get(requestBody, 'body')) {
+      request.body = requestBody.body;
+    }
 
     const requestTypes = {
         body: JSON.stringify(requestBodyTypes, null, 2),
