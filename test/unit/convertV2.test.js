@@ -426,9 +426,9 @@ describe('The convert v2 Function', function() {
           baseUrl1 = variables.find((variable) => {
             return variable.key === 'baseUrl1';
           }),
-          // Operation-level server override â†’ dedicated `baseUrl1` collection variable
+          // Operation-level server override → dedicated `baseUrl1` collection variable
           overrideRequest = collection.item[1].item[0].item[0].request,
-          // Root server â†’ `baseUrl`
+          // Root server → `baseUrl`
           rootRequest = collection.item[0].item[0].item[0].request;
 
         expect(overrideRequest.url.host[0]).to.equal('{{baseUrl1}}');
@@ -3589,7 +3589,7 @@ describe('The convert v2 Function', function() {
     it('response examples pair with matching QUERY + HEADER parameter examples (no request body)', function (done) {
       // Headline case: GET /users?role=admin|user. Parameter example keys (role, X-Trace) match the
       // response example keys, so two saved responses are generated, each carrying the paired
-      // query/header value in its originalRequest. M = R âˆ© (B âˆª P) = {admin, user}, B = âˆ….
+      // query/header value in its originalRequest. M = R ∩ (B ∪ P) = {admin, user}, B = ∅.
       const spec = {
         openapi: '3.0.0',
         info: { title: 'param examples', version: '1.0.0' },

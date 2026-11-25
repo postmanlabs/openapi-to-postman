@@ -3081,7 +3081,7 @@ let QUERYPARAM = 'query',
   /**
    * Collects the union of plural `examples` keys defined across an operation's query, path and
    * header parameters (set P in the matching-key model). These keys participate in the
-   * response<->request example pairing: M = R âˆ© (B âˆª P).
+   * response<->request example pairing: M = R ∩ (B ∪ P).
    *
    * Only the parameter-level plural `examples` map contributes keys; a singular `example` (or a
    * JSON-schema `examples` array) has no stable key and is only used as a fallback value.
