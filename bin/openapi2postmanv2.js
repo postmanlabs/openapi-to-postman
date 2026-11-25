@@ -4,7 +4,7 @@ var _ = require('lodash'),
   Converter = require('../dist/index.js'),
   fs = require('fs'),
   path = require('path'),
-  availableOptions = require('../lib/options').getOptions('use', { usage: ['CONVERSION'] }),
+  rawOptions,
   availableSyncOptions = require('../lib/options').getSyncOptions('use'),
   inputFile,
   outputFile,
@@ -26,7 +26,11 @@ var _ = require('lodash'),
  * @returns {Object} - Parsed option in format of JSON object
  */
 function parseOptions (value) {
-  let definedOptions = value.split(','),
+  let availableOptions = require('../lib/options').getOptions('use', {
+      usage: ['CONVERSION'],
+      moduleVersion: interfaceVersion
+    }),
+    definedOptions = value.split(','),
     parsedOptions = {};
 
   _.forEach(definedOptions, (definedOption) => {
@@ -96,7 +100,11 @@ program
   .option('-p, --pretty', 'Pretty print the JSON file')
   .option('-i, --interface-version <interfaceVersion>', 'Interface version of convert() to be used')
   .option('-c, --options-config <optionsConfig>', 'JSON file containing Converter options')
-  .option('-O, --options <options>', 'comma separated list of options', parseOptions)
+  .option('-O, --options <options>', 'comma separated list of options', (value, registeredOptions) => {
+    // Commander 2 stores its option definitions on program.options. Keep them until parsing finishes.
+    rawOptions = value;
+    return registeredOptions;
+  })
   .option('--sync <collectionFile>', 'Sync spec changes with an existing Postman Collection file')
   .option('--sync-options <syncOptions>', 'comma separated list of sync options', parseSyncOptions)
   .option('--sync-options-config <syncOptionsConfig>', 'JSON file containing sync options');
@@ -133,9 +141,9 @@ inputFile = program.spec;
 outputFile = program.output || false;
 testFlag = program.test || false;
 prettyPrintFlag = program.pretty || false;
-interfaceVersion = program.interfaceVersion || 'v2';
+interfaceVersion = program.interfaceVersion === 'v1' ? 'v1' : 'v2';
 configFile = program.optionsConfig || false;
-definedOptions = (!(program.options instanceof Array) ? program.options : {});
+definedOptions = rawOptions ? parseOptions(rawOptions) : {};
 syncFile = program.sync || false;
 definedSyncOptions = (!(program.syncOptions instanceof Array) ? program.syncOptions : {});
 syncOptionsConfigFile = program.syncOptionsConfig || false;
