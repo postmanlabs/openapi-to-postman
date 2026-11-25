@@ -37,6 +37,10 @@ export function mergeRequestData(
       targetRequest.body :
       mergeRequestBodyData(targetRequest.body, sourceRequest?.body);
   }
+  else if (!shouldSyncExamples && sourceRequest.body?.mode) {
+    // The spec may omit a body that already exists in the saved collection.
+    targetRequest.body = sourceRequest.body;
+  }
 
   targetRequest.url = shouldSyncExamples ?
     targetRequest.url :

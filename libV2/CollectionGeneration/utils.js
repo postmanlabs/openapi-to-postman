@@ -28,7 +28,9 @@ const _ = require('lodash'),
 
     // Setting headers
     originalRequest.header = _.get(response, 'originalRequest.headers', []);
-    originalRequest.body = requestItem.request.body;
+    if (requestItem.request.body) {
+      originalRequest.body = requestItem.request.body;
+    }
 
     let sdkResponse = new Response({
       name: response.name,

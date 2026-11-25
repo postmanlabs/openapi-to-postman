@@ -3667,9 +3667,12 @@ module.exports = {
         pathParams: pathVariables
       },
       headers,
-      body: _.get(requestBody, 'body'),
       auth: alwaysInheritAuthentication ? undefined : authHelper
     };
+
+    if (_.get(requestBody, 'body')) {
+      request.body = requestBody.body;
+    }
 
     const requestTypes = {
         body: JSON.stringify(requestBodyTypes, null, 2),

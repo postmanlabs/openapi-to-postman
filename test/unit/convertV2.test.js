@@ -127,6 +127,23 @@ const expect = require('chai').expect,
 
 describe('The convert v2 Function', function() {
 
+  it('should omit absent request bodies from requests and saved examples', function(done) {
+    const spec = {
+      openapi: '3.0.0',
+      info: { title: 'Users', version: '1' },
+      paths: { '/users': { get: { responses: { 200: { description: 'OK' } } } } }
+    };
+
+    Converter.convertV2({ type: 'json', data: spec }, {}, (err, result) => {
+      expect(err).to.be.null;
+      const item = result.output[0].data.item[0].item[0];
+
+      expect(item.request).not.to.have.property('body');
+      expect(item.response[0].originalRequest).not.to.have.property('body');
+      done();
+    });
+  });
+
   it('Should explicitly set auth when specified on a request ' +
   securityTestInheritance, function(done) {
     var openapi = fs.readFileSync(securityTestInheritance, 'utf8');
