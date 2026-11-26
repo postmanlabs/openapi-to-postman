@@ -20,10 +20,12 @@ jobs:
   npm-publish:
     name: Publish to npm
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout (the tag being released)
         uses: actions/checkout@v4
         with:
+          persist-credentials: false
           ref: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
 
       - name: Set up Node.js

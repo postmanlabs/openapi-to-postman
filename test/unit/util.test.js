@@ -2263,6 +2263,47 @@ describe('SCHEMA UTILITY FUNCTION TESTS ', function () {
         expect(pmResponseBody.id).to.equal('<long>');
         expect(pmResponseBody.name).to.equal('<string>');
       });
+      it('should frame OAS 3.2 itemSchema SSE fields separately', function() {
+        const content = {
+            'text/event-stream': {
+              schema: { type: 'array' },
+              itemSchema: {
+                type: 'object',
+                properties: {
+                  data: { type: 'string', default: 'line one\nline two' },
+                  event: { type: 'string', default: 'update' },
+                  id: { type: 'string', default: '42' },
+                  retry: { type: 'integer', default: 1000 }
+                }
+              }
+            }
+          },
+          result = SchemaUtils.convertToPmResponseBody(content, {}, {
+            schemaFaker: true,
+            indentCharacter: '  ',
+            exampleParametersResolution: 'schema'
+          }, {}, { openapi: '3.2.0' });
+
+        expect(result.responseBody).to.equal(
+          'event: update\nid: 42\nretry: 1000\ndata: line one\ndata: line two\n\n');
+      });
+      it('should not frame explicit complete-stream examples for itemSchema', function() {
+        const content = {
+            'text/event-stream': {
+              itemSchema: {
+                type: 'object',
+                properties: { data: { type: 'string' } }
+              },
+              example: 'event: supplied\ndata: full stream\n\n'
+            }
+          },
+          result = SchemaUtils.convertToPmResponseBody(content, {}, {
+            schemaFaker: true,
+            exampleParametersResolution: 'example'
+          }, {}, { openapi: '3.2.0' });
+
+        expect(result.responseBody).to.equal('event: supplied\ndata: full stream\n\n');
+      });
       it('with Content-Type application/vnd.api+json', function() {
         var contentObj = {
             'application/vnd.api+json': {

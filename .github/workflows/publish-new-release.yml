@@ -11,6 +11,7 @@ jobs:
   release:
     name: Publish new release
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     # only merged pull requests that begin with 'release/' or 'hotfix/' must trigger this job
     if: github.event.pull_request.merged == true &&
       (contains(github.event.pull_request.head.ref, 'release/') || contains(github.event.pull_request.head.ref, 'hotfix/'))

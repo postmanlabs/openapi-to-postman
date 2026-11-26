@@ -204,4 +204,155 @@ describe('syncCollection', function () {
       }).value
     ).to.equal('{{passVarReq}}');
   });
+
+  it('should add, update, and drop baseUrl* collection variables on sync', function () {
+    const latest = new Collection({
+        item: [],
+        variable: [
+          { key: 'baseUrl', value: 'https://api.example.com' },
+          { key: 'baseUrl1', value: 'https://staging.example.com' }
+        ]
+      }),
+      current = new Collection({
+        item: [],
+        variable: [
+          { key: 'baseUrl', value: 'https://old.example.com' },
+          { key: 'baseUrl2', value: 'https://gone.example.com' },
+          { key: 'keepMe', value: 'user-value' }
+        ]
+      }),
+      synced = syncCollection(latest, current);
+
+    expect(
+      synced.variables.all().map((variable) => {
+        return { key: variable.key, value: variable.value };
+      })
+    ).to.deep.equal([
+      { key: 'baseUrl', value: 'https://api.example.com' },
+      { key: 'keepMe', value: 'user-value' },
+      { key: 'baseUrl1', value: 'https://staging.example.com' }
+    ]);
+  });
+
+  it('should add missing server variables referenced by baseUrl* without overwriting existing ones', function () {
+    const latest = new Collection({
+        item: [],
+        variable: [
+          { key: 'baseUrl', value: 'https://{{region}}.example.com' },
+          { key: 'region', value: 'us' },
+          { key: 'baseUrl1', value: 'https://path.example.com/{{version}}' },
+          { key: 'version', value: 'v2' }
+        ]
+      }),
+      current = new Collection({
+        item: [],
+        variable: [
+          { key: 'baseUrl', value: 'https://{{region}}.example.com' },
+          { key: 'region', value: 'eu' }
+        ]
+      }),
+      synced = syncCollection(latest, current);
+
+    expect(
+      synced.variables.all().map((variable) => {
+        return { key: variable.key, value: variable.value };
+      })
+    ).to.deep.equal([
+      { key: 'baseUrl', value: 'https://{{region}}.example.com' },
+      { key: 'region', value: 'eu' },
+      { key: 'baseUrl1', value: 'https://path.example.com/{{version}}' },
+      { key: 'version', value: 'v2' }
+    ]);
+  });
+
+  it('should keep a removed baseUrl* variable while an orphaned request still uses it', function () {
+    const latest = new Collection({
+        item: [{ name: 'pets', request: { method: 'GET', url: '{{baseUrl}}/pets' } }],
+        variable: [{ key: 'baseUrl', value: 'https://api.example.com' }]
+      }),
+      current = new Collection({
+        item: [
+          { name: 'pets', request: { method: 'GET', url: '{{baseUrl}}/pets' } },
+          { name: 'legacy', request: { method: 'GET', url: '{{baseUrl1}}/legacy' } }
+        ],
+        variable: [
+          { key: 'baseUrl', value: 'https://api.example.com' },
+          { key: 'baseUrl1', value: 'https://legacy.example.com' },
+          { key: 'baseUrl2', value: 'https://unused.example.com' }
+        ]
+      }),
+      synced = syncCollection(latest, current);
+
+    expect(synced.variables.all().map((variable) => { return variable.key; })).to.deep.equal(['baseUrl', 'baseUrl1']);
+  });
+
+  it('should move orphaned requests and preserved examples along when baseUrl* keys shift', function () {
+    const response = (url) => {
+        return {
+          name: 'ok',
+          code: 200,
+          originalRequest: { method: 'GET', url },
+          body: ''
+        };
+      },
+      latest = new Collection({
+        item: [{
+          name: 'pets',
+          request: { method: 'GET', url: '{{baseUrl2}}/pets' },
+          response: [response('{{baseUrl2}}/pets'), response('{{baseUrl2}}/pets')]
+        }],
+        variable: [
+          { key: 'baseUrl', value: 'https://api.example.com' },
+          { key: 'baseUrl1', value: 'https://api.eu.example.com' },
+          { key: 'baseUrl2', value: 'https://pets.example.com' }
+        ]
+      }),
+      current = new Collection({
+        item: [
+          {
+            name: 'pets',
+            request: { method: 'GET', url: '{{baseUrl1}}/pets' },
+            response: [response('{{baseUrl1}}/pets'), response('{{baseUrl1}}/pets?saved=1')]
+          },
+          { name: 'legacy', request: { method: 'GET', url: '{{baseUrl2}}/legacy' } }
+        ],
+        variable: [
+          { key: 'baseUrl', value: 'https://api.example.com' },
+          { key: 'baseUrl1', value: 'https://pets.example.com' },
+          { key: 'baseUrl2', value: 'https://legacy.example.com' }
+        ]
+      }),
+      synced = syncCollection(latest, current, { syncExamples: true }),
+      requests = synced.items.all();
+
+    expect(requests.map((item) => { return item.request.url.toString(); }))
+      .to.deep.equal(['{{baseUrl2}}/pets', '{{baseUrl3}}/legacy']);
+    expect(requests[0].responses.all().map((item) => { return item.originalRequest.url.toString(); }))
+      .to.deep.equal(['{{baseUrl2}}/pets', '{{baseUrl2}}/pets?saved=1']);
+    expect(
+      synced.variables.all().map((variable) => {
+        return { key: variable.key, value: variable.value };
+      })
+    ).to.deep.equal([
+      { key: 'baseUrl', value: 'https://api.example.com' },
+      { key: 'baseUrl2', value: 'https://pets.example.com' },
+      { key: 'baseUrl3', value: 'https://legacy.example.com' },
+      { key: 'baseUrl1', value: 'https://api.eu.example.com' }
+    ]);
+  });
+
+  it('should keep baseUrl* variables when the latest collection has none', function () {
+    const latest = new Collection({ item: [], variable: [] }),
+      current = new Collection({
+        item: [],
+        variable: [
+          { key: 'baseUrl', value: 'https://api.example.com' },
+          { key: 'baseUrl1', value: 'https://staging.example.com' }
+        ]
+      }),
+      synced = syncCollection(latest, current);
+
+    expect(synced.variables.all().map((variable) => { return variable.key; }))
+      .to.deep.equal(['baseUrl', 'baseUrl1']);
+  });
 });

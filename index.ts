@@ -10,7 +10,10 @@ import type {
   OptionsRecord,
   BundleResult,
   FilesResult,
-  ValidationResult
+  ValidationResult,
+  CollectionResult,
+  ContractTestOptions,
+  ContractTestResult
 } from './types';
 
 export type {
@@ -18,6 +21,9 @@ export type {
   SyncOptions,
   Callback,
   CollectionResult,
+  ContractTestOptions,
+  ContractTestResult,
+  ConversionIssue,
   BundleResult,
   FilesResult,
   ValidationResult
@@ -78,6 +84,22 @@ export function convertV2WithTypes(input: SpecificationInput, options: Options, 
   }
 
   return cb(new UserError(_.get(schema, 'validationResult.reason', DEFAULT_INVALID_ERROR)));
+}
+
+/**
+ * Rearranges a convertV2WithTypes result into an ordered contract-test collection: requests run in
+ * dependency order with values passed between them, followed by a children-first teardown and
+ * negative checks. Convert with `generateContractTests: true` and `parametersResolution: 'Example'`
+ * so every request carries the status and schema assertions and uses the spec's example values.
+ * @param {CollectionResult} conversion - Result of convertV2WithTypes
+ * @param {ContractTestOptions} [options] - Excluded operations and headers to send
+ * @returns {ContractTestResult} The collection and a summary of its links, inputs and errors
+ */
+export function buildContractTestCollection(
+  conversion: CollectionResult,
+  options?: ContractTestOptions
+): ContractTestResult {
+  return require('../libV2/SpecContractTesting').build(conversion, options);
 }
 
 /**
@@ -202,5 +224,6 @@ export default {
   detectRelatedFiles,
   bundle,
   syncCollection,
+  buildContractTestCollection,
   SchemaPack
 };

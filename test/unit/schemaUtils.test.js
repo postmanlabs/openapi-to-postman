@@ -124,6 +124,73 @@ describe('getParametersForPathItem function', function () {
     expect(result.header.length).to.equal(2);
     expect(result.path.length).to.equal(2);
   });
+
+  it('should expand OAS 3.2 querystring content, encoding, and examples', function () {
+    const param = {
+        in: 'querystring',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['filter'],
+              properties: {
+                filter: { type: 'string' },
+                page: { type: 'integer' }
+              }
+            },
+            encoding: {
+              filter: { style: 'deepObject', explode: true }
+            },
+            examples: {
+              first: { value: { filter: 'active', page: 2 } }
+            }
+          }
+        }
+      },
+      result = getParametersForPathItem([param], {}, { openapi: '3.2.0' });
+
+    expect(result.query).to.have.length(2);
+    expect(result.query[0]).to.include({
+      name: 'filter',
+      required: true,
+      style: 'deepObject',
+      explode: true,
+      example: 'active'
+    });
+    expect(result.query[0].examples.first.value).to.equal('active');
+    expect(result.query[1].examples.first.value).to.equal(2);
+    expect(getParametersForPathItem([param], {}, { openapi: '3.1.0' }).query).to.be.empty;
+  });
+
+  it('should expand OAS 3.2 querystring parameters referenced by $ref', function () {
+    const components = {
+        components: {
+          parameters: {
+            SearchQuery: {
+              in: 'querystring',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: { q: { type: 'string' } }
+                  },
+                  example: { q: 'ref-term' }
+                }
+              }
+            }
+          }
+        }
+      },
+      result = getParametersForPathItem(
+        [{ $ref: '#/components/parameters/SearchQuery' }],
+        {},
+        { openapi: '3.2.0' },
+        components
+      );
+
+    expect(result.query).to.have.length(1);
+    expect(result.query[0]).to.include({ name: 'q', example: 'ref-term' });
+  });
 });
 
 describe('verifyDeprecatedProperties function', function () {
