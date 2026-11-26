@@ -62,7 +62,7 @@ describe('buildContractTestCollection', function () {
     expect(_.pick(result.summary, ['inputs', 'errors', 'excluded'])).to.eql({ inputs: [], errors: [], excluded: [] });
   });
 
-  it('orders flows, then no-token checks, missing-field checks and a children-first teardown', async function () {
+  it('orders requests, then no-token checks, missing-key checks and a children-first teardown', async function () {
     const result = await generate(PETSTORE);
 
     expect(_.map(requests(result), 'name')).to.eql([
@@ -70,9 +70,9 @@ describe('buildContractTestCollection', function () {
       '3. POST /pets', '4. GET /pets', '5. GET /pets/{petId}', '6. PUT /pets/{petId}',
       '7. GET /owners/{ownerId} without a token', '8. GET /pets without a token',
       '9. GET /pets/{petId} without a token',
-      '10. POST /owners without "name"',
-      '11. POST /pets without "name"', '12. DELETE /pets/{petId} (clean up if created)',
-      '13. POST /pets without "ownerId"', '14. DELETE /pets/{petId} (clean up if created)',
+      '10. POST /owners without body "name"',
+      '11. POST /pets without body "name"', '12. DELETE /pets/{petId} (clean up if created)',
+      '13. POST /pets without body "ownerId"', '14. DELETE /pets/{petId} (clean up if created)',
       '15. DELETE /pets/{petId}', '16. GET /pets/{petId} (expect 404)'
     ]);
   });
@@ -112,8 +112,8 @@ describe('buildContractTestCollection', function () {
       param: { in: 'path', name: 'id' } });
     expect(link(result, 'fileId').producer.operation).to.equal('POST /specifications/{id}/files');
     expect(_.map(requests(result), 'name').slice(-4)).to.eql([
-      '8. DELETE /specifications/{id}/files/{fileId}', '9. GET /specifications/{id}/files/{fileId} (expect 404)',
-      '10. DELETE /specifications/{id}', '11. GET /specifications/{id} (expect 404)'
+      '9. DELETE /specifications/{id}/files/{fileId}', '10. GET /specifications/{id}/files/{fileId} (expect 404)',
+      '11. DELETE /specifications/{id}', '12. GET /specifications/{id} (expect 404)'
     ]);
   });
 
@@ -150,9 +150,9 @@ describe('buildContractTestCollection', function () {
       .to.equal('import');
   });
 
-  it('deletes a resource that a missing-field check wrongly creates', async function () {
+  it('deletes a resource that a missing-key check wrongly creates', async function () {
     const result = await generate(PETSTORE),
-      check = request(result, '11. POST /pets without "name"'),
+      check = request(result, '11. POST /pets without body "name"'),
       cleanup = request(result, '12. DELETE /pets/{petId} (clean up if created)');
 
     expect(exec(check, 'test')).to.include('pm.collectionVariables.set("leaked_petId", created)')
@@ -160,6 +160,79 @@ describe('buildContractTestCollection', function () {
     expect(_.find(cleanup.request.url.variable, { key: 'petId' }).value).to.equal('{{leaked_petId}}');
     expect(exec(cleanup, 'prerequest')).to.include('{"leaked_petId":"nothing was created"}');
     expect(exec(cleanup, 'test')).to.equal('pm.collectionVariables.unset("leaked_petId");');
+  });
+
+  it('leaves out each required query, header and body key once, on every method but DELETE', async function () {
+    const json = (schema, example) => { return { content: { 'application/json': { schema, example } } }; },
+      str = { type: 'string' },
+      result = await generate({ openapi: '3.0.0', info: { title: 'Keys', version: '1' }, paths: {
+        '/things': {
+          post: { responses: created({ id: 'string' }), parameters: [
+            { name: 'containerId', in: 'query', required: true, schema: str, example: 'ws-1' },
+            { name: 'limit', in: 'query', schema: { type: 'integer' }, example: 5 },
+            { name: 'x-socket-id', in: 'header', required: true, schema: str, example: 's-1' },
+            { name: 'X-Api-Key', in: 'header', required: true, schema: str, example: 'k' }],
+          requestBody: json({ type: 'object', required: ['name', 'missing'], properties: { name: str, missing: str,
+            count: { type: 'integer' },
+            owner: { type: 'object', required: ['accountId'], properties: { accountId: str } },
+            vet: { type: 'object', required: ['vetId'], properties: { vetId: str } },
+            tags: { type: 'array', items: { type: 'object', required: ['label'], properties: { label: str } } } } },
+          { name: 'Rex', count: 2, owner: { accountId: 'a-1' }, tags: [{ label: 'x' }] }) }
+        },
+        '/things/{thingId}': {
+          get: { parameters: [idParam('thingId')], responses: { 200: { description: 'ok' } } },
+          delete: { parameters: [idParam('thingId'),
+            { name: 'reason', in: 'query', required: true, schema: str, example: 'test' }],
+          responses: { 204: { description: 'ok' } } }
+        }
+      } }, { headers: [{ name: 'X-Api-Key', value: 'secret' }] }),
+      checks = _.map(requests(result), 'name').filter((name) => { return name.includes(' without '); }),
+      sent = (name) => {
+        const item = request(result, name);
+
+        return { query: _.map(_.reject(item.request.url.query, 'disabled'), 'key'),
+          header: _.map(_.reject(item.request.header, 'disabled'), 'key'), body: JSON.parse(item.request.body.raw) };
+      };
+
+    // Path parameters can't be left out; the caller's -H header and a DELETE's query get no check; neither do a
+    // field the example doesn't send (`missing`), an object it doesn't have (`vet`), or keys inside arrays.
+    expect(checks.filter((name) => { return !name.endsWith('without a token'); })).to.eql([
+      '4. POST /things without query "containerId"', '6. POST /things without header "x-socket-id"',
+      '8. POST /things without body "name"', '10. POST /things without body "owner.accountId"'
+    ]);
+    expect(sent('4. POST /things without query "containerId"').query).to.eql([]);
+    expect(sent('6. POST /things without header "x-socket-id"').header).to.not.include('x-socket-id');
+    expect(sent('8. POST /things without body "name"').body).to.eql({ count: 2, owner: { accountId: '{{accountId}}' },
+      tags: [{ label: 'x' }] });
+    expect(sent('10. POST /things without body "owner.accountId"').body.owner).to.eql({});
+    expect(exec(request(result, '4. POST /things without query "containerId"'), 'test'))
+      .to.include('Rejects a request without query \\"containerId\\" (4xx)');
+    // Each is followed by a cleanup, in case the create wrongly succeeds.
+    expect(_.map(requests(result), 'name')).to.include('5. DELETE /things/{thingId} (clean up if created)');
+  });
+
+  it('leaves out a linked key and keeps the rest of the body intact around unquoted placeholders', async function () {
+    const json = (schema, example) => { return { content: { 'application/json': { schema, example } } }; },
+      result = await generate({ openapi: '3.0.0', info: { title: 'Linked', version: '1' }, paths: {
+        '/owners': { post: { responses: { 201: { description: 'ok', content: { 'application/json': {
+          schema: { type: 'object', properties: { id: { type: 'integer' } } } } } } } } },
+        '/pets': { post: { responses: created({}), requestBody: json({ type: 'object', required: ['name', 'ownerId'],
+          properties: { name: { type: 'string' }, ownerId: { type: 'integer' } } }, { name: 'Rex', ownerId: 1 }) } },
+        '/search': { get: { responses: { 200: { description: 'ok' } }, parameters: [
+          { name: 'ownerId', in: 'query', required: true, schema: { type: 'integer' }, example: 1 }] } }
+      } }),
+      byLabel = (suffix) => { return _.find(requests(result), (item) => { return item.name.endsWith(suffix); }); },
+      withoutName = byLabel('POST /pets without body "name"'),
+      withoutOwner = byLabel('POST /pets without body "ownerId"'),
+      search = byLabel('GET /search without query "ownerId"');
+
+    // The other field stays linked, written unquoted for an integer.
+    expect(withoutName.request.body.raw).to.equal('{\n  "ownerId": {{ownerId}}\n}');
+    expect(exec(withoutName, 'prerequest')).to.include('"ownerId"');
+    // The left-out key isn't wired, so the request doesn't wait for it.
+    expect(JSON.parse(withoutOwner.request.body.raw)).to.eql({ name: 'Rex' });
+    expect(exec(withoutOwner, 'prerequest')).to.equal('');
+    expect(_.find(search.request.url.query, { key: 'ownerId' }).disabled).to.equal(true);
   });
 
   it('fills an id field at any depth of a body, in every array item, where the example has it', async function () {
@@ -477,7 +550,8 @@ describe('buildContractTestCollection invariants', function () {
         if (item.name.endsWith('without a token') && _.get(item, 'request.auth.type') !== 'noauth') {
           problems.push(`${item.name}: sends auth`);
         }
-        if ((item.name.endsWith('without a token') || item.name.includes(' without "')) && deletes.length) {
+        if ((item.name.endsWith('without a token') || (/ without (query|header|body) "/).test(item.name)) &&
+          deletes.length) {
           problems.push(`${item.name}: runs after a teardown delete`);
         }
         if (item.name.endsWith('(expect 404)') && !_.some(deletes, { path: pathOf(item) })) {

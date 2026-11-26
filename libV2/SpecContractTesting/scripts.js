@@ -176,13 +176,13 @@ module.exports = {
     `  pm.expect(pm.response.code, ${RECEIVED}).to.be.oneOf([401, 403]);`, '});'],
 
   /**
-   * Test that a request missing a required body field is rejected.
+   * Test that a request missing a required key is rejected.
    *
-   * @param {String} field - removed field
+   * @param {String} label - the key left out, e.g. `query "containerId"` or `body "name"`
    * @returns {String[]} exec lines
    */
-  expectMissingFieldRejected: (field) => {
-    return [`pm.test("Rejects a request without \\"${field}\\" (4xx)", function () {`,
+  expectMissingKeyRejected: (label) => {
+    return [`pm.test(${JSON.stringify(`Rejects a request without ${label} (4xx)`)}, function () {`,
       `  pm.expect(pm.response.code, ${RECEIVED}).to.be.within(400, 499);`, '});'];
   },
 

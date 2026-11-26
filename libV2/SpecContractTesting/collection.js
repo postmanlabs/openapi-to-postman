@@ -112,9 +112,82 @@ const _ = require('lodash'),
     return true;
   },
 
-  removeBodyField = (request, field) => {
-    try { request.body.raw = JSON.stringify(_.omit(JSON.parse(request.body.raw), field), null, 2); }
-    catch (e) { /* non-JSON body: nothing to remove */ }
+  /**
+   * Keys the spec marks as required, for the missing-key checks: query and header parameters (except headers
+   * the caller sends), and body fields, top level and in nested objects (not inside arrays). Path parameters
+   * can't be left out of a URL, so they aren't included.
+   *
+   * @param {Object} op - operation
+   * @param {String[]} sentHeaders - lower-case names of the headers the caller sends
+   * @returns {Object[]} keys: { in: query|header, name } or { in: 'body', path }
+   */
+  requiredKeys = (op, sentHeaders) => {
+    const bodyFields = (schema, pointer = '', depth = 0) => {
+      if (!schema || depth > 4 || schema.type === 'array' || schema.items) { return []; }
+
+      return _.map(schema.required, (name) => { return `${pointer}/${name}`; })
+        .concat(_.flatMap(schema.properties, (child, name) => {
+          return child && (child.type === 'object' || child.properties) ?
+            bodyFields(child, `${pointer}/${name}`, depth + 1) : [];
+        }));
+    };
+
+    return op.params.filter((param) => {
+      return param.required && (param.in === 'query' ||
+        (param.in === 'header' && !sentHeaders.includes(param.name.toLowerCase())));
+    }).map((param) => { return { in: param.in, name: param.name }; })
+      .concat(_.uniq(bodyFields(op.requestBodySchema)).map((path) => { return { in: 'body', path }; }));
+  },
+
+  // `query "containerId"`, `header "x-socket-id"`, `body "owner.accountId"`
+  keyLabel = (key) => {
+    return `${key.in} "${key.in === 'body' ? key.path.split('/').filter(Boolean).join('.') : key.name}"`;
+  },
+
+  // Whether a linked parameter is the key left out, or inside it.
+  isOmitted = (key, param) => {
+    if (param.in !== key.in) { return false; }
+    if (key.in === 'body') { return param.path === key.path || param.path.startsWith(`${key.path}/`); }
+
+    return key.in === 'header' ? param.name.toLowerCase() === key.name.toLowerCase() : param.name === key.name;
+  },
+
+  /**
+   * Leaves a key out of a request. A nested body field is removed only where the example has its parent.
+   *
+   * @param {Object} request - request, before wiring
+   * @param {Object} key - from requiredKeys
+   * @returns {Boolean} false when the request doesn't send the key, so leaving it out would change nothing
+   */
+  omitKey = (request, key) => {
+    const disable = (entries, name, ignoreCase) => {
+      const found = _.filter(entries, (entry) => {
+        return !entry.disabled && (ignoreCase ? entry.key.toLowerCase() === name.toLowerCase() : entry.key === name);
+      });
+
+      found.forEach((entry) => { entry.disabled = true; });
+
+      return found.length > 0;
+    };
+
+    if (key.in === 'query') { return disable(_.get(request, 'url.query'), key.name); }
+    if (key.in === 'header') { return disable(request.header, key.name, true); }
+
+    const mode = _.get(request, 'body.mode'),
+      parts = key.path.split('/').filter(Boolean);
+
+    if (mode === 'urlencoded' || mode === 'formdata') {
+      return parts.length === 1 && disable(request.body[mode], parts[0]);
+    }
+
+    const body = mode === 'raw' ? _.attempt(JSON.parse, request.body.raw) : undefined,
+      parent = parts.length > 1 ? _.get(body, parts.slice(0, -1)) : body;
+
+    if (!_.isPlainObject(parent) || !_.has(parent, _.last(parts))) { return false; }
+    delete parent[_.last(parts)];
+    request.body.raw = JSON.stringify(body, null, 2);
+
+    return true;
   },
 
   // Optional query and header parameters are not sent; wiring a link re-enables one. Headers the
@@ -188,14 +261,16 @@ const _ = require('lodash'),
       },
 
       // A copy of the operation's request wired to the variables `variableFor` picks (null leaves a
-      // parameter alone). Null when a linked value can't be put into the request (reported in `unapplied`).
-      prepare = (op, variableFor) => {
+      // parameter alone). Null when a linked value can't be put into the request (reported in `unapplied`), or
+      // when `edit`, run on the request before wiring, returns false.
+      prepare = (op, variableFor, edit) => {
         if (!itemOf(op)) { return null; }
 
         const item = _.cloneDeep(itemOf(op));
 
         disableOptionalParams(item, op, headerNames);
         delete item.response;
+        if (edit && !edit(item.request)) { return null; }
 
         const wired = usesOf(op).map(({ link, param }) => {
           const variable = variableFor(link, param);
@@ -274,24 +349,24 @@ const _ = require('lodash'),
           scripts.expectNoTokenRejected);
       },
 
-      // Before the teardown, so parent ids still exist. If the API wrongly creates the resource,
-      // the next request deletes it.
-      missingFieldChecks = (op) => {
-        const cleanup = cleanupFor(op);
+      // Before the teardown, so parent ids still exist: each required key left out once, expecting a 4xx. Not
+      // for deletes, which would remove the resource before the rest of the run if wrongly accepted. If a create
+      // wrongly accepts it, the next request deletes what it made.
+      missingKeyChecks = (op) => {
+        const cleanup = op.role === 'create' ? cleanupFor(op) : null;
 
-        _.get(op.requestBodySchema, 'required', []).forEach((field) => {
-          const stepId = `${op.operationId}:missing-${field}`,
-            prepared = prepare(op, (link, param) => {
-              return param.in === 'body' && param.path === `/${field}` ? null : link.variable;
-            }),
+        requiredKeys(op, headerNames).forEach((key) => {
+          const label = keyLabel(key),
+            stepId = `${op.operationId}:missing-${label}`,
+            prepared = prepare(op, (link, param) => { return isOmitted(key, param) ? null : link.variable; },
+              (request) => { return omitKey(request, key); }),
             deletion = prepared && cleanup && prepare(cleanup.op, (link, param) => {
               return isIdParam(cleanup.op, param) ? cleanup.variable : link.variable;
             });
 
           if (!prepared) { return; }
 
-          removeBodyField(prepared.item.request, field);
-          add(prepared, stepId, `${op.method} ${op.path} without "${field}"`, scripts.expectMissingFieldRejected(field)
+          add(prepared, stepId, `${op.method} ${op.path} without ${label}`, scripts.expectMissingKeyRejected(label)
             .concat(deletion ? scripts.captureCreated(cleanup.variable, cleanup.path) : []));
           if (deletion) {
             add(deletion, `${stepId}:cleanup`, `${cleanup.op.method} ${cleanup.op.path} (clean up if created)`,
@@ -302,7 +377,7 @@ const _ = require('lodash'),
 
     _.flatten(_.values(_.omit(flows, 'teardown'))).forEach(flowStep);
     sortedOperations.filter((op) => { return op.method === 'GET' && isSecured(op); }).forEach(noTokenCheck);
-    _.filter(sortedOperations, { role: 'create' }).forEach(missingFieldChecks);
+    sortedOperations.filter((op) => { return op.method !== 'DELETE'; }).forEach(missingKeyChecks);
     _.forEach(flows.teardown, flowStep);
 
     return { requests, unapplied: _.uniqWith(unapplied, _.isEqual) };

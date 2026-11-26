@@ -140,10 +140,18 @@ Requests are emitted in four phases, numbered `1.`, `2.`, ... only once included
    headers are given), sorted by key: sent with `noauth`, without credential headers and with the real linked
    ids, expecting 401 or 403. They run while the resources still exist, so a
    rejection can only be about the token.
-3. **Missing-field checks**, for each create's required top-level body fields, sorted: the field is removed
-   and a 4xx is expected. They run before the teardown, so parent ids still exist. If the resource has a
-   delete linked to this create, a `DELETE … (clean up if created)` step follows. It runs only if the API
-   wrongly accepted the request (the check saves the new id as `leaked_<variable>`).
+3. **Missing-key checks**, for every operation except deletes, alphabetically by key: each required key is left
+   out once and a 4xx is expected, `<METHOD /path> without query "containerId"` (or `header "x-socket-id"`,
+   `body "owner.accountId"`). Required keys (`requiredKeys`): query parameters; header parameters, except headers
+   the caller sends with `headers`; body fields from the schema's `required` lists, top level and in nested
+   objects, not inside arrays. Path parameters can't be left out of a URL, so they get none. The key is left out
+   before wiring (`omitKey`): a query or header entry is disabled, a form field disabled, a JSON field deleted.
+   A check is only added when the request actually sends the key; a nested field is only removed where the
+   example has its parent. A linked key left out isn't wired, so the guard doesn't wait for it. They run before
+   the teardown, so parent ids still exist. For a create whose resource has a delete linked to it, a
+   `DELETE … (clean up if created)` step follows; it runs only if the API wrongly accepted the request (the
+   check saves the new id as `leaked_<variable>`). Other operations that wrongly accept get no cleanup.
+   Deletes get no checks: a wrongly accepted one would remove the resource before the rest of the run.
 4. **Teardown**: deletes, each followed by a read expecting 404 (`deleted_<variable>`).
 
 **A request is left out only when excluded, or when a linked value has no place in it** (e.g. an XML body),
@@ -167,15 +175,15 @@ them.
 | `markDeleted` | test | On 2xx, keeps the ids as `deleted_<variable>` and clears the originals |
 | `expectGone` | test | `Request | Deleted resource is gone (404)` |
 | `expectNoTokenRejected` | test | 401 or 403 |
-| `expectMissingFieldRejected` | test | 4xx |
+| `expectMissingKeyRejected` | test | `Rejects a request without <in> "<key>" (4xx)` |
 | `captureCreated`, `clear` | test | Keep and clear `leaked_<variable>` for the cleanup step |
 
 The converter's own contract test script (status declared, body matches schema) is kept on every request and teardown
-step; the no-token and missing-field checks don't have it.
+step; the no-token and missing-key checks don't have it.
 
 **Request values:** the converter fills requests from the spec's examples, falling back to values generated
 from the schema (strings become `"string"`, numbers are random). This module only replaces linked values with
-`{{variable}}` and removes the field in missing-field checks.
+`{{variable}}` and leaves keys out in missing-key checks.
 
 **Other output details:** `headers` are sent on every request, replacing same-named spec headers; credential
 headers replace the spec's auth and are left out of the no-token checks. Item ids are `ct-${hash(stepId)}`. `info._postman_id` is derived from the spec hash.
@@ -278,7 +286,7 @@ chained or sent as the spec's example.
 - **Invariants run on every fixture in that folder**, so a new fixture is covered automatically:
   - every linked value is saved before it's used, no input is declared as a collection variable, and both are guarded
   - every path id is linked
-  - no-token and missing-field checks run before any teardown delete; no-token checks send no auth
+  - no-token and missing-key checks run before any teardown delete; no-token checks send no auth
   - each 404 check follows a delete of the same resource; children are deleted before parents
   - the same run order and collection id however the spec is laid out
   - adding an unrelated endpoint doesn't change existing links
