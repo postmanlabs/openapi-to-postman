@@ -1,5 +1,5 @@
 // Builds the contract-test requests from the converter's output: one numbered list in run order,
-// wired with the links, then no-token checks, missing-field checks and a children-first teardown.
+// wired with the links, then no-token checks, missing-key checks and a children-first teardown.
 const _ = require('lodash'),
   { hash, flattenItems, requestKey, itemKey, toLodashPath } = require('./utils'),
   scripts = require('./scripts'),
