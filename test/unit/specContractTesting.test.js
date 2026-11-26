@@ -235,6 +235,21 @@ describe('buildContractTestCollection', function () {
     expect(_.find(search.request.url.query, { key: 'ownerId' }).disabled).to.equal(true);
   });
 
+  it('keeps the <x>Type sibling left out when its <x>Id is wired', async function () {
+    const str = { type: 'string' },
+      result = await generate({ openapi: '3.0.0', info: { title: 'Siblings', version: '1' }, paths: {
+        '/specs': { get: { responses: { 200: { description: 'ok' } }, parameters: [
+          { name: 'containerId', in: 'query', required: true, schema: str, example: 'ws-1' },
+          { name: 'containerType', in: 'query', required: true, schema: str, example: 'workspace' }] } }
+      } }),
+      sent = (name) => {
+        return _.map(_.reject(request(result, name).request.url.query, 'disabled'), 'key');
+      };
+
+    expect(sent('2. GET /specs without query "containerId"')).to.eql(['containerType']);
+    expect(sent('3. GET /specs without query "containerType"')).to.eql(['containerId']);
+  });
+
   it('fills an id field at any depth of a body, in every array item, where the example has it', async function () {
     const json = (schema, example) => { return { content: { 'application/json': { schema, example } } }; },
       object = (properties) => { return { type: 'object', properties }; },

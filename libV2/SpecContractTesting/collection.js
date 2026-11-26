@@ -154,8 +154,10 @@ const _ = require('lodash'),
 
   /**
    * Leaves a key out of a request. A nested body field is removed only where the example has its parent.
+   * Runs after wiring, which can re-enable a parameter (the `<x>Type` sibling of a wired `<x>Id`); unquoted
+   * placeholders for non-string values are kept as they are.
    *
-   * @param {Object} request - request, before wiring
+   * @param {Object} request - request, after wiring
    * @param {Object} key - from requiredKeys
    * @returns {Boolean} false when the request doesn't send the key, so leaving it out would change nothing
    */
@@ -180,12 +182,16 @@ const _ = require('lodash'),
       return parts.length === 1 && disable(request.body[mode], parts[0]);
     }
 
-    const body = mode === 'raw' ? _.attempt(JSON.parse, request.body.raw) : undefined,
+    const marker = '__ct_placeholder__',
+      raw = mode === 'raw' && typeof request.body.raw === 'string' ? request.body.raw.replace(
+        /([:[,]\s*)\{\{([^{}]+)\}\}/g, (match, before, name) => { return before + JSON.stringify(marker + name); }
+      ) : undefined,
+      body = raw === undefined ? undefined : _.attempt(JSON.parse, raw),
       parent = parts.length > 1 ? _.get(body, parts.slice(0, -1)) : body;
 
     if (!_.isPlainObject(parent) || !_.has(parent, _.last(parts))) { return false; }
     delete parent[_.last(parts)];
-    request.body.raw = JSON.stringify(body, null, 2);
+    request.body.raw = JSON.stringify(body, null, 2).replace(new RegExp(`"${marker}([^"]+)"`, 'g'), '{{$1}}');
 
     return true;
   },
@@ -262,7 +268,7 @@ const _ = require('lodash'),
 
       // A copy of the operation's request wired to the variables `variableFor` picks (null leaves a
       // parameter alone). Null when a linked value can't be put into the request (reported in `unapplied`), or
-      // when `edit`, run on the request before wiring, returns false.
+      // when `edit`, run on the wired request, returns false.
       prepare = (op, variableFor, edit) => {
         if (!itemOf(op)) { return null; }
 
@@ -270,7 +276,6 @@ const _ = require('lodash'),
 
         disableOptionalParams(item, op, headerNames);
         delete item.response;
-        if (edit && !edit(item.request)) { return null; }
 
         const wired = usesOf(op).map(({ link, param }) => {
           const variable = variableFor(link, param);
@@ -284,7 +289,9 @@ const _ = require('lodash'),
           return false;
         });
 
-        return wired.includes(false) ? null : { item, needs: _.compact(wired) };
+        if (wired.includes(false) || (edit && !edit(item.request))) { return null; }
+
+        return { item, needs: _.compact(wired) };
       },
 
       // Numbered only once included, so left-out requests leave no gaps.

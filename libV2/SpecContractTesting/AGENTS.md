@@ -145,7 +145,8 @@ Requests are emitted in four phases, numbered `1.`, `2.`, ... only once included
    `body "owner.accountId"`). Required keys (`requiredKeys`): query parameters; header parameters, except headers
    the caller sends with `headers`; body fields from the schema's `required` lists, top level and in nested
    objects, not inside arrays. Path parameters can't be left out of a URL, so they get none. The key is left out
-   before wiring (`omitKey`): a query or header entry is disabled, a form field disabled, a JSON field deleted.
+   after wiring (`omitKey`), since wiring an `<x>Id` re-enables its `<x>Type` sibling: a query or header entry
+   is disabled, a form field disabled, a JSON field deleted (unquoted placeholders kept).
    A check is only added when the request actually sends the key; a nested field is only removed where the
    example has its parent. A linked key left out isn't wired, so the guard doesn't wait for it. They run before
    the teardown, so parent ids still exist. For a create whose resource has a delete linked to it, a
